@@ -120,8 +120,10 @@ A realism toggle hides the 3D inset during scenarios.
      across $1.10–2.20, with disagreeing scaling exponents. It pooled 31 core configurations without screening or condition matching,
      and the library's values are unverified estimates. So it can't decide validity either way.
    - An earlier "GO" (commit `0903af4`) rested on the single $2.00 point and was withdrawn after review: `docs/reviews/2026-09-26-m1-go-review.md`.
-   - Next: screen the data (task A3), verify parameters (C2), compare within one well-documented core configuration with a
-     calibration/held-out split (C1), then **propose** GO/NO-GO to the user with the evidence.
+   - **C1 done (2026-09-26), proposal: NO-GO for M1 as stated** ([results](docs/validation/m1-c1-results.md), protocol fixed in advance).
+     Held-out core 246 errs by ×1.85 typical after a one-parameter calibration, and core 242 by ×2.4; the calibration had to go outside its allowed range.
+     Measured peak power grows as (ρ−$1)^3.1–3.8, the model as ^2.0 (Nordheim–Fuchs). The leading hypothesis is too-weak temperature dependence
+     of the assumed UZrH heat capacity and feedback (Fuchs–Hansen regime). Next: C2 (real cp(T), α(T)), then re-run C1 unchanged. The decision is the user's.
 2. **OpenMC library.** TRIGA model, then rod-worth curves, β_eff, Λ, temperature coefficients,
    and 3D power shapes over the state grid.
 3. **Static 3D viewer.** Load the geometry and one power tally, colour the core by power, noclip camera.
