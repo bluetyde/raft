@@ -29,8 +29,8 @@ Status: `ready` (brief can be written now) · `blocked` (needs something first) 
 
 | ID | Task | Files | Oracle / proof of done | Status |
 |---|---|---|---|---|
-| A5 | `web/` scaffold (Vite + TS + Vitest) and a TypeScript library validator | `web/` | The **30 broken fixtures** in `schema/vectors/invalid/` each give exactly their `expected.json` codes; the synthetic core validates | ready; first confirm `npm install` works in the sandbox (agy's commands have no network) |
-| A6 | TypeScript port of the engine (`physics_ref`: engine, library, numerics) | `web/src/sim/` | Vitest runs every vector in `schema/engine-vectors/` within its declared tolerances | blocked on A5 (and C5, which regenerates the vectors) |
+| A5 | `web/` scaffold (Vite + TS + Vitest) and a TypeScript library validator | `web/` | The **30 broken fixtures** in `schema/vectors/invalid/` each give exactly their `expected.json` codes; the synthetic core validates | **blocked on sandbox Node setup**: agy's commands have no network, each run starts from a fresh clone without `node_modules`, and the sandbox's Node 18 is likely too old for the TS/Vite toolchain. Waiting for the runner's pre-agy `npm ci` step (committed lockfile, network, outside agy's sandbox) and Node 24 in the sandbox |
+| A6 | TypeScript port of the engine (`physics_ref`: engine, library, numerics) | `web/src/sim/` | Vitest runs every vector in `schema/engine-vectors/` within its declared tolerances | **blocked on sandbox Node setup** (as A5), on A5 itself, and on C5 (which regenerates the vectors) |
 | A7 | Scenario schema + validator + valid/invalid fixtures (typed predicates, plan 05) | `schema/scenario.schema.json`, `pipeline/scenario/`, fixtures | Every invalid fixture gives its expected code | ready |
 | A8 | Command and snapshot schemas + fixtures (ARCHITECTURE interfaces) | `schema/command.schema.json`, `schema/snapshot.schema.json` | Snapshots from the golden-vector scenarios validate; invalid fixtures fail with expected codes | ready |
 
