@@ -9,8 +9,12 @@
   "provenance": {
     "generator": "pipeline.library.build_triga",
     "created": "2026-09-26",
-    "notes": "Experimental benchmark model combining ICSBEP IEU-COMP-THERM-003, Simnad 1981, and \u0160vajger 2023.",
+    "notes": "Experimental TRIGA-like model. Values were collected for the JSI TRIGA (candidate sources: ICSBEP IEU-COMP-THERM-003, Simnad 1981, Svajger & Snoj 2023) but have NOT been checked against them, so they are labelled 'assumed'. Delayed-group betas are Keepin abundances x an assumed beta_eff of 0.0070. Geometry and power shapes are illustrative, not the benchmark core. See docs/reviews/2026-09-26-m1-go-review.md.",
     "sources": [
+      {
+        "id": "keepin1965",
+        "cite": "G. R. Keepin, Physics of Nuclear Kinetics, Addison-Wesley (1965): U-235 thermal delayed-neutron groups"
+      },
       {
         "id": "icsbep",
         "cite": "ICSBEP Benchmark IEU-COMP-THERM-003 (OECD-NEA, 2007)"
@@ -34,19 +38,19 @@
     },
     "Tfuel": {
       "value": 293.15,
-      "source": "cited:icsbep"
+      "source": "assumed"
     },
     "Tcoolant": {
       "value": 293.15,
-      "source": "cited:icsbep"
+      "source": "assumed"
     },
     "xenon": {
       "value": 0.0,
-      "source": "cited:icsbep"
+      "source": "assumed"
     },
     "rho": {
       "value": -0.045,
-      "source": "cited:icsbep"
+      "source": "assumed"
     },
     "calibration": null
   },
@@ -60,7 +64,7 @@
         0.000805,
         0.000294
       ],
-      "source": "cited:icsbep"
+      "source": "assumed"
     },
     "lambda": {
       "values": [
@@ -71,11 +75,11 @@
         1.14,
         3.01
       ],
-      "source": "cited:icsbep"
+      "source": "cited:keepin1965"
     },
     "genTime": {
       "value": 4e-05,
-      "source": "cited:icsbep"
+      "source": "assumed"
     },
     "extSource": {
       "value": 0.5,
@@ -119,7 +123,7 @@
           ],
           "interp": "linear",
           "outOfRange": "clamp-and-flag",
-          "source": "cited:icsbep"
+          "source": "assumed"
         },
         "scram": {
           "t": [
@@ -136,7 +140,7 @@
             0.2,
             0.0
           ],
-          "source": "cited:icsbep"
+          "source": "assumed"
         },
         "fireTime": 0.08
       },
@@ -175,7 +179,7 @@
           ],
           "interp": "linear",
           "outOfRange": "clamp-and-flag",
-          "source": "cited:icsbep"
+          "source": "assumed"
         },
         "scram": {
           "t": [
@@ -192,7 +196,7 @@
             0.2,
             0.0
           ],
-          "source": "cited:icsbep"
+          "source": "assumed"
         }
       },
       {
@@ -230,7 +234,7 @@
           ],
           "interp": "linear",
           "outOfRange": "clamp-and-flag",
-          "source": "cited:icsbep"
+          "source": "assumed"
         },
         "scram": {
           "t": [
@@ -247,7 +251,7 @@
             0.2,
             0.0
           ],
-          "source": "cited:icsbep"
+          "source": "assumed"
         }
       },
       {
@@ -285,7 +289,7 @@
           ],
           "interp": "linear",
           "outOfRange": "clamp-and-flag",
-          "source": "cited:icsbep"
+          "source": "assumed"
         },
         "scram": {
           "t": [
@@ -302,7 +306,7 @@
             0.2,
             0.0
           ],
-          "source": "cited:icsbep"
+          "source": "assumed"
         }
       }
     ],
@@ -325,7 +329,7 @@
       ],
       "interp": "linear",
       "outOfRange": "clamp-and-flag",
-      "source": "cited:simnad1981"
+      "source": "assumed"
     },
     "coolantTemp": {
       "T": [
@@ -344,7 +348,7 @@
       ],
       "interp": "linear",
       "outOfRange": "clamp-and-flag",
-      "source": "cited:icsbep"
+      "source": "assumed"
     },
     "xenon": {
       "N": [
@@ -361,14 +365,14 @@
       ],
       "interp": "linear",
       "outOfRange": "extrapolate-and-flag",
-      "source": "cited:icsbep"
+      "source": "assumed"
     }
   },
   "thermal": {
     "fuel": {
       "mass": {
         "value": 84.0,
-        "source": "cited:icsbep"
+        "source": "assumed"
       },
       "cp": {
         "T": [
@@ -389,27 +393,27 @@
         ],
         "interp": "linear",
         "outOfRange": "clamp-and-flag",
-        "source": "cited:simnad1981"
+        "source": "assumed"
       }
     },
     "coolant": {
       "mass": {
         "value": 20000.0,
-        "source": "cited:svajger2023"
+        "source": "assumed"
       },
       "cp": {
         "value": 4184.0,
-        "source": "cited:icsbep"
+        "source": "assumed"
       }
     },
     "hA": {
       "value": 3000.0,
-      "source": "cited:svajger2023"
+      "source": "assumed"
     },
     "heatExchanger": {
       "UA": {
         "value": 10000.0,
-        "source": "cited:svajger2023"
+        "source": "assumed"
       },
       "sinkTemp": {
         "value": 293.15,
@@ -435,23 +439,23 @@
     },
     "gammaI": {
       "value": 0.061,
-      "source": "cited:icsbep"
+      "source": "assumed"
     },
     "gammaXe": {
       "value": 0.003,
-      "source": "cited:icsbep"
+      "source": "assumed"
     },
     "lambdaI": {
       "value": 2.87e-05,
-      "source": "cited:icsbep"
+      "source": "assumed"
     },
     "lambdaXe": {
       "value": 2.09e-05,
-      "source": "cited:icsbep"
+      "source": "assumed"
     },
     "sigmaXe": {
       "value": 2.6e-22,
-      "source": "cited:icsbep"
+      "source": "assumed"
     }
   },
   "plant": {

@@ -128,6 +128,7 @@
     "lambdaIodineSecInv": 2.87e-5,
     "lambdaXenonSecInv": 2.09e-5,
     "sigmaXenonMicroscopicM2": 2.6e-22,
-    "fluxPerWatt": 4.0e7
+    "fluxPerWatt": 4.0e10,
+    "fluxPerWattNote": "n/(m^2 s) per W, core average. Was 4.0e7, which is 1000x below a typical 250 kW TRIGA (~1e12 n/(cm^2 s)) and disagreed with the library; likely a cm^2/m^2 slip. 4.0e10 is an unverified estimate matching the library (review 2026-09-26)."
   }
 }

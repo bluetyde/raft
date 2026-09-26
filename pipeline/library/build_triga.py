@@ -20,10 +20,12 @@ from typing import Dict, List, Tuple
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "libraries" / "triga-jsi"
 
-CITED_BENCH = "cited:icsbep"
-CITED_SIMNAD = "cited:simnad1981"
-CITED_SVAJGER = "cited:svajger2023"
+# Source labels (docs/library-format.md section 3). "cited:<id>" means the value was checked in that publication.
+# None of the values below has been checked against the benchmark, Simnad or Svajger yet (review 2026-09-26,
+# docs/reviews/2026-09-26-m1-go-review.md), so they are "assumed" until the parameter check (task C2) confirms them.
+# The delayed-group decay constants are Keepin's standard U-235 thermal values and are cited as such.
 ASSUMED = "assumed"
+CITED_KEEPIN = "cited:keepin1965"
 
 T_REF = 293.15  # K (20 °C)
 PITCH = 4.3  # cm
@@ -215,12 +217,12 @@ def build_library(out_dir: Path) -> dict:
                 "rho": worth_pts,
                 "interp": "linear",
                 "outOfRange": "clamp-and-flag",
-                "source": CITED_BENCH,
+                "source": ASSUMED,
             },
             "scram": {
                 "t": [0.0, 0.05, 0.15, 0.25, 0.35],
                 "x": [1.0, 0.95, 0.65, 0.20, 0.0],
-                "source": CITED_BENCH,
+                "source": ASSUMED,
             },
         }
         if pulse_cap:
@@ -259,8 +261,12 @@ def build_library(out_dir: Path) -> dict:
         "provenance": {
             "generator": "pipeline.library.build_triga",
             "created": "2026-09-26",
-            "notes": "Experimental benchmark model combining ICSBEP IEU-COMP-THERM-003, Simnad 1981, and Švajger 2023.",
+            "notes": ("Experimental TRIGA-like model. Values were collected for the JSI TRIGA (candidate sources: ICSBEP "
+                      "IEU-COMP-THERM-003, Simnad 1981, Svajger & Snoj 2023) but have NOT been checked against them, so they "
+                      "are labelled 'assumed'. Delayed-group betas are Keepin abundances x an assumed beta_eff of 0.0070. "
+                      "Geometry and power shapes are illustrative, not the benchmark core. See docs/reviews/2026-09-26-m1-go-review.md."),
             "sources": [
+                {"id": "keepin1965", "cite": "G. R. Keepin, Physics of Nuclear Kinetics, Addison-Wesley (1965): U-235 thermal delayed-neutron groups"},
                 {"id": "icsbep", "cite": "ICSBEP Benchmark IEU-COMP-THERM-003 (OECD-NEA, 2007)"},
                 {"id": "simnad1981", "cite": "M. T. Simnad, General Atomics Report GA-A16377 (1981)"},
                 {"id": "svajger2023", "cite": "I. Švajger, L. Snoj, Nuclear Engineering and Technology 55 (2023) 4404–4415"},
@@ -268,16 +274,16 @@ def build_library(out_dir: Path) -> dict:
         },
         "reference": {
             "rods": {rid: 0.0 for rid in ROD_SPECS},
-            "Tfuel": S(T_REF, CITED_BENCH),
-            "Tcoolant": S(T_REF, CITED_BENCH),
-            "xenon": S(0.0, CITED_BENCH),
-            "rho": S(-0.0450, CITED_BENCH),  # All rods inserted shutdown margin
+            "Tfuel": S(T_REF, ASSUMED),
+            "Tcoolant": S(T_REF, ASSUMED),
+            "xenon": S(0.0, ASSUMED),
+            "rho": S(-0.0450, ASSUMED),  # All rods inserted shutdown margin
             "calibration": None,
         },
         "kinetics": {
-            "beta": {"values": GROUP_BETAS, "source": CITED_BENCH},
-            "lambda": {"values": GROUP_LAMBDAS, "source": CITED_BENCH},
-            "genTime": S(4.0e-5, CITED_BENCH),
+            "beta": {"values": GROUP_BETAS, "source": ASSUMED},
+            "lambda": {"values": GROUP_LAMBDAS, "source": CITED_KEEPIN},
+            "genTime": S(4.0e-5, ASSUMED),
             "extSource": S(0.5, ASSUMED),
         },
         "reactivity": {
@@ -287,47 +293,47 @@ def build_library(out_dir: Path) -> dict:
                 "rho": rho_fuel,
                 "interp": "linear",
                 "outOfRange": "clamp-and-flag",
-                "source": CITED_SIMNAD,
+                "source": ASSUMED,
             },
             "coolantTemp": {
                 "T": [283.15, T_REF, 313.15, 333.15, 353.15],
                 "rho": [round(-3.5e-5 * (T - T_REF), 12) for T in [283.15, T_REF, 313.15, 333.15, 353.15]],
                 "interp": "linear",
                 "outOfRange": "clamp-and-flag",
-                "source": CITED_BENCH,
+                "source": ASSUMED,
             },
             "xenon": {
                 "N": [0.0, 1.0e20, 2.0e20, 4.0e20],
                 "rho": [0.0, -0.0015, -0.0030, -0.0060],
                 "interp": "linear",
                 "outOfRange": "extrapolate-and-flag",
-                "source": CITED_BENCH,
+                "source": ASSUMED,
             },
         },
         "thermal": {
             "fuel": {
-                "mass": S(84.0, CITED_BENCH),
+                "mass": S(84.0, ASSUMED),
                 "cp": {
                     "T": TEMP_GRID,
                     "c": cp_vals,
                     "interp": "linear",
                     "outOfRange": "clamp-and-flag",
-                    "source": CITED_SIMNAD,
+                    "source": ASSUMED,
                 },
             },
-            "coolant": {"mass": S(20000.0, CITED_SVAJGER), "cp": S(4184.0, CITED_BENCH)},
-            "hA": S(3000.0, CITED_SVAJGER),
-            "heatExchanger": {"UA": S(10000.0, CITED_SVAJGER), "sinkTemp": S(T_REF, ASSUMED), "pump": "primary"},
+            "coolant": {"mass": S(20000.0, ASSUMED), "cp": S(4184.0, ASSUMED)},
+            "hA": S(3000.0, ASSUMED),
+            "heatExchanger": {"UA": S(10000.0, ASSUMED), "sinkTemp": S(T_REF, ASSUMED), "pump": "primary"},
             "deposition": {"fuelFraction": S(1.0, ASSUMED)},
         },
         "poisons": {
             "fluxPerWatt": S(4.0e10, ASSUMED),
             "sigmaF": S(5.0, ASSUMED),
-            "gammaI": S(0.061, CITED_BENCH),
-            "gammaXe": S(0.003, CITED_BENCH),
-            "lambdaI": S(2.87e-5, CITED_BENCH),
-            "lambdaXe": S(2.09e-5, CITED_BENCH),
-            "sigmaXe": S(2.6e-22, CITED_BENCH),
+            "gammaI": S(0.061, ASSUMED),
+            "gammaXe": S(0.003, ASSUMED),
+            "lambdaI": S(2.87e-5, ASSUMED),
+            "lambdaXe": S(2.09e-5, ASSUMED),
+            "sigmaXe": S(2.6e-22, ASSUMED),
         },
         "plant": {
             "modes": ["steady", "pulse"],
