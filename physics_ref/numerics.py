@@ -2,6 +2,10 @@
 
 Both are written so the TypeScript port can reproduce them bit for bit
 (64-bit integer arithmetic via BigInt there; IEEE doubles everywhere else).
+
+Every sum is an explicit left-to-right loop. Python 3.12 changed the built-in sum() of floats to compensated
+(Neumaier) summation, so sum() gives last-bit-different results on 3.11 and 3.12+, and JavaScript has no
+equivalent. An explicit loop gives the same bits in every Python version and in the TypeScript port.
 """
 from __future__ import annotations
 
@@ -53,7 +57,9 @@ def solve(a: list[list[float]], b: list[float]) -> list[float]:
                     row[c] -= factor * pivot_row[c]
     x = [0.0] * n
     for r in range(n - 1, -1, -1):
-        s = m[r][n] - sum(m[r][c] * x[c] for c in range(r + 1, n))
+        s = m[r][n]
+        for c in range(r + 1, n):
+            s -= m[r][c] * x[c]
         x[r] = s / m[r][r]
     return x
 
@@ -87,8 +93,14 @@ def lu_solve(factored, b: list[float]) -> list[float]:
     y = [b[perm[i]] for i in range(n)]
     for i in range(n):
         row = lu[i]
-        y[i] -= sum(row[j] * y[j] for j in range(i))
+        acc = 0.0
+        for j in range(i):
+            acc += row[j] * y[j]
+        y[i] -= acc
     for i in range(n - 1, -1, -1):
         row = lu[i]
-        y[i] = (y[i] - sum(row[j] * y[j] for j in range(i + 1, n))) / row[i]
+        acc = 0.0
+        for j in range(i + 1, n):
+            acc += row[j] * y[j]
+        y[i] = (y[i] - acc) / row[i]
     return y

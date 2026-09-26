@@ -56,7 +56,10 @@ class Table:
         if b < a:
             return -self.integral(b, a)
         pts = [a] + [x for x in self.xs if a < x < b] + [b]
-        return sum(0.5 * (self(p) + self(q)) * (q - p) for p, q in zip(pts, pts[1:]))
+        total = 0.0             # explicit loop, not sum(): see numerics.py
+        for p, q in zip(pts, pts[1:]):
+            total += 0.5 * (self(p) + self(q)) * (q - p)
+        return total
 
 
 class Rod:
@@ -120,7 +123,9 @@ class Library:
         k = m["kinetics"]
         self.beta = list(k["beta"]["values"])
         self.lam = list(k["lambda"]["values"])
-        self.beta_total = sum(self.beta)
+        self.beta_total = 0.0
+        for b in self.beta:     # explicit loop, not sum(): see numerics.py
+            self.beta_total += b
         self.gen_time = k["genTime"]["value"]
         self.ext_source = k["extSource"]["value"]
 
