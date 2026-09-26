@@ -30,7 +30,31 @@ DEFAULT_CONFIG = {
     "hInit": 1e-5,       # s, first solver step
     "hMin": 1e-12,       # s, below this the solver gives up
     "eventTol": 1e-7,    # s, truth-trip location
+    "method": "ros2",
 }
+
+# ROS3P coefficients: J. Lang and J. Verwer, "ROS3P—An accurate third-order
+# Rosenbrock solver designed for parabolic problems", BIT Numerical Mathematics
+# 41 (2001) 731–738, Table 5.1 (p. 735), transformed form (5.2).
+gamma = 7.886751345948129e-01
+a21 = 1.267949192431123e+00
+a31 = 1.267949192431123e+00
+a32 = 0.0
+c21 = -1.607695154586736e+00
+c31 = -3.464101615137755e+00
+c32 = -1.732050807568877e+00
+alpha1 = 0.0
+alpha2 = 1.0
+alpha3 = 1.0
+gamma1 = 7.886751345948129e-01
+gamma2 = -2.113248654051871e-01
+gamma3 = -1.077350269189626e+00
+m1 = 2.0
+m2 = 5.773502691896258e-01
+m3 = 4.226497308103742e-01
+mhat1 = 2.113248654051871e+00
+mhat2 = 1.0
+mhat3 = 4.226497308103742e-01
 
 GAMMA = 1.0 + 1.0 / math.sqrt(2.0)
 IP, IC0, ITF, ITC, II, IX, IEP, IEH = 0, 1, 7, 8, 9, 10, 11, 12
@@ -104,6 +128,17 @@ class Engine:
             raise InitError("E_INIT_INVALID", f"library doesn't declare {CAPABILITY}")
         self.lib = lib
         self.config = dict(DEFAULT_CONFIG, **(config or {}))
+        method = self.config.get("method")
+        if method == "ros2":
+            self._stepper = self._ros2
+            self._step_exp = -0.5
+            self._step_fac = lambda err: 0.9 / math.sqrt(err)
+        elif method == "ros3p":
+            self._stepper = self._ros3p
+            self._step_exp = -1.0 / 3.0
+            self._step_fac = lambda err: 0.9 * (err ** self._step_exp)
+        else:
+            raise InitError("E_INIT_INVALID", f"unknown method {method!r}")
         self.init_spec = copy.deepcopy(init or {})
         self.seed = seed
         self.rng = SplitMix64(seed)
@@ -361,6 +396,38 @@ class Engine:
             acc += (e / sc) ** 2
         return y_new, math.sqrt(acc / n)
 
+    def _ros3p(self, t, y, h, J, f0, ft):
+        n = len(y)
+        inv_h_gamma = 1.0 / (h * gamma)
+        M = [[(inv_h_gamma if i == j else 0.0) - J[i][j] for j in range(n)] for i in range(n)]
+        lu = lu_factor(M)
+
+        # Stage 1: alpha1 = 0.0, no prior stages
+        rhs1 = [f0[i] + h * gamma1 * ft[i] for i in range(n)]
+        u1 = lu_solve(lu, rhs1)
+
+        # Stage 2: alpha2 = 1.0
+        y_stage2 = [y[i] + a21 * u1[i] for i in range(n)]
+        f_stage2 = self.rhs(t + h, y_stage2)
+        rhs2 = [f_stage2[i] + (c21 / h) * u1[i] + h * gamma2 * ft[i] for i in range(n)]
+        u2 = lu_solve(lu, rhs2)
+
+        # Stage 3: alpha3 = 1.0, a31 = a21, a32 = 0.0 (evaluates F at the same point as stage 2)
+        rhs3 = [f_stage2[i] + (c31 / h) * u1[i] + (c32 / h) * u2[i] + h * gamma3 * ft[i] for i in range(n)]
+        u3 = lu_solve(lu, rhs3)
+
+        y_new = [y[i] + m1 * u1[i] + m2 * u2[i] + m3 * u3[i] for i in range(n)]
+        y_hat = [y[i] + mhat1 * u1[i] + mhat2 * u2[i] + mhat3 * u3[i] for i in range(n)]
+
+        atol = self._scales(y)
+        rtol = self.config["rtol"]
+        acc = 0.0
+        for i in range(n):
+            e = y_new[i] - y_hat[i]
+            sc = atol[i] + rtol * max(abs(y[i]), abs(y_new[i]))
+            acc += (e / sc) ** 2
+        return y_new, math.sqrt(acc / n)
+
     def _integrate(self, t0: float, t1: float) -> None:
         y, h = self.y, self.h
         t = t0
@@ -370,15 +437,15 @@ class Engine:
             truncated = h >= t1 - t
             hs = t1 - t if truncated else h
             while True:
-                y_new, err = self._ros2(t, y, hs, J, f0, ft)
+                y_new, err = self._stepper(t, y, hs, J, f0, ft)
                 if err <= 1.0 and y_new[IP] >= 0.0:
                     break
                 self.diag["rejected"] += 1
-                hs *= 0.25 if y_new[IP] < 0.0 else max(0.2, 0.9 / math.sqrt(err))
+                hs *= 0.25 if y_new[IP] < 0.0 else max(0.2, self._step_fac(err))
                 truncated = False
                 if hs < self.config["hMin"]:
                     raise SolverError(f"step size underflow at t = {t:.9g}")
-            fac = min(4.0, max(0.2, 0.9 / math.sqrt(max(err, 1e-10))))
+            fac = min(4.0, max(0.2, self._step_fac(max(err, 1e-10))))
             t_new = t1 if truncated else t + hs
             t_new, y_new = self._locate_trips(t, y, hs, t_new, y_new, J, f0, ft)
             h = max(h, hs * fac) if truncated else hs * fac
@@ -401,7 +468,7 @@ class Engine:
         lo, hi, y_hi = 0.0, hs, y_new
         while hi - lo > self.config["eventTol"]:
             mid = 0.5 * (lo + hi)
-            y_mid, _ = self._ros2(t, y, mid, J, f0, ft)
+            y_mid, _ = self._stepper(t, y, mid, J, f0, ft)
             if any(eval_predicate(tr["predicate"], lambda s: self._truth_signal(s, t + mid, y_mid), tr["input"]) for tr in fired):
                 hi, y_hi = mid, y_mid
             else:
@@ -664,9 +731,11 @@ class Engine:
             snap["truth"]["shape"] = self.shape()
         return snap
 
-    # ------------------------------------------------ checkpoint, replay
     def pins(self) -> dict:
-        return {"engineVersion": ENGINE_VERSION, "libraryDigest": self.lib.digest, "config": dict(self.config)}
+        cfg = dict(self.config)
+        if cfg.get("method") == "ros2":
+            cfg.pop("method", None)
+        return {"engineVersion": ENGINE_VERSION, "libraryDigest": self.lib.digest, "config": cfg}
 
     def checkpoint(self) -> dict:
         return {
