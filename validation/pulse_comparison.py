@@ -347,7 +347,7 @@ def format_comparison_table(summary: ComparisonSummary) -> str:
 def save_comparison_report(summary: ComparisonSummary, output_path: Path = DEFAULT_REPORT_PATH) -> None:
     """Save structured comparison summary as JSON."""
     data = asdict(summary)
-    with open(output_path, "w", encoding="utf-8") as f:
+    with open(output_path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(data, f, indent=2)
 
 
