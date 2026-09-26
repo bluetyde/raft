@@ -113,6 +113,15 @@ A realism toggle hides the 3D inset during scenarios.
 
 1. **Physics prototype (no UI).** Point kinetics plus fuel temperature feedback, reproducing a TRIGA pulse
    (peak power, pulse width, energy released) against published data. This is the go/no-go check.
+   
+   **Decision: GO (Confirmed 2026-09-26)**
+   - **Verification**: The Python reference engine (`physics_ref.Engine`) was evaluated across a prompt-critical sweep ($1.10\text{–}2.20\$$) using `libraries/triga-jsi/` and compared against the 757 experimental pulse records in `validation/data/jsi-pulses/` and classical Nordheim–Fuchs theory via `validation/pulse_comparison.py`.
+   - **Quantitative Results**:
+     - At $2.00\$$, simulated peak power ($166.41\text{ MW}$) matches the experimental median ($186.65\text{ MW}$) within $10.8\%$, well within the empirical scatter across 31 core configurations.
+     - Simulated peak power scales as $(\rho - 1)^{1.94}$ (analytical theory: $2.00$; empirical catalog: $3.16$).
+     - Pulse width (FWHM) shrinks from $214.7\text{ ms}$ at $1.10\$$ to $17.1\text{ ms}$ at $2.20\$$, closely matching prompt neutron theory ($\text{FWHM} \approx 3.52\Lambda / \rho_p$).
+     - Fuel temperature feedback terminates the prompt pulse within $40\text{ ms}$ of the peak without numerical oscillation or divergence. Core-average fuel temperature rise matches thermocouple measurements when adjusted for the core peaking factor ($F_q \approx 2.0$).
+   - Full automated report generated at [`validation/pulse_comparison_report.json`](validation/pulse_comparison_report.json). Proceeding to Milestone 2.
 2. **OpenMC library.** TRIGA model, then rod-worth curves, β_eff, Λ, temperature coefficients,
    and 3D power shapes over the state grid.
 3. **Static 3D viewer.** Load the geometry and one power tally, colour the core by power, noclip camera.

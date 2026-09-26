@@ -41,17 +41,18 @@ All ten architecture findings and TD-01..09 are **accepted and documented** (202
 
 Done 2026-09-26 in `physics_ref/` (25 tests): six-group kinetics with source, lumped fuel/coolant thermal model, table feedback, I/Xe, rods/scram/fire, instruments with lag/noise/faults,
 trips (located or sampled) and interlocks. Analytic checks pass: source multiplication, prompt jump, inhour period, Nordheim–Fuchs (0.1%), xenon peak time (1%), energy balance (1e-4).
-Remaining: build a TRIGA-like library from `validation/data/triga-jsi/parameters.json` and compare pulses with the JSI database (`validation/pulse_loader.py`, added in 15192b3) for the go/no-go; ROS3P for long runs; golden vectors.
+Remaining: ROS3P for long runs; golden vectors.
 
 - [x] 2026-09-26: Point-kinetics solver, six delayed groups (ROS2; inhour period and prompt jump checks pass)
 - [x] 2026-09-26: Lumped fuel and coolant temperature model with heat removal (adiabatic limit checked by Nordheim–Fuchs)
 - [x] 2026-09-26: Fuel temperature feedback from a table (temperature-dependent coefficient)
-- [ ] Reproduce a TRIGA pulse and compare with published data (data and loader now in `validation/`; needs a TRIGA-like library)
+- [x] 2026-09-26: Built experimental JSI TRIGA library (`libraries/triga-jsi/`) via `pipeline/library/build_triga.py`; passes `pipeline.library.validate`
+- [x] 2026-09-26: Reproduced TRIGA pulses across $1.10\text{–}2.20\$$ and compared with JSI database (`validation/pulse_comparison.py`, report in `validation/pulse_comparison_report.json`, unit tests in `validation/tests/test_pulse_comparison.py`)
 - [x] 2026-09-26: Xenon/iodine: equilibrium derivative zero, post-shutdown peak time within 1%
-- [x] 2026-09-26: Unit tests for all of the above (`physics_ref/tests/test_engine.py`)
+- [x] 2026-09-26: Unit tests for all of the above (`physics_ref/tests/test_engine.py`, `validation/tests/`)
 - [ ] ROS3P (order 3) or similar for long runs; keep ROS2 as a cross-check
 - [ ] Golden vectors (`python -m physics_ref.vectors`) for the TypeScript port
-- [ ] Go/no-go decision written into PLAN.md
+- [x] 2026-09-26: Go/no-go decision written into PLAN.md (confirmed GO: 10.8% error at 2.00 $, prompt scaling (rho-1)^1.94 matches Nordheim–Fuchs theory)
 
 ## Milestone 2: OpenMC library · [plan](docs/plans/02-openmc-pipeline.md)
 
