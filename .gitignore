@@ -9,3 +9,4 @@ statepoint*.h5
 summary.h5
 .vscode/
 .DS_Store
+validation/data/jsi-pulses/traces/

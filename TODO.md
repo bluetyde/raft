@@ -5,7 +5,7 @@ Design lives in [PLAN.md](PLAN.md). Details per area in [docs/plans/](docs/plans
 
 ## Now
 
-- [ ] Download the JSI pulse database ([trigapulse.ijs.si](http://trigapulse.ijs.si/), 493 pulses) into `validation/data/jsi-pulses/` with a citation; ask the listed contact about redistribution terms
+- [x] 2026-09-26: Downloaded and parsed JSI pulse database (757 pulses from [trigapulse.ijs.si](http://trigapulse.ijs.si/), 1991–2023) into `validation/data/jsi-pulses/` (CSV and JSON summary) with citations, fetch script, loader API (`validation/pulse_loader.py`), unit tests, and TRIGA benchmark parameters (`validation/data/triga-jsi/parameters.json`)
 - [ ] Get access to the ICSBEP handbook entry `IEU-COMP-THERM-003` (cores 132 and 133) and list what it publishes (k-eff, rod worths, specs)
 - [ ] Create the `openmc-vr` conda env in WSL (clone of `openmc-mcnp` + pytest + jsonschema), then try OpenMC 0.16 there; leave the shared env alone ([TOOLING §2](docs/TOOLING.md))
 - [ ] Find the JSI Research Reactor Simulator's source repo, confirm its license, and decide how to use it as an independent comparison
