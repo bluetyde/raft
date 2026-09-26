@@ -48,12 +48,14 @@ Remaining: ROS3P for long runs; golden vectors.
 - [x] 2026-09-26: Fuel temperature feedback from a table (temperature-dependent coefficient)
 - [x] 2026-09-26: Built experimental TRIGA-like library (`libraries/triga-jsi/`) via `pipeline/library/build_triga.py`; passes `pipeline.library.validate`. Values relabelled `assumed` after review (unverified; task C2)
 - [x] 2026-09-26: First pulse sweep $1.10–2.20 vs pooled JSI bins (`validation/pulse_comparison.py`): sim/exp ratios 0.51–5.92, inconclusive (unscreened, unmatched)
-- [ ] Screen the pulse data (A3, `agy/pulse-screening`), then a condition-matched comparison in one core configuration with calibration/held-out split (C1)
+- [x] 2026-09-26: Pulse data screening (A3, `agy/pulse-screening`, verified: 757 = 667 kept + 90 excluded)
+- [x] 2026-09-26: C1 condition-matched comparison (`validation/c1_comparison.py`, `docs/validation/m1-c1-results.md`): proposal **NO-GO**; H1 0.614 > 0.405, H2 0.880 > 0.693, s = 2.63 outside [0.5, 2]; slope 3.1–3.8 measured vs 2.0 model
+- [ ] C2: real UZrH1.6 cp(T) and α(T) from sources, rebuild library, re-run C1 with the same protocol
 - [x] 2026-09-26: Xenon/iodine: equilibrium derivative zero, post-shutdown peak time within 1%
 - [x] 2026-09-26: Unit tests for all of the above (`physics_ref/tests/test_engine.py`, `validation/tests/`)
 - [ ] ROS3P (order 3) or similar for long runs; keep ROS2 as a cross-check
 - [ ] Golden vectors (`python -m physics_ref.vectors`) for the TypeScript port
-- [ ] Go/no-go: **proposed to the user** with the C1 evidence (an earlier automatic GO was withdrawn: `docs/reviews/2026-09-26-m1-go-review.md`)
+- [ ] Go/no-go: C1 proposes NO-GO (awaiting the user's decision); an earlier automatic GO was withdrawn (`docs/reviews/2026-09-26-m1-go-review.md`)
 
 ## Milestone 2: OpenMC library · [plan](docs/plans/02-openmc-pipeline.md)
 
