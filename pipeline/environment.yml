@@ -1,0 +1,15 @@
+# Conda env for the OpenMC pipeline (WSL2 / Linux or macOS x86_64 via Rosetta).
+# Create:  conda env create -f pipeline/environment.yml
+# Then:    conda env config vars set OPENMC_CROSS_SECTIONS=/path/to/cross_sections.xml -n openmc-vr
+# Never modify the shared openmc-mcnp env for this project (docs/WORKFLOWS.md, section 0).
+# Versions pinned to what was verified on 2026-09-25; move to OpenMC 0.16 deliberately, in this file.
+name: openmc-vr
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - openmc=0.15.3
+  - numpy=2.4
+  - scipy=1.17
+  - h5py=3.16
+  - uncertainties=3.2

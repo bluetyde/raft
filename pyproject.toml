@@ -1,0 +1,12 @@
+[project]
+name = "virtual-reactor"
+version = "0.0.1"
+description = "Open reactor modeller: OpenMC-derived reactor libraries run live in the browser"
+license = "MIT"
+requires-python = ">=3.11"
+# The fast checks (library format, validator, fixtures) use only the standard library.
+dependencies = []
+
+[project.optional-dependencies]
+# The OpenMC pipeline runs in the conda env from pipeline/environment.yml, not from pip.
+pipeline = ["numpy", "scipy", "h5py", "uncertainties"]

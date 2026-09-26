@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+web/dist/
+pipeline/cache/
+*.h5
+statepoint*.h5
+summary.h5
+.vscode/
+.DS_Store
