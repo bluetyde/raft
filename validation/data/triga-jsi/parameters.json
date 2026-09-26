@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "reactor": "JSI TRIGA Mark II",
+  "facility": "Jožef Stefan Institute, Ljubljana, Slovenia",
+  "benchmark": "ICSBEP IEU-COMP-THERM-003",
+  "licensedPowerWatts": 250000.0,
+  "sources": [
+    {
+      "id": "icsbep",
+      "citation": "International Handbook of Evaluated Criticality Safety Benchmark Experiments (ICSBEP), IEU-COMP-THERM-003 (2007)"
+    },
+    {
+      "id": "simnad1981",
+      "citation": "M. T. Simnad, 'The U-ZrHx Alloy: Its Properties and Use in TRIGA Fuel', General Atomics Report GA-A16377 (1981)"
+    },
+    {
+      "id": "svajger2023",
+      "citation": "I. Švajger, L. Snoj, 'Evaluation of reactor pulse experiments', Nuclear Engineering and Technology, 55 (2023) 4404–4415"
+    }
+  ],
+  "kinetics": {
+    "betaEff": 0.0070,
+    "physicalBeta": 0.006502,
+    "importanceFactor": 1.07659,
+    "promptGenerationTimeSeconds": 4.0e-5,
+    "sourceStrengthWattsEquivalentPerSec": 0.001,
+    "delayedGroups": [
+      { "group": 1, "beta": 0.000231, "lambdaSecInv": 0.0124 },
+      { "group": 2, "beta": 0.001533, "lambdaSecInv": 0.0305 },
+      { "group": 3, "beta": 0.001372, "lambdaSecInv": 0.1110 },
+      { "group": 4, "beta": 0.002765, "lambdaSecInv": 0.3010 },
+      { "group": 5, "beta": 0.000805, "lambdaSecInv": 1.1400 },
+      { "group": 6, "beta": 0.000294, "lambdaSecInv": 3.0100 }
+    ]
+  },
+  "geometry": {
+    "gridType": "hexagonal_rings",
+    "rings": ["A", "B", "C", "D", "E", "F"],
+    "totalGridPositions": 91,
+    "activeFuelLengthCm": 38.1,
+    "fuelMeatDiameterCm": 3.63,
+    "cladThicknessCm": 0.0508,
+    "cladMaterial": "Stainless Steel 304",
+    "reflectorMaterial": "Graphite"
+  },
+  "rods": [
+    {
+      "id": "transient",
+      "name": "Transient (Pulse) Rod",
+      "type": "pulse",
+      "drive": "pneumatic_or_rack",
+      "ring": "C",
+      "totalWorthDollars": 2.20,
+      "totalWorthPcm": 1540.0,
+      "ejectionTimeSeconds": 0.080
+    },
+    {
+      "id": "safety",
+      "name": "Safety Rod",
+      "type": "scram",
+      "drive": "motor_magnetic_latch",
+      "ring": "C",
+      "totalWorthDollars": 3.10,
+      "totalWorthPcm": 2170.0,
+      "scramDropTimeSeconds": 0.350
+    },
+    {
+      "id": "shim",
+      "name": "Compensating (Shim) Rod",
+      "type": "scram",
+      "drive": "motor_magnetic_latch",
+      "ring": "D",
+      "totalWorthDollars": 2.80,
+      "totalWorthPcm": 1960.0,
+      "scramDropTimeSeconds": 0.350
+    },
+    {
+      "id": "regulating",
+      "name": "Regulating Rod",
+      "type": "regulating",
+      "drive": "motor_non_scram",
+      "ring": "E",
+      "totalWorthDollars": 0.85,
+      "totalWorthPcm": 595.0,
+      "speedFractionPerSec": 0.015
+    }
+  ],
+  "thermal": {
+    "fuelMeat": {
+      "material": "U-ZrH1.6",
+      "uraniumEnrichmentWtPct": 19.75,
+      "uraniumWeightFraction": 0.12,
+      "hToZrAtomRatio": 1.6,
+      "coreFuelMassKg": 84.0,
+      "referenceTemperatureK": 293.15,
+      "heatCapacity": {
+        "model": "polynomial_kelvin",
+        "description": "cp(T) = a0 + a1*(T - 293.15) + a2*(T - 293.15)^2 in J/(kg*K)",
+        "a0": 350.0,
+        "a1": 0.350,
+        "a2": 0.00020,
+        "validRangeK": [293.15, 973.15]
+      }
+    },
+    "feedbackCoefficients": {
+      "fuelTemperaturePrompt": {
+        "model": "polynomial_kelvin",
+        "description": "alpha_f(T) = d(rho)/dT in (Delta k/k)/K",
+        "a0": -1.05e-4,
+        "a1": -1.20e-7,
+        "validRangeK": [293.15, 973.15]
+      },
+      "coolantTemperature": {
+        "model": "constant",
+        "alphaCoolantPerKelvin": -3.5e-5
+      }
+    },
+    "coolantPool": {
+      "coolantMassKg": 20000.0,
+      "coolantSpecificHeatJPerKgK": 4184.0,
+      "convectiveHeatTransferWattsPerK": 3000.0,
+      "coolingSystemMaxRemovalWatts": 250000.0
+    }
+  },
+  "poisons": {
+    "iodineYield": 0.061,
+    "xenonDirectYield": 0.003,
+    "lambdaIodineSecInv": 2.87e-5,
+    "lambdaXenonSecInv": 2.09e-5,
+    "sigmaXenonMicroscopicM2": 2.6e-22,
+    "fluxPerWatt": 4.0e7
+  }
+}
