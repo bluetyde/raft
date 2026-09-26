@@ -12,7 +12,7 @@ Milestone: M9. A few items (license, repo, CI) happen much earlier.
   - Alternatives kept on file: **Apache-2.0** (same freedom plus an explicit patent grant; matches ARMI). **GPL-3.0** would allow reusing GPL code, but every derivative would have to stay GPL.
   - A `LICENSE` file (MIT) goes in when the git repo is created.
   - The license for **library data** is separate: libraries built from published benchmarks may inherit terms from their sources. Check what the ICSBEP handbook terms allow before shipping the TRIGA library publicly.
-- **CI (GitHub Actions):** Python tests (physics-ref, pipeline without OpenMC runs), schema validation, TypeScript tests, golden-vector agreement, web build.
+- **CI (GitHub Actions):** Python tests (physics_ref, pipeline without OpenMC runs), schema validation, TypeScript tests, golden-vector agreement, web build.
   OpenMC runs themselves stay local; CI checks against stored results.
 
 ## Release contents
