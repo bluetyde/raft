@@ -249,7 +249,9 @@ class Engine:
     # ------------------------------------------------ physics
     def reactivity(self, t, y) -> dict:
         lib = self.lib
-        rods = sum(r.worth(self.rod_position(r.id, t)) for r in lib.rods)
+        rods = 0.0
+        for r in lib.rods:      # explicit loop, not sum(): see numerics.py
+            rods += r.worth(self.rod_position(r.id, t))
         fuel = lib.fuel_temp(y[ITF])
         cool = lib.cool_temp(y[ITC])
         xe = lib.xenon(y[IX])
