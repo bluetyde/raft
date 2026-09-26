@@ -20,7 +20,7 @@ SYNTHETIC_CORE = REPO_ROOT / "schema" / "vectors" / "synthetic-core"
 
 TOLERANCES = {
     "power": {"rel": 1e-9, "abs": 1e-15},
-    "temperature": {"abs": 1e-9},
+    "temperature": {"rel": 1e-9, "abs": 1e-9},   # rel added: abs alone was ~2e-12 relative at 500 K, tighter than platform libm noise
     "poisons": {"rel": 1e-9, "abs": 1.0},
     "eventTime": {"abs": 1e-9},
 }
@@ -40,88 +40,88 @@ def near_critical_rods(lib: Library, target_rho: float) -> dict[str, float]:
     return {"safety": 1.0, "regulating": 0.5 * (lo + hi), "transient": 0.0}
 
 
-_lib = Library(SYNTHETIC_CORE)
-_near_crit = near_critical_rods(_lib, -0.0005)
-
-SCENARIOS: list[dict] = [
-    {
-        "name": "source-level",
-        "description": "Source equilibrium at zero reactivity with all rods fully inserted.",
-        "init": {},
-        "seed": 1,
-        "config": {"outerDt": 0.01},
-        "steps": 100,
-        "sampleEvery": 10,
-        "script": [],
-    },
-    {
-        "name": "rod-withdrawal",
-        "description": "Transient rod withdrawal from near-critical state followed by stop.",
-        "init": {"rods": copy.deepcopy(_near_crit)},
-        "seed": 1,
-        "config": {"outerDt": 0.01},
-        "steps": 500,
-        "sampleEvery": 25,
-        "script": [
-            {"step": 0, "cmd": {"type": "rod.move", "rod": "transient", "direction": "out"}},
-            {"step": 300, "cmd": {"type": "rod.move", "rod": "transient", "direction": "stop"}},
-        ],
-    },
-    {
-        "name": "pulse",
-        "description": "Prompt-critical pulse initiated by firing transient rod in pulse mode.",
-        "init": {"rods": copy.deepcopy(_near_crit), "mode": "pulse"},
-        "seed": 1,
-        "config": {"outerDt": 0.001},
-        "steps": 300,
-        "sampleEvery": 5,
-        "script": [
-            {"step": 0, "cmd": {"type": "rod.fire", "rod": "transient"}},
-        ],
-    },
-    {
-        "name": "scram",
-        "description": "Manual scram during rod withdrawal followed by rejected withdrawal attempt.",
-        "init": {"rods": copy.deepcopy(_near_crit)},
-        "seed": 1,
-        "config": {"outerDt": 0.01},
-        "steps": 400,
-        "sampleEvery": 10,
-        "script": [
-            {"step": 0, "cmd": {"type": "rod.move", "rod": "transient", "direction": "out"}},
-            {"step": 200, "cmd": {"type": "scram"}},
-            {"step": 260, "cmd": {"type": "rod.move", "rod": "safety", "direction": "out"}},
-        ],
-    },
-    {
-        "name": "rejections",
-        "description": "Command rejections from interlocks, rod capability, unknown targets, and instrument fault.",
-        "init": {},
-        "seed": 1,
-        "config": {"outerDt": 0.01},
-        "steps": 20,
-        "sampleEvery": 5,
-        "script": [
-            {"step": 0, "cmd": {"type": "rod.fire", "rod": "transient"}},
-            {"step": 0, "cmd": {"type": "rod.fire", "rod": "safety"}},
-            {"step": 0, "cmd": {"type": "rod.move", "rod": "ghost", "direction": "out"}},
-            {"step": 0, "cmd": {"type": "warp"}},
-            {"step": 1, "cmd": {"type": "fault.instrument", "instrument": "linear", "kind": "dead"}},
-        ],
-    },
-    {
-        "name": "period-trip",
-        "description": "Transient rod withdrawal triggering internal short-period trip.",
-        "init": {"rods": copy.deepcopy(_near_crit)},
-        "seed": 1,
-        "config": {"outerDt": 0.01},
-        "steps": 3000,
-        "sampleEvery": 100,
-        "script": [
-            {"step": 0, "cmd": {"type": "rod.move", "rod": "transient", "direction": "out"}},
-        ],
-    },
-]
+def _scenarios(lib: Library) -> list[dict]:
+    """Scenario definitions. Built when generating, so importing this module has no side effects."""
+    _near_crit = near_critical_rods(lib, -0.0005)
+    return [
+        {
+            "name": "source-level",
+            "description": "Source-driven equilibrium with all rods fully inserted (reactivity -0.0325, subcritical).",
+            "init": {},
+            "seed": 1,
+            "config": {"outerDt": 0.01},
+            "steps": 100,
+            "sampleEvery": 10,
+            "script": [],
+        },
+        {
+            "name": "rod-withdrawal",
+            "description": "Transient rod withdrawal from near-critical state followed by stop.",
+            "init": {"rods": copy.deepcopy(_near_crit)},
+            "seed": 1,
+            "config": {"outerDt": 0.01},
+            "steps": 500,
+            "sampleEvery": 25,
+            "script": [
+                {"step": 0, "cmd": {"type": "rod.move", "rod": "transient", "direction": "out"}},
+                {"step": 300, "cmd": {"type": "rod.move", "rod": "transient", "direction": "stop"}},
+            ],
+        },
+        {
+            "name": "pulse",
+            "description": "Prompt-critical pulse initiated by firing transient rod in pulse mode.",
+            "init": {"rods": copy.deepcopy(_near_crit), "mode": "pulse"},
+            "seed": 1,
+            "config": {"outerDt": 0.001},
+            "steps": 300,
+            "sampleEvery": 5,
+            "script": [
+                {"step": 0, "cmd": {"type": "rod.fire", "rod": "transient"}},
+            ],
+        },
+        {
+            "name": "scram",
+            "description": "Manual scram during rod withdrawal followed by rejected withdrawal attempt.",
+            "init": {"rods": copy.deepcopy(_near_crit)},
+            "seed": 1,
+            "config": {"outerDt": 0.01},
+            "steps": 400,
+            "sampleEvery": 10,
+            "script": [
+                {"step": 0, "cmd": {"type": "rod.move", "rod": "transient", "direction": "out"}},
+                {"step": 200, "cmd": {"type": "scram"}},
+                {"step": 260, "cmd": {"type": "rod.move", "rod": "safety", "direction": "out"}},
+            ],
+        },
+        {
+            "name": "rejections",
+            "description": "Command rejections from interlocks, rod capability, unknown targets, and instrument fault.",
+            "init": {},
+            "seed": 1,
+            "config": {"outerDt": 0.01},
+            "steps": 20,
+            "sampleEvery": 5,
+            "script": [
+                {"step": 0, "cmd": {"type": "rod.fire", "rod": "transient"}},
+                {"step": 0, "cmd": {"type": "rod.fire", "rod": "safety"}},
+                {"step": 0, "cmd": {"type": "rod.move", "rod": "ghost", "direction": "out"}},
+                {"step": 0, "cmd": {"type": "warp"}},
+                {"step": 1, "cmd": {"type": "fault.instrument", "instrument": "linear", "kind": "dead"}},
+            ],
+        },
+        {
+            "name": "period-trip",
+            "description": "Transient rod withdrawal triggering internal short-period trip.",
+            "init": {"rods": copy.deepcopy(_near_crit)},
+            "seed": 1,
+            "config": {"outerDt": 0.01},
+            "steps": 3000,
+            "sampleEvery": 100,
+            "script": [
+                {"step": 0, "cmd": {"type": "rod.move", "rod": "transient", "direction": "out"}},
+            ],
+        },
+    ]
 
 
 def sample_from_engine(e: Engine) -> dict:
@@ -197,7 +197,7 @@ def generate(out: Path = DEFAULT_OUT) -> list[str]:
 
     lib = Library(SYNTHETIC_CORE)
     names = []
-    for sc in SCENARIOS:
+    for sc in _scenarios(lib):
         doc = run_scenario(lib, sc)
         content = json.dumps(doc, indent=1, sort_keys=True, allow_nan=False) + "\n"
         (out / f"{sc['name']}.json").write_bytes(content.encode("utf-8"))
