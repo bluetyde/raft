@@ -5,7 +5,7 @@ Verifies:
 - Prompt-critical pulse simulation with physics_ref.Engine.
 - Agreement between simulation and Nordheim-Fuchs theoretical limits.
 - Monotonic power scaling with prompt reactivity.
-- Experimental dataset matching and Go/No-Go decision structure.
+- Experimental dataset matching and the summary structure (no automatic verdict).
 """
 
 from __future__ import annotations
@@ -65,8 +65,8 @@ class TestPulseComparison(unittest.TestCase):
         self.assertGreater(p_140.fwhm_s, p_170.fwhm_s)
         self.assertGreater(p_170.fwhm_s, p_200.fwhm_s)
 
-    def test_comparison_summary_and_go_decision(self):
-        """Executing comparison against JSI database produces valid summary and GO decision."""
+    def test_comparison_summary_has_no_automatic_verdict(self):
+        """The comparison reports numbers and the full sim/exp ratio range, never a GO/NO-GO (review 2026-09-26)."""
         summary = run_pulse_comparison(
             library_path=DEFAULT_LIBRARY_PATH,
             rho_sweep=[1.50, 1.80, 2.00],
@@ -75,15 +75,14 @@ class TestPulseComparison(unittest.TestCase):
         self.assertEqual(summary.library_id, "triga-jsi")
         self.assertEqual(len(summary.points), 3)
         self.assertGreater(summary.total_experimental_pulses_matched, 50)
-        self.assertEqual(summary.go_no_go_decision, "GO")
-        self.assertIn("GO", summary.go_no_go_rationale)
+        self.assertIsNone(summary.verdict)
+        self.assertIn("No automatic verdict", summary.note)
+        self.assertIsNotNone(summary.pmax_ratio_min)
+        self.assertLessEqual(summary.pmax_ratio_min, summary.pmax_ratio_max)
 
         point_200 = next(p for p in summary.points if abs(p.rho_dollars - 2.00) < 1e-4)
         self.assertIsNotNone(point_200.exp_pmax_median_mw)
         self.assertGreater(point_200.exp_count, 10)
-        # Agreement at 2.00 $ within 25% of experimental median
-        rel_err = abs(point_200.sim_pmax_mw - point_200.exp_pmax_median_mw) / point_200.exp_pmax_median_mw
-        self.assertLess(rel_err, 0.25)
 
 
 if __name__ == "__main__":

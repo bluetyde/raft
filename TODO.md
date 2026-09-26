@@ -46,13 +46,14 @@ Remaining: ROS3P for long runs; golden vectors.
 - [x] 2026-09-26: Point-kinetics solver, six delayed groups (ROS2; inhour period and prompt jump checks pass)
 - [x] 2026-09-26: Lumped fuel and coolant temperature model with heat removal (adiabatic limit checked by Nordheim–Fuchs)
 - [x] 2026-09-26: Fuel temperature feedback from a table (temperature-dependent coefficient)
-- [x] 2026-09-26: Built experimental JSI TRIGA library (`libraries/triga-jsi/`) via `pipeline/library/build_triga.py`; passes `pipeline.library.validate`
-- [x] 2026-09-26: Reproduced TRIGA pulses across $1.10\text{–}2.20\$$ and compared with JSI database (`validation/pulse_comparison.py`, report in `validation/pulse_comparison_report.json`, unit tests in `validation/tests/test_pulse_comparison.py`)
+- [x] 2026-09-26: Built experimental TRIGA-like library (`libraries/triga-jsi/`) via `pipeline/library/build_triga.py`; passes `pipeline.library.validate`. Values relabelled `assumed` after review (unverified; task C2)
+- [x] 2026-09-26: First pulse sweep $1.10–2.20 vs pooled JSI bins (`validation/pulse_comparison.py`): sim/exp ratios 0.51–5.92, inconclusive (unscreened, unmatched)
+- [ ] Screen the pulse data (A3, `agy/pulse-screening`), then a condition-matched comparison in one core configuration with calibration/held-out split (C1)
 - [x] 2026-09-26: Xenon/iodine: equilibrium derivative zero, post-shutdown peak time within 1%
 - [x] 2026-09-26: Unit tests for all of the above (`physics_ref/tests/test_engine.py`, `validation/tests/`)
 - [ ] ROS3P (order 3) or similar for long runs; keep ROS2 as a cross-check
 - [ ] Golden vectors (`python -m physics_ref.vectors`) for the TypeScript port
-- [x] 2026-09-26: Go/no-go decision written into PLAN.md (confirmed GO: 10.8% error at 2.00 $, prompt scaling (rho-1)^1.94 matches Nordheim–Fuchs theory)
+- [ ] Go/no-go: **proposed to the user** with the C1 evidence (an earlier automatic GO was withdrawn: `docs/reviews/2026-09-26-m1-go-review.md`)
 
 ## Milestone 2: OpenMC library · [plan](docs/plans/02-openmc-pipeline.md)
 

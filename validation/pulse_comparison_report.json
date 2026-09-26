@@ -6,8 +6,10 @@
   "pmax_scaling_exponent_exp": 3.158,
   "energy_scaling_exponent_sim": 0.748,
   "energy_scaling_exponent_exp": 2.648,
-  "go_no_go_decision": "GO",
-  "go_no_go_rationale": "M1 physics engine reproduces physical TRIGA self-limiting pulse dynamics across 1.10\u20132.20 $. Simulated peak power scales as (rho-1)^1.94 (theoretical 2.0, empirical 3.16). At 2.00 $, simulated peak power (166.41 MW) matches the experimental median (186.65 MW) within 10.8%, well within the core-to-core experimental variance across 31 core configurations.",
+  "verdict": null,
+  "note": "No automatic verdict: experimental bins pool core configurations without screening or condition matching. Sim/exp median peak-power ratios span 0.51-5.92 across the sweep. See docs/reviews/2026-09-26-m1-go-review.md.",
+  "pmax_ratio_min": 0.515,
+  "pmax_ratio_max": 5.921,
   "points": [
     {
       "rho_dollars": 1.1,

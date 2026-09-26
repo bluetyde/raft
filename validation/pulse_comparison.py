@@ -8,7 +8,9 @@ temperature rise against:
   1. Classical adiabatic Nordheim-Fuchs theory.
   2. The empirical 757-pulse experimental catalog from the JSI TRIGA Mark II reactor.
 
-Serves as the quantitative basis for the Milestone 1 Go/No-Go decision.
+Produces numbers for the Milestone 1 go/no-go discussion. It does NOT issue a verdict: the experimental bins
+here pool 31 core configurations without screening or condition matching, so they can't decide validity
+(docs/reviews/2026-09-26-m1-go-review.md). A go/no-go is proposed to the user from a condition-matched comparison.
 """
 
 from __future__ import annotations
@@ -82,8 +84,10 @@ class ComparisonSummary:
     pmax_scaling_exponent_exp: float
     energy_scaling_exponent_sim: float
     energy_scaling_exponent_exp: float
-    go_no_go_decision: str
-    go_no_go_rationale: str
+    verdict: Optional[str]
+    note: str
+    pmax_ratio_min: Optional[float]
+    pmax_ratio_max: Optional[float]
     points: List[PulseComparisonPoint]
 
 
@@ -212,7 +216,7 @@ def run_pulse_comparison(
         window_dollars: Matching tolerance for experimental pulse reactivity bins.
 
     Returns:
-        ComparisonSummary containing all metrics, experimental statistics, and decision.
+        ComparisonSummary containing all metrics, experimental statistics, and the ratio range (no verdict).
     """
     lib = Library(library_path)
     all_pulses = load_pulse_summary(pulses_data_path)
@@ -289,32 +293,12 @@ def run_pulse_comparison(
     exp_p_slope = _log_polyfit_slope(exp_prompt_rhos, exp_pmaxs)
     exp_e_slope = _log_polyfit_slope(exp_prompt_rhos, exp_energies)
 
-    # Decision evaluation
-    # Milestone 1 acceptance criteria:
-    # 1. Physics prototype reproduces self-limiting pulse behavior without divergence or numerical instability.
-    # 2. Simulated peak powers and pulse energies scale appropriately with prompt reactivity.
-    # 3. Peak powers at high reactivity (e.g. 2.00 $) match experimental observations within core-to-core scatter (+-25%).
-    high_rho_match = next((p for p in points if abs(p.rho_dollars - 2.00) < 1e-4), None)
-    if high_rho_match and high_rho_match.exp_pmax_median_mw:
-        err_2dollar = abs(high_rho_match.sim_pmax_mw - high_rho_match.exp_pmax_median_mw) / high_rho_match.exp_pmax_median_mw
-    else:
-        err_2dollar = 0.0
-
-    is_go = (
-        len(points) >= 3
-        and all(p.sim_pmax_mw > 0 for p in points)
-        and 1.5 <= sim_p_slope <= 2.5
-        and err_2dollar < 0.35
-    )
-
-    decision = "GO" if is_go else "NO-GO"
-    rationale = (
-        f"[{decision}] M1 physics engine reproduces physical TRIGA self-limiting pulse dynamics across 1.10–2.20 $. "
-        f"Simulated peak power scales as (rho-1)^{sim_p_slope:.2f} (theoretical 2.0, empirical {exp_p_slope:.2f}). "
-        f"At 2.00 $, simulated peak power ({high_rho_match.sim_pmax_mw if high_rho_match else 'N/A'} MW) matches "
-        f"the experimental median ({high_rho_match.exp_pmax_median_mw if high_rho_match else 'N/A'} MW) within {err_2dollar*100:.1f}%, "
-        f"well within the core-to-core experimental variance across 31 core configurations."
-    )
+    # No automatic verdict (review 2026-09-26). Report the whole picture instead of one point.
+    ratios = [p.sim_pmax_mw / p.exp_pmax_median_mw for p in points if p.exp_pmax_median_mw]
+    note = ("No automatic verdict: experimental bins pool core configurations without screening or condition "
+            "matching. Sim/exp median peak-power ratios span "
+            + (f"{min(ratios):.2f}-{max(ratios):.2f}" if ratios else "n/a")
+            + " across the sweep. See docs/reviews/2026-09-26-m1-go-review.md.")
 
     return ComparisonSummary(
         library_id=lib.id,
@@ -324,8 +308,10 @@ def run_pulse_comparison(
         pmax_scaling_exponent_exp=round(exp_p_slope, 3),
         energy_scaling_exponent_sim=round(sim_e_slope, 3),
         energy_scaling_exponent_exp=round(exp_e_slope, 3),
-        go_no_go_decision=decision,
-        go_no_go_rationale=rationale,
+        verdict=None,
+        note=note,
+        pmax_ratio_min=round(min(ratios), 3) if ratios else None,
+        pmax_ratio_max=round(max(ratios), 3) if ratios else None,
         points=points,
     )
 
@@ -335,7 +321,7 @@ def format_comparison_table(summary: ComparisonSummary) -> str:
     lines = [
         f"==========================================================================================================================",
         f" JSI TRIGA Mark II Pulse Simulation vs Experimental Benchmark Comparison (Milestone 1)",
-        f" Library: {summary.library_id} | Total Matched Pulses: {summary.total_experimental_pulses_matched} | Decision: {summary.go_no_go_decision}",
+        f" Library: {summary.library_id} | Total Matched Pulses: {summary.total_experimental_pulses_matched} | Verdict: none (see note)",
         f"==========================================================================================================================",
         f" Rho($) | Prompt($) | Sim Pmax (MW) | Exp Pmax Med (MW) | Sim E (MWs) | Exp E Med (MWs) | Sim FWHM (ms) | Exp FWHM (ms) | Exp N",
         f"--------------------------------------------------------------------------------------------------------------------------",
@@ -352,8 +338,7 @@ def format_comparison_table(summary: ComparisonSummary) -> str:
         f"--------------------------------------------------------------------------------------------------------------------------",
         f" Power Scaling: Simulated Pmax ~ (rho-1)^{summary.pmax_scaling_exponent_sim:.2f} | Experimental Pmax ~ (rho-1)^{summary.pmax_scaling_exponent_exp:.2f}",
         f" Energy Scaling: Simulated Energy ~ (rho-1)^{summary.energy_scaling_exponent_sim:.2f} | Experimental Energy ~ (rho-1)^{summary.energy_scaling_exponent_exp:.2f}",
-        f" Decision: {summary.go_no_go_decision}",
-        f" Rationale: {summary.go_no_go_rationale}",
+        f" Note: {summary.note}",
         f"==========================================================================================================================",
     ])
     return "\n".join(lines)
