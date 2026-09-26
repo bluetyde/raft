@@ -26,24 +26,31 @@ All ten architecture findings and TD-01..09 are **accepted and documented** (202
 - [ ] Binary array descriptors, base vs delta shapes, per-table interpolation and range behavior ([03](docs/plans/03-library-format.md))
 - [x] 2026-09-25: Normative [`docs/library-format.md`](docs/library-format.md) v0.1.0 + `schema/library.schema.json` with 28 stable error codes (TD-02: implemented + verified in Python; TypeScript side pending)
 - [x] 2026-09-25: Synthetic fixture `schema/vectors/synthetic-core` (generated, deterministic) + 30 invalid fixtures covering every error code; stdlib validator `pipeline/library/validate.py`; 10 tests pass on Windows Python 3.14 and WSL Python 3.11
-- [ ] Initial-conditions part of the fixture: the library holds the reference state; the explicit initial-state definition (equilibrium or supplied inventories) belongs to the engine and scenarios, next with the headless slice
+- [x] 2026-09-26: Initial-state definition in the engine: power `source-equilibrium` / `critical-equilibrium` / `given`, precursors equilibrium or supplied, poisons zero/equilibrium/given; impossible equilibria rejected
 - [x] 2026-09-25: Scaffold part 1: `LICENSE` (MIT), `THIRD_PARTY_NOTICES.md`, `.gitattributes` (LF), `.gitignore`, `pyproject.toml` (fast checks need no packages), `pipeline/environment.yml` (`openmc-vr`, pinned)
 - [ ] Scaffold part 2: create the `openmc-vr` env from the file; `web/` with a committed `package-lock.json`; CI (or the local pre-merge check) runs the fast tests + web build (TD-03)
-- [ ] Headless slice: load → initialize → move rod → advance → snapshot → checkpoint → replay; then a minimal panel and primitive viewer.
+- [x] 2026-09-26: Headless slice in Python (`physics_ref/`): load → initialize (explicit rules, `E_INIT_*`) → commands with seq/status → advance → snapshot → checkpoint → replay, all bit-identical (TD-05 implemented + verified in Python)
+- [ ] Then a minimal panel and primitive viewer (needs the TypeScript port).
       Checkpoint restore must match uninterrupted execution including noise and trips; built with the first stateful runtime, not deferred to M6 (TD-05)
-- [ ] Independent checks: a deliberately perturbed coefficient or event time must fail an independent test; vector changes need a reason (TD-04)
+- [ ] Independent checks: a deliberately perturbed coefficient or event time must fail an independent test; vector changes need a reason (TD-04). Analytic tests + scipy Radau cross-check exist; golden vectors for the TS port not yet
 - [ ] Basic resource bounds in the first worker and recorder; an accelerated synthetic session stays within a measured memory budget (TD-08)
 - [ ] Browser end-to-end check on the same fixture: malformed library, a trip, pause/resume, replay. Only then expand the transport grid
 - [ ] Performance budgets on a named reference laptop: library memory, load time, command latency, replay latency, solver throughput
 
 ## Milestone 1: Physics prototype (Python, no UI) · [plan](docs/plans/01-physics-core.md)
 
-- [ ] Point-kinetics solver, six delayed groups (stiff solver; check against analytic step-response inverse-period values)
-- [ ] Lumped fuel temperature model (adiabatic first, then with heat removal)
-- [ ] Prompt fuel temperature feedback coefficient
-- [ ] Reproduce a TRIGA pulse and compare with published data
-- [ ] Add xenon/iodine and check equilibrium xenon worth and the post-shutdown peak time
-- [ ] Unit tests for all of the above
+Done 2026-09-26 in `physics_ref/` (25 tests): six-group kinetics with source, lumped fuel/coolant thermal model, table feedback, I/Xe, rods/scram/fire, instruments with lag/noise/faults,
+trips (located or sampled) and interlocks. Analytic checks pass: source multiplication, prompt jump, inhour period, Nordheim–Fuchs (0.1%), xenon peak time (1%), energy balance (1e-4).
+Remaining: real TRIGA data (JSI pulse database) for the go/no-go, ROS3P for long runs, golden vectors.
+
+- [x] 2026-09-26: Point-kinetics solver, six delayed groups (ROS2; inhour period and prompt jump checks pass)
+- [x] 2026-09-26: Lumped fuel and coolant temperature model with heat removal (adiabatic limit checked by Nordheim–Fuchs)
+- [x] 2026-09-26: Fuel temperature feedback from a table (temperature-dependent coefficient)
+- [ ] Reproduce a TRIGA pulse and compare with published data (needs JSI pulse database + TRIGA-like parameters)
+- [x] 2026-09-26: Xenon/iodine: equilibrium derivative zero, post-shutdown peak time within 1%
+- [x] 2026-09-26: Unit tests for all of the above (`physics_ref/tests/test_engine.py`)
+- [ ] ROS3P (order 3) or similar for long runs; keep ROS2 as a cross-check
+- [ ] Golden vectors (`python -m physics_ref.vectors`) for the TypeScript port
 - [ ] Go/no-go decision written into PLAN.md
 
 ## Milestone 2: OpenMC library · [plan](docs/plans/02-openmc-pipeline.md)

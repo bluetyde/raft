@@ -1,7 +1,7 @@
 # Plan 01: Physics core
 
 The time-dependent model that runs live.
-It's written first in Python (`physics-ref/`), which is the reference, and then ported to TypeScript (`web/src/sim/`).
+It's written first in Python (`physics_ref/`), which is the reference, and then ported to TypeScript (`web/src/sim/`).
 Milestones: M1 (Python prototype), M4 (TypeScript port).
 
 ## Scope
@@ -90,6 +90,15 @@ Decay constants and yields are nuclear data, but they still go in the library so
 
 ## Solver
 
+**Implemented (2026-09-26): ROS2** (two-stage Rosenbrock, order 2, L-stable, embedded order-1 error estimate), dense LU on the ~17-variable system,
+finite-difference Jacobian and time derivative, relative + absolute tolerances per component. Rods are known functions of time within a step.
+Checkpoints store the current step size, so a restored run is bit-identical. Order 2 is slow for long runs at tight tolerance
+(tracking a power decay from 100 kW to source level for an hour takes ~30k steps at rtol 1e-6): **ROS3P or similar is a TODO** before long scenarios.
+Verified against scipy's Radau on the same equations (`TestIndependentIntegrator`, runs where scipy is installed).
+
+**Finding:** the full model's pulse peak is 3.4% above Nordheim–Fuchs for the synthetic core, because delayed neutrons return during the ~50 ms pulse.
+With return suppressed (the formula's assumption), the engine matches the formula to better than 0.1%.
+
 The equations are **stiff**. Prompt behavior happens on the scale of Λ (tens of microseconds for TRIGA; check the value in M2).
 Xenon changes over hours. The solver has to handle both without slowing the browser down.
 
@@ -114,7 +123,7 @@ Xenon changes over hours. The solver has to handle both without slowing the brow
 - **Interlocks** (enforced in the sim core, not the UI): for example, pulse mode is blocked above a power limit, and only one rod can be withdrawn at a time.
   The library lists the rules as a **small typed predicate format** (validated signal references, a fixed set of operators). Unknown operators are errors.
 
-## Tests (all in `physics-ref/tests/`, then copied as vectors into `schema/vectors/`)
+## Tests (all in `physics_ref/tests/`, then copied as vectors into `schema/vectors/`)
 
 | Test | Checks | Reference |
 |---|---|---|

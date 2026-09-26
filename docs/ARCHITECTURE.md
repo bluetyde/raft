@@ -43,7 +43,7 @@ Anyone can make a library with any tool as long as it matches the schema.
 | Run planner and runner | Python | `pipeline/runs/` | Builds the list of OpenMC cases from a config, runs them, resumes after interruption | [02](plans/02-openmc-pipeline.md) |
 | Extractor | Python | `pipeline/extract/` | Turns statepoints into k, rod worths, β, Λ, coefficients, shapes | [02](plans/02-openmc-pipeline.md) |
 | Library builder and validator | Python | `pipeline/library/` | Writes and validates the library | [03](plans/03-library-format.md) |
-| Reference physics | Python | `physics-ref/` | Readable, well-tested version of the simulation; the source of truth | [01](plans/01-physics-core.md) |
+| Reference physics | Python | `physics_ref/` | Readable, well-tested version of the simulation; the source of truth | [01](plans/01-physics-core.md) |
 | Schema and test vectors | JSON | `schema/` | Library JSON Schema, command and state types, golden results shared by Python and TS | [03](plans/03-library-format.md) |
 | Simulation core | TypeScript | `web/src/sim/` | Port of the reference physics; runs in a Web Worker | [01](plans/01-physics-core.md) |
 | Instrument layer | TypeScript | `web/src/instruments/` | What the operator is allowed to see: detector ranges, lag, noise, failures | [05](plans/05-operator-ui.md) |
@@ -85,7 +85,11 @@ type Command =
 
 **Scheduling (the worker is the only authority):** each command carries a client ID. The worker assigns the accepted sim time and a monotonically increasing sequence number,
 and replies `accepted` or `rejected` with a reason (e.g. interlock, paused, already tripped, unknown rod).
-Order within one instant: scripted events, then operator commands (by sequence number), then trip checks, then scram actions.
+Order at one boundary instant (implemented in `physics_ref/engine.py`): rod motions rebased and instruments sampled, then trips on instrument readings evaluated
+(a new trip scrams all rods), then commands in sequence-number order, then integration continues. Protection acts on the state reached **before** any new input
+at that instant. This deliberately differs from the review's proposal (commands before trips); a command can't slip in ahead of a trip that's already due.
+Trips whose inputs are all truth signals are located **inside** solver steps (to 0.1 µs). Instrument channels are sampled only at boundaries, like a digital channel.
+Scripted scenario events will slot in before commands when scenarios exist.
 Every accepted command goes into the **command log**. See replay under Runtime loop.
 
 ### 3. State snapshot (simulation → views)
@@ -157,7 +161,7 @@ virtual-reactor/
   README.md  PLAN.md  TODO.md
   docs/            ARCHITECTURE.md, WORKFLOWS.md, plans/, library-format.md (spec, once written)
   schema/          library.schema.json, command/state types, vectors/ (golden test cases)
-  physics-ref/     Python reference simulation + tests
+  physics_ref/     Python reference simulation + tests
   pipeline/        models/, runs/, extract/, library/, armi/ (later), configs/
   libraries/       built libraries (large arrays via release assets, not git history)
   validation/      data/ (published measurements, with sources), tests/, reports/

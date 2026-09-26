@@ -12,7 +12,8 @@ Step-by-step procedures for the recurring kinds of work. The structure behind th
 - **Web:** Node on Windows (WSL has no Node). `web/package-lock.json` is committed; `npm ci` reproduces it.
 - **Dev port:** `VR_PORT` (default **5187**). Each checkout or agent picks its own free port and records it in its log entry, so concurrent sessions don't collide.
 - **Processes:** stop only processes your session started, then confirm your port is free.
-- **Fast checks (run before every handoff):** from the repo root, `python -m unittest discover -s pipeline/tests -t .` (standard library only; Python ≥ 3.11).
+- **Fast checks (run before every handoff):** from the repo root, `python -m unittest` (standard library only; Python ≥ 3.11; about 40 s, mostly the pulse and xenon physics tests).
+  In an env with scipy (e.g. WSL `openmc-mcnp`/`openmc-vr`) it also runs the independent-integrator check.
   Validate any library with `python -m pipeline.library.validate <folder>`. Regenerate fixtures with `python -m pipeline.library.synthetic` and review the diff.
 - **Fast checks need no OpenMC:** the synthetic fixture lets the headless tests and web build run on a clean checkout (and in CI) without nuclear data.
 
@@ -37,7 +38,7 @@ Runs in WSL2, `conda activate openmc-vr` (a clone of `openmc-mcnp`; never modify
 
 The Python reference is the source of truth. TypeScript follows it.
 
-1. Change `physics-ref/` and its tests. All tests must pass.
+1. Change `physics_ref/` and its tests. All tests must pass.
 2. Regenerate the golden vectors: `python -m physics_ref.vectors` → `schema/vectors/`.
    Vectors carry provenance (generator commit, solver settings, tolerances). **Changed expected results need a stated reason and a readable before/after summary**
    in the commit or log. Never refresh expectations just to make a test pass. The independent checks (analytic tests, scipy path) must still pass unchanged.
