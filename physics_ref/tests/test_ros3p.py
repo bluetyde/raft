@@ -163,6 +163,36 @@ class TestROS3P(unittest.TestCase):
             resumed.step()
         self.assertEqual(comparable(resumed.checkpoint()), comparable(a.checkpoint()))
 
+    def test_time_dependent_accuracy(self):
+        """Added by the dispatcher (Claude Code), not agy: the order study above is autonomous (constant
+        reactivity, no rod motion), so dF/dt = 0 there and the gamma_i coefficients never enter; a wrong gamma_i
+        passes it. Here the regulating rod moves 0.4 -> 0.5 in 0.2 s (one worth-table segment, so reactivity rises
+        linearly by ~$0.39) and fixed-step ROS3P at h = 0.0025 must match an independent reference.
+        Reference P(0.2 s) = 1.61402354941325 W: scipy Radau with our Jacobian, rtol 1e-12 (rtol 1e-10 agrees to
+        9e-13), openmc-vr env, 2026-09-26. Measured errors at h = 0.0025: correct coefficients 2.6e-7; gamma1 = 0.5
+        1.4e-3; gamma2 = 0 1.2e-4; gamma3 = 0 2.7e-3; c32 x 1.01 5.3e-5; c21 x 1.01 2.5e-5; m2 = 0.583 5.8e-5.
+        The 2e-6 threshold sits 8x above the correct error and 12x below the smallest wrong-coefficient error."""
+        L = kinetics_only_lib()
+        L.calibration = -(L.ref_rho + L.rod_by_id["regulating"].worth(0.4))
+        L.mark_modified("time-dependent-accuracy")
+        e = Engine(L, {"rods": {"safety": 0.0, "regulating": 0.4, "transient": 0.0},
+                       "power": {"mode": "critical-equilibrium", "value": 1.0}}, config={"method": "ros3p"})
+        e.motions["regulating"] = {"kind": "move", "t0": 0.0, "x0": 0.4, "v": 0.5}
+        t, y, h = 0.0, list(e.y), 0.0025
+        for _ in range(round(0.2 / h)):
+            f0 = e.rhs(t, y)
+            J, ft = e._jacobian(t, y, f0)
+            y, _ = e._ros3p(t, y, h, J, f0, ft)
+            t += h
+        self.assertLess(abs(y[IP] / 1.61402354941325 - 1.0), 2e-6)
+
+    def test_time_dependent_accuracy_catches_wrong_gamma(self):
+        """Added by the dispatcher: the check above fails when a gamma_i (dF/dt coefficient) is wrong."""
+        for name, value in (("gamma2", 0.0), ("gamma3", 0.0)):
+            with self.subTest(coefficient=name), patch.object(engine, name, value):
+                with self.assertRaises(AssertionError):
+                    self.test_time_dependent_accuracy()
+
     def test_ros2_unchanged(self):
         e = scripted_run(lib(), [500])
         self.assertEqual(repr(e.y[0]), "0.040326259713735685")
