@@ -9,7 +9,7 @@ Design lives in [PLAN.md](PLAN.md). Details per area in [docs/plans/](docs/plans
 - [ ] Get access to the ICSBEP handbook entry `IEU-COMP-THERM-003` (cores 132 and 133) and list what it publishes (k-eff, rod worths, specs)
 - [ ] Create the `openmc-vr` conda env in WSL (clone of `openmc-mcnp` + pytest + jsonschema), then try OpenMC 0.16 there; leave the shared env alone ([TOOLING §2](docs/TOOLING.md))
 - [ ] Find the JSI Research Reactor Simulator's source repo, confirm its license, and decide how to use it as an independent comparison
-- [ ] First commit and private GitHub repo `bluetyde/virtual-reactor` (local `git init` done 2026-09-25; waiting on the user's go-ahead)
+- [x] 2026-09-26: Private GitHub repo [bluetyde/virtual-reactor](https://github.com/bluetyde/virtual-reactor), MIT license detected, first commit `55da9c2`
 
 ## Contracts (before M1 code) · from the [architecture review](docs/ARCHITECTURE-REVIEW.md) and [tech-debt register](docs/TECH-DEBT-REVIEW.md)
 
