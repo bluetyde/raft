@@ -17,16 +17,69 @@ VECTORS_DIR = REPO_ROOT / "schema" / "engine-vectors"
 SYNTHETIC_CORE = REPO_ROOT / "schema" / "vectors" / "synthetic-core"
 
 
+_CATEGORY = {"power": "power", "precursors": "power", "energy": "power", "peakPower": "power",
+             "fuelTemp": "temperature", "coolantTemp": "temperature",
+             "iodine": "poisons", "xenon": "poisons", "t": "eventTime", "peakTime": "eventTime"}
+_DEFAULT_TOL = {"rel": 1e-9, "abs": 1e-12}
+
+
+def _compare(a, b, tol, path, problems, key=None):
+    """Recursively compare two vector documents; floats within tolerance, everything else exactly."""
+    if isinstance(a, dict) and isinstance(b, dict):
+        if sorted(a) != sorted(b):
+            problems.append(f"{path}: keys differ")
+            return
+        for k in a:
+            _compare(a[k], b[k], tol, f"{path}.{k}", problems, k)
+    elif isinstance(a, list) and isinstance(b, list):
+        if len(a) != len(b):
+            problems.append(f"{path}: length {len(a)} != {len(b)}")
+            return
+        for i, (x, y) in enumerate(zip(a, b)):
+            _compare(x, y, tol, f"{path}[{i}]", problems, key)
+    elif isinstance(a, float) or isinstance(b, float):
+        if isinstance(a, bool) or isinstance(b, bool) or not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
+            problems.append(f"{path}: type differs")
+            return
+        t = tol.get(_CATEGORY.get(key, ""), _DEFAULT_TOL)
+        limit = t.get("abs", 0.0) + t.get("rel", 0.0) * max(abs(a), abs(b))
+        if abs(a - b) > limit:
+            problems.append(f"{path}: {a!r} vs {b!r} (limit {limit:.3g})")
+    elif a != b or type(a) is not type(b):
+        problems.append(f"{path}: {a!r} != {b!r}")
+
+
 class TestEngineVectors(unittest.TestCase):
     def test_committed_vectors_match_generator(self):
-        """Committed engine vectors must match the generator exactly (reproducible golden vectors)."""
+        """Committed vectors must match a fresh run within their declared tolerances.
+
+        Not byte-for-byte: platform math libraries (exp, log, sin) differ in the last bit, and a pulse amplifies
+        that to ~1e-12 relative between Linux and Windows. Strings, integers, booleans, event types, ids and
+        reasons must still match exactly; floats must agree within the file's own tolerances."""
         with tempfile.TemporaryDirectory() as tmp:
             vectors.generate(Path(tmp))
-            fresh = {p.relative_to(tmp).as_posix(): p.read_bytes() for p in Path(tmp).rglob("*") if p.is_file()}
-        committed = {p.relative_to(VECTORS_DIR).as_posix(): p.read_bytes() for p in VECTORS_DIR.rglob("*") if p.is_file()}
+            fresh = {p.name: json.loads(p.read_text(encoding="utf-8")) for p in Path(tmp).glob("*.json")}
+        committed = {p.name: json.loads(p.read_text(encoding="utf-8")) for p in VECTORS_DIR.glob("*.json")}
         self.assertEqual(sorted(fresh), sorted(committed))
-        changed = [k for k in fresh if fresh[k] != committed[k]]
-        self.assertEqual(changed, [], "regenerate with `python -m physics_ref.vectors` and review the diff")
+        for name in sorted(fresh):
+            with self.subTest(file=name):
+                problems = []
+                _compare(committed[name], fresh[name], committed[name]["tolerances"], "$", problems)
+                self.assertEqual(problems[:10], [], "regenerate with `python -m physics_ref.vectors` and review the diff")
+
+    def test_comparison_catches_real_differences(self):
+        """The tolerant comparison must still fail on a changed value, reason or event."""
+        doc = json.loads((VECTORS_DIR / "scram.json").read_text(encoding="utf-8"))
+        tol = doc["tolerances"]
+        for mutate in (lambda d: d["samples"][3].__setitem__("power", d["samples"][3]["power"] * (1 + 1e-6)),
+                       lambda d: d["samples"][3].__setitem__("fuelTemp", d["samples"][3]["fuelTemp"] + 1e-6),
+                       lambda d: d["events"][-1].__setitem__("reason", "REJ_SOMETHING_ELSE"),
+                       lambda d: d["events"].pop()):
+            other = json.loads(json.dumps(doc))
+            mutate(other)
+            problems = []
+            _compare(doc, other, tol, "$", problems)
+            self.assertTrue(problems)
 
     def test_vectors_are_valid_json_without_nonfinite(self):
         def _forbid_constant(c):
