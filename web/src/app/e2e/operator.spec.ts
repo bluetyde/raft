@@ -97,10 +97,18 @@ test("a pulse peak between snapshots reaches the log chart at full height; the p
   }, pulse.init);
   await expect(page.locator("#app")).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
   await expect(page.locator('[data-op="transient:fire"]')).toBeEnabled({ timeout: 10_000 });
-  await page.click('[data-op="play"]'); // commands wait for time to move (D2 of the C6 design)
+  if (process.env.VR_E2E_THROTTLE) {
+    // reproduce a slow CI runner: slow the page's CPU (the worker runs slower too)
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: Number(process.env.VR_E2E_THROTTLE) });
+  }
+  // FIRE while paused: the command queues and applies on step 0 (D2 of the C6 design), so the pulse timing does not
+  // depend on how fast the page is. Then run.
   await page.click('[data-op="transient:fire"]');
-  await expect(page.locator(".vr-operator > .vr-note")).toContainText("rod.fire accepted", { timeout: 10_000 });
-  await page.waitForTimeout(1500); // 1.5 s of sim time at 1x: through the pulse
+  await page.click('[data-op="play"]');
+  await expect(page.locator(".vr-operator > .vr-note")).toContainText("rod.fire accepted", { timeout: 30_000 });
+  // wait in sim time, not wall time: pulse steps are slow (about 60 ms each here, more on CI), and the peak is at 0.14 s
+  await expect.poll(async () => (await view(page))?.console.t ?? 0, { timeout: 60_000 }).toBeGreaterThan(0.6);
   const r = await page.evaluate(() => {
     const w = window as any;
     const snaps: { log: number; ext: number | null }[] = w.__snaps;
