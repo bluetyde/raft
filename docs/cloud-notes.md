@@ -180,6 +180,20 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   2 new runtime tests (extremes), and 6 new Playwright tests (`operator.spec.ts`). Four deliberate breaks were each caught.
 - Branch: `claude/m5-operator-design`. Checks: see the PR.
 
+### 2026-09-27: PRs #3 to #6 merged into main (user OK)
+
+- What: the user said "Yes merge". The other session also recommended it. I merged the four PRs in order, each with a merge commit:
+  1. #3 M3 viewer: `6d37c81`.
+  2. #4 browser e2e check: `41c7172`.
+  3. #5 M4 live explorer: `35273d0`.
+  4. #6 M5 operator panel: `fed44a7`.
+- Before each merge, I merged `main` into the PR branch and ran `npx tsc --noEmit`, Vitest, all Playwright tests and `python3 scripts/premerge.py` (all pass).
+  I then waited for both CI jobs (`premerge` and `e2e`) to pass on the new head. The only conflicts were in this file. I kept the entries from both sides.
+- On `main` now: 181 Vitest tests, 14 Playwright tests, and 108 Python tests.
+- The hourly PR check-ins are stopped.
+- **For the local session:** the M5 items for you are still open: ARCHITECTURE §3 (alarms are derived in the view) and the `rod.setTarget` finding in the M4 entry.
+- Branch: `claude/kind-bohr-p73819` (this log entry only).
+
 ### 2026-09-27: M6 instructor view design (proposal, waiting for the user)
 
 - What: `docs/m6-instructor-design.md`. No code yet. Decisions D1–D6 are open for the user.
@@ -189,7 +203,7 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   - the snapshot does not list active instrument faults (the runtime can read the engine's public `faults` field, so this is not a request).
   The recommended options need no engine change for the first slice. Possible later requests, only if the user picks those options:
   `fault.rod` and instrument drift in both engines (D3a), and an ARCHITECTURE change from "one owner" to "one shared worker" (D2a).
-- Branch: `claude/m6-instructor-design`, based on `main` at `1442af9`.
+- Branch: `claude/m6-instructor-design`, based on `main` (with `1442af9` merged in).
 - User decision (2026-09-27): approved with D1–D6 = option a, and four amendments:
   coarse sessions reject pulse mode and `rod.fire` with a clear reason, and the time bar shows the step;
   reactivity clear comes from the engine (added to the D3a request);
