@@ -38,7 +38,12 @@
    "coreRadius": 21.12,
    "status": "Unverified finer values (4.05 ... 19.89 cm) from a web-search summary of JSI slides; agree with ravnik within the inch rounding. ravnik is used."
   },
-  "plateThicknessIn": 0.75
+  "plateThicknessIn": 0.75,
+  "positionAngle": {
+   "formulaDeg": "theta = -90 - (k - 1) * 360 / N  (x right, y up, seen from above; k = position number, N = positions in the ring)",
+   "meaning": "position 1 of every ring directly below the centre (6 o'clock), numbering clockwise seen from above",
+   "source": "merljak2015 core figure; checked on trigapulse 242.pdf label coordinates: all 91 labels within 2.3 deg, ring spacing ratios within 1% of ravnik"
+  }
  },
  "reflector": {
   "graphiteInnerDiameterIn": 17.9,
@@ -139,6 +144,25 @@
    "fueledFollower": 0.05443,
    "derivation": "(900 - 200) steps over 38.1 cm; matches castagna2017's ~0.054 cm/step",
    "transient": "ASSUMED the same 0.0544 cm/step (castagna2017: 47.2 cm over 873 steps = 0.0541); transient travel not stated for JSI"
+  },
+  "positions": {
+   "T": {
+    "name": "transient (pulzna, labelled P on the maps)",
+    "position": "C4"
+   },
+   "V": {
+    "name": "safety (varnostna)",
+    "position": "C10"
+   },
+   "K": {
+    "name": "shim / compensating (kompenzacijska)",
+    "position": "D10"
+   },
+   "R": {
+    "name": "regulating (regulacijska)",
+    "position": "D1"
+   },
+   "source": "core maps 242.pdf/246.pdf and merljak2015 figure; letters as in the rod-table headers (T, K, V, R)"
   }
  },
  "criticalStates": {
