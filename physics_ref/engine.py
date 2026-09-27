@@ -732,9 +732,7 @@ class Engine:
         return snap
 
     def pins(self) -> dict:
-        cfg = dict(self.config)
-        if cfg.get("method") == "ros2":
-            cfg.pop("method", None)
+        cfg = dict(self.config)  # always includes "method": the solver is part of what a replay must reproduce
         return {"engineVersion": ENGINE_VERSION, "libraryDigest": self.lib.digest, "config": cfg}
 
     def checkpoint(self) -> dict:

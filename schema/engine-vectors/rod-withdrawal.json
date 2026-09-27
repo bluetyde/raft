@@ -39,6 +39,7 @@
    "eventTol": 1e-07,
    "hInit": 1e-05,
    "hMin": 1e-12,
+   "method": "ros2",
    "outerDt": 0.01,
    "rtol": 1e-06
   },
