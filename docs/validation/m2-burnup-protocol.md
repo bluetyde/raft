@@ -1,5 +1,9 @@
 # M2 burnup calibration: protocol (written before any calibrated result was seen, 2026-09-27)
 
+Disclosure: before writing this, one plumbing test was run with a throwaway low-statistics depletion table (1,000 particles):
+core 242 at its critical state with a uniform 15 MWd/kg gave k = 1.009 ± 0.003 (`--quick`). No core 246 run with burnup, and no
+production-table run, had been made.
+
 ## Why a calibration
 
 The full-core model with fresh fuel is +$7 at core 242's measured critical state (`m2-core.md`). The open sources do not give the burnup
