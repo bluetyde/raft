@@ -179,4 +179,3 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 - Tests: 17 new Vitest tests (`operator.test.ts`: truth guard, meters, derived period with the library's lag and noise, 10 ms spike, annunciator),
   2 new runtime tests (extremes), and 6 new Playwright tests (`operator.spec.ts`). Four deliberate breaks were each caught.
 - Branch: `claude/m5-operator-design`. Checks: see the PR.
-
