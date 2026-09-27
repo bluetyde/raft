@@ -114,7 +114,7 @@ A realism toggle hides the 3D inset during scenarios.
 1. **Physics prototype (no UI).** Point kinetics plus fuel temperature feedback, reproducing a TRIGA pulse
    (peak power, pulse width, energy released) against published data. This is the go/no-go check.
    
-   **Status (2026-09-26): code verified; validation against measurements inconclusive. No GO/NO-GO yet.**
+   **Status (2026-09-27): NO-GO (user decision on the C1 proposal). Next: C2 (verify parameters, esp. UZrH cp(T), α(T)), then re-run C1 unchanged.**
    - Code verification passed: the engine matches Nordheim–Fuchs to < 0.1% under its assumptions, plus the other analytic checks (`physics_ref/tests/`).
    - A first comparison with the JSI pulse database (`validation/pulse_comparison.py`) gave sim/exp median peak-power ratios of 0.51–5.92
      across $1.10–2.20, with disagreeing scaling exponents. It pooled 31 core configurations without screening or condition matching,

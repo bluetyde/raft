@@ -30,23 +30,22 @@ Status: `ready` (brief can be written now) · `blocked` (needs something first) 
 
 | ID | Task | Files | Oracle / proof of done | Status |
 |---|---|---|---|---|
-| A5-1 | TS port of `pipeline/library/minischema.py` + every semantic check of `validate.py` (28 codes) + Vitest tests | `web/src/library/` | The **30 broken fixtures** in `schema/vectors/invalid/` give exactly their `expected.json` codes; synthetic core and `triga-jsi` validate | ready after A5-0 (`--node 24 --setup "npm ci --ignore-scripts"`) |
+| A5-1 | TS port of `pipeline/library/minischema.py` + every semantic check of `validate.py` (28 codes) + Vitest tests | `web/src/library/` | The **30 broken fixtures** in `schema/vectors/invalid/` give exactly their `expected.json` codes; synthetic core and `triga-jsi` validate | **in progress** (agy, `claude/agy-a5-1-validator`; `--node 24 --setup "cd web && npm ci --ignore-scripts" --env openmc-vr`); oracle also includes a Python-vs-TS `(code, path)` parity test |
 | A6-1 | TS port of `physics_ref` (numerics, library, engine incl. ROS3P) + its Python tests ported + a Vitest runner over every golden vector | `web/src/sim/` | Every vector in `schema/engine-vectors/` within its declared tolerances; ported analytic tests; snapshots valid against `schema/snapshot.schema.json` | blocked on A5-1 and C5. Split at numerics/library vs engine if the brief gets too large |
 | A7 | Scenario schema + validator + fixtures | `schema/scenario.schema.json`, `pipeline/scenario/` | Every invalid fixture gives its expected code | **on hold (user)**. Step 0 failed (spec still moving); the format design is Claude's when resumed |
 
 New dispatches use branches `claude/agy-<task>` (INSTRUCTIONS.md rule 5).
 
-Sandbox Node setup landed (2026-09-26): `--node 24` (24.18.0, matches Windows) and `--setup "npm ci --ignore-scripts"` (runs with network before agy starts; a committed lockfile is required).
+Sandbox Node setup landed (2026-09-26): `--node 24` (24.18.0, matches Windows) and `--setup` (runs with network before agy starts; a committed lockfile is required). Setup runs at the repo root, so use `--setup "cd web && npm ci --ignore-scripts"`.
 
 ### Claude-only (judgment, data, precision-critical numerics, small changes)
 
 | ID | Task | Why not agy | Status |
 |---|---|---|---|
-| C1 | M1 condition-matched comparison | physics judgment | done: proposal **NO-GO** ([results](validation/m1-c1-results.md)); awaiting the user's decision |
-| C2 | Verify every parameter in `validation/data/triga-jsi/parameters.json` and the library against real sources (esp. UZrH cp(T), α(T)); then correct citations in `pipeline/library/build_triga.py` (the former A4) and re-run C1 unchanged | judgment on sources | ready |
+| C1 | M1 condition-matched comparison | physics judgment | done: **NO-GO accepted by the user 2026-09-27** ([results](validation/m1-c1-results.md)) |
+| C2 | Verify every parameter in `validation/data/triga-jsi/parameters.json` and the library against real sources (esp. UZrH cp(T), α(T)); then correct citations in `pipeline/library/build_triga.py` (the former A4) and re-run C1 unchanged | judgment on sources | **in progress** |
 | C3 | OpenMC JSI TRIGA model (M2) | OpenMC transport, nuclear data | blocked on C2 |
 | C4 | Verify each agy result (skill step 4), log, propose merges | dispatcher's job | ongoing |
-| A5-0 | `web/` scaffold: `package.json` with pinned deps (TypeScript, Vite, Vitest), lockfile generated on Windows (Node 24), `tsconfig`/Vitest config; design decisions for A5-1 (TS port of `minischema` instead of a JSON Schema library, injected file reader, WebCrypto SHA-256) | dependencies and lockfile are the dispatcher's by skill rule; small | ready |
 | C5 | Keep `"method"` in `pins()` (undo agy's omission) and regenerate `schema/engine-vectors/` | small, touches pinned contracts | ready; must land before A6-1 (the vectors are A6's oracle) |
 | A6-0 | A6 design in the brief: module layout, API parity with Python, SplitMix64 on BigInt, explicit left-to-right sums, library loading via A5-1, snapshot validation via the TS minischema; Web Worker out of scope | design decisions | with the A6-1 brief |
 | C6 | Web Worker runtime, clock and command bus (ARCHITECTURE runtime loop) | scheduling semantics still open | later |
@@ -60,6 +59,7 @@ Sandbox Node setup landed (2026-09-26): `--node 24` (24.18.0, matches Windows) a
 | A2 | Golden engine vectors | `main` via `agy/golden-vectors` + `claude/golden-vectors-fix` |
 | A3 | Pulse data screening | `main` via `agy/pulse-screening` |
 | A4 | Relabel unverified library values `assumed` (done by Claude in the M1 review) | `main` via `claude/m1-review` |
+| A5-0 | `web/` scaffold + A5-1 design (`web/README.md`) + Python parity fixes (Claude) | `main` via `claude/a5-0-scaffold` |
 | A8 | Command and snapshot schemas + validator + fixtures | `main` via `claude/agy-contracts` |
 
 ### Codex review points
