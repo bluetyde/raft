@@ -1,0 +1,127 @@
+{
+ "B246": 23.675258421961058,
+ "betaEffPcm": 724.306095025632,
+ "tablePcmPerDollar": 700.0,
+ "cores": {
+  "242": {
+   "table": "s242.txt",
+   "tableHeader": "SREDICA 242 (P=400 W: T=UP, K=499, V=UP, R=500)                                        Ljubljana, 19.10.2020",
+   "rows": [
+    {
+     "steps": 150.0,
+     "modelPcm": 52.024690311470636,
+     "modelStdPcm": 106.94452521261317,
+     "measuredPcm": 53.3,
+     "modelDollars": 0.0718269398376795,
+     "measuredDollars": 0.07614285714285714,
+     "ratioDollars": 0.9433181592190555
+    },
+    {
+     "steps": 300.0,
+     "modelPcm": 453.0392024377548,
+     "modelStdPcm": 100.9116692012934,
+     "measuredPcm": 359.7,
+     "modelDollars": 0.6254803121900038,
+     "measuredDollars": 0.5138571428571428,
+     "ratioDollars": 1.2172260732082365
+    },
+    {
+     "steps": 450.0,
+     "modelPcm": 951.482948082561,
+     "modelStdPcm": 104.81643304773976,
+     "measuredPcm": 1011.6,
+     "modelDollars": 1.313647578858065,
+     "measuredDollars": 1.4451428571428573,
+     "ratioDollars": 0.9090088030848611
+    },
+    {
+     "steps": 600.0,
+     "modelPcm": 1960.1543660625198,
+     "modelStdPcm": 97.66375267683856,
+     "measuredPcm": 1886.7,
+     "modelDollars": 2.7062513756606634,
+     "measuredDollars": 2.6952857142857143,
+     "ratioDollars": 1.0040684597246325
+    },
+    {
+     "steps": 750.0,
+     "modelPcm": 2753.208139249681,
+     "modelStdPcm": 104.39394689526313,
+     "measuredPcm": 2675.1,
+     "modelDollars": 3.801166603674997,
+     "measuredDollars": 3.8215714285714286,
+     "ratioDollars": 0.9946606192562887
+    },
+    {
+     "steps": 900.0,
+     "modelPcm": 3051.8248059800967,
+     "modelStdPcm": 106.5914732118653,
+     "measuredPcm": 3033.7,
+     "modelDollars": 4.213446258342059,
+     "measuredDollars": 4.333857142857142,
+     "ratioDollars": 0.9722162312817489
+    }
+   ]
+  },
+  "246": {
+   "table": "s246.txt",
+   "tableHeader": "SREDICA 244 (P=400 W: T=UP, K=543, V=UP, R=544)                                       Ljubljana, 8.6.2021",
+   "rows": [
+    {
+     "steps": 150.0,
+     "modelPcm": 190.16869045815687,
+     "modelStdPcm": 92.3483313674777,
+     "measuredPcm": 58.7,
+     "modelDollars": 0.2625529341312903,
+     "measuredDollars": 0.08385714285714287,
+     "ratioDollars": 3.130954921497499
+    },
+    {
+     "steps": 300.0,
+     "modelPcm": 238.9959604969859,
+     "modelStdPcm": 93.52549461499446,
+     "measuredPcm": 362.4,
+     "modelDollars": 0.3299654139849924,
+     "measuredDollars": 0.5177142857142857,
+     "ratioDollars": 0.6373504133264203
+    },
+    {
+     "steps": 450.0,
+     "modelPcm": 946.700527115247,
+     "modelStdPcm": 97.19435026615632,
+     "measuredPcm": 999.0,
+     "modelDollars": 1.3070448165726742,
+     "measuredDollars": 1.427142857142857,
+     "ratioDollars": 0.9158472188196917
+    },
+    {
+     "steps": 600.0,
+     "modelPcm": 1776.1322982576623,
+     "modelStdPcm": 106.37256109775021,
+     "measuredPcm": 1839.6,
+     "modelDollars": 2.452184663991828,
+     "measuredDollars": 2.6279999999999997,
+     "ratioDollars": 0.9330991872115024
+    },
+    {
+     "steps": 750.0,
+     "modelPcm": 2416.174959341659,
+     "modelStdPcm": 90.81565010494543,
+     "measuredPcm": 2600.4,
+     "modelDollars": 3.3358478907403843,
+     "measuredDollars": 3.714857142857143,
+     "ratioDollars": 0.8979747437003034
+    },
+    {
+     "steps": 900.0,
+     "modelPcm": 2598.3958293046176,
+     "modelStdPcm": 92.76670206983768,
+     "measuredPcm": 2937.2,
+     "modelDollars": 3.5874278114595524,
+     "measuredDollars": 4.196,
+     "ratioDollars": 0.8549637300904558
+    }
+   ]
+  }
+ }
+}
