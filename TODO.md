@@ -29,7 +29,7 @@ Order matters: M2 replaces the `assumed` inputs that M1's caveats rest on, and t
 
 **Housekeeping**
 9. [ ] **[agy]** Pre-merge check (TD-03, A9): one script that runs the Python fast tests plus `npm test`/`typecheck`/`build`.
-10. [ ] **[codex]** When quota allows: the engine line (pending since 2026-09-26), then the TS port (A6-1) and the per-core library changes; together these close M1's review.
+10. [ ] **[codex]** The TS port (`web/src/`), which the M1 review didn't cover. (The engine line and M1 were reviewed 2026-09-27; 8 findings fixed.)
 11. [ ] Find the JSI Research Reactor Simulator's source and license (independent comparison, reference only).
 
 **Standalone kinetics engine (decided 2026-09-27: yes, but not before the API settles)**
@@ -95,7 +95,7 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 - [x] 2026-09-26: Golden vectors (`python -m physics_ref.vectors`), merged; regenerate on Linux Python 3.11 (Windows libm adds last-bit noise)
 - [x] 2026-09-27: Go/no-go: **NO-GO** accepted by the user (C1 proposal); an earlier automatic GO was withdrawn (`docs/reviews/2026-09-26-m1-go-review.md`)
 - [x] 2026-09-27: **M1 GO** (user decision on run 3, option 2: A1's bound mis-specified, failure kept on record). [Results](docs/validation/m1-c1-results.md)
-- [ ] **[codex]** Codex review of M1 (pending, quota): see Next #10
+- [x] 2026-09-27: **[codex]** Codex review of M1 (`_codex/m1-review/REVIEW.md`, commit `1ba400d`): 8 findings (2 P1, 6 P2), all fixed with one regression each in Python (`41a503c`) and mirrored in TS by agy; the engine-line and TS-port reviews in Next #10 are covered by this review's scope except the TS port
 
 ## Milestone 2: OpenMC library · [plan](docs/plans/02-openmc-pipeline.md)
 
