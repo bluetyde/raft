@@ -30,6 +30,20 @@ DEFAULT_OUT = REPO_ROOT / "libraries" / "triga-jsi"
 ASSUMED = "assumed"
 CITED_KEEPIN = "cited:keepin1965"
 CITED_VAVTAR = "cited:vavtar2021"
+CITED_SVAJGER = "cited:svajger2024"
+
+# Run-3 variants (docs/validation/m1-run3-protocol.md). Fuel mass 2.363 kg/element (svajger2024 Table 10, geometry check);
+# element counts from the database core maps. The fuel reactivity table is svajger2024 Table 2 (k-infinity of standard fuel,
+# Serpent, ENDF/B-VII.0): delta-rho in pcm at 294..800 K, with 294 K used as the 293.15 K reference; beyond 800 K alpha is
+# held at -9.81 pcm/K. The "paper" variant reproduces svajger2024 Table 10's inputs for the code-to-code check.
+MASS_PER_ELEMENT = 2.363
+TABLE2_T = [293.15, 400.0, 500.0, 600.0, 700.0, 800.0, 1200.0]
+TABLE2_RHO_PCM = [0.0, -694.0, -1612.0, -2583.0, -3551.0, -4533.0, -4533.0 - 9.81 * 400.0]
+VARIANTS = {
+    "242": {"id": "triga-jsi-242", "name": "JSI TRIGA Mark II, core 242 (59 elements)", "mass": 59 * MASS_PER_ELEMENT, "fuel": "table2"},
+    "246": {"id": "triga-jsi-246", "name": "JSI TRIGA Mark II, core 246 (65 elements)", "mass": 65 * MASS_PER_ELEMENT, "fuel": "table2"},
+    "paper": {"id": "triga-jsi-paper", "name": "JSI TRIGA Mark II, svajger2024 Table 10 inputs", "mass": 59 * 2.36, "fuel": "paper"},
+}
 
 T_REF = 293.15  # K (20 °C)
 PITCH = 4.3  # cm
@@ -174,7 +188,7 @@ def raw_shape(elements: List[str], pos: Dict[str, Tuple[float, float]],
     return out
 
 
-def build_library(out_dir: Path) -> dict:
+def build_library(out_dir: Path, variant: str | None = None) -> dict:
     """Build the complete JSI TRIGA library files in out_dir."""
     out_dir.mkdir(parents=True, exist_ok=True)
     arrays_dir = out_dir / "arrays"
@@ -268,6 +282,18 @@ def build_library(out_dir: Path) -> dict:
 
     cp_vals = [round(fuel_cp(T), 4) for T in TEMP_GRID]
     rho_fuel = [round(fuel_rho(T), 12) for T in TEMP_GRID]
+    fuel_T, fuel_src, cp_src = TEMP_GRID, CITED_VAVTAR, CITED_VAVTAR
+    mass = S(84.0, ASSUMED)
+    v = VARIANTS[variant] if variant else None
+    if v:
+        mass = S(round(v["mass"], 4), CITED_SVAJGER)
+        if v["fuel"] == "table2":
+            fuel_T, fuel_src = TABLE2_T, CITED_SVAJGER
+            rho_fuel = [round(r * 1e-5, 12) for r in TABLE2_RHO_PCM]
+        else:  # "paper": alpha = -10 pcm/K constant, C = 341.6 J/(kg K) constant
+            fuel_src = cp_src = CITED_SVAJGER
+            rho_fuel = [round(-10e-5 * (T - T_REF), 12) for T in TEMP_GRID]
+            cp_vals = [341.6 for _ in TEMP_GRID]
 
     # Geometry primitives
     geometry = [
@@ -286,8 +312,8 @@ def build_library(out_dir: Path) -> dict:
 
     manifest = {
         "schemaVersion": "0.1.0",
-        "id": "triga-jsi",
-        "name": "JSI TRIGA Mark II (Ljubljana) Benchmark Core",
+        "id": v["id"] if v else "triga-jsi",
+        "name": v["name"] if v else "JSI TRIGA Mark II (Ljubljana) Benchmark Core",
         "status": "experimental",
         "capabilities": ["point-kinetics/lumped-thermal-v1"],
         "provenance": {
@@ -321,11 +347,11 @@ def build_library(out_dir: Path) -> dict:
         "reactivity": {
             "rods": rods,
             "fuelTemp": {
-                "T": TEMP_GRID,
+                "T": fuel_T,
                 "rho": rho_fuel,
                 "interp": "linear",
                 "outOfRange": "clamp-and-flag",
-                "source": CITED_VAVTAR,
+                "source": fuel_src,
             },
             "coolantTemp": {
                 "T": [283.15, T_REF, 313.15, 333.15, 353.15],
@@ -344,13 +370,13 @@ def build_library(out_dir: Path) -> dict:
         },
         "thermal": {
             "fuel": {
-                "mass": S(84.0, ASSUMED),
+                "mass": mass,
                 "cp": {
                     "T": TEMP_GRID,
                     "c": cp_vals,
                     "interp": "linear",
                     "outOfRange": "clamp-and-flag",
-                    "source": CITED_VAVTAR,
+                    "source": cp_src,
                 },
             },
             "coolant": {"mass": S(20000.0, ASSUMED), "cp": S(4184.0, ASSUMED)},
@@ -420,11 +446,14 @@ def build_library(out_dir: Path) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(description="Build JSI TRIGA benchmark library.")
-    parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="Output library folder")
+    parser.add_argument("--out", type=Path, default=None, help="Output library folder (default libraries/<id>)")
+    parser.add_argument("--core", choices=sorted(VARIANTS), default=None,
+                        help="Run-3 variant (docs/validation/m1-run3-protocol.md); default: the original triga-jsi library")
     args = parser.parse_args()
+    out = args.out or (REPO_ROOT / "libraries" / VARIANTS[args.core]["id"] if args.core else DEFAULT_OUT)
 
-    print(f"Building TRIGA-JSI library in {args.out}...")
-    manifest = build_library(args.out)
+    print(f"Building TRIGA-JSI library in {out}...")
+    manifest = build_library(out, args.core)
     print(f"Built library '{manifest['id']}' (status: {manifest['status']}) successfully.")
 
 
