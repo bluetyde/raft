@@ -86,3 +86,12 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   Future requests R3 (change `outerDt` during a session) and R4 (engine step cost) are above.
 - Branch: `claude/c6-runtime-design` (based on `claude/kind-bohr-p73819`, because this file is not on `main` yet).
 
+### 2026-09-27: C6 runtime implemented
+
+- What: `web/src/runtime/` (`protocol.ts`, `runtime.ts`, `history.ts`, `readers.ts`, `worker.ts`, `client.ts`), built on the engine's public API only.
+  No change to `web/src/sim/`, `web/src/library/`, `web/src/contracts/` or `schema/`. Design and decisions: `docs/c6-runtime-design.md`.
+- Tests: 39 new Vitest tests in `web/src/runtime/*.test.ts` (fake clock; the main oracle compares a runtime session with `Engine.replay` and a plain loop).
+  Five targeted breaks, each caught. A manual Chromium smoke run of the real worker passed. Automated browser e2e is still TODO Next #8.
+- Behaviour to know: a rewind to a step keeps the commands logged at that step queued, the same as `Engine.replay`.
+- Branch: `claude/c6-runtime-design`. Checks: see the PR.
+

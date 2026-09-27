@@ -1,6 +1,6 @@
 # C6: Web Worker runtime (design)
 
-Status: **approved by the user on 2026-09-27, with the recommended option for D1–D4** (see the table at the end). Implemented in `web/src/runtime/` on the same branch.
+Status: **approved by the user on 2026-09-27, with the recommended option for D1–D4** (see the table at the end). Implemented in `web/src/runtime/` on the same branch (39 Vitest tests, plus a manual smoke run in Chromium, section 11).
 Scope: TODO Next #6 and the "Runtime loop" in [ARCHITECTURE.md](ARCHITECTURE.md). The runtime runs `web/src/sim`'s `Engine` in a Web Worker.
 It has a clock, a command bus, a snapshot and event stream, and history (checkpoint, rewind, replay).
 Out of scope: views, the scalar plot buffer, multi-window mirroring (`BroadcastChannel`), scenarios, and the memory-budget benchmark (TD-08, after C6).
@@ -65,7 +65,8 @@ All files are in `web/src/runtime/`. Only `worker.ts` and `client.ts` touch Work
 | `runtime.ts` | The `Runtime` class: clock, command bus, snapshot and event stream, history. It gets `now()`, `schedule(fn)` and `post(msg, transfer)` from its host, so tests drive it with a fake clock. |
 | `history.ts` | Checkpoint store, rewind and session import/export. |
 | `readers.ts` | `LibraryReader` implementations: fetch from a base URL, and a map of transferred files (File API folder drop). |
-| `worker.ts` | Worker entry point. Connects `onmessage` and `postMessage` to one `Runtime`. |
+| `worker.ts` | Worker entry point. Connects `onmessage` and `postMessage` to one `Runtime`. Yields through a `MessageChannel`, which has no minimum delay. |
+| `test-helpers.ts` | Test only: a fake host with a controllable wall clock, and library folders read into the `files` form. |
 | `client.ts` | Main-thread `RuntimeClient`: typed calls, a promise per command acknowledgement, snapshot and event subscriptions, worker error detection. |
 
 ## 4. Messages
@@ -88,6 +89,8 @@ Every message has `kind` and the first one has `protocol`. The worker is the onl
 | | `events` | every new engine event, in order |
 | | `clock` | requested rate, achieved rate, `paused`, `limited` with a cause (`cpu`, `halted`, `solver`) |
 | | `history` | checkpoint steps, first and last step, whether thinning happened |
+| | `rewound` | the step reached after a rewind or a session import, and the previous timeline as a session file |
+| | `error` | a request that could not be done: the request kind, a code (`E_BAD_ARGUMENT`, `E_RUNNING`, `E_FAULTED`, ...) and a message |
 | | `fault` | an unexpected error, with its message; the clock is paused |
 
 ## 5. Clock
@@ -119,7 +122,8 @@ Every message has `kind` and the first one has `protocol`. The worker is the onl
 5. After the next step, the engine's `command` event gives the result. The worker sends `ack` with the engine's status and reason unchanged.
 
 Runtime-only reasons: `REJ_SCHEMA`, `REJ_NO_LIBRARY` (nothing loaded), `REJ_HALTED` (the engine is halted, so the command would never apply),
-`REJ_FAULTED` (a solver error stopped the clock; only a rewind continues) and `REJ_REWOUND` (a queued command was after the rewind point and was discarded).
+`REJ_FAULTED` (a solver error stopped the clock; only a rewind continues), `REJ_REWOUND` (a queued command was after the rewind point and was discarded)
+and `REJ_SESSION_REPLACED` (a queued command was discarded by a new load or a session import).
 
 **D2: commands while paused.**
 - **(a) Queue them (chosen).** They are submitted at the paused boundary and apply on the next step, at resume or at a single step. The `ack` comes then. This is what the engine does anyway, and it is deterministic. The instructor can pause, set up a fault, and resume.
@@ -150,6 +154,7 @@ Runtime-only reasons: `REJ_SCHEMA`, `REJ_NO_LIBRARY` (nothing loaded), `REJ_HALT
 - **Rewind to a step.** Take the latest checkpoint at or before the target, `Engine.restore` it, then run the same loop as `Engine.replay`, starting from that checkpoint:
   submit each logged command at its step (skipping commands with `seq < cp.nextSeq`, which the checkpoint already holds) and step until the target. Then the clock is paused.
   The re-submitted commands get their original sequence numbers, because the checkpoint restores `nextSeq`.
+  As in `Engine.replay`, commands logged at the target step itself stay queued: they were sent at that boundary, so they apply on the next step.
 - **D3: commands after the rewind point.**
   - **(a) Truncate (chosen).** The future is discarded. Before that, the runtime keeps the old timeline as one in-memory session file, so the user can export it.
   - (b) Keep the future as a redo list, replayed on request.
@@ -192,7 +197,13 @@ Runtime-only reasons: `REJ_SCHEMA`, `REJ_NO_LIBRARY` (nothing loaded), `REJ_HALT
 - **Session:** export, then import, gives the same checkpoint. A wrong library digest gives a clear error.
 - **Stream:** events arrive in order and complete when snapshots are coalesced. The shape is sent only when the rule in §7 says so.
 - **Library errors:** a malformed library gives `loadFailed` with the validator's codes.
-- The real Worker path (`worker.ts`, `client.ts`) is thin, so it is checked in the browser end-to-end test (TODO Next #8), not in Vitest.
+- **Client:** `client.test.ts` joins a `RuntimeClient` to a `Runtime` in memory (messages cloned and delivered asynchronously): load, command promises, automatic `frameAck`,
+  error routing (an error for one request never answers another), session round trip, and worker loss.
+- **Targeted breaks (2026-09-27):** five deliberate faults, each caught by at least one test: replay re-submitting commands already in a checkpoint (3 tests fail),
+  the clock running one step ahead (4), a rebuilt checkpoint log with one extra command (4), snapshots ignoring `frameAck` (1), and no structural command check (1).
+- **Real Worker:** `worker.ts` does not run under Vitest. A manual smoke run in Chromium (Playwright 1.56, Vite dev server) loaded the synthetic core over `fetch`,
+  ran 1.5 s of wall time at 10× (15.08 s of sim time, 44 snapshots), and did a command, a session export, a rewind and a failed load (`E_JSON`).
+  The automated browser test is TODO Next #8.
 
 ## Decisions (approved by the user, 2026-09-27)
 
