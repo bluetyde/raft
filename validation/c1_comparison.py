@@ -93,6 +93,8 @@ def simulate(dollars: float, s: float = 1.0, p0: float = P0_DEFAULT, t_max: floa
     if status["status"] != "accepted":
         raise RuntimeError(f"fire rejected: {status}")
     while e.t < t_max:
+        if e.halted:  # a halted engine makes no progress (M1 review finding 3)
+            raise RuntimeError(f"engine halted: {e.halted}")
         e.step()
         max_tf = max(max_tf, e.y[ITF])
         if e.t > e.peak_time + 0.2 and e.y[IP] < 0.01 * e.peak_power and e.peak_power > 10 * p0:

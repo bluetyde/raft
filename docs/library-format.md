@@ -113,8 +113,8 @@ Axis values are strictly increasing (`E_TABLE_NOT_MONOTONIC`), and all arrays ha
 | `xenon` | `N` (atoms/m³) | ρ change from the reference xenon density |
 
 Rod ids are unique (`E_DUPLICATE_ID`), and `reference.rods` has exactly the same ids (`E_ROD_UNKNOWN`).
-Scram `t` starts at 0 and is strictly increasing (`E_TABLE_NOT_MONOTONIC`). Scram `x` values are in [0, 1] and end at 0 (`E_SCRAM_PROFILE`).
-Only pulse-capable rods may have `fireTime`.
+Scram `t` starts at 0 and is strictly increasing (`E_TABLE_NOT_MONOTONIC`). Scram `x` values are in [0, 1], never increase, and end at 0 (`E_SCRAM_PROFILE`).
+Pulse-capable rods must have `fireTime`, and only they may have it (`E_SCHEMA`).
 
 ## 8. Thermal and poisons
 
@@ -228,7 +228,7 @@ Reason codes (`R_*`) are defined with the engine, not in this format.
 | `E_PREDICATE_TYPE` | A predicate's operator doesn't fit its value or signal |
 | `E_MODE_UNKNOWN` | `initialMode` or a trip mode isn't in `modes` |
 | `E_PUMP_UNKNOWN` | The heat exchanger names an unknown pump |
-| `E_SCRAM_PROFILE` | Scram positions are outside [0, 1] or don't end at 0 |
+| `E_SCRAM_PROFILE` | Scram positions are outside [0, 1], increase anywhere, or don't end at 0 |
 | `E_PATH_UNSAFE` | A path is absolute or escapes the library |
 | `E_FILE_MISSING` | A referenced file doesn't exist |
 | `E_OFFSET_BOUNDS` | Byte length or offset is inconsistent with the shape or file size |

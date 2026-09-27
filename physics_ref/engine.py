@@ -90,6 +90,28 @@ def _pred_signals(p, default):
     return [p.get("signal", default)]
 
 
+def _pred_leaves(p, default):
+    """Numeric threshold comparisons in a predicate, as (signal, use_abs, threshold). `between` gives both edges."""
+    for key in ("all", "any"):
+        if key in p:
+            out = []
+            for sub in p[key]:
+                out += _pred_leaves(sub, default)
+            return out
+    if "not" in p:
+        return _pred_leaves(p["not"], default)
+    sig, op, ref = p.get("signal", default), p["op"], p["value"]
+    if op == "between":
+        return [(sig, False, ref[0]), (sig, False, ref[1])]
+    if isinstance(ref, str):
+        return []
+    return [(sig, op == "absGt", ref)]
+
+
+def _sign(x: float) -> int:
+    return (x > 0.0) - (x < 0.0)
+
+
 def eval_predicate(p, get, default=None) -> bool:
     if "all" in p:
         return all(eval_predicate(s, get, default) for s in p["all"])
@@ -455,30 +477,62 @@ class Engine:
                 self.peak_power, self.peak_time = y[IP], t
         self.y, self.h = y, h
 
+    def _leaf_g(self, leaf, t, y):
+        sig, use_abs, ref = leaf
+        v = self._truth_signal(sig, t, y)
+        if v is None or isinstance(v, str):
+            return None
+        return (abs(v) if use_abs else v) - ref
+
+    def _bisect(self, t, y, hs, J, f0, ft, crossed, y_end):
+        """Smallest step s in (0, hs] (to eventTol) at which crossed(s, y_s) holds; crossed(hs) is known to hold."""
+        lo, hi, y_hi = 0.0, hs, y_end
+        while hi - lo > self.config["eventTol"]:
+            mid = 0.5 * (lo + hi)
+            y_mid, _ = self._stepper(t, y, mid, J, f0, ft)
+            if crossed(mid, y_mid):
+                hi, y_hi = mid, y_mid
+            else:
+                lo = mid
+        return hi, y_hi
+
     def _locate_trips(self, t, y, hs, t_new, y_new, J, f0, ft):
-        """If a truth-signal trip becomes true in this step, shorten the step to the crossing and trip there."""
+        """If a truth-signal trip condition holds anywhere in this step, shorten the step to the earliest such point and trip there.
+
+        A condition can be entered and left within one step (a `between` window crossed in one step), so besides the end point
+        every threshold crossing inside the step is located and the predicate checked just after it (M1 review finding 2)."""
         cands = [tr for tr in self.located_trips
                  if tr["id"] not in self.latched and tr["id"] not in self.active_trips and self._trip_mode_ok(tr)]
         if not cands:
             return t_new, y_new
-        get_new = lambda s: self._truth_signal(s, t_new, y_new)
-        fired = [tr for tr in cands if eval_predicate(tr["predicate"], get_new, tr["input"])]
-        if not fired:
+        best = None      # (s, y_s)
+        for tr in cands:
+            pred, inp = tr["predicate"], tr["input"]
+            holds = lambda s, ys, pred=pred, inp=inp: eval_predicate(pred, lambda sig: self._truth_signal(sig, t + s, ys), inp)
+            hits = []
+            for leaf in _pred_leaves(pred, inp):
+                g0, g1 = self._leaf_g(leaf, t, y), self._leaf_g(leaf, t_new, y_new)
+                if g0 is None or g1 is None or _sign(g0) == _sign(g1):
+                    continue
+                s0 = _sign(g0)
+                s, ys = self._bisect(t, y, hs, J, f0, ft,
+                                     lambda s, ys, leaf=leaf, s0=s0: _sign(self._leaf_g(leaf, t + s, ys)) != s0, y_new)
+                if holds(s, ys):
+                    hits.append((s, ys))
+            if not hits and holds(hs, y_new):
+                hits.append(self._bisect(t, y, hs, J, f0, ft, holds, y_new))
+            for h in hits:
+                if best is None or h[0] < best[0]:
+                    best = h
+        if best is None:
             return t_new, y_new
-        lo, hi, y_hi = 0.0, hs, y_new
-        while hi - lo > self.config["eventTol"]:
-            mid = 0.5 * (lo + hi)
-            y_mid, _ = self._stepper(t, y, mid, J, f0, ft)
-            if any(eval_predicate(tr["predicate"], lambda s: self._truth_signal(s, t + mid, y_mid), tr["input"]) for tr in fired):
-                hi, y_hi = mid, y_mid
-            else:
-                lo = mid
-        t_ev = t + hi
-        get_ev = lambda s: self._truth_signal(s, t_ev, y_hi)
-        for tr in fired:
+        s_ev, y_ev = best
+        t_ev = t + s_ev
+        get_ev = lambda sig: self._truth_signal(sig, t_ev, y_ev)
+        for tr in cands:
             if eval_predicate(tr["predicate"], get_ev, tr["input"]):
                 self._trip(tr, t_ev)
-        return t_ev, y_hi
+        return t_ev, y_ev
 
     # ------------------------------------------------ trips, instruments, commands
     def _trip_mode_ok(self, trip) -> bool:
@@ -527,7 +581,7 @@ class Engine:
     def _check_reject_tables(self) -> None:
         lib = self.lib
         checks = [(lib.fuel_temp, self.y[ITF], "fuelTemp"), (lib.cool_temp, self.y[ITC], "coolantTemp"),
-                  (lib.xenon, self.y[IX], "xenon")]
+                  (lib.xenon, self.y[IX], "xenon"), (lib.fuel_cp, self.y[ITF], "fuelCp")]
         checks += [(r.worth, self.rod_position(r.id, self.t), f"rod.{r.id}") for r in lib.rods]
         for table, x, name in checks:
             if table.out_of_range == "reject" and table.value(x)[1]:
@@ -566,7 +620,8 @@ class Engine:
                 status, reason = "rejected", f"REJ_INTERLOCK:{il['id']}"
             elif direction == "out" and tripped:
                 status, reason = "rejected", "REJ_TRIPPED"
-            elif self.motions[rid]["kind"] == "scram" and direction != "in":
+            elif self.motions[rid]["kind"] == "scram":
+                # any drive command, even "in", would replace the scram profile with the slower drive (M1 review finding 1)
                 status, reason = "rejected", "REJ_SCRAM_IN_PROGRESS"
             else:
                 x = self.rod_position(rid, t)
@@ -783,5 +838,11 @@ class Engine:
             while k < len(cmds) and cmds[k]["step"] == e.step_index:
                 e.submit(cmds[k]["cmd"], cmds[k]["clientId"])
                 k += 1
+            if e.halted:            # step() makes no progress once halted; the reason is in e.halted (M1 review finding 3)
+                return e
             e.step()
+        # commands logged at the final boundary are queued again, not applied, so continuing matches the original (finding 5)
+        while k < len(cmds) and cmds[k]["step"] == e.step_index:
+            e.submit(cmds[k]["cmd"], cmds[k]["clientId"])
+            k += 1
         return e

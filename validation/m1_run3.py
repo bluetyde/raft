@@ -31,6 +31,8 @@ def peak_power(library_path: Path, dollars: float) -> float:
     """Peak power [W] of a pulse set up as in C1 (run until < 1% of peak and >= 0.2 s after it, or 10 s)."""
     e = pulse_engine(library_path, dollars, OUTER_DT)
     while e.t < 10.0:
+        if e.halted:  # a halted engine makes no progress (M1 review finding 3)
+            raise RuntimeError(f"engine halted: {e.halted}")
         e.step()
         if e.t > e.peak_time + 0.2 and e.snapshot()["truth"]["power"] < 0.01 * e.peak_power and e.peak_power > 10.0:
             break

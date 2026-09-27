@@ -378,3 +378,79 @@ class TestIndependentIntegrator(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestM1ReviewRegressions(unittest.TestCase):
+    """One regression per confirmed finding of the Codex M1 review (_codex/m1-review/REVIEW.md, 2026-09-27)."""
+
+    def test_1_drive_commands_cannot_cancel_a_scram(self):
+        for delay in (0, 5):     # queued with the scram, and during insertion
+            L = lib()
+            e = Engine(L, {"rods": near_critical_rods(L, -0.0005)})
+            e.submit({"type": "scram"})
+            for _ in range(delay):
+                e.step()
+            seq = e.submit({"type": "rod.move", "rod": "safety", "direction": "in"})
+            e.advance(0.6)
+            self.assertEqual(next(ev for ev in e.events if ev.get("seq") == seq)["reason"], "REJ_SCRAM_IN_PROGRESS")
+            self.assertEqual(e.rod_position("safety", e.t), 0.0, f"delay {delay}")
+
+    def test_2_trip_window_crossed_inside_one_step_is_found(self):
+        times = []
+        for dt in (0.01, 0.001):
+            L = lib()
+            L.trips = L.trips + [{"id": "window", "input": "truth.rod.transient",
+                                  "predicate": {"op": "between", "value": [0.00008, 0.0001]}, "latching": True}]
+            L.mark_modified("window-trip")
+            e = Engine(L, {"rods": near_critical_rods(L, -0.0005)}, config={"outerDt": dt})
+            e.submit({"type": "rod.move", "rod": "transient", "direction": "out"})   # 0.02/s: inside the window at 4-5 ms
+            e.advance(0.02)
+            ev = [x for x in e.events if x["type"] == "trip" and x["id"] == "window"]
+            self.assertEqual(len(ev), 1, f"outerDt {dt}")
+            times.append(ev[0]["t"])
+        for t in times:
+            self.assertLess(abs(t - 0.004), 1e-6)
+
+    def test_3_replay_of_a_halted_run_returns(self):
+        L = lib()
+        t = L.fuel_temp
+        L.fuel_temp = Table(t.xs, t.ys, "reject")
+        L.mark_modified("reject-fuel-temp")
+        e = Engine(L, {"Tfuel": 1300.0})
+        self.assertTrue(e.halted)
+        r = Engine.replay(L, e.session(), 1)          # used to loop forever
+        self.assertEqual(r.halted, e.halted)
+        self.assertEqual(r.step_index, 0)
+
+    def test_4_heat_capacity_reject_policy_is_enforced(self):
+        L = lib()
+        L.fuel_cp = Table([293.15, 300.0], [300.0, 300.0], "reject")
+        L.mark_modified("reject-cp")
+        e = Engine(L, {"Tfuel": 350.0})
+        self.assertEqual(e.halted, "R_TABLE_REJECT_fuelCp")
+
+    def test_5_replay_keeps_commands_pending_at_the_final_boundary(self):
+        L = lib()
+        e = Engine(L, {"rods": near_critical_rods(L, -0.0005)})
+        e.step()
+        e.submit({"type": "pump.set", "pump": L.pumps[0], "on": False})
+        r = Engine.replay(L, json.loads(json.dumps(e.session())), e.step_index)
+        self.assertEqual((len(r.pending), r.next_seq), (len(e.pending), e.next_seq))
+        e.step()
+        r.step()
+        self.assertEqual(comparable(r.checkpoint()), comparable(e.checkpoint()))
+
+    def test_7_integral_float_array_fields_load(self):
+        import shutil
+        import tempfile
+        from pipeline.library.validate import validate_library
+        with tempfile.TemporaryDirectory() as tmp:
+            dst = Path(tmp) / "core"
+            shutil.copytree(FIXTURE, dst)
+            m = json.loads((dst / "manifest.json").read_text(encoding="utf-8"))
+            for d in m["arrays"].values():
+                d["offset"], d["byteLength"] = float(d["offset"]), float(d["byteLength"])
+                d["shape"] = [float(n) for n in d["shape"]]
+            (dst / "manifest.json").write_text(json.dumps(m, indent=1), encoding="utf-8")
+            self.assertEqual(validate_library(dst), [])
+            self.assertEqual(Library(dst).arrays["base"], lib().arrays["base"])

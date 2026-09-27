@@ -171,8 +171,8 @@ class Library:
     @staticmethod
     def _load_array(folder, d):
         data = (folder / d["file"]).read_bytes()
-        n = d["byteLength"] // 4
-        return list(struct.unpack_from(f"<{n}f", data, d["offset"]))
+        n = int(d["byteLength"]) // 4        # integral floats (0.0) are valid JSON integers
+        return list(struct.unpack_from(f"<{n}f", data, int(d["offset"])))
 
     def mark_modified(self, note: str) -> None:
         """Call after changing fields in a test; the digest then can't match an unmodified library."""

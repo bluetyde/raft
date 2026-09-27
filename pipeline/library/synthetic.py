@@ -371,6 +371,15 @@ def invalid_cases() -> list[tuple[str, list[str], Callable]]:
     def scram_end(m, b):
         m["reactivity"]["rods"][0]["scram"]["x"][-1] = 0.1
 
+    def scram_increasing(m, b):
+        # stays in [0, 1] and ends at 0, but moves outward mid-scram (Rod.scram_tau needs a non-increasing profile)
+        x = m["reactivity"]["rods"][0]["scram"]["x"]
+        x[1], x[2] = x[2], x[1]
+
+    def fire_time_missing(m, b):
+        rod = next(r for r in m["reactivity"]["rods"] if r["pulseCapable"])
+        del rod["fireTime"]
+
     def shape_dims(m, b):
         d = m["arrays"]["base"]
         d["shape"] = list(reversed(d["shape"]))
@@ -393,6 +402,8 @@ def invalid_cases() -> list[tuple[str, list[str], Callable]]:
         ("table-not-monotonic", ["E_TABLE_NOT_MONOTONIC"], swap_T),
         ("table-length", ["E_TABLE_LENGTH"], setp(["reactivity", "coolantTemp", "rho"], [0.0, 0.0, 0.0, 0.0])),
         ("scram-profile", ["E_SCRAM_PROFILE"], scram_end),
+        ("scram-profile-increasing", ["E_SCRAM_PROFILE"], scram_increasing),
+        ("pulse-rod-without-firetime", ["E_SCHEMA"], fire_time_missing),
         ("duplicate-element", ["E_DUPLICATE_ID", "E_GEOMETRY_ID"], dup_element),
         ("rod-unknown", ["E_ROD_UNKNOWN"], ghost_rod),
         ("synthetic-source-in-experimental", ["E_SOURCE_SYNTHETIC"], setp(["status"], "experimental")),

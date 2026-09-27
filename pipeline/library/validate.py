@@ -196,8 +196,13 @@ class _Checker:
                 self.add("E_TABLE_NOT_MONOTONIC", f"{path}.scram.t", "must start at 0 and strictly increase")
             elif sc["x"][-1] != 0 or any(not 0 <= x <= 1 for x in sc["x"]):
                 self.add("E_SCRAM_PROFILE", f"{path}.scram.x", "positions must be in [0, 1] and end at 0")
+            elif any(b > a for a, b in zip(sc["x"], sc["x"][1:])):
+                # the engine inverts the profile (Rod.scram_tau), which needs it non-increasing
+                self.add("E_SCRAM_PROFILE", f"{path}.scram.x", "positions must not increase during a scram")
             if "fireTime" in rod and not rod["pulseCapable"]:
                 self.add("E_SCHEMA", f"{path}.fireTime", "only pulse-capable rods may have fireTime")
+            if rod["pulseCapable"] and "fireTime" not in rod:
+                self.add("E_SCHEMA", f"{path}", "pulse-capable rods need fireTime")
         self._table(r["fuelTemp"], "T", "rho", "$.reactivity.fuelTemp", ref["Tfuel"]["value"])
         self._table(r["coolantTemp"], "T", "rho", "$.reactivity.coolantTemp", ref["Tcoolant"]["value"])
         self._table(r["xenon"], "N", "rho", "$.reactivity.xenon", ref["xenon"]["value"])
@@ -264,14 +269,16 @@ class _Checker:
                 self.add("E_FILE_MISSING", path, f"{d['file']} not found")
                 continue
             data = f.read_bytes()
-            count = math.prod(d["shape"])
-            if d["byteLength"] != 4 * count or d["offset"] + d["byteLength"] > len(data):
+            # The schema's integers may arrive as integral floats (0.0); struct needs Python ints.
+            offset, byte_length = int(d["offset"]), int(d["byteLength"])
+            count = math.prod(int(n) for n in d["shape"])
+            if byte_length != 4 * count or offset + byte_length > len(data):
                 self.add("E_OFFSET_BOUNDS", path, f"byteLength {d['byteLength']} / offset {d['offset']} don't fit shape {d['shape']} and file size {len(data)}")
                 continue
             if hashlib.sha256(data).hexdigest() != d["sha256"]:
                 self.add("E_DIGEST_MISMATCH", path, "sha256 doesn't match the file")
                 continue
-            values = list(struct.unpack_from(f"<{count}f", data, d["offset"]))
+            values = list(struct.unpack_from(f"<{count}f", data, offset))
             if not all(math.isfinite(v) for v in values):
                 self.add("E_NONFINITE", path, "contains NaN or infinity")
                 continue
@@ -281,7 +288,7 @@ class _Checker:
         if name not in m["arrays"]:
             self.add("E_ARRAY_UNKNOWN", path, f"array {name!r} isn't declared in $.arrays")
             return None
-        if m["arrays"][name]["shape"] != dims:
+        if [int(n) for n in m["arrays"][name]["shape"]] != dims:
             self.add("E_SHAPE_DIMS", path, f"array {name!r} has shape {m['arrays'][name]['shape']}, expected {dims}")
             return None
         return self.arrays.get(name)  # None if it failed an array check (already reported)
