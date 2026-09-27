@@ -2,8 +2,13 @@
 
 Standard library only, so the fast checks run on a clean checkout without extra packages.
 Any keyword outside SUPPORTED makes the schema itself invalid (SchemaError): the schema can
-never silently use a rule this checker would ignore. The TypeScript side will use a full
-JSON Schema library against the same file, and both must agree on schema/vectors/.
+never silently use a rule this checker would ignore. web/src/library/ ports this file to
+TypeScript line for line, and both must give the same (path, code) results on every fixture, so
+the semantics here are pinned to what JavaScript can reproduce:
+- const/enum use JSON equality: true is not 1, and 1 equals 1.0 (JSON has one number type);
+- pattern is an ECMAScript-compatible regex, and a trailing "$" means end of string (Python's "$"
+  also matches before a final newline; JavaScript's doesn't);
+- minLength counts code points.
 """
 from __future__ import annotations
 
@@ -24,6 +29,26 @@ class SchemaError(Exception):
 
 def _is_number(v: Any) -> bool:
     return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def _json_equal(a: Any, b: Any) -> bool:
+    """Equality of JSON values as JavaScript would see them (Python's True == 1 isn't)."""
+    if isinstance(a, bool) or isinstance(b, bool):
+        return isinstance(a, bool) and isinstance(b, bool) and a == b
+    if _is_number(a) or _is_number(b):
+        return _is_number(a) and _is_number(b) and a == b
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(_json_equal(x, y) for x, y in zip(a, b))
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(_json_equal(a[k], b[k]) for k in a)
+    return type(a) is type(b) and a == b
+
+
+def _pattern_ok(pattern: str, v: str) -> bool:
+    """re.search, except a trailing "$" means end of string, as in JavaScript."""
+    if pattern.endswith("$") and not pattern.endswith("\\$"):
+        pattern = pattern[:-1] + r"\Z"
+    return re.search(pattern, v) is not None
 
 
 def _type_ok(v: Any, t: str) -> bool:
@@ -104,14 +129,14 @@ class Validator:
         if "type" in s and not _type_ok(v, s["type"]):
             out.append((path, f"expected {s['type']}"))
             return
-        if "const" in s and v != s["const"]:
+        if "const" in s and not _json_equal(v, s["const"]):
             out.append((path, f"must be {s['const']!r}"))
-        if "enum" in s and v not in s["enum"]:
+        if "enum" in s and not any(_json_equal(v, e) for e in s["enum"]):
             out.append((path, f"must be one of {s['enum']}"))
         if isinstance(v, str):
-            if "minLength" in s and len(v) < s["minLength"]:
+            if "minLength" in s and len(v) < s["minLength"]:  # code points
                 out.append((path, f"shorter than {s['minLength']}"))
-            if "pattern" in s and not re.search(s["pattern"], v):
+            if "pattern" in s and not _pattern_ok(s["pattern"], v):
                 out.append((path, f"doesn't match pattern {s['pattern']}"))
         if _is_number(v):
             if "minimum" in s and v < s["minimum"]:
