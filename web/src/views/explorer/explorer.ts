@@ -9,6 +9,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { elementShares, pick, rodOffsetCm, type HalfSpace, type PickHit, type Vec3, type ViewerModel } from "./model";
 import { bindNoclip, NoclipController } from "./noclip";
 import { CoreScene, fromScene, toScene } from "./scene";
+import { powerColors } from "./live";
 import { styleFor, viridis } from "./styles";
 
 export type CutAxis = "x" | "y" | "z";
@@ -31,7 +32,7 @@ export interface Inspected {
   lines: [string, string][];
 }
 
-type Overlay = "materials" | "power";
+export type Overlay = "materials" | "power" | "live";
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -59,6 +60,9 @@ export class Explorer {
   private highlight: THREE.Box3Helper | null = null;
   private cutaway: Cutaway | null = null;
   private overlay: Overlay = "materials";
+  private livePowers: Map<string, number> | null = null;
+  private live = false;
+  private readonly overlaySelect: HTMLSelectElement;
   private dirty = true;
   private last = performance.now();
   private raf = 0;
@@ -111,7 +115,9 @@ export class Explorer {
     const overlay = el("select", {}, [
       el("option", { value: "materials", textContent: "materials" }),
       el("option", { value: "power", textContent: "reference power share" }),
+      el("option", { value: "live", textContent: "live power (M4)" }),
     ]);
+    this.overlaySelect = overlay;
     overlay.onchange = () => this.setOverlay(overlay.value as Overlay);
     const presets = el("span", {}, [
       el("button", { textContent: "Top (1)", onclick: () => this.preset(1) }),
@@ -172,7 +178,8 @@ export class Explorer {
       const id = input.dataset["rod"]!;
       if (Object.hasOwn(rods, id)) input.value = String(rods[id]);
     }
-    if (this.lastInspected) this.select(this.lastInspected.hit); // the box follows a moved rod
+    const hit = this.lastInspected?.hit;
+    if (hit && this.core.model.primitives[hit.index]!.rod !== undefined) this.select(hit); // the box follows a moved rod
     this.dirty = true;
   }
 
@@ -184,8 +191,11 @@ export class Explorer {
 
   setOverlay(o: Overlay): void {
     this.overlay = o;
+    this.overlaySelect.value = o;
     if (!this.core) return;
-    if (o === "power") {
+    if (o === "live") {
+      this.core.setElementColors(this.livePowers ? powerColors(this.livePowers) : null);
+    } else if (o === "power") {
       const shares = elementShares(this.core.model);
       const max = Math.max(...shares.values());
       const colors = new Map<string, [number, number, number]>();
@@ -195,6 +205,22 @@ export class Explorer {
       this.core.setElementColors(null);
     }
     this.dirty = true;
+  }
+
+  /** Live element powers (W) from the runtime; drawn when the overlay is "live". */
+  setElementPowers(powers: Map<string, number> | null): void {
+    this.livePowers = powers;
+    if (this.overlay === "live") this.setOverlay("live");
+  }
+
+  /** Live mode (M4): rods follow the simulation, so the sliders become read-outs. */
+  setLive(on: boolean): void {
+    this.live = on;
+    if (this.core) this.buildRodSliders(this.core.model);
+  }
+
+  get rodPositions(): Record<string, number> {
+    return this.core ? this.core.rodPositions : {};
   }
 
   setMode(mode: "orbit" | "noclip"): void {
@@ -312,9 +338,11 @@ export class Explorer {
       const input = el("input", { type: "range", min: "0", max: "1", step: "0.01", value: String(model.refRods[id] ?? 0) });
       input.dataset["rod"] = id;
       input.oninput = () => this.setRodPositions({ [id]: Number(input.value) });
+      input.disabled = this.live;
       return el("label", { className: "vr-rod" }, [`${id} `, input]);
     });
-    this.rodBox.replaceChildren(el("div", { className: "vr-note", textContent: "Rods (view only in M3):" }), ...rows);
+    const note = this.live ? "Rods (following the simulation; drive them from the controls):" : "Rods (view only):";
+    this.rodBox.replaceChildren(el("div", { className: "vr-note", textContent: note }), ...rows);
   }
 
   private bindPointer(): void {

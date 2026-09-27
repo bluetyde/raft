@@ -44,3 +44,19 @@ export function catalogReader(entry: CatalogEntry, fetchFn: (url: string) => Pro
     },
   };
 }
+
+/** Every file of a library as bytes, keyed by manifest-relative path (the runtime's `files` source). New buffers each call, so they can be transferred. */
+export async function catalogFiles(
+  entry: CatalogEntry,
+  fetchFn: (url: string) => Promise<Response> = fetch,
+): Promise<Record<string, ArrayBuffer>> {
+  const out: Record<string, ArrayBuffer> = {};
+  await Promise.all(
+    [...entry.files].map(async ([path, url]) => {
+      const res = await fetchFn(url);
+      if (!res.ok) throw new Error(`could not fetch ${path} (${res.status})`);
+      out[path] = await res.arrayBuffer();
+    }),
+  );
+  return out;
+}
