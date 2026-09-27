@@ -51,6 +51,19 @@ def _interp(xs: list[float], ys: list[float], x: float) -> float | None:
     return ys[i] + t * (ys[i + 1] - ys[i])
 
 
+class _NonStandardJSON(ValueError):
+    pass
+
+
+def _reject_constant(name: str) -> Any:
+    raise _NonStandardJSON(f"{name} isn't valid JSON")
+
+
+def _load_json(text: str) -> Any:
+    """json.loads as strict as JavaScript's JSON.parse: NaN, Infinity and -Infinity are errors."""
+    return json.loads(text, parse_constant=_reject_constant)
+
+
 def _increasing(xs: list[float]) -> bool:
     return all(b > a for a, b in zip(xs, xs[1:]))
 
@@ -75,11 +88,11 @@ class _Checker:
     def run(self) -> list[Issue]:
         manifest_path = self.folder / "manifest.json"
         try:
-            m = json.loads(manifest_path.read_text(encoding="utf-8"))
+            m = _load_json(manifest_path.read_text(encoding="utf-8"))
         except FileNotFoundError:
             self.add("E_JSON", "manifest.json", "manifest.json not found")
             return self.issues
-        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+        except (json.JSONDecodeError, _NonStandardJSON, UnicodeDecodeError) as e:
             self.add("E_JSON", "manifest.json", f"not valid JSON: {e}")
             return self.issues
         if not isinstance(m, dict):
