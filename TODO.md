@@ -161,6 +161,8 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 
 ## Ideas / later
 
+- **Hypothetical: OpenMC on the GPU** (RTX 5070, 12 GB, visible in WSL). OpenMC's GPU port (OpenMP offload, from the ANL exascale work) is an experimental branch, not in the releases we use; it needs an offload-capable compiler and CUDA, support for the new Blackwell architecture is the main risk, and it may not support the thermal-scattering data our TRIGA model needs (H in ZrH, water, graphite). Worth a time-boxed experiment only if CPU run times become the bottleneck after the `--quick` and source-reuse speedups (2026-09-27).
+
 - Share the 3D geometry loader with OpenMC Studio
 - Reuse Studio's WebGL2 BVH CSG ray tracer for the explorer (shared module or copied code); decide in M3 ([TOOLING §6](docs/TOOLING.md))
 - Update `terrapower/armicontrib-openmc` for current ARMI instead of writing a new plugin (plan 08)
