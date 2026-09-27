@@ -10,6 +10,7 @@ import {
   ITF,
   IX,
   InitError,
+  roundHalfEven,
 } from "./engine";
 import { Table } from "./library";
 import {
@@ -425,5 +426,23 @@ describe("TestDeterminismAndReplay", () => {
     expect(() => Engine.restore(kLib, cp)).toThrow(CheckpointError);
     cp.pins.engineVersion = "9.9.9";
     expect(() => Engine.restore(L, cp)).toThrow(CheckpointError);
+  });
+});
+
+// Added by the dispatcher (Claude) after verification: the A6-1 brief asked for round-half-even in advance()
+// but gave no test for it, so a Math.round port passed every check. Expected values are Python's round().
+describe("advance() rounds half steps to even, like Python's round()", () => {
+  it("roundHalfEven matches Python", () => {
+    expect([0.5, 1.5, 2.5, -0.5, -1.5].map(roundHalfEven)).toEqual([0, 2, 2, 0, -2]);
+    expect(roundHalfEven(0.045 / 0.01)).toBe(4); // 4.5 exactly; Math.round gives 5
+  });
+
+  it("advance() takes Python's number of steps at exact half steps", async () => {
+    const L = await loadSyntheticCore();
+    for (const [seconds, steps] of [[0.005, 0], [0.015, 2], [0.025, 2], [0.035, 4], [0.045, 4]] as const) {
+      const e = new Engine(L, {});
+      e.advance(seconds);
+      expect(e.stepIndex, `advance(${seconds})`).toBe(steps);
+    }
   });
 });
