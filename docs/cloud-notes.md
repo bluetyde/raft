@@ -6,7 +6,7 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 
 ## Scope of the cloud session
 
-- Owns: `web/src/runtime/`, `web/src/views/`, `web/src/app/`, `web/index.html`, `web/package.json` and its lockfile (dependencies only), `.github/`, this file, and its own design docs under `docs/`.
+- Owns: `web/src/runtime/`, `web/src/views/`, `web/src/app/`, `web/index.html`, `web/vite.config.ts` (user OK, 2026-09-27), `web/package.json` and its lockfile (dependencies only), `.github/`, this file, and its own design docs under `docs/`.
 - Does not edit: `physics_ref/`, `web/src/sim/`, `web/src/library/`, `web/src/contracts/`, `schema/`, `pipeline/`, `validation/`, `libraries/`.
   Engine or schema changes come here as requests, because the Python and TypeScript engines must stay in step.
 - Works on branches with pull requests only. It never pushes to `main` or merges into it.
