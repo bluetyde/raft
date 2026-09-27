@@ -29,6 +29,13 @@ Order matters: M2 replaces the `assumed` inputs that M1's caveats rest on, and t
 10. [ ] Codex review when quota allows: the engine line (pending), then the TS port (A6-1) and the per-core library changes.
 11. [ ] Find the JSI Research Reactor Simulator's source and license (independent comparison, reference only).
 
+**Standalone kinetics engine (decided 2026-09-27: yes, but not before the API settles)**
+12. [ ] Rule from now on: keep `physics_ref/` and `web/src/sim/` separable. No imports from views, `pipeline/` or `validation/` except through one small library-loader module.
+13. [ ] After C6: define a plain parameter API for the engine (parameters in, state out) and make our library format an adapter over it.
+14. [ ] At M9 (open release): split the engine into its own MIT repo (Python and npm packages, the same golden vectors), and make this project depend on it.
+    Why it's worth it: an MIT, dependency-free, browser-capable point-kinetics engine with deterministic replay and pulse validation fills a gap
+    (PyRK has no license; openpointkinetics is GPL and dormant). Why not yet: the API will change with C6 and M2.
+
 ## Now
 
 - [x] 2026-09-26: Downloaded and parsed JSI pulse database (757 pulses from [trigapulse.ijs.si](http://trigapulse.ijs.si/), 1991–2023) into `validation/data/jsi-pulses/` (CSV and JSON summary) with citations, fetch script, loader API (`validation/pulse_loader.py`), unit tests, and TRIGA benchmark parameters (`validation/data/triga-jsi/parameters.json`)
