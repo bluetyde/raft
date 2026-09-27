@@ -118,8 +118,12 @@ class TestJsiPulseDatabase(unittest.TestCase):
         self.assertGreater(fuel["coreFuelMassKg"], 50.0)
 
         # Prompt negative temperature coefficient must be negative
-        alpha_f = thermal["feedbackCoefficients"]["fuelTemperaturePrompt"]["a0"]
-        self.assertLess(alpha_f, 0.0)
+        # (tabulated as |alpha| with a negative sign since C2, 2026-09-27)
+        prompt = thermal["feedbackCoefficients"]["fuelTemperaturePrompt"]
+        self.assertIn("negative", prompt["description"])
+        self.assertTrue(prompt["pointsK"])
+        for _, abs_alpha in prompt["pointsK"]:
+            self.assertGreater(abs_alpha, 0.0)
 
 
 if __name__ == "__main__":
