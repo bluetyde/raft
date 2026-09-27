@@ -306,9 +306,15 @@ class Checker {
         sc.x.some((x: number) => !(0 <= x && x <= 1))
       ) {
         this.add("E_SCRAM_PROFILE", `${path}.scram.x`, "positions must be in [0, 1] and end at 0");
+      } else if (sc.x.some((b: number, i: number) => i > 0 && b > sc.x[i - 1])) {
+        // the engine inverts the profile (Rod.scram_tau), which needs it non-increasing
+        this.add("E_SCRAM_PROFILE", `${path}.scram.x`, "positions must not increase during a scram");
       }
       if (Object.hasOwn(rod, "fireTime") && !rod.pulseCapable) {
         this.add("E_SCHEMA", `${path}.fireTime`, "only pulse-capable rods may have fireTime");
+      }
+      if (rod.pulseCapable && !Object.hasOwn(rod, "fireTime")) {
+        this.add("E_SCHEMA", `${path}`, "pulse-capable rods need fireTime");
       }
     }
     this.table(r.fuelTemp, "T", "rho", "$.reactivity.fuelTemp", ref.Tfuel.value);

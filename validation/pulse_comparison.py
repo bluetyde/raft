@@ -130,6 +130,8 @@ def simulate_pulse(
     t_start = e.t
 
     while e.t < max_t:
+        if e.halted:  # a halted engine makes no progress (M1 review finding 3)
+            raise RuntimeError(f"engine halted: {e.halted}")
         e.step()
         times.append(e.t)
         powers.append(e.y[IP])
