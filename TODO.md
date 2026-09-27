@@ -12,7 +12,7 @@ Order matters: M2 replaces the `assumed` inputs that M1's caveats rest on, and t
 
 **Track 1: M2, the OpenMC library (Claude; judgment, transport, nuclear data)**
 1. [ ] **Open data only.** The ICSBEP handbook is licensed to named users and stays out of this work and the repo (user, 2026-09-27). Sources: the database core maps (element positions for cores 242/246); open JSI papers for fuel geometry and materials (svajger2024 Fig. 16 and Table 1, vavtar2021); public NRC TRIGA documents for the standard GA element; ENDF/B-VIII.0. Cite numbers; don't copy whole tables. Downloaded database files stay out of git.
-2. [ ] Create the `openmc-vr` env in WSL Ubuntu from `pipeline/environment.yml` (the agent sandbox already has one; Ubuntu only has `openmc-mcnp`, `openmc-cad`).
+2. [x] 2026-09-27: `openmc-vr` env in WSL Ubuntu (OpenMC 0.15.3, ENDF/B-VIII.0 path set)
 3. [ ] TD-06 gate before any sweep: run manifests hash the model content, so a changed model invalidates a run and an interrupted run can't pass as complete. Design Claude, then **[agy]** implementation (oracle: tampered-model and interrupted-run fixtures must fail).
 4. [ ] OpenMC model of the JSI core: cores 242 and 246 from the database core maps (element positions and serials in `242.pdf`/`246.pdf`), fresh fuel first. Main caveat: burnup (decades-old elements) biases absolute k-eff; report the offset, and look for published per-element burnup in open JSI papers.
 5. [ ] First outputs, each with an existing check:
@@ -28,7 +28,7 @@ Order matters: M2 replaces the `assumed` inputs that M1's caveats rest on, and t
 8. [ ] **[agy]** Browser end-to-end check on the synthetic fixture: malformed library, a trip, pause/resume, replay (once C6 exists).
 
 **Housekeeping**
-9. [ ] **[agy]** Pre-merge check (TD-03, A9): one script that runs the Python fast tests plus `npm test`/`typecheck`/`build`.
+9. [x] 2026-09-27: **[agy]** Pre-merge check (TD-03, A9): `python scripts/premerge.py` (agy, verified by Claude). CI that runs it: the cloud session (browser track), in progress.
 10. [ ] **[codex]** The TS port (`web/src/`), which the M1 review didn't cover. (The engine line and M1 were reviewed 2026-09-27; 8 findings fixed.)
 11. [ ] Find the JSI Research Reactor Simulator's source and license (independent comparison, reference only).
 
