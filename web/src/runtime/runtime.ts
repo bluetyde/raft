@@ -13,6 +13,7 @@ import { Engine, InitError } from "../sim/engine";
 import { LibraryError, loadLibrary, type Library } from "../sim/library";
 import { CheckpointStore, checkSessionFile, replayCommands, sessionFile } from "./history";
 import {
+  isCoarse,
   PROTOCOL_VERSION,
   type ClockLimit,
   type Extreme,
@@ -74,6 +75,11 @@ function cachingReader(inner: LibraryReader): LibraryReader {
       return p;
     },
   };
+}
+
+/** True for the commands that a coarse session refuses: pulse mode and rod firing (M6 amendment 1). */
+function isPulseCommand(cmd: Record<string, any>): boolean {
+  return cmd["type"] === "rod.fire" || (cmd["type"] === "mode.set" && cmd["mode"] === "pulse");
 }
 
 function everySteps(seconds: number, outerDt: number): number {
@@ -207,6 +213,9 @@ export class Runtime {
       if (err instanceof InitError) return fail([{ code: err.code, path: "init", message: err.message }]);
       return fail([{ code: "E_INIT_INVALID", path: "init", message: String(err) }]);
     }
+    if (isCoarse(eng.config.outerDt) && eng.mode === "pulse") {
+      return fail([{ code: "E_COARSE_PULSE", path: "init.mode", message: `pulse mode needs an outer step of 10 ms or less (this one is ${eng.config.outerDt} s)` }]);
+    }
     this.rejectPending("REJ_SESSION_REPLACED");
     this.lib = lib;
     this.history.clear();
@@ -247,6 +256,8 @@ export class Runtime {
     if (typeof clientId !== "string" || validateCommand(cmd).length > 0) return reject("REJ_SCHEMA");
     if (this.faulted) return reject("REJ_FAULTED");
     if (e.halted) return reject("REJ_HALTED");
+    // Checked here, before the engine, so the rejected command is not in the log and replays stay the same.
+    if (isCoarse(e.config.outerDt) && isPulseCommand(cmd as Record<string, any>)) return reject("REJ_COARSE_STEP");
     const seq = e.submit(cmd as Record<string, any>, clientId);
     this.pendingAcks.set(seq, clientSeq);
     this.host.post({ kind: "queued", clientSeq, seq, step: e.stepIndex, t: e.t });
@@ -464,6 +475,9 @@ export class Runtime {
       const f = checkSessionFile(file, lib);
       const s = f.session;
       ne = new Engine(lib, s.init, s.seed, s.pins.config);
+      if (isCoarse(ne.config.outerDt) && (ne.mode === "pulse" || s.commands.some((c: any) => isPulseCommand(c.cmd ?? {})))) {
+        throw new Error("a coarse session (outer step longer than 10 ms) cannot hold pulse mode or rod firing");
+      }
       const every = everySteps(this.options.checkpointEveryS, ne.config.outerDt);
       checkpointInto(store, ne, every, true);
       replayCommands(ne, s.commands, f.endStep, (x) => checkpointInto(store, x, every, false));
@@ -535,8 +549,9 @@ export class Runtime {
     this.awaitingFrameAck = true;
     const extremes = this.extremes;
     this.extremes = {};
-    if (shape) this.host.post({ kind: "snapshot", snapshot, shape, extremes }, [shape.buffer]);
-    else this.host.post({ kind: "snapshot", snapshot, extremes });
+    const faults = { instruments: { ...e.faults }, extraRho: e.extraRho };
+    if (shape) this.host.post({ kind: "snapshot", snapshot, shape, extremes, faults }, [shape.buffer]);
+    else this.host.post({ kind: "snapshot", snapshot, extremes, faults });
   }
 
   private shapeDue(snapshot: Record<string, any>): boolean {

@@ -1,6 +1,7 @@
 # M6: Instructor view (design)
 
-Status: **proposal, waiting for the user.** No code yet. The decisions are marked **D1–D6**, each with options and a recommendation. The table at the end lists them.
+Status: **approved by the user on 2026-09-27: D1–D6 as recommended (all option a), with four amendments** (§9). Slice S1 is built on the same branch (§10).
+The decisions are marked **D1–D6**, each with options and a recommendation. The table at the end lists them.
 
 The plan is [plan 06](plans/06-instructor.md). This design builds on the C6 runtime ([c6-runtime-design.md](c6-runtime-design.md)) and the M5 operator panel ([m5-operator-design.md](m5-operator-design.md)).
 
@@ -146,7 +147,46 @@ Each slice is its own PR on its own branch, based on the one before. Each has it
 - D2a: ARCHITECTURE §"one owner" says one shared worker.
 - Optional, from D5: R3 (change `outerDt` during a session) stays open.
 
-## Decisions (waiting for the user)
+## 9. Amendments (user, 2026-09-27)
+
+1. **Coarse sessions and pulses.** A coarse session (outer step longer than 10 ms) rejects `mode.set` to `pulse` and `rod.fire`, with the reason `REJ_COARSE_STEP` and a text that says why.
+   The time bar shows the session's outer step. A test covers it.
+   The runtime does the check before the engine sees the command, so the rejected command is not in the command log.
+   For the same reason, a coarse session cannot load in pulse mode, and a coarse session file with a pulse command does not import.
+2. **Reactivity clear comes from the engine.** The panel does not insert the opposite amount. The other session adds a clear to the D3a request.
+   Until then, the panel has no clear button for reactivity.
+   Note for that request: today the engine accepts any `fault.reactivity` and adds `deltaRho ?? 0`. So a new `{kind: "clear"}` field would be accepted as a no-op by an older engine.
+   The panel must know that the engine supports clear (for example, from the engine version in the pins) before it offers it.
+3. **Roles with two windows.** The worker enforces which commands each window's role may send. The operator window cannot send time, rewind or fault commands. A test covers it. This comes with S3.
+4. **Compare.** Compare shows each branch's fork step and command count next to its final values. This comes with S2.
+
+The other session will do D3a (rod stuck, no-scram, drop and clear; instrument drift; reactivity clear) after its M2 runs, and the ARCHITECTURE change to one shared worker.
+
+## 10. Slice S1: what is built
+
+- **Runtime** (`web/src/runtime/`):
+  - each snapshot message has `faults` (instrument faults and the inserted reactivity), read from the engine's public fields;
+  - a coarse session (outer step longer than 10 ms, `isCoarse` in `protocol.ts`) rejects `rod.fire` and `mode.set` to `pulse` with `REJ_COARSE_STEP`.
+    It also refuses to load in pulse mode (`E_COARSE_PULSE`), and it refuses to import a coarse session file that holds pulse mode or a rod firing;
+  - `RUNTIME_REJECTIONS` gives the text for `REJ_COARSE_STEP`. The operator panel shows it next to the code.
+- **Operator panel:** its rate menu now follows the clock, because the instructor can also set the rate.
+- **Instructor view** (`web/src/views/instructor/`):
+  - `time.ts`: the two outer steps (fine 10 ms, coarse 1 s), the rates for each, and the step as the time bar shows it;
+  - `timeline.ts`: markers for trips, rejected commands and the instructor's faults, and the mapping from the bar to a step;
+  - `faults.ts`: the fault commands that the engine has (instrument stuck, dead and clear, reactivity insertion, pump trip and restart). The panel lists the others as "not in the engine yet";
+  - `truth.ts`: the reactivity by source in pcm, each instrument's reading next to its true value, and the active-fault lines;
+  - `panel.ts`: the DOM panel. A click on the timeline asks first, then rewinds. "New session" restarts the library with the chosen outer step.
+- **Layout:** `instructor` in `web/src/app/main.ts`: the operator panel next to the instructor panel. The 3D view is hidden in this layout.
+- **Not in S1:** markers from before an import (the runtime does not send the events of a replay), branches, annotations and export (S2), and two windows (S3).
+
+### Findings while building S1
+
+- **A reactivity step trips `period-short` at once.** The trip reads `truth.period`, which has no lag. Right after a step, the prompt jump gives a very short period.
+  On the synthetic core, 5, 10, 20 and 40 pcm all trip after one step. `triga-jsi-242` has the same trip.
+  A real period channel has a lag, so it would not trip on a small step. This is a question for the library and the engine, not for the view. The panel has a note about it.
+- **`fault.reactivity` accepts unknown fields.** A `{kind: "clear"}` sent to today's engine is accepted and adds 0. So the view must know that the engine supports clear before it sends one (amendment 2).
+
+## Decisions (approved by the user, 2026-09-27)
 
 | # | Decision | Recommended |
 |---|---|---|
