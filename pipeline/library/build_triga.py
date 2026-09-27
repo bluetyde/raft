@@ -24,8 +24,12 @@ DEFAULT_OUT = REPO_ROOT / "libraries" / "triga-jsi"
 # None of the values below has been checked against the benchmark, Simnad or Svajger yet (review 2026-09-26,
 # docs/reviews/2026-09-26-m1-go-review.md), so they are "assumed" until the parameter check (task C2) confirms them.
 # The delayed-group decay constants are Keepin's standard U-235 thermal values and are cited as such.
+# C2 (2026-09-27) checked the kinetics, fuel cp(T), fuel alpha(T) and pulse-rod ejection time against
+# Vavtar & Snoj, EPJ Web Conf. 247, 08006 (2021) (CC-BY 4.0; JSI group), and cites them as "cited:vavtar2021".
+# Everything else stays "assumed".
 ASSUMED = "assumed"
 CITED_KEEPIN = "cited:keepin1965"
+CITED_VAVTAR = "cited:vavtar2021"
 
 T_REF = 293.15  # K (20 °C)
 PITCH = 4.3  # cm
@@ -34,7 +38,7 @@ R_EXT = 28.0  # cm, extrapolated core radius
 H_EXT = 25.0  # cm, extrapolated axial half-height
 AXIAL_EDGES = [-19.05, -15.24, -11.43, -7.62, -3.81, 0.0, 3.81, 7.62, 11.43, 15.24, 19.05]
 ROD_X = [i / 10.0 for i in range(11)]
-TEMP_GRID = [T_REF, 400.0, 600.0, 800.0, 1000.0, 1200.0]
+TEMP_GRID = [T_REF, 350.0, 400.0, 500.0, 600.0, 800.0, 1000.0, 1200.0]
 
 # JSI TRIGA Mark II rod configuration
 # Rod ID: (Name, ring location, total worth in Delta k/k, pulseCapable, travelTime)
@@ -46,9 +50,42 @@ ROD_SPECS = {
     "regulating": ("Regulating rod", "E12", 0.85 * 0.0070, False, None),       # 0.85 $
 }
 
-# 6 delayed precursor groups (Keepin / ENDF/B-VIII.0 for U-235, beta_eff = 0.0070)
-GROUP_BETAS = [0.000231, 0.001533, 0.001372, 0.002765, 0.000805, 0.000294]
+# 6 delayed precursor groups. Betas: Vavtar & Snoj 2021, Table 1 (sum 0.00699891; beta_eff = 0.007 in the text).
+GROUP_BETAS = [0.00023097, 0.00153278, 0.00137180, 0.00276451, 0.00080489, 0.00029396]
 GROUP_LAMBDAS = [0.0124, 0.0305, 0.1110, 0.3010, 1.1400, 3.0100]
+
+
+# Fuel specific heat, standard 12 wt% U element: C(T) = 333 + 0.678 (T[K] - 274.15) J/(kg K)
+# (Vavtar & Snoj 2021, eq. 1.8, citing Simnad, GA E-177-833, 1980).
+def fuel_cp(T: float) -> float:
+    return 333.0 + 0.678 * (T - 274.15)
+
+
+# |alpha_f| of fresh standard fuel, (T in K, 1e-5 per K), read by eye from Vavtar & Snoj 2021, Fig. 1
+# (after PULSTRI, Ravnik et al.). Precision about +-0.5e-5 per K. Beyond the last point it is held constant.
+ALPHA_FUEL_POINTS = [(293.15, 6.2), (373.15, 7.3), (473.15, 8.3), (573.15, 8.9), (673.15, 8.8),
+                     (873.15, 8.4), (1073.15, 8.0), (1273.15, 7.7)]
+
+
+def fuel_alpha(T: float) -> float:
+    """alpha_f(T) in (Delta k/k)/K (negative), linear between the digitized points."""
+    pts = ALPHA_FUEL_POINTS
+    if T <= pts[0][0]:
+        return -pts[0][1] * 1e-5
+    for (t0, a0), (t1, a1) in zip(pts, pts[1:]):
+        if T <= t1:
+            return -(a0 + (a1 - a0) * (T - t0) / (t1 - t0)) * 1e-5
+    return -pts[-1][1] * 1e-5
+
+
+def fuel_rho(T: float, steps: int = 2000) -> float:
+    """rho_fuel(T) = integral of alpha_f from T_REF to T (trapezoid rule, fine enough for a piecewise-linear alpha)."""
+    h = (T - T_REF) / steps
+    total = 0.0
+    for i in range(steps):
+        a, b = T_REF + i * h, T_REF + (i + 1) * h
+        total += 0.5 * (fuel_alpha(a) + fuel_alpha(b)) * h
+    return total
 
 
 def S(value: float, source: str, **extra) -> dict:
@@ -229,13 +266,8 @@ def build_library(out_dir: Path) -> dict:
             rod_obj["fireTime"] = travel_time or 0.08
         rods.append(rod_obj)
 
-    # Specific heat cp(T) = 350 + 0.350*(T - 293.15) + 0.00020*(T - 293.15)^2
-    cp_vals = [round(350.0 + 0.350 * (T - T_REF) + 0.00020 * (T - T_REF) ** 2, 4) for T in TEMP_GRID]
-
-    # Prompt fuel temperature feedback: integral of alpha_f(T)
-    # alpha_f(T) = -1.05e-4 - 1.20e-7*(T - 293.15)
-    # rho(T) = -1.05e-4*(T - 293.15) - 0.60e-7*(T - 293.15)^2
-    rho_fuel = [round(-1.05e-4 * (T - T_REF) - 0.60e-7 * (T - T_REF) ** 2, 12) for T in TEMP_GRID]
+    cp_vals = [round(fuel_cp(T), 4) for T in TEMP_GRID]
+    rho_fuel = [round(fuel_rho(T), 12) for T in TEMP_GRID]
 
     # Geometry primitives
     geometry = [
@@ -261,15 +293,15 @@ def build_library(out_dir: Path) -> dict:
         "provenance": {
             "generator": "pipeline.library.build_triga",
             "created": "2026-09-26",
-            "notes": ("Experimental TRIGA-like model. Values were collected for the JSI TRIGA (candidate sources: ICSBEP "
-                      "IEU-COMP-THERM-003, Simnad 1981, Svajger & Snoj 2023) but have NOT been checked against them, so they "
-                      "are labelled 'assumed'. Delayed-group betas are Keepin abundances x an assumed beta_eff of 0.0070. "
-                      "Geometry and power shapes are illustrative, not the benchmark core. See docs/reviews/2026-09-26-m1-go-review.md."),
+            "notes": ("Experimental TRIGA-like model. Kinetics (betas, generation time), fuel cp(T), fuel alpha(T) and the "
+                      "pulse-rod ejection time are cited from Vavtar & Snoj 2021 (checked 2026-09-27, task C2); alpha(T) is "
+                      "read from a figure (+-0.5e-5/K). Everything else is 'assumed'. Geometry and power shapes are "
+                      "illustrative, not the benchmark core. See docs/reviews/2026-09-26-m1-go-review.md."),
             "sources": [
                 {"id": "keepin1965", "cite": "G. R. Keepin, Physics of Nuclear Kinetics, Addison-Wesley (1965): U-235 thermal delayed-neutron groups"},
                 {"id": "icsbep", "cite": "ICSBEP Benchmark IEU-COMP-THERM-003 (OECD-NEA, 2007)"},
-                {"id": "simnad1981", "cite": "M. T. Simnad, General Atomics Report GA-A16377 (1981)"},
-                {"id": "svajger2023", "cite": "I. Švajger, L. Snoj, Nuclear Engineering and Technology 55 (2023) 4404–4415"},
+                {"id": "vavtar2021", "cite": "I. Vavtar, L. Snoj, Evaluation of approximations in reactor pulse, EPJ Web of Conferences 247, 08006 (2021), doi:10.1051/epjconf/202124708006"},
+                {"id": "svajger2024", "cite": "I. Švajger, D. Čalič, A. Pungerčič, A. Trkov, L. Snoj, Evaluation of reactor pulse experiments, Nuclear Engineering and Technology 56 (2024) 1165–1203, doi:10.1016/j.net.2023.11.021 (not yet checked)"},
             ],
         },
         "reference": {
@@ -281,9 +313,9 @@ def build_library(out_dir: Path) -> dict:
             "calibration": None,
         },
         "kinetics": {
-            "beta": {"values": GROUP_BETAS, "source": ASSUMED},
+            "beta": {"values": GROUP_BETAS, "source": CITED_VAVTAR},
             "lambda": {"values": GROUP_LAMBDAS, "source": CITED_KEEPIN},
-            "genTime": S(4.0e-5, ASSUMED),
+            "genTime": S(4.0e-5, CITED_VAVTAR),  # prompt neutron lifetime l = 4e-5 s; Lambda = l/k = l at critical
             "extSource": S(0.5, ASSUMED),
         },
         "reactivity": {
@@ -293,7 +325,7 @@ def build_library(out_dir: Path) -> dict:
                 "rho": rho_fuel,
                 "interp": "linear",
                 "outOfRange": "clamp-and-flag",
-                "source": ASSUMED,
+                "source": CITED_VAVTAR,
             },
             "coolantTemp": {
                 "T": [283.15, T_REF, 313.15, 333.15, 353.15],
@@ -318,7 +350,7 @@ def build_library(out_dir: Path) -> dict:
                     "c": cp_vals,
                     "interp": "linear",
                     "outOfRange": "clamp-and-flag",
-                    "source": ASSUMED,
+                    "source": CITED_VAVTAR,
                 },
             },
             "coolant": {"mass": S(20000.0, ASSUMED), "cp": S(4184.0, ASSUMED)},

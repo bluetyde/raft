@@ -151,12 +151,18 @@ def simulate_pulse(
 
     fwhm = (crossings[1] - crossings[0]) if len(crossings) >= 2 else None
 
-    # Classical Nordheim-Fuchs theoretical values
-    # C = m * cp_0, alpha = prompt negative temperature coefficient
-    c_core = lib_copy.fuel_mass * lib_copy.fuel_cp(lib_copy.ref_tfuel)
-    # Average |alpha| over reference to reference + delta_tf
-    alpha_0 = 1.05e-4
-    k_nf = alpha_0 / c_core
+    # Classical Nordheim-Fuchs theoretical values, with the library's own feedback linearised over this pulse:
+    # gamma = -rho_fuel(T_ref + dT) / (m * integral of cp from T_ref to T_ref + dT), reactivity per joule.
+    # (Was a hardcoded alpha = 1.05e-4 /K, which ignored the library; found in C2, 2026-09-27.)
+    t_ref = lib_copy.ref_tfuel
+    n_int = 200
+    heat = 0.0
+    for i in range(n_int):
+        ta = t_ref + delta_tf * i / n_int
+        tb = t_ref + delta_tf * (i + 1) / n_int
+        heat += 0.5 * (lib_copy.fuel_cp(ta) + lib_copy.fuel_cp(tb)) * (tb - ta)
+    heat *= lib_copy.fuel_mass
+    k_nf = -lib_copy.fuel_temp(t_ref + delta_tf) / heat if heat > 0 else float("inf")
     gen_time = lib_copy.gen_time
 
     if rho_prompt > 0:
