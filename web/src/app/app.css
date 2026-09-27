@@ -1,0 +1,101 @@
+:root {
+  color-scheme: dark;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+  background: #0b1a2a;
+  color: #e4ebf2;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+}
+
+.vr-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 12px;
+  background: #11263b;
+  border-bottom: 1px solid #22405e;
+}
+
+.vr-status {
+  opacity: 0.8;
+}
+
+.vr-view {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.vr-explorer canvas {
+  display: block;
+  outline: none;
+}
+
+.vr-panel {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 320px;
+  max-height: calc(100% - 20px);
+  overflow: auto;
+  padding: 10px;
+  background: rgba(11, 26, 42, 0.88);
+  border: 1px solid #22405e;
+  border-radius: 6px;
+}
+
+.vr-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.vr-rod {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.vr-note,
+.vr-help {
+  font-size: 12px;
+  opacity: 0.75;
+  margin: 6px 0;
+}
+
+.vr-inspect table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.vr-inspect th {
+  text-align: left;
+  font-weight: normal;
+  opacity: 0.7;
+  padding-right: 8px;
+  vertical-align: top;
+}
+
+.vr-crosshair {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  font-size: 20px;
+  opacity: 0.8;
+}
