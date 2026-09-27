@@ -113,6 +113,40 @@ export function predSignals(p: any, defaultSig?: string): string[] {
   return [p.signal ?? defaultSig];
 }
 
+export type PredLeaf = [signal: string, useAbs: boolean, threshold: number];
+
+export function predLeaves(p: any, defaultSig?: string): PredLeaf[] {
+  for (const key of ["all", "any"] as const) {
+    if (Object.hasOwn(p, key)) {
+      const out: PredLeaf[] = [];
+      for (const sub of p[key]) {
+        out.push(...predLeaves(sub, defaultSig));
+      }
+      return out;
+    }
+  }
+  if (Object.hasOwn(p, "not")) {
+    return predLeaves(p.not, defaultSig);
+  }
+  const sig = p.signal ?? defaultSig;
+  const op = p.op;
+  const ref = p.value;
+  if (op === "between") {
+    return [
+      [sig, false, ref[0]],
+      [sig, false, ref[1]],
+    ];
+  }
+  if (typeof ref === "string") {
+    return [];
+  }
+  return [[sig, op === "absGt", ref]];
+}
+
+export function sign(x: number): number {
+  return (x > 0.0 ? 1 : 0) - (x < 0.0 ? 1 : 0);
+}
+
 export function evalPredicate(p: any, get: (s: string) => any, defaultSig?: string): boolean {
   if (Object.hasOwn(p, "all")) {
     return p.all.every((s: any) => evalPredicate(s, get, defaultSig));
@@ -732,6 +766,41 @@ export class Engine {
     this.h = h;
   }
 
+  private _leafG(leaf: PredLeaf, t: number, y: number[]): number | null {
+    const [sig, useAbs, ref] = leaf;
+    const v = this._truthSignal(sig, t, y);
+    if (v === null || typeof v === "string") {
+      return null;
+    }
+    return (useAbs ? Math.abs(v) : v) - ref;
+  }
+
+  private _bisect(
+    t: number,
+    y: number[],
+    hs: number,
+    J: number[][],
+    f0: number[],
+    ft: number[],
+    crossed: (s: number, ys: number[]) => boolean,
+    yEnd: number[],
+  ): [number, number[]] {
+    let lo = 0.0;
+    let hi = hs;
+    let yHi = yEnd;
+    while (hi - lo > this.config.eventTol) {
+      const mid = 0.5 * (lo + hi);
+      const [yMid] = this._stepper(t, y, mid, J, f0, ft);
+      if (crossed(mid, yMid)) {
+        hi = mid;
+        yHi = yMid;
+      } else {
+        lo = mid;
+      }
+    }
+    return [hi, yHi];
+  }
+
   private _locateTrips(
     t: number,
     y: number[],
@@ -751,36 +820,58 @@ export class Engine {
     if (cands.length === 0) {
       return [tNew, yNew];
     }
-    const getNew = (s: string) => this._truthSignal(s, tNew, yNew);
-    const fired = cands.filter((tr) => evalPredicate(tr.predicate, getNew, tr.input));
-    if (fired.length === 0) {
-      return [tNew, yNew];
-    }
-    let lo = 0.0;
-    let hi = hs;
-    let yHi = yNew;
-    while (hi - lo > this.config.eventTol) {
-      const mid = 0.5 * (lo + hi);
-      const [yMid] = this._stepper(t, y, mid, J, f0, ft);
-      if (
-        fired.some((tr) =>
-          evalPredicate(tr.predicate, (s: string) => this._truthSignal(s, t + mid, yMid), tr.input),
-        )
-      ) {
-        hi = mid;
-        yHi = yMid;
-      } else {
-        lo = mid;
+    let best: [number, number[]] | null = null;
+    for (const tr of cands) {
+      const pred = tr.predicate;
+      const inp = tr.input;
+      const holds = (s: number, ys: number[]) =>
+        evalPredicate(pred, (sig: string) => this._truthSignal(sig, t + s, ys), inp);
+      const hits: [number, number[]][] = [];
+      for (const leaf of predLeaves(pred, inp)) {
+        const g0 = this._leafG(leaf, t, y);
+        const g1 = this._leafG(leaf, tNew, yNew);
+        if (g0 === null || g1 === null || sign(g0) === sign(g1)) {
+          continue;
+        }
+        const s0 = sign(g0);
+        const [s, ys] = this._bisect(
+          t,
+          y,
+          hs,
+          J,
+          f0,
+          ft,
+          (stepS, stepYs) => {
+            const g = this._leafG(leaf, t + stepS, stepYs);
+            return g !== null && sign(g) !== s0;
+          },
+          yNew,
+        );
+        if (holds(s, ys)) {
+          hits.push([s, ys]);
+        }
+      }
+      if (hits.length === 0 && holds(hs, yNew)) {
+        hits.push(this._bisect(t, y, hs, J, f0, ft, holds, yNew));
+      }
+      for (const h of hits) {
+        if (best === null || h[0] < best[0]) {
+          best = h;
+        }
       }
     }
-    const tEv = t + hi;
-    const getEv = (s: string) => this._truthSignal(s, tEv, yHi);
-    for (const tr of fired) {
+    if (best === null) {
+      return [tNew, yNew];
+    }
+    const [sEv, yEv] = best;
+    const tEv = t + sEv;
+    const getEv = (sig: string) => this._truthSignal(sig, tEv, yEv);
+    for (const tr of cands) {
       if (evalPredicate(tr.predicate, getEv, tr.input)) {
         this._trip(tr, tEv);
       }
     }
-    return [tEv, yHi];
+    return [tEv, yEv];
   }
 
   private _tripModeOk(trip: any): boolean {
@@ -858,6 +949,7 @@ export class Engine {
       [lib.fuelTemp, this.y[ITF]!, "fuelTemp"],
       [lib.coolTemp, this.y[ITC]!, "coolantTemp"],
       [lib.xenon, this.y[IX]!, "xenon"],
+      [lib.fuelCp, this.y[ITF]!, "fuelCp"],
     ];
     for (const r of lib.rods) {
       checks.push([r.worth, this.rodPosition(r.id, this.t), `rod.${r.id}`]);
@@ -919,7 +1011,8 @@ export class Engine {
       } else if (direction === "out" && tripped) {
         status = "rejected";
         reason = "REJ_TRIPPED";
-      } else if (this.motions[rid]!.kind === "scram" && direction !== "in") {
+      } else if (this.motions[rid]!.kind === "scram") {
+        // any drive command, even "in", would replace the scram profile with the slower drive (M1 review finding 1)
         status = "rejected";
         reason = "REJ_SCRAM_IN_PROGRESS";
       } else {
@@ -1274,7 +1367,14 @@ export class Engine {
         e.submit(cmds[k].cmd, cmds[k].clientId);
         k++;
       }
+      if (e.halted) {
+        return e;
+      }
       e.step();
+    }
+    while (k < cmds.length && cmds[k].step === e.stepIndex) {
+      e.submit(cmds[k].cmd, cmds[k].clientId);
+      k++;
     }
     return e;
   }

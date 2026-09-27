@@ -1,4 +1,9 @@
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { nodeReader } from "../library/node-reader";
+import { validateLibrary } from "../library/validate";
 import {
   CheckpointError,
   Engine,
@@ -12,7 +17,7 @@ import {
   InitError,
   roundHalfEven,
 } from "./engine";
-import { Table } from "./library";
+import { Table, loadLibrary } from "./library";
 import {
   comparable,
   inhourOmega,
@@ -20,6 +25,7 @@ import {
   loadSyntheticCore,
   pulseLib,
   scriptedRun,
+  syntheticCorePath,
 } from "./testing";
 import { nearCriticalRods } from "./vectors";
 
@@ -443,6 +449,119 @@ describe("advance() rounds half steps to even, like Python's round()", () => {
       const e = new Engine(L, {});
       e.advance(seconds);
       expect(e.stepIndex, `advance(${seconds})`).toBe(steps);
+    }
+  });
+});
+
+describe("TestM1ReviewRegressions", () => {
+  it("test_1_drive_commands_cannot_cancel_a_scram", async () => {
+    for (const delay of [0, 5]) { // queued with the scram, and during insertion
+      const L = await loadSyntheticCore();
+      const e = new Engine(L, { rods: nearCriticalRods(L, -0.0005) });
+      e.submit({ type: "scram" });
+      for (let i = 0; i < delay; i++) {
+        e.step();
+      }
+      const seq = e.submit({ type: "rod.move", rod: "safety", direction: "in" });
+      e.advance(0.6);
+      const ev = e.events.find((x: any) => x.seq === seq);
+      expect(ev?.reason).toBe("REJ_SCRAM_IN_PROGRESS");
+      expect(e.rodPosition("safety", e.t)).toBe(0.0);
+    }
+  });
+
+  it("test_2_trip_window_crossed_inside_one_step_is_found", async () => {
+    const times: number[] = [];
+    for (const dt of [0.01, 0.001]) {
+      const L = await loadSyntheticCore();
+      L.trips = [
+        ...L.trips,
+        {
+          id: "window",
+          input: "truth.rod.transient",
+          predicate: { op: "between", value: [0.00008, 0.0001] },
+          latching: true,
+        },
+      ];
+      await L.markModified("window-trip");
+      const e = new Engine(L, { rods: nearCriticalRods(L, -0.0005) }, 1, { outerDt: dt });
+      e.submit({ type: "rod.move", rod: "transient", direction: "out" }); // 0.02/s: inside the window at 4-5 ms
+      e.advance(0.02);
+      const ev = e.events.filter((x: any) => x.type === "trip" && x.id === "window");
+      expect(ev.length).toBe(1);
+      times.push(ev[0]!.t);
+    }
+    for (const t of times) {
+      expect(Math.abs(t - 0.004)).toBeLessThan(1e-6);
+    }
+  });
+
+  it("test_3_replay_of_a_halted_run_returns", async () => {
+    const L = await loadSyntheticCore();
+    const t = L.fuelTemp;
+    L.fuelTemp = new Table(t.xs, t.ys, "reject");
+    await L.markModified("reject-fuel-temp");
+    const e = new Engine(L, { Tfuel: 1300.0 });
+    expect(e.halted).toBeTruthy();
+    let stepCount = 0;
+    const origStep = Engine.prototype.step;
+    try {
+      Engine.prototype.step = function (this: Engine) {
+        stepCount++;
+        if (stepCount > 1000) {
+          throw new Error("iteration guard: step() called > 1000 times on halted engine replay");
+        }
+        return origStep.apply(this);
+      };
+      const r = Engine.replay(L, e.session(), 1); // used to loop forever
+      expect(r.halted).toBe(e.halted);
+      expect(r.stepIndex).toBe(0);
+    } finally {
+      Engine.prototype.step = origStep;
+    }
+  });
+
+  it("test_4_heat_capacity_reject_policy_is_enforced", async () => {
+    const L = await loadSyntheticCore();
+    L.fuelCp = new Table([293.15, 300.0], [300.0, 300.0], "reject");
+    await L.markModified("reject-cp");
+    const e = new Engine(L, { Tfuel: 350.0 });
+    expect(e.halted).toBe("R_TABLE_REJECT_fuelCp");
+  });
+
+  it("test_5_replay_keeps_commands_pending_at_the_final_boundary", async () => {
+    const L = await loadSyntheticCore();
+    const e = new Engine(L, { rods: nearCriticalRods(L, -0.0005) });
+    e.step();
+    e.submit({ type: "pump.set", pump: L.pumps[0]!, on: false });
+    const r = Engine.replay(L, JSON.parse(JSON.stringify(e.session())), e.stepIndex);
+    expect([r.pending.length, r.nextSeq]).toEqual([e.pending.length, e.nextSeq]);
+    e.step();
+    r.step();
+    expect(comparable(r.checkpoint())).toEqual(comparable(e.checkpoint()));
+  });
+
+  it("test_7_integral_float_array_fields_load", async () => {
+    const tmp = mkdtempSync(join(tmpdir(), "m1-test7-"));
+    try {
+      const dst = join(tmp, "core");
+      cpSync(syntheticCorePath, dst, { recursive: true });
+      const m = JSON.parse(readFileSync(join(dst, "manifest.json"), "utf-8"));
+      for (const d of Object.values<any>(m.arrays)) {
+        d.offset = `${d.offset}.0`;
+        d.byteLength = `${d.byteLength}.0`;
+        d.shape = d.shape.map((n: number) => `${n}.0`);
+      }
+      let text = JSON.stringify(m, null, 1);
+      text = text.replace(/"(\d+\.0)"/g, "$1");
+      writeFileSync(join(dst, "manifest.json"), text, "utf-8");
+      const reader = nodeReader(dst);
+      expect(await validateLibrary(reader)).toEqual([]);
+      const loaded = await loadLibrary(reader);
+      const baseLib = await loadSyntheticCore();
+      expect(loaded.arrays["base"]).toEqual(baseLib.arrays["base"]);
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
     }
   });
 });
