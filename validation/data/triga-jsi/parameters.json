@@ -14,28 +14,66 @@
       "citation": "M. T. Simnad, 'The U-ZrHx Alloy: Its Properties and Use in TRIGA Fuel', General Atomics Report GA-A16377 (1981)"
     },
     {
-      "id": "svajger2023",
-      "citation": "I. Švajger, L. Snoj, 'Evaluation of reactor pulse experiments', Nuclear Engineering and Technology, 55 (2023) 4404–4415"
+      "id": "svajger2024",
+      "citation": "I. Švajger, D. Čalič, A. Pungerčič, A. Trkov, L. Snoj, 'Evaluation of reactor pulse experiments', Nuclear Engineering and Technology 56 (2024) 1165–1203, doi:10.1016/j.net.2023.11.021. (Was cited here as 55 (2023) 4404–4415, which is wrong.) Full text not yet checked."
+    },
+    {
+      "id": "vavtar2021",
+      "citation": "I. Vavtar, L. Snoj, 'Evaluation of approximations in reactor pulse', EPJ Web of Conferences 247, 08006 (2021), doi:10.1051/epjconf/202124708006 (CC-BY 4.0). Checked 2026-09-27 (C2)."
     }
   ],
   "kinetics": {
-    "betaEff": 0.0070,
+    "betaEff": 0.007,
     "physicalBeta": 0.006502,
     "importanceFactor": 1.07659,
-    "promptGenerationTimeSeconds": 4.0e-5,
+    "promptGenerationTimeSeconds": 4e-05,
     "sourceStrengthWattsEquivalentPerSec": 0.001,
     "delayedGroups": [
-      { "group": 1, "beta": 0.000231, "lambdaSecInv": 0.0124 },
-      { "group": 2, "beta": 0.001533, "lambdaSecInv": 0.0305 },
-      { "group": 3, "beta": 0.001372, "lambdaSecInv": 0.1110 },
-      { "group": 4, "beta": 0.002765, "lambdaSecInv": 0.3010 },
-      { "group": 5, "beta": 0.000805, "lambdaSecInv": 1.1400 },
-      { "group": 6, "beta": 0.000294, "lambdaSecInv": 3.0100 }
-    ]
+      {
+        "group": 1,
+        "beta": 0.00023097,
+        "lambdaSecInv": 0.0124
+      },
+      {
+        "group": 2,
+        "beta": 0.00153278,
+        "lambdaSecInv": 0.0305
+      },
+      {
+        "group": 3,
+        "beta": 0.0013718,
+        "lambdaSecInv": 0.111
+      },
+      {
+        "group": 4,
+        "beta": 0.00276451,
+        "lambdaSecInv": 0.301
+      },
+      {
+        "group": 5,
+        "beta": 0.00080489,
+        "lambdaSecInv": 1.14
+      },
+      {
+        "group": 6,
+        "beta": 0.00029396,
+        "lambdaSecInv": 3.01
+      }
+    ],
+    "betaEffSource": "vavtar2021 (text: beta = 0.007)",
+    "promptGenerationTimeSource": "vavtar2021 (prompt neutron lifetime l = 4e-5 s)",
+    "delayedGroupsSource": "betas: vavtar2021 Table 1; lambdas: Keepin 1965 (vavtar2021 Table 1 gives 0.1115 and 1.1380 for groups 3 and 5)"
   },
   "geometry": {
     "gridType": "hexagonal_rings",
-    "rings": ["A", "B", "C", "D", "E", "F"],
+    "rings": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F"
+    ],
     "totalGridPositions": 91,
     "activeFuelLengthCm": 38.1,
     "fuelMeatDiameterCm": 3.63,
@@ -50,9 +88,10 @@
       "type": "pulse",
       "drive": "pneumatic_or_rack",
       "ring": "C",
-      "totalWorthDollars": 2.20,
+      "totalWorthDollars": 2.2,
       "totalWorthPcm": 1540.0,
-      "ejectionTimeSeconds": 0.080
+      "ejectionTimeSeconds": 0.08,
+      "ejectionTimeSource": "vavtar2021 (0.425 m rod, 80 ms travel)"
     },
     {
       "id": "safety",
@@ -60,9 +99,9 @@
       "type": "scram",
       "drive": "motor_magnetic_latch",
       "ring": "C",
-      "totalWorthDollars": 3.10,
+      "totalWorthDollars": 3.1,
       "totalWorthPcm": 2170.0,
-      "scramDropTimeSeconds": 0.350
+      "scramDropTimeSeconds": 0.35
     },
     {
       "id": "shim",
@@ -70,9 +109,9 @@
       "type": "scram",
       "drive": "motor_magnetic_latch",
       "ring": "D",
-      "totalWorthDollars": 2.80,
+      "totalWorthDollars": 2.8,
       "totalWorthPcm": 1960.0,
-      "scramDropTimeSeconds": 0.350
+      "scramDropTimeSeconds": 0.35
     },
     {
       "id": "regulating",
@@ -94,25 +133,59 @@
       "coreFuelMassKg": 84.0,
       "referenceTemperatureK": 293.15,
       "heatCapacity": {
-        "model": "polynomial_kelvin",
-        "description": "cp(T) = a0 + a1*(T - 293.15) + a2*(T - 293.15)^2 in J/(kg*K)",
-        "a0": 350.0,
-        "a1": 0.350,
-        "a2": 0.00020,
-        "validRangeK": [293.15, 973.15]
-      }
+        "model": "linear_kelvin",
+        "description": "cp(T) = 333 + 0.678*(T - 274.15) in J/(kg*K), standard 12 wt% U element",
+        "a0": 333.0,
+        "a1": 0.678,
+        "tOffsetK": 274.15,
+        "source": "vavtar2021 eq. 1.8, citing Simnad, GA E-177-833 (1980)"
+      },
+      "coreFuelMassKgNote": "assumed; consistent with vavtar2021's gamma = alpha/(m C) = 2.1e-9 per J (gives 2.0-2.15e-9 over 293-573 K)"
     },
     "feedbackCoefficients": {
       "fuelTemperaturePrompt": {
-        "model": "polynomial_kelvin",
-        "description": "alpha_f(T) = d(rho)/dT in (Delta k/k)/K",
-        "a0": -1.05e-4,
-        "a1": -1.20e-7,
-        "validRangeK": [293.15, 973.15]
+        "model": "tabulated_abs_alpha",
+        "description": "|alpha_f|(T) in 1e-5 (Delta k/k)/K, fresh fuel, linear between points, negative sign",
+        "pointsK": [
+          [
+            293.15,
+            6.2
+          ],
+          [
+            373.15,
+            7.3
+          ],
+          [
+            473.15,
+            8.3
+          ],
+          [
+            573.15,
+            8.9
+          ],
+          [
+            673.15,
+            8.8
+          ],
+          [
+            873.15,
+            8.4
+          ],
+          [
+            1073.15,
+            8.0
+          ],
+          [
+            1273.15,
+            7.7
+          ]
+        ],
+        "precision": "+-0.5e-5 per K (read by eye from a figure)",
+        "source": "vavtar2021 Fig. 1 (after PULSTRI, Ravnik et al.)"
       },
       "coolantTemperature": {
         "model": "constant",
-        "alphaCoolantPerKelvin": -3.5e-5
+        "alphaCoolantPerKelvin": -3.5e-05
       }
     },
     "coolantPool": {
@@ -125,10 +198,10 @@
   "poisons": {
     "iodineYield": 0.061,
     "xenonDirectYield": 0.003,
-    "lambdaIodineSecInv": 2.87e-5,
-    "lambdaXenonSecInv": 2.09e-5,
+    "lambdaIodineSecInv": 2.87e-05,
+    "lambdaXenonSecInv": 2.09e-05,
     "sigmaXenonMicroscopicM2": 2.6e-22,
-    "fluxPerWatt": 4.0e10,
+    "fluxPerWatt": 40000000000.0,
     "fluxPerWattNote": "n/(m^2 s) per W, core average. Was 4.0e7, which is 1000x below a typical 250 kW TRIGA (~1e12 n/(cm^2 s)) and disagreed with the library; likely a cm^2/m^2 slip. 4.0e10 is an unverified estimate matching the library (review 2026-09-26)."
   }
 }
