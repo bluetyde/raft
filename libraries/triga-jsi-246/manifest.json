@@ -1,7 +1,7 @@
 {
   "schemaVersion": "0.1.0",
   "id": "triga-jsi-246",
-  "name": "JSI TRIGA Mark II, core 246 (65 elements)",
+  "name": "JSI TRIGA Mark II, core 246 (64 elements)",
   "status": "experimental",
   "capabilities": [
     "point-kinetics/lumped-thermal-v1"
@@ -373,7 +373,7 @@
   "thermal": {
     "fuel": {
       "mass": {
-        "value": 153.595,
+        "value": 151.232,
         "source": "cited:svajger2024"
       },
       "cp": {

@@ -140,21 +140,22 @@
         "tOffsetK": 274.15,
         "source": "vavtar2021 eq. 1.8, citing Simnad, GA E-177-833 (1980)"
       },
-      "coreFuelMassKgNote": "assumed 84 kg, unsourced and wrong (C2 pass 3): it equals 36 elements. svajger2024 Table 10: 2.36 kg/element (matches geometry: 382 cm3 x 6.18 g/cm3). Core 242 has 59 elements (139 kg), core 246 has 65 (154 kg), per the database core maps. Kept until the user decides on the M1 criterion; see docs/validation/m1-c1-results.md.",
+      "coreFuelMassKgNote": "assumed 84 kg, unsourced and wrong (C2 pass 3): it equals 36 elements. svajger2024 Table 10: 2.36 kg/element (matches geometry: 382 cm3 x 6.18 g/cm3). Core 242 has 58 elements (137.1 kg), core 246 has 64 (151.2 kg), per the database core maps. Kept until the user decides on the M1 criterion; see docs/validation/m1-c1-results.md.",
       "fuelMassPerElementKg": 2.36,
       "fuelMassPerElementSource": "svajger2024 Table 10",
       "coreElementCounts": {
         "242": {
-          "elements": 59,
+          "elements": 58,
           "date": "2019-09-26",
           "fuel": "standard 12 wt% U"
         },
         "246": {
-          "elements": 65,
+          "elements": 64,
           "date": "2021-07-23",
           "fuel": "standard 12 wt% U"
         },
-        "source": "trigapulse.ijs.si core maps 242.pdf, 246.pdf (read 2026-09-27; 2 elements in the storage rack excluded)"
+        "source": "trigapulse.ijs.si core maps 242.pdf, 246.pdf (read 2026-09-27; 2 elements in the storage rack excluded)",
+        "correction": "2026-09-27: first recorded as 59 and 65; the 4-digit count included each map's date year (2019, 2021). Corrected from the label coordinates (every serial assigned to its position)."
       }
     },
     "feedbackCoefficients": {
