@@ -29,6 +29,11 @@ function physics(s: any) {
 }
 
 test.beforeEach(async ({ page }) => {
+  if (process.env.VR_E2E_THROTTLE) {
+    // reproduce a slow CI runner: slow the page's CPU
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: Number(process.env.VR_E2E_THROTTLE) });
+  }
   await page.goto("/src/app/e2e/index.html");
   await expect(page.locator("#status")).toHaveText("ready");
 });
@@ -49,7 +54,7 @@ for (const [how, code] of [
 
 test("a trip: the period trip fires at the golden vector's time, and the peak matches", async ({ page }) => {
   const r = await page.evaluate(
-    (v) => window.e2e.start({ init: v.init, seed: v.seed, config: v.config }),
+    (v) => window.e2e.start({ init: v.init, seed: v.seed, config: v.config, pauseOnTrip: true }),
     { init: vector.init, seed: vector.seed, config: vector.config },
   );
   expect(r.loaded).not.toBeNull();
@@ -58,10 +63,10 @@ test("a trip: the period trip fires at the golden vector's time, and the peak ma
   // (the trip comes at about 17 s of sim time, so the pause lands well before the vector's last step)
   await page.evaluate(({ id, cmd }) => window.e2e.send(id, cmd), { id: r.id, cmd: vector.script[0].cmd });
   await page.evaluate((id) => window.e2e.time(id, { rate: 20, paused: false }), r.id);
+  // the harness pauses the clock inside the page when the trip event arrives (pauseOnTrip)
   await expect
     .poll(async () => (await state(page, r.id)).events.some((e: any) => e.type === "trip"), { timeout: 30_000 })
     .toBe(true);
-  await page.evaluate((id) => window.e2e.time(id, { paused: true }), r.id);
 
   const s = await state(page, r.id);
   const got = s.events.find((e: any) => e.type === "trip");

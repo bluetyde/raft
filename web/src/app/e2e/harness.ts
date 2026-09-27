@@ -56,11 +56,17 @@ function run(id: number): Recorder {
 
 const api = {
   /** Start a worker, load the synthetic core (optionally broken), and return the run id and the load result. */
-  async start(opts: { init?: Record<string, any>; seed?: number; config?: Record<string, any>; corrupt?: "json" | "digest" } = {}) {
+  async start(
+    opts: { init?: Record<string, any>; seed?: number; config?: Record<string, any>; corrupt?: "json" | "digest"; pauseOnTrip?: boolean } = {},
+  ) {
     const worker = new Worker(new URL("../../runtime/worker.ts", import.meta.url), { type: "module" });
     const client = new RuntimeClient(worker, "e2e");
     const r: Recorder = { client, worker, events: [], acks: [], snapshot: null, snapshots: 0, clock: null, errors: [] };
-    client.on("events", (m) => r.events.push(...m.events));
+    client.on("events", (m) => {
+      r.events.push(...m.events);
+      // pause from inside the page as soon as a trip arrives: polling from the test runner can lag by a second under load
+      if (opts.pauseOnTrip && m.events.some((e: any) => e.type === "trip")) client.setTime({ paused: true });
+    });
     client.on("ack", (m) => r.acks.push(m));
     client.on("snapshot", (m) => {
       r.snapshot = m.snapshot;
@@ -70,7 +76,7 @@ const api = {
     client.on("error", (m) => r.errors.push(`${m.request}: ${m.code}`));
     client.on("fault", (m) => r.errors.push(`fault: ${m.message}`));
     const id = runs.push(r) - 1;
-    const { corrupt: how, ...load } = opts;
+    const { corrupt: how, pauseOnTrip: _p, ...load } = opts;
     const files = await syntheticFiles();
     if (how) corrupt(files, how);
     try {
