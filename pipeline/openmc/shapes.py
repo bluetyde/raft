@@ -46,11 +46,12 @@ def add_shape_tallies(model, n_axial: int = AXIAL_BINS) -> list[str]:
     mesh = openmc.RegularMesh()
     mesh.lower_left, mesh.upper_right, mesh.dimension = (-100.0, -100.0, -core_model.HALF_FUEL), \
         (100.0, 100.0, core_model.HALF_FUEL), (1, 1, n_axial)
+    cf = openmc.CellFilter([cells[l] for l in labels])
     t = openmc.Tally(name="shape")
-    t.filters = [openmc.CellFilter([cells[l] for l in labels]), openmc.MeshFilter(mesh)]
+    t.filters = [cf, openmc.MeshFilter(mesh)]
     t.scores = ["fission"]
     total = openmc.Tally(name="shape-total")
-    total.filters = [openmc.CellFilter([cells[l] for l in labels])]
+    total.filters = [cf]
     total.scores = ["fission"]
     model.tallies = openmc.Tallies(list(model.tallies) + [t, total])
     return labels
