@@ -1,0 +1,91 @@
+{
+ "description": "JSI TRIGA Mark II core geometry from open sources only (no ICSBEP). Values from other GA TRIGA Mark II reactors are marked as such; the JSI-specific ones win where both exist.",
+ "sources": {
+  "svajger2024": "I. Švajger et al., Nuclear Engineering and Technology 56 (2024) 1165–1203, doi:10.1016/j.net.2023.11.021",
+  "ksu2004": "Kansas State University TRIGA Mark II, Safety Analysis Report dated 2004-12-21 (NRC license R-88; public, NRC ADAMS). Standard GA stainless-steel TRIGA element and components; a different reactor, so reactor-specific values (reflector size, rod types) are not used for JSI",
+  "trigapulse": "JSI TRIGA pulse database, trigapulse.ijs.si: core maps 242.pdf and 246.pdf, rod tables s242.pdf and s246.pdf (downloaded, kept out of git)",
+  "castagna2017": "C. Castagna et al., A new model with Serpent for the first criticality benchmarks of the TRIGA Mark II reactor, arXiv:1707.05194 (Pavia reactor)"
+ },
+ "grid": {
+  "rings": {
+   "A": 1,
+   "B": 6,
+   "C": 12,
+   "D": 18,
+   "E": 24,
+   "F": 30
+  },
+  "uniformSpacingWithinRing": true,
+  "ringRadiiCm": null,
+  "ringRadiiStatus": "MISSING: not in svajger2024 or ksu2004. Bound: F ring + element radius (1.877) must stay inside the reflector radius 22.098, so F < 20.22 cm.",
+  "source": "svajger2024 (rings and capacities)",
+  "ringRadiiCandidateCm": {
+   "B": 4.05,
+   "C": 7.98,
+   "D": 11.95,
+   "E": 15.92,
+   "F": 19.89,
+   "coreRadius": 21.12,
+   "status": "UNVERIFIED: quoted by a web-search summary, apparently from JSI's ICTP slides 'Characterisation of the JSI TRIGA reactor' (indico.ictp.it event 7993); the server didn't respond, so not checked against the document. Consistent with the F < 20.22 cm bound."
+  }
+ },
+ "reflector": {
+  "innerRadiusCm": 22.098,
+  "source": "svajger2024 section 4.2 (radius to the graphite reflector)",
+  "heightCm": 55.9,
+  "heightSource": "ksu2004 (0.559 m; a GA Mark II value, not confirmed for JSI)",
+  "outerRadiusCm": null,
+  "outerStatus": "MISSING for JSI (ksu2004's 42 in outer diameter is KSU's)"
+ },
+ "gridPlates": {
+  "thicknessCm": 1.905,
+  "fuelHoleDiameterCm": 3.823,
+  "source": "ksu2004 (0.75 in aluminum; hole 0.03823 m)",
+  "spacingCm": null,
+  "spacingStatus": "castagna2017 gives 64.8 cm for Pavia; not confirmed for JSI"
+ },
+ "fuelElement": {
+  "totalLengthCm": 72.06,
+  "fuelLengthCm": 38.1,
+  "graphiteEndReflectorCm": 8.738,
+  "source": "ksu2004 (standard 304 SS-clad element: 28.37 in total, 15 in fuel, 3.44 in graphite axial reflectors); fuel length matches svajger2024",
+  "radialSource": "jsi_standard_fuel.json (svajger2024 Table 1)"
+ },
+ "controlRods": {
+  "types": "JSI: three B4C rods with fuel followers (safety, shim, regulating) and a transient rod with an air follower (svajger2024)",
+  "absorberLengthCm": 50.8,
+  "claddingCm": 0.0762,
+  "standardRodDiameterCm": 2.225,
+  "pulseRodDiameterCm": 3.175,
+  "source": "ksu2004 (20 in B4C or borated graphite, 30 mil aluminum sheath; 7/8 in and 1.25 in rods). KSU's standard rods may differ from JSI's fuel-followed rods: follower dimensions are MISSING",
+  "travelCm": {
+   "standard": 38.1,
+   "transient": 47.2,
+   "source": "castagna2017 (Pavia), not confirmed for JSI"
+  }
+ },
+ "criticalStates": {
+  "242": {
+   "powerW": 400,
+   "rodsSteps": {
+    "T": "up",
+    "K": 499,
+    "V": "up",
+    "R": 500
+   },
+   "source": "trigapulse s242.pdf header (measured 2020-10-19 on core 242)"
+  },
+  "244": {
+   "powerW": 400,
+   "rodsSteps": {
+    "T": "up",
+    "K": 543,
+    "V": "up",
+    "R": 544
+   },
+   "source": "trigapulse s246.pdf header (measured 2021-06-08 on core 244; core 246's pulses use this table)"
+  },
+  "stepsToCm": null,
+  "stepsStatus": "MISSING: the JSI step size and the rod positions at step 0 are not in the open sources found"
+ }
+}
