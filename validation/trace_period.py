@@ -19,8 +19,8 @@ import math
 import struct
 from pathlib import Path
 
-from physics_ref import Engine
-from validation.c1_comparison import _fresh_library, transient_start_position
+from physics_ref import Engine, Library
+from validation.c1_comparison import LIBRARY_PATH, transient_start_position
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TRACES = REPO_ROOT / "validation" / "data" / "jsi-pulses" / "traces"
@@ -74,9 +74,11 @@ def fit_omega(power: list[float], dt: float, lo: float = LO, hi: float = HI, cle
     return omega, int(n), noise
 
 
-def engine_trace(dollars: float, p0: float = 1.0, t_max: float = 1.5) -> list[float]:
-    """Power [MW] every SIM_DT for a pulse of `dollars` fired from critical at p0 W (same setup as C1)."""
-    lib = _fresh_library(1.0)
+def pulse_engine(library_path: Path, dollars: float, outer_dt: float, p0: float = 1.0) -> Engine:
+    """Engine set up as in C1: other rods out, transient rod at the position that inserts `dollars`, exactly critical
+    (test-only calibration offset), source off, P0 = p0 W, pulse mode, rod fire submitted."""
+    lib = Library(library_path)
+    lib.ext_source = 0.0
     x0 = transient_start_position(lib, dollars)
     rods = {r.id: 1.0 for r in lib.rods}
     rods["transient"] = x0
@@ -84,10 +86,16 @@ def engine_trace(dollars: float, p0: float = 1.0, t_max: float = 1.5) -> list[fl
     for r in lib.rods:
         rho_rods += r.worth(rods[r.id])
     lib.calibration = -(lib.ref_rho + rho_rods)
-    lib.mark_modified(f"trace_period:d={dollars!r}")
+    lib.mark_modified(f"pulse:d={dollars!r}:p0={p0!r}")
     e = Engine(lib, {"rods": rods, "mode": "pulse", "power": {"mode": "critical-equilibrium", "value": p0}},
-               config={"outerDt": SIM_DT})
+               config={"outerDt": outer_dt})
     e.submit({"type": "rod.fire", "rod": "transient"})
+    return e
+
+
+def engine_trace(dollars: float, p0: float = 1.0, t_max: float = 1.5, library_path: Path = LIBRARY_PATH) -> list[float]:
+    """Power [MW] every SIM_DT for a pulse of `dollars` fired from critical at p0 W (same setup as C1)."""
+    e = pulse_engine(library_path, dollars, SIM_DT, p0)
     out = []
     while e.t < t_max:
         e.step()
@@ -97,10 +105,10 @@ def engine_trace(dollars: float, p0: float = 1.0, t_max: float = 1.5) -> list[fl
     return out
 
 
-def model_curve() -> list[tuple[float, float]]:
+def model_curve(library_path: Path = LIBRARY_PATH) -> list[tuple[float, float]]:
     curve = []
     for d in DOLLAR_GRID:
-        fit = fit_omega(engine_trace(d), SIM_DT, clean=True)
+        fit = fit_omega(engine_trace(d, library_path=library_path), SIM_DT, clean=True)
         if fit:
             curve.append((d, fit[0]))
     return curve

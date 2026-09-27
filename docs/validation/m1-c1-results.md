@@ -191,3 +191,39 @@ clean enough; the rest are low-$ pulses buried in noise) and inverts the engine'
 - ω and Pmax together give Λ/γ without any label (Nordheim–Fuchs: Pmax ≈ ω²Λ/(2γ)). That is the handle for the remaining level question
   (fuel mass, α, Λ) in run 3.
 - Caveat: ω measures ρ′/Λ, so "inferred $" assumes the library's Λ = 40 µs.
+
+## Run 3 (2026-09-27): per-core libraries, trace-inferred $, the user's criterion
+
+Protocol `m1-run3-protocol.md` (committed `053c4c3` before any run-3 code), code `53cf090`, report `validation/m1_run3_report.json`.
+Two deviations, both committed before any run-3 metric was seen: the simulation grid was widened from $1.275–1.75 to $1.25–1.90 (`2cc9c0e`, `9f0e645`)
+because one pulse was inferred at $1.7515 and the −$0.03 sensitivity shift reached $1.27. Both earlier attempts stopped with an error before computing any metric.
+
+**Part A (code-to-code, svajger2024 Table 10 inputs, γ = 2.102 × 10⁻⁹ /J):**
+
+| $ | engine / Fuchs–Hansen | A1 range [0.75, 1.02] |
+|---|---|---|
+| 1.5 | **1.026** | fail (0.6% above the upper bound) |
+| 1.8 | 1.010 | pass |
+| 2.1 | 1.006 | pass |
+
+**Part B (code-to-data, no calibration, each core's own library):**
+
+| | pulses used (of fitted) | RMS e (B1 ≤ 0.405) | bias (B2 ≤ 0.262) | slope measured / sim (B3 ±0.4) | B4 ≥ 20 |
+|---|---|---|---|---|---|
+| Core 242 | 32 (of 56), $1.33–1.75 | **0.048** (×1.05) | +0.039 | 1.89 / 1.98 | pass |
+| Core 246 | 36 (of 80), $1.30–1.55 | **0.026** (×1.03) | −0.014 | 1.85 / 1.95 | pass |
+
+Sensitivity to the inferred $ (±$0.03, not scored): RMS 0.10–0.17, bias −0.16 … +0.15, all still inside B1/B2.
+
+**Proposal under the fixed rules: NO-GO**, because A1 fails at $1.5 by 0.6%. Why it fails: the A1 upper bound (1.02) assumed Fuchs–Hansen is an upper bound,
+because the published IPM sits below it. But delayed neutrons returning during the pulse *raise* the peak in a point-kinetics model with a step-like insertion.
+This repo's own analytic test already showed it (`test_delayed_return_raises_the_peak`: the full model is 3.4% above Nordheim–Fuchs for the synthetic core), and the effect is largest near
+prompt critical. The IPM's lower peak comes from its rod worth varying with height during ejection and from heat removal, which the thresholds should have
+considered. That was an error in writing the protocol (Claude's), not a finding about the engine. Whether to accept A1 as mis-specified is the user's decision;
+the rules are not changed here.
+
+What run 3 shows: with cited inputs and no calibration, the engine reproduces each core's measured peak powers to within a few percent on the trace-derived axis
+(Part B), and follows Fuchs–Hansen to within 3% with the paper's inputs (Part A). Caveats:
+- The inferred $ depends on Λ = 40 µs, so B tests the cited γ against Λ jointly, not each on its own.
+- B covers $1.30–1.75 on the corrected axis only. Below $1.30 the traces are too noisy for the rise-rate fit.
+- Rod worth shapes, fireTime and geometry are still `assumed`.
