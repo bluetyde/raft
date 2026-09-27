@@ -33,15 +33,15 @@ CITED_VAVTAR = "cited:vavtar2021"
 CITED_SVAJGER = "cited:svajger2024"
 
 # Run-3 variants (docs/validation/m1-run3-protocol.md). Fuel mass 2.363 kg/element (svajger2024 Table 10, geometry check);
-# element counts from the database core maps. The fuel reactivity table is svajger2024 Table 2 (k-infinity of standard fuel,
+# element counts from the database core maps (58 and 64; first counted as 59 and 65, which included the map's date year). The fuel reactivity table is svajger2024 Table 2 (k-infinity of standard fuel,
 # Serpent, ENDF/B-VII.0): delta-rho in pcm at 294..800 K, with 294 K used as the 293.15 K reference; beyond 800 K alpha is
 # held at -9.81 pcm/K. The "paper" variant reproduces svajger2024 Table 10's inputs for the code-to-code check.
 MASS_PER_ELEMENT = 2.363
 TABLE2_T = [293.15, 400.0, 500.0, 600.0, 700.0, 800.0, 1200.0]
 TABLE2_RHO_PCM = [0.0, -694.0, -1612.0, -2583.0, -3551.0, -4533.0, -4533.0 - 9.81 * 400.0]
 VARIANTS = {
-    "242": {"id": "triga-jsi-242", "name": "JSI TRIGA Mark II, core 242 (59 elements)", "mass": 59 * MASS_PER_ELEMENT, "fuel": "table2"},
-    "246": {"id": "triga-jsi-246", "name": "JSI TRIGA Mark II, core 246 (65 elements)", "mass": 65 * MASS_PER_ELEMENT, "fuel": "table2"},
+    "242": {"id": "triga-jsi-242", "name": "JSI TRIGA Mark II, core 242 (58 elements)", "mass": 58 * MASS_PER_ELEMENT, "fuel": "table2"},
+    "246": {"id": "triga-jsi-246", "name": "JSI TRIGA Mark II, core 246 (64 elements)", "mass": 64 * MASS_PER_ELEMENT, "fuel": "table2"},
     "paper": {"id": "triga-jsi-paper", "name": "JSI TRIGA Mark II, svajger2024 Table 10 inputs", "mass": 59 * 2.36, "fuel": "paper"},
 }
 

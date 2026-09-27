@@ -235,3 +235,16 @@ The user chose to treat A1's upper bound (1.02) as mis-specified, not as a test 
 and that stays on record.** The alternative, a run 4 with a corrected bound, was declined because any new bound would be chosen after seeing 1.026.
 Open caveats: B tests γ and Λ jointly (Λ = 40 µs assumed); rod worth shapes, fireTime and geometry are still `assumed` (M2 replaces them with OpenMC values);
 B covers $1.30–1.75 only.
+
+### Correction (2026-09-27): element counts 58 and 64, not 59 and 65
+
+Run 3's per-core libraries used 59 (core 242) and 65 (core 246) elements. The core-map count included each map's date year (2019, 2021) as if it were
+an element serial; assigning every serial to its position (`pipeline/openmc/core_maps.py`) gives **58 and 64**. Re-run with the corrected libraries,
+everything else unchanged (`validation/m1_run3_report_counts_corrected.json`):
+
+| | RMS e | bias | slopes measured / sim | B1–B4 |
+|---|---|---|---|---|
+| Core 242 | 0.048 → **0.035** | +0.039 → **+0.022** | 1.89 / 1.98 | pass |
+| Core 246 | 0.026 → **0.037** | −0.014 → **−0.029** | 1.85 / 1.95 | pass |
+
+Part A is unaffected (it uses the paper's own inputs). The M1 decision stands; the corrected numbers are the ones to quote.
