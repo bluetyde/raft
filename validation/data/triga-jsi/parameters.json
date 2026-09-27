@@ -15,7 +15,7 @@
     },
     {
       "id": "svajger2024",
-      "citation": "I. Švajger, D. Čalič, A. Pungerčič, A. Trkov, L. Snoj, 'Evaluation of reactor pulse experiments', Nuclear Engineering and Technology 56 (2024) 1165–1203, doi:10.1016/j.net.2023.11.021. (Was cited here as 55 (2023) 4404–4415, which is wrong.) Full text not yet checked."
+      "citation": "I. Švajger, D. Čalič, A. Pungerčič, A. Trkov, L. Snoj, 'Evaluation of reactor pulse experiments', Nuclear Engineering and Technology 56 (2024) 1165–1203, doi:10.1016/j.net.2023.11.021. (Was cited here as 55 (2023) 4404–4415, which is wrong.) Checked 2026-09-27 (C2 pass 2)."
     },
     {
       "id": "vavtar2021",
@@ -140,7 +140,9 @@
         "tOffsetK": 274.15,
         "source": "vavtar2021 eq. 1.8, citing Simnad, GA E-177-833 (1980)"
       },
-      "coreFuelMassKgNote": "assumed; consistent with vavtar2021's gamma = alpha/(m C) = 2.1e-9 per J (gives 2.0-2.15e-9 over 293-573 K)"
+      "coreFuelMassKgNote": "assumed 84 kg; consistent with vavtar2021's gamma = 2.1e-9 /J. svajger2024 Table 10 gives 2.36 kg/element, i.e. 132 kg for the library's 56 elements, which with the cited alpha(T), cp(T) gives gamma ~1.3-1.4e-9 /J. The two JSI papers imply different gamma; unresolved (docs/validation/m1-c1-results.md, C2 pass 2).",
+      "fuelMassPerElementKg": 2.36,
+      "fuelMassPerElementSource": "svajger2024 Table 10"
     },
     "feedbackCoefficients": {
       "fuelTemperaturePrompt": {
@@ -181,7 +183,33 @@
           ]
         ],
         "precision": "+-0.5e-5 per K (read by eye from a figure)",
-        "source": "vavtar2021 Fig. 1 (after PULSTRI, Ravnik et al.)"
+        "source": "vavtar2021 Fig. 1 (after PULSTRI, Ravnik et al.)",
+        "crossCheck": {
+          "source": "svajger2024 Table 2 (Serpent, ENDF/B-VII.0, standard fuel, k-infinity)",
+          "alphaPcmPerK": [
+            [
+              400,
+              -6.54
+            ],
+            [
+              500,
+              -9.19
+            ],
+            [
+              600,
+              -9.71
+            ],
+            [
+              700,
+              -9.68
+            ],
+            [
+              800,
+              -9.81
+            ]
+          ],
+          "range": "5-10e-5 /K, median 7.5e-5, 1 sigma 20%"
+        }
       },
       "coolantTemperature": {
         "model": "constant",
