@@ -13,5 +13,7 @@ export default defineConfig({
   test: {
     include: ["src/**/*.test.ts"],
     environment: "node",
+    // CPU-heavy analytic checks take 3-6 s on the GitHub runner, near Vitest's 5 s default.
+    testTimeout: 30_000,
   },
 });

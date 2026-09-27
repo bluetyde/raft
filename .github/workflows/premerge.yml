@@ -2,6 +2,7 @@ name: premerge
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
