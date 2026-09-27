@@ -13,11 +13,11 @@ import {
 } from "./protocol";
 import type { Issue } from "../library/validate";
 
-/** What the client needs from a Worker (a real one, or an in-memory pair in tests). */
+/** What the client needs from a Worker (a real one, or an in-memory pair in tests). A DOM Worker fits this type. */
 export interface WorkerLike {
-  postMessage(msg: ToWorker, transfer?: Transferable[]): void;
-  onmessage: ((ev: { data: FromWorker }) => void) | null;
-  onerror?: ((ev: unknown) => void) | null;
+  postMessage(msg: ToWorker, transfer: Transferable[]): void;
+  onmessage: ((this: any, ev: MessageEvent) => any) | null;
+  onerror?: ((this: any, ev: any) => any) | null;
 }
 
 export type Ack = Extract<FromWorker, { kind: "ack" }>;
@@ -44,7 +44,7 @@ export class RuntimeClient {
     private readonly worker: WorkerLike,
     readonly clientId = "local",
   ) {
-    worker.onmessage = (ev) => this.dispatch(ev.data);
+    worker.onmessage = (ev) => this.dispatch(ev.data as FromWorker);
     worker.onerror = () => {
       this.disconnected = true;
       this.emit({ kind: "fault", message: "the runtime worker stopped" });
@@ -142,7 +142,7 @@ export class RuntimeClient {
     const i = this.waiters.findIndex((w) => this.matches(w, msg));
     if (i >= 0) this.waiters.splice(i, 1)[0]!.resolve(msg);
     this.emit(msg);
-    if (msg.kind === "snapshot") this.worker.postMessage({ kind: "frameAck" });
+    if (msg.kind === "snapshot") this.worker.postMessage({ kind: "frameAck" }, []);
   }
 
   private emit(msg: FromWorker): void {
