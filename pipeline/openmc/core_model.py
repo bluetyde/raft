@@ -190,6 +190,9 @@ def build(core: str, rods: dict[str, float], particles: int, batches: int, inact
             else:
                 layers = []                       # channels and empty positions: water (assumed)
             cyl, pc = layered_cells(x, y, r_pos, layers, M["water"], (zb_s, zt_s))
+            for c in pc:
+                if c.fill is M["fuel"]:
+                    c.name = lab                  # fuel cells carry their grid position (shapes.py bins power by it)
             pos_cyls.append(cyl)
             cells += pc
 
