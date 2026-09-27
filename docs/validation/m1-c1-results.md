@@ -93,3 +93,34 @@ report in `validation/c1_report_run2.json` (run 1 stays in `c1_report.json`).
   or offset reactivity axis, or from an E1000 integration window that varies with pulse size (the window is undocumented).
 - **Also fixed in C2:** `validation/pulse_comparison.py` computed its Nordheim–Fuchs reference from a hardcoded α = 1.05 × 10⁻⁴ /K instead of the
   library. It now linearises the library's own ρ_fuel(T) and cp(T) over each pulse, and agrees with the engine within 2% at $1.50–$2.00.
+
+## C2 pass 2 (2026-09-27): Švajger et al., NET 56 (2024) 1165–1203
+
+This is the JSI group's own comparison of the same pulse database with Fuchs–Hansen, Nordheim–Fuchs and their Improved Pulse Model (IPM).
+It settles the question C1 raised:
+
+- **Their model shows the same misfit.** On a single core (4 April 2018, their Fig. 42) the IPM "always predicts higher maximum power than
+  experiments": about 85% higher at $2 and 9% at $3. That is the steep low-$ behaviour C1 found (our uncalibrated engine: +28% at $2 against core 246).
+- **Their explanation:** the inserted reactivity comes from rod-calibration curves and carries about 5% uncertainty (Table 14). It shifts with
+  core composition (number and position of fuel elements). Measurements at low power are noisier, and their conclusions say the theoretical models
+  "can only be applied at higher reactivity". Across core configurations, the measured peak power moves the opposite way from the models
+  (more fuel elements: models higher, data lower; §9.3).
+- **Energy windows:** E1000 is their "1000-points method" (1000 samples either side of the peak). The three windowing methods agree at high
+  reactivity and diverge at low reactivity (their Fig. 40, 43), which fits the steep measured energy law.
+- **Inputs, cross-checked:**
+  - Computed α(T) for standard fuel (their Table 2, Serpent, ENDF/B-VII.0): −6.54, −9.19, −9.71, −9.68, −9.81 pcm/K at 400–800 K. This agrees
+    with the value we read off Vavtar's Fig. 1 to about 10% up to 500 K, and stays flatter above it.
+  - α range 5–10 × 10⁻⁵ /K, median 7.5 × 10⁻⁵, 1σ 20%.
+  - Fuel mass 2.36 kg per element (their Table 10).
+- **An inconsistency to resolve, not tune:** 56 elements (our library's geometry) × 2.36 kg = 132 kg, against the library's `assumed` 84 kg.
+  With 132 kg, γ = α/(m·cp) drops to about 1.3–1.4 × 10⁻⁹ /J, where Vavtar & Snoj 2021 use 2.1 × 10⁻⁹. Švajger's own constant inputs
+  (α 7.5 × 10⁻⁵, C 341.6 J/(kg·K), 57–61 elements) give 1.5–1.6 × 10⁻⁹. So the two JSI papers imply different γ.
+  The library keeps 84 kg (γ ≈ 2.1 × 10⁻⁹, matching Vavtar) until the user decides; 132 kg would raise the model's peak power by about 1.5×,
+  toward the IPM's own overprediction.
+
+**Conclusion for M1.** C1's criterion (point kinetics matching measured peak powers within ×1.5 across $1.3–$3) is stricter than what the source
+group's own, more detailed model achieves on its own data. Failing it no longer says our engine or inputs are wrong. It says the criterion asks for
+something the measured reactivity axis can't support at low $. A fair M1 needs a different criterion (the user's decision), for example:
+1. **Code-to-code:** match the published IPM/FH with the published inputs (we do: 284 MW at $2 against about 265–290 MW), and
+2. **Code-to-data where the source trusts its data:** within the paper's uncertainty band at d ≥ $2, and a single core only (not pooled
+   across configurations).
