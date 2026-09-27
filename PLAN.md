@@ -114,7 +114,11 @@ A realism toggle hides the 3D inset during scenarios.
 1. **Physics prototype (no UI).** Point kinetics plus fuel temperature feedback, reproducing a TRIGA pulse
    (peak power, pulse width, energy released) against published data. This is the go/no-go check.
    
-   **Status (2026-09-27): NO-GO (user decision on the C1 proposal). Next: C2 (verify parameters, esp. UZrH cp(T), α(T)), then re-run C1 unchanged.**
+   **Status (2026-09-27): GO for M1 as redefined by the user** ([run 3](docs/validation/m1-c1-results.md), protocol [m1-run3-protocol.md](docs/validation/m1-run3-protocol.md)).
+   With cited inputs and no calibration, the engine reproduces the published pulse model within 3% and each core's measured peak powers within about 5%
+   (cores 242 and 246, on the trace-derived $ axis, $1.30–1.75). Check A1 failed by 0.6% at $1.5; the user judged its bound mis-specified (delayed-neutron
+   return raises the peak above Fuchs–Hansen, documented in the repo before the run), and the failure stays on record.
+   The history below (C1 NO-GO, C2, C7) explains how the criterion and the $ axis changed.
    - Code verification passed: the engine matches Nordheim–Fuchs to < 0.1% under its assumptions, plus the other analytic checks (`physics_ref/tests/`).
    - A first comparison with the JSI pulse database (`validation/pulse_comparison.py`) gave sim/exp median peak-power ratios of 0.51–5.92
      across $1.10–2.20, with disagreeing scaling exponents. It pooled 31 core configurations without screening or condition matching,

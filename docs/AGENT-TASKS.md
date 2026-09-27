@@ -30,7 +30,8 @@ Status: `ready` (brief can be written now) · `blocked` (needs something first) 
 
 | ID | Task | Files | Oracle / proof of done | Status |
 |---|---|---|---|---|
-| A6-1 | TS port of `physics_ref` (numerics, library, engine incl. ROS3P) + its Python tests ported + a Vitest runner over every golden vector | `web/src/sim/` | Every vector in `schema/engine-vectors/` within its declared tolerances; ported analytic tests; snapshots valid against `schema/snapshot.schema.json` | blocked on C5 (A5-1 done). Split at numerics/library vs engine if the brief gets too large |
+| A9 | Pre-merge check script (TD-03): Python fast tests + `npm test` / `typecheck` / `build`, one command, non-zero exit on any failure | `scripts/` | Exits 0 on `main`; exits non-zero when a test is broken on purpose (one case per stage) | ready |
+| A10 | Primitive 3D viewer from the library's `geometry` (after the M3 renderer decision; dispatcher adds three.js + lockfile) | `web/src/views/explorer/` | Every primitive of the synthetic core and `triga-jsi-246` rendered and pickable by id; e2e screenshot check | blocked on TD-07 decision |
 | A7 | Scenario schema + validator + fixtures | `schema/scenario.schema.json`, `pipeline/scenario/` | Every invalid fixture gives its expected code | **on hold (user)**. Step 0 failed (spec still moving); the format design is Claude's when resumed |
 
 New dispatches use branches `claude/agy-<task>` (INSTRUCTIONS.md rule 5).
@@ -42,12 +43,9 @@ Sandbox Node setup landed (2026-09-26): `--node 24` (24.18.0, matches Windows) a
 | ID | Task | Why not agy | Status |
 |---|---|---|---|
 | C1 | M1 condition-matched comparison | physics judgment | done: **NO-GO accepted by the user 2026-09-27** ([results](validation/m1-c1-results.md)) |
-| C2 | Verify every parameter in `validation/data/triga-jsi/parameters.json` and the library against real sources (esp. UZrH cp(T), α(T)); then correct citations in `pipeline/library/build_triga.py` (the former A4) and re-run C1 unchanged | judgment on sources | pass 1 done (cited kinetics, cp(T), α(T); C1 run 2 still NO-GO, misfit is the data's low-$ scaling); next: Švajger et al. 2024 on the $ axis |
-| C3 | OpenMC JSI TRIGA model (M2) | OpenMC transport, nuclear data | blocked on C2 |
+| C3 | OpenMC JSI TRIGA model (M2): benchmark core, then cores 242/246; rod worths vs the measured tables, Λ, β_eff, α(T) | OpenMC transport, nuclear data | ready (TODO Next, track 1); ICSBEP access requested by the user |
 | C4 | Verify each agy result (skill step 4), log, propose merges | dispatcher's job | ongoing |
-| C5 | Keep `"method"` in `pins()` (undo agy's omission) and regenerate `schema/engine-vectors/` | small, touches pinned contracts | ready; must land before A6-1 (the vectors are A6's oracle) |
-| A6-0 | A6 design in the brief: module layout, API parity with Python, SplitMix64 on BigInt, explicit left-to-right sums, library loading via A5-1, snapshot validation via the TS minischema; Web Worker out of scope | design decisions | with the A6-1 brief |
-| C6 | Web Worker runtime, clock and command bus (ARCHITECTURE runtime loop) | scheduling semantics still open | later |
+| C6 | Web Worker runtime, clock and command bus (ARCHITECTURE runtime loop) | scheduling semantics still open | ready (TODO Next, track 2) |
 | — | Anything like ROS3P: solvers, new numerical methods, coefficient work, precision-critical code | small and precision-critical (skill step 0) | — |
 
 ### Done
@@ -60,6 +58,8 @@ Sandbox Node setup landed (2026-09-26): `--node 24` (24.18.0, matches Windows) a
 | A4 | Relabel unverified library values `assumed` (done by Claude in the M1 review) | `main` via `claude/m1-review` |
 | A5-0 | `web/` scaffold + A5-1 design (`web/README.md`) + Python parity fixes (Claude) | `main` via `claude/a5-0-scaffold` |
 | A5-1 | TS validators + Python-vs-TS parity oracle (step-0 win: 1448 lines in 7 min, 4 of 5 targeted breaks caught, 5th not observable) | `main` via `claude/agy-a5-1-validator` |
+| A6-1 | TS port of the engine vs the golden vectors (agy; plus a dispatcher half-step rounding test) | `main` via `claude/agy-a6-1-engine` |
+| C2, C5, C7 | Cited inputs; `method` in pins; trace-derived $ axis. M1 GO on 2026-09-27 (run 3) | `main` |
 | A8 | Command and snapshot schemas + validator + fixtures | `main` via `claude/agy-contracts` |
 
 ### Codex review points
