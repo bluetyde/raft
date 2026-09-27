@@ -31,10 +31,13 @@ test("withdrawing a rod moves it in the 3D view, raises power, and colours the f
   await expect(page.locator(".vr-controls .vr-note")).toContainText("rod.move accepted", { timeout: 10_000 });
   await expect.poll(async () => (await rods(page))["regulating"]!, { timeout: 15_000 }).toBeGreaterThan(r0 + 0.05);
 
-  // the rod in the 3D scene is where the runtime says it is (read-out and scene come from the same snapshot)
-  const pct = await page.locator(".vr-controls .vr-row", { hasText: "regulating" }).locator(".vr-pos").textContent();
-  const shown = Number.parseFloat(pct ?? "");
-  expect(Math.abs(shown - 100 * (await rods(page))["regulating"]!)).toBeLessThan(2);
+  // the rod in the 3D scene is where the read-out says it is: both come from the same snapshot handler, so read
+  // them in one page task (two separate reads race the moving rod: 20 %/s at 10x)
+  const both = await page.evaluate(() => {
+    const row = [...document.querySelectorAll(".vr-controls .vr-row")].find((r) => r.textContent!.includes("regulating"))!;
+    return { shown: Number.parseFloat(row.querySelector(".vr-pos")!.textContent!), scene: (window as any).vr.explorer.rodPositions.regulating };
+  });
+  expect(Math.abs(both.shown - 100 * both.scene)).toBeLessThanOrEqual(0.051); // the read-out rounds to 0.1 %
 
   // live overlay: fuel instances carry colours, and they are not all the same
   const colours = await page.evaluate(() => {
