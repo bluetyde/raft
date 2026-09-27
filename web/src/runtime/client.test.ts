@@ -19,7 +19,7 @@ function pair() {
   host.post = (msg: FromWorker) => {
     host.out.push(msg);
     const copy = structuredClone(msg);
-    queueMicrotask(() => worker.onmessage?.({ data: copy }));
+    queueMicrotask(() => worker.onmessage?.({ data: copy } as MessageEvent));
   };
   const client = new RuntimeClient(worker, "operator");
   const settle = async () => {
@@ -31,6 +31,10 @@ function pair() {
   const load = () => client.load({ kind: "files", files: readFolder(syntheticCoreDir) });
   return { host, rt, worker, client, settle, load };
 }
+
+// Compile-time check: a real DOM Worker must fit WorkerLike (tsc fails here if it stops fitting).
+const workerFits: (w: Worker) => WorkerLike = (w) => w;
+void workerFits;
 
 describe("RuntimeClient", () => {
   it("load resolves with the pins, or rejects with the validator's issues", async () => {
