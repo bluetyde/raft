@@ -1,6 +1,6 @@
 # C6: Web Worker runtime (design)
 
-Status: **proposal, 2026-09-27. Waiting for the user's approval. No runtime code exists yet.**
+Status: **approved by the user on 2026-09-27, with the recommended option for D1–D4** (see the table at the end). Implemented in `web/src/runtime/` on the same branch.
 Scope: TODO Next #6 and the "Runtime loop" in [ARCHITECTURE.md](ARCHITECTURE.md). The runtime runs `web/src/sim`'s `Engine` in a Web Worker.
 It has a clock, a command bus, a snapshot and event stream, and history (checkpoint, rewind, replay).
 Out of scope: views, the scalar plot buffer, multi-window mirroring (`BroadcastChannel`), scenarios, and the memory-budget benchmark (TD-08, after C6).
@@ -9,7 +9,7 @@ The engine does not change. The runtime uses only its public API: `new Engine`, 
 `Engine.restore` and `Engine.replay`, plus the read-only fields `t`, `stepIndex`, `halted`, `events` and `lib`.
 The messages carry commands and snapshots in the forms of `schema/command.schema.json` and `schema/snapshot.schema.json`.
 
-Open decisions are marked **D1–D4**, each with options and a recommendation. They are listed again at the end.
+The decisions are marked **D1–D4**, each with its options. The table at the end gives the choices.
 
 ## 1. What the engine already fixes
 
@@ -35,10 +35,25 @@ These facts come from `web/src/sim/engine.ts` and set most of the runtime's beha
 | `checkpoint()` / `Engine.restore()` | 14 µs / 0.33 ms | 8 µs / 0.27 ms |
 | 60 s of steady sim at `outerDt` 0.01 / 0.1 / 1 s | 179× / 1992× / 11157× real time | 187× / 1872× / 15130× real time |
 
-Two results drive the design:
+A second test used a 4-hour transient on `triga-jsi-242`: a rod withdrawal, a scram at 600 s, then xenon build-up (at about 1 mW, so not a full-power case).
+It changed only `outerDt`:
+
+| `outerDt` | Speed reached | Largest relative difference from the 10 ms run (t = 300 s, 600 s, 1 h, 4 h) |
+|---|---|---|
+| 10 ms | 31× | — |
+| 0.1 s | 238× | power 2e-11, xenon 4e-10 |
+| 1 s | 1993× | power 2e-11, xenon 4e-8, fuel temperature 9e-9 K (absolute) |
+
+The step cost is higher while the state changes (31× here, against about 150× at steady state).
+The results do not change with `outerDt`, because inside each outer step the adaptive solver chooses its own steps to meet `rtol`.
+
+Three results drive the design:
 1. The cost is per outer step, and almost independent of the step length. At 10 ms outer steps, one core gives about **150× real time** at most.
    The 600× and 3600× presets in [plan 06](plans/06-instructor.md) need a longer outer step (D1).
 2. One step of a pulse can take about 60 ms. A step cannot be split, so this is the worst-case delay before the worker reads the next message.
+3. A longer `outerDt` changes only what happens at boundaries: commands apply up to one outer step later in sim time, instruments and noise are sampled once per outer step,
+   and trips on instrument readings are checked once per outer step. Trips on truth signals are still located inside the step (to 0.1 µs).
+   So a slow scenario (a xenon wait) can use 1–2 s outer steps and reach 3600×, but a pulse scenario needs 10 ms.
 
 ## 3. Parts
 
@@ -91,7 +106,7 @@ Every message has `kind` and the first one has `protocol`. The worker is the onl
 | Option | What it means | Cost |
 |---|---|---|
 | T1 | Keep one `outerDt` (10 ms) for all sessions. The rate caps at about 150×, and the UI shows the achieved rate. | Nothing. Xenon scenarios (hours) take minutes of wall time. |
-| **T2 (recommended now)** | `outerDt` is a session setting, fixed for the session (the engine already supports this, and pins it). A xenon scenario uses, for example, 0.5 s. The UI offers only the rates the session can reach. | Instruments are sampled and boundary trips are checked once per outer step, so a coarse session reacts later to fast events. It suits slow scenarios, not pulses. |
+| **T2 (chosen)** | `outerDt` is a session setting, fixed for the session (the engine already supports this, and pins it). A xenon scenario uses, for example, 0.5 s. The UI offers only the rates the session can reach. | Instruments are sampled and boundary trips are checked once per outer step, so a coarse session reacts later to fast events. It suits slow scenarios, not pulses. |
 | T3 (later, needs the engine) | Let a session change `outerDt` at a logged boundary, so one session can be fine during a pulse and coarse during a xenon wait. | An engine change in Python and TypeScript: time is no longer `stepIndex × outerDt`. Request R3 in `docs/cloud-notes.md`, only if you choose it. |
 
 ## 6. Command bus
@@ -103,14 +118,15 @@ Every message has `kind` and the first one has `protocol`. The worker is the onl
 4. Otherwise the worker calls `engine.submit(cmd, clientId)` and sends `queued` with the sequence number, step and sim time.
 5. After the next step, the engine's `command` event gives the result. The worker sends `ack` with the engine's status and reason unchanged.
 
-Runtime-only reasons: `REJ_SCHEMA`, `REJ_NO_LIBRARY` (nothing loaded), `REJ_HALTED` (the engine is halted, so the command would never apply), and `REJ_ROLE` (only with D4 option b).
+Runtime-only reasons: `REJ_SCHEMA`, `REJ_NO_LIBRARY` (nothing loaded), `REJ_HALTED` (the engine is halted, so the command would never apply),
+`REJ_FAULTED` (a solver error stopped the clock; only a rewind continues) and `REJ_REWOUND` (a queued command was after the rewind point and was discarded).
 
 **D2: commands while paused.**
-- **(a) Queue them (recommended).** They are submitted at the paused boundary and apply on the next step, at resume or at a single step. The `ack` comes then. This is what the engine does anyway, and it is deterministic. The instructor can pause, set up a fault, and resume.
+- **(a) Queue them (chosen).** They are submitted at the paused boundary and apply on the next step, at resume or at a single step. The `ack` comes then. This is what the engine does anyway, and it is deterministic. The instructor can pause, set up a fault, and resume.
 - (b) Reject them with `REJ_PAUSED`. Simpler to explain to an operator, but an instructor cannot prepare actions during a pause.
 
 **D4: who may send which command.** ARCHITECTURE marks faults as instructor-only.
-- **(a) No check in C6 (recommended for now).** Plan 06 says instructor mode is only a toggle in v1. The views decide which controls they show.
+- **(a) No check in C6 (chosen).** Plan 06 says instructor mode is only a toggle in v1. The views decide which controls they show.
 - (b) The runtime checks a role table by `clientId` and rejects `fault.*` from other views with `REJ_ROLE`. Cheap, and useful later for a scenario's allowed controls.
 
 ## 7. Snapshots and events
@@ -135,7 +151,7 @@ Runtime-only reasons: `REJ_SCHEMA`, `REJ_NO_LIBRARY` (nothing loaded), `REJ_HALT
   submit each logged command at its step (skipping commands with `seq < cp.nextSeq`, which the checkpoint already holds) and step until the target. Then the clock is paused.
   The re-submitted commands get their original sequence numbers, because the checkpoint restores `nextSeq`.
 - **D3: commands after the rewind point.**
-  - **(a) Truncate (recommended for C6).** The future is discarded. Before that, the runtime keeps the old timeline as one in-memory session file, so the user can export it.
+  - **(a) Truncate (chosen).** The future is discarded. Before that, the runtime keeps the old timeline as one in-memory session file, so the user can export it.
   - (b) Keep the future as a redo list, replayed on request.
   - (c) The full branch tree of plan 06. This is M6 work, and it builds on (a).
 - **Session export** wraps `engine.session()` as `{format: "virtual-reactor-session", version: 1, endStep, session}`.
@@ -147,6 +163,13 @@ Runtime-only reasons: `REJ_SCHEMA`, `REJ_NO_LIBRARY` (nothing loaded), `REJ_HALT
 - `load` builds a `LibraryReader` from the source, runs `validateLibrary`, and stops with `loadFailed` and the issues if there are any.
   Then it calls `loadLibrary` and `new Engine(lib, init, seed, config)`. An `InitError` gives `loadFailed` with its `E_INIT_*` code.
 - A worker holds one library and one engine. A new `load` replaces both and clears the history.
+
+## Later ways to more speed (not in C6)
+
+- **T3:** change `outerDt` at a logged boundary, so one session can be fine during a pulse and coarse during a wait. Engine work in Python and TypeScript (request R3).
+- **A faster engine step.** 55–320 µs per step is slow for a 13-value state, so profiling will probably find a few times more speed.
+  The golden vectors must still pass, and this is the other session's work (request R4).
+- More workers do not help: one timeline is computed one step after another.
 
 ## 10. Limits (first cut for TD-08)
 
@@ -171,9 +194,9 @@ Runtime-only reasons: `REJ_SCHEMA`, `REJ_NO_LIBRARY` (nothing loaded), `REJ_HALT
 - **Library errors:** a malformed library gives `loadFailed` with the validator's codes.
 - The real Worker path (`worker.ts`, `client.ts`) is thin, so it is checked in the browser end-to-end test (TODO Next #8), not in Vitest.
 
-## Decisions for the user
+## Decisions (approved by the user, 2026-09-27)
 
-| # | Question | Recommendation |
+| # | Question | Choice |
 |---|---|---|
 | D1 | Time rates above about 150× | **T2**: `outerDt` as a fixed per-session setting now; T3 (engine change) only if needed later |
 | D2 | Commands while paused | **(a)** queue them; they apply when time moves |
