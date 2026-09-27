@@ -163,6 +163,16 @@ class TestROS3P(unittest.TestCase):
             resumed.step()
         self.assertEqual(comparable(resumed.checkpoint()), comparable(a.checkpoint()))
 
+    def test_pins_always_name_the_method(self):
+        # C5: the solver is part of what a replay must reproduce, so pins carry it for ROS2 too.
+        L = lib()
+        self.assertEqual(scripted_run(L, [3]).pins()["config"]["method"], "ros2")
+        self.assertEqual(scripted_run_ros3p(L, [3]).pins()["config"]["method"], "ros3p")
+        # A checkpoint written before C5 (no "method" in its pins) restores as ROS2.
+        cp = json.loads(json.dumps(scripted_run(L, [3]).checkpoint()))
+        del cp["pins"]["config"]["method"]
+        self.assertEqual(Engine.restore(L, cp).config["method"], "ros2")
+
     def test_time_dependent_accuracy(self):
         """Added by the dispatcher (Claude Code), not agy: the order study above is autonomous (constant
         reactivity, no rod motion), so dF/dt = 0 there and the gamma_i coefficients never enter; a wrong gamma_i
