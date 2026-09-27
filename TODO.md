@@ -23,9 +23,9 @@ Order matters: M2 replaces the `assumed` inputs that M1's caveats rest on, and t
    Then rebuild the per-core libraries with OpenMC values replacing `assumed` rod shapes, and re-run run 3's Part B as a regression.
 
 **Track 2: the browser (parallel)**
-6. [ ] C6: Web Worker runtime, clock and command bus (ARCHITECTURE runtime loop). Claude designs the scheduling semantics; parts can then be delegated.
+6. [x] 2026-09-27 (cloud session, merged `6a4be94`): C6: Web Worker runtime, clock and command bus (ARCHITECTURE runtime loop).
 7. [ ] M3 renderer decision (TD-07: primitives now, CSG reuse later), then a three.js scaffold (the dispatcher adds the dependency and lockfile). Then **[agy]** the primitive viewer from the library's `geometry` (A10).
-8. [ ] **[agy]** Browser end-to-end check on the synthetic fixture: malformed library, a trip, pause/resume, replay (once C6 exists).
+8. [x] 2026-09-27 (cloud session, PR #4; CI job runs `npx playwright test -c src/app/e2e/playwright.config.ts`, not premerge.py): Browser end-to-end check on the synthetic fixture: malformed library, a trip, pause/resume, replay.
 
 **Housekeeping**
 9. [x] 2026-09-27: **[agy]** Pre-merge check (TD-03, A9): `python scripts/premerge.py` (agy, verified by Claude). CI that runs it: the cloud session (browser track), in progress.
@@ -69,7 +69,7 @@ All ten architecture findings and TD-01..09 are **accepted and documented** (202
       Checkpoint restore must match uninterrupted execution including noise and trips; built with the first stateful runtime, not deferred to M6 (TD-05)
 - [x] 2026-09-27: Independent checks (TD-04): perturbed-coefficient tests (`test_wrong_coefficient_breaks_order`, `..._catches_wrong_gamma`), vector self-test (`test_comparison_catches_real_differences`, ported to TS), and targeted breaks during each verification (logged). Golden vectors reproduced by the TS port (A6-1).
 - [ ] **[agy]** Basic resource bounds in the first worker and recorder (after C6); an accelerated synthetic session stays within a measured memory budget (TD-08)
-- [ ] **[agy]** Browser end-to-end check on the same fixture (Next #8): malformed library, a trip, pause/resume, replay. Only then expand the transport grid
+- [x] 2026-09-27 (Next #8, PR #4): Browser end-to-end check on the same fixture: malformed library, a trip, pause/resume, replay. Only then expand the transport grid
 - [ ] Performance budgets on a named reference laptop (Claude sets the budgets; **[agy]** writes the benchmark harness): library memory, load time, command latency, replay latency, solver throughput
 
 ## Milestone 1: Physics prototype (Python, no UI) · [plan](docs/plans/01-physics-core.md)
