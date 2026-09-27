@@ -59,3 +59,31 @@ That regime is what the JSI pulse-database paper is reported to compare against.
 - The simulated "energy" in `c1_report.json` is the energy until the run stopped (up to 10 s with the rod out), so it includes the post-pulse tail.
   It isn't comparable with `E1000` and wasn't scored.
 - One core configuration was calibrated. The thresholds were chosen by me, before the run. The user may judge them differently.
+
+## Run 2 (2026-09-27): cited inputs, protocol unchanged
+
+After the user accepted the NO-GO, C2 replaced the assumed kinetics and fuel inputs with values checked in Vavtar & Snoj,
+EPJ Web Conf. 247, 08006 (2021) (JSI group, CC-BY 4.0): cp(T) = 333 + 0.678 (T − 274.15) J/(kg·K) (their eq. 1.8, citing Simnad),
+|α_f|(T) rising from 6.2 to 8.9 × 10⁻⁵/K between 20 and 300 °C and then falling slowly (their Fig. 1, read by eye, ±0.5 × 10⁻⁵/K),
+the Table 1 delayed-group betas, and ℓ = 4 × 10⁻⁵ s. The fuel mass (84 kg, still `assumed`) gives γ = α/(m·cp) = 2.0–2.15 × 10⁻⁹ /J
+over 293–573 K, matching the paper's γ = 2.1 × 10⁻⁹. `validation/c1_comparison.py` and the thresholds weren't touched;
+report in `validation/c1_report_run2.json` (run 1 stays in `c1_report.json`).
+
+| ID | Run 1 (assumed inputs) | Run 2 (cited inputs) | Threshold |
+|---|---|---|---|
+| H1 held-out 246 RMS | 0.614 | **0.615** | ≤ 0.405 |
+| H2 core 242 RMS | 0.880 | **0.794** | ≤ 0.693 |
+| H3 fitted s | 2.63 | **4.00** | [0.5, 2] |
+| Uncalibrated bias, held-out 246, d ≥ 1.30 | +0.94 | **+1.48** | — |
+
+**Still NO-GO.** But the reason is now clearer:
+
+- **The engine matches the published model with the published inputs.** Uncalibrated, a $2.00 step gives 284 MW peak, 6.9 MWs energy and a
+  196 K core-average fuel rise. Vavtar & Snoj's own Fuchs–Hansen and improved pulse models give about 290 MW and 265 MW at $2 (their Fig. 2 and 4).
+  Measured medians at $2.00: 222 MW (core 246), 138 MW (core 242); E1000 6.0 MWs; instrumented-element rise ~250 K.
+- **The disagreement is at low $.** Measured peak power falls with (d − 1)^3.1–3.8, and no point-kinetics model with these inputs does that:
+  realistic cp(T) and α(T) move together (γ nearly constant), so the square law survives. Fitting s to the whole range therefore pushes s up
+  (to 4.0) to pull the model down at low $, and it then misses both ends.
+- **Next suspect: the $ assigned to each measured pulse**, not the physics inputs. A reactivity axis stretched at low $ (for example from the rod
+  calibration used for each core, or the prompt-jump correction) would produce exactly this pattern. Švajger et al., NET 56 (2024) 1165–1203,
+  compares these same measurements with Fuchs–Hansen; it is the next thing to read (not yet checked: the PDF exceeds the fetch limit).

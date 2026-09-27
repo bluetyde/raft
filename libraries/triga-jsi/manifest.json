@@ -9,7 +9,7 @@
   "provenance": {
     "generator": "pipeline.library.build_triga",
     "created": "2026-09-26",
-    "notes": "Experimental TRIGA-like model. Values were collected for the JSI TRIGA (candidate sources: ICSBEP IEU-COMP-THERM-003, Simnad 1981, Svajger & Snoj 2023) but have NOT been checked against them, so they are labelled 'assumed'. Delayed-group betas are Keepin abundances x an assumed beta_eff of 0.0070. Geometry and power shapes are illustrative, not the benchmark core. See docs/reviews/2026-09-26-m1-go-review.md.",
+    "notes": "Experimental TRIGA-like model. Kinetics (betas, generation time), fuel cp(T), fuel alpha(T) and the pulse-rod ejection time are cited from Vavtar & Snoj 2021 (checked 2026-09-27, task C2); alpha(T) is read from a figure (+-0.5e-5/K). Everything else is 'assumed'. Geometry and power shapes are illustrative, not the benchmark core. See docs/reviews/2026-09-26-m1-go-review.md.",
     "sources": [
       {
         "id": "keepin1965",
@@ -20,12 +20,12 @@
         "cite": "ICSBEP Benchmark IEU-COMP-THERM-003 (OECD-NEA, 2007)"
       },
       {
-        "id": "simnad1981",
-        "cite": "M. T. Simnad, General Atomics Report GA-A16377 (1981)"
+        "id": "vavtar2021",
+        "cite": "I. Vavtar, L. Snoj, Evaluation of approximations in reactor pulse, EPJ Web of Conferences 247, 08006 (2021), doi:10.1051/epjconf/202124708006"
       },
       {
-        "id": "svajger2023",
-        "cite": "I. \u0160vajger, L. Snoj, Nuclear Engineering and Technology 55 (2023) 4404\u20134415"
+        "id": "svajger2024",
+        "cite": "I. \u0160vajger, D. \u010cali\u010d, A. Punger\u010di\u010d, A. Trkov, L. Snoj, Evaluation of reactor pulse experiments, Nuclear Engineering and Technology 56 (2024) 1165\u20131203, doi:10.1016/j.net.2023.11.021 (not yet checked)"
       }
     ]
   },
@@ -57,14 +57,14 @@
   "kinetics": {
     "beta": {
       "values": [
-        0.000231,
-        0.001533,
-        0.001372,
-        0.002765,
-        0.000805,
-        0.000294
+        0.00023097,
+        0.00153278,
+        0.0013718,
+        0.00276451,
+        0.00080489,
+        0.00029396
       ],
-      "source": "assumed"
+      "source": "cited:vavtar2021"
     },
     "lambda": {
       "values": [
@@ -79,7 +79,7 @@
     },
     "genTime": {
       "value": 4e-05,
-      "source": "assumed"
+      "source": "cited:vavtar2021"
     },
     "extSource": {
       "value": 0.5,
@@ -313,23 +313,27 @@
     "fuelTemp": {
       "T": [
         293.15,
+        350.0,
         400.0,
+        500.0,
         600.0,
         800.0,
         1000.0,
         1200.0
       ],
       "rho": [
-        -0.0,
-        -0.01190426535,
-        -0.03786866535,
-        -0.06863306535,
-        -0.10419746535,
-        -0.14456186535
+        0.0,
+        -0.003746894672,
+        -0.007396096112,
+        -0.015450177574,
+        -0.024186045198,
+        -0.041651889913,
+        -0.0583444888,
+        -0.074277315283
       ],
       "interp": "linear",
       "outOfRange": "clamp-and-flag",
-      "source": "assumed"
+      "source": "cited:vavtar2021"
     },
     "coolantTemp": {
       "T": [
@@ -377,23 +381,27 @@
       "cp": {
         "T": [
           293.15,
+          350.0,
           400.0,
+          500.0,
           600.0,
           800.0,
           1000.0,
           1200.0
         ],
         "c": [
-          350.0,
-          389.6809,
-          476.2289,
-          578.7769,
-          697.3249,
-          831.8729
+          345.882,
+          384.4263,
+          418.3263,
+          486.1263,
+          553.9263,
+          689.5263,
+          825.1263,
+          960.7263
         ],
         "interp": "linear",
         "outOfRange": "clamp-and-flag",
-        "source": "assumed"
+        "source": "cited:vavtar2021"
       }
     },
     "coolant": {
@@ -754,7 +762,9 @@
     "tempDelta": {
       "T": [
         293.15,
+        350.0,
         400.0,
+        500.0,
         600.0,
         800.0,
         1000.0,
@@ -808,14 +818,14 @@
       "dtype": "float32",
       "byteOrder": "little",
       "shape": [
-        6,
+        8,
         56,
         10
       ],
       "order": "C",
       "offset": 0,
-      "byteLength": 13440,
-      "sha256": "4ed7b1bf66fbbe2b2c16b22d83fa2bade70316f13fc4dbf687fcf7cb8b7c3981"
+      "byteLength": 17920,
+      "sha256": "11dd1d6fb786b3f33bb9198e2f934161a29dea5ffdae1e9895db5f870618aeb9"
     },
     "rod_transient": {
       "file": "arrays/rod_transient.f32",
