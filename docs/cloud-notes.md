@@ -6,7 +6,7 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 
 ## Scope of the cloud session
 
-- Owns: `web/src/runtime/`, `web/src/views/`, `web/src/app/`, `web/index.html`, `web/package.json` and its lockfile (dependencies only), `.github/`, this file, and its own design docs under `docs/`.
+- Owns: `web/src/runtime/`, `web/src/views/`, `web/src/app/`, `web/index.html`, `web/vite.config.ts` (user OK, 2026-09-27), `web/package.json` and its lockfile (dependencies only), `.github/`, this file, and its own design docs under `docs/`.
 - Does not edit: `physics_ref/`, `web/src/sim/`, `web/src/library/`, `web/src/contracts/`, `schema/`, `pipeline/`, `validation/`, `libraries/`.
   Engine or schema changes come here as requests, because the Python and TypeScript engines must stay in step.
 - Works on branches with pull requests only. It never pushes to `main` or merges into it.
@@ -44,6 +44,17 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   For a 13-value state this is slow, so profiling (allocations per step, for example) could give a few times more speed.
 - The cost is per outer step and almost independent of `outerDt`. A 1 s outer step gave the same results to 4e-8 relative and 1993× real time.
 - Only if the other session has time. The golden vectors must still pass.
+
+### R5 (open, 2026-09-27): third-party notices for three.js and viridis
+
+- The app build now bundles **three.js 0.186.1** (MIT, copyright three.js authors) and uses the **viridis** colour-map stops from matplotlib (CC0),
+  in `web/src/views/explorer/styles.ts`. `THIRD_PARTY_NOTICES.md` still says "No third-party code is included yet".
+- Request: add both to `THIRD_PARTY_NOTICES.md` (the file is outside the cloud session's scope). `@types/three` and its type dependencies are build-time only.
+
+### R6 (open, 2026-09-27): `web/src/main.ts` is no longer used
+
+- `web/index.html` now loads `web/src/app/main.ts` (the explorer). The old placeholder `web/src/main.ts` is outside the cloud session's files, so it stays, unused.
+- Request: delete it, or say the cloud session may.
 
 ### R2 (information, 2026-09-27): CI has no scipy, so one Python test skips there
 
@@ -94,4 +105,16 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   Five targeted breaks, each caught. A manual Chromium smoke run of the real worker passed. Automated browser e2e is still TODO Next #8.
 - Behaviour to know: a rewind to a step keeps the commands logged at that step queued, the same as `Engine.replay`.
 - Branch: `claude/c6-runtime-design`. Checks: see the PR.
+
+### 2026-09-27: M3 renderer decision and three.js viewer
+
+- What: `docs/m3-renderer-decision.md` (TD-07: three.js meshes from the primitives now, behind the `ViewerModel` adapter; CSG reuse at a later gate) and the viewer in
+  `web/src/views/explorer/` (noclip and orbit cameras, one cutaway plane with stencil caps, click-to-inspect with exact analytic picking, view-only rod sliders,
+  per-element reference power overlay). App in `web/src/app/`, which bundles the synthetic core and `triga-jsi-242`. `web/index.html` loads the app.
+- Dependencies (user OK): `three` 0.186.1 and `@types/three` 0.186.0, pinned exactly. The lockfile was regenerated with npm 11.19.0 (the CI npm), and its diff only adds packages.
+  (npm 10 in this container drops the `libc` fields of the native bindings, so it was not used.)
+- Tests: 34 new Vitest tests (picking on both libraries, scene bounds, rods, cutaway, overlay, noclip math, catalog). A Chromium run of the production build checked a real click pick,
+  cutaway caps (with and without), a withdrawn rod, and both libraries.
+- Requests R5 (notices) and R6 (unused `web/src/main.ts`) are above.
+- Branch: `claude/m3-viewer` (based on `claude/c6-runtime-design`). Checks: see the PR.
 
