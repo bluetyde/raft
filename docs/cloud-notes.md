@@ -56,3 +56,17 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 - First CI runs on `d7e4ba8` (Python 3.11.16, Node 24.21.0, npm 11.19.0): the `pull_request` run passed.
   The `push` run failed in web-test on a 5 s timeout (request R1). The Python stage took 198–227 s and skipped 1 test (R2).
 - Fix: `testTimeout: 30_000` in `web/vite.config.ts` (R1, user OK), and `push` limited to `main`.
+
+### 2026-09-27: C6 runtime design (proposal, waiting for the user)
+
+- What: `docs/c6-runtime-design.md`, the design for the Web Worker runtime (clock, command bus, snapshot and event stream, history). No code yet.
+  It uses only the engine's public API and the command and snapshot schemas. No engine or schema change is needed for the recommended options.
+- Findings from the engine code that the other session may want to know:
+  - `time.set` and `time.rewindTo` from ARCHITECTURE §2 are not engine commands (the engine rejects them). The design keeps time control in the runtime.
+  - `engine.checkpoint()` copies the whole command log, so the runtime stores checkpoints without it and rebuilds it from its own log.
+  - `engine.session()` has no end step, so the runtime's session file adds one.
+- Measured step cost (Node 22, one core): about 55–90 µs per 10 ms outer step, so at most about 150× real time. The cost is per step, so 3600× needs a longer `outerDt`.
+  One pulse step on the synthetic core takes about 60 ms.
+- Possible request R3 (only if the user picks D1 option T3): let a session change `outerDt` at a logged boundary. Not requested yet.
+- Branch: `claude/c6-runtime-design` (based on `claude/kind-bohr-p73819`, because this file is not on `main` yet).
+
