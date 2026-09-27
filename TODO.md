@@ -3,11 +3,37 @@
 Running list. Check items off, add new ones at the bottom of their section, and note the date when something finishes.
 Design lives in [PLAN.md](PLAN.md). Details per area in [docs/plans/](docs/plans/); overall structure in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+## Next (planned 2026-09-27, after the M1 GO)
+
+Order matters: M2 replaces the `assumed` inputs that M1's caveats rest on, and the browser track can run in parallel. Owner per antigravity-task step 0 ([board](docs/AGENT-TASKS.md)).
+
+**Track 1: M2, the OpenMC library (Claude; judgment, transport, nuclear data)**
+1. [ ] **User:** request access to ICSBEP `IEU-COMP-THERM-003` (OECD-NEA account); it gives the benchmark cores 132/133 specs and k-eff.
+2. [ ] Create the `openmc-vr` env in WSL Ubuntu from `pipeline/environment.yml` (the agent sandbox already has one; Ubuntu only has `openmc-mcnp`, `openmc-cad`).
+3. [ ] TD-06 gate before any sweep: run manifests hash the model content, so a changed model invalidates a run and an interrupted run can't pass as complete (design Claude; implementation a candidate for agy).
+4. [ ] OpenMC model of the JSI core. Start from the benchmark core, then cores 242 and 246 from the database core maps (element positions and serials are in `242.pdf`/`246.pdf`).
+5. [ ] First outputs, each with an existing check:
+   - transient-rod integral worth vs the measured rod tables (`s242.pdf`, and `s246.pdf` which was measured on core 244);
+   - Λ and β_eff: Λ settles run 3's joint γ/Λ caveat (40 µs assumed);
+   - fuel α(T) vs svajger2024 Table 2;
+   - k-eff vs the benchmark.
+   Then rebuild the per-core libraries with OpenMC values replacing `assumed` rod shapes, and re-run run 3's Part B as a regression.
+
+**Track 2: the browser (parallel)**
+6. [ ] C6: Web Worker runtime, clock and command bus (ARCHITECTURE runtime loop). Claude designs the scheduling semantics; parts can then be delegated.
+7. [ ] M3 renderer decision (TD-07: primitives now, CSG reuse later), then a three.js scaffold. The dispatcher adds the dependency and lockfile; the primitive viewer from the library's `geometry` is an agy candidate.
+8. [ ] Browser end-to-end check on the synthetic fixture: malformed library, a trip, pause/resume, replay (agy candidate once C6 exists).
+
+**Housekeeping**
+9. [ ] Pre-merge check (TD-03): one script that runs the Python fast tests plus `npm test`/`typecheck`/`build` (small; agy candidate).
+10. [ ] Codex review when quota allows: the engine line (pending), then the TS port (A6-1) and the per-core library changes.
+11. [ ] Find the JSI Research Reactor Simulator's source and license (independent comparison, reference only).
+
 ## Now
 
 - [x] 2026-09-26: Downloaded and parsed JSI pulse database (757 pulses from [trigapulse.ijs.si](http://trigapulse.ijs.si/), 1991–2023) into `validation/data/jsi-pulses/` (CSV and JSON summary) with citations, fetch script, loader API (`validation/pulse_loader.py`), unit tests, and TRIGA benchmark parameters (`validation/data/triga-jsi/parameters.json`)
 - [ ] Get access to the ICSBEP handbook entry `IEU-COMP-THERM-003` (cores 132 and 133) and list what it publishes (k-eff, rod worths, specs)
-- [ ] Create the `openmc-vr` conda env in WSL (clone of `openmc-mcnp` + pytest + jsonschema), then try OpenMC 0.16 there; leave the shared env alone ([TOOLING §2](docs/TOOLING.md))
+- [ ] Create the `openmc-vr` conda env in WSL (clone of `openmc-mcnp` + pytest + jsonschema), then try OpenMC 0.16 there; leave the shared env alone ([TOOLING §2](docs/TOOLING.md)). *(2026-09-27: exists in the agent sandbox (Python 3.11.16, OpenMC 0.15.3); not yet in WSL Ubuntu; see Next #2)*
 - [ ] Find the JSI Research Reactor Simulator's source repo, confirm its license, and decide how to use it as an independent comparison
 - [x] 2026-09-26: Private GitHub repo [bluetyde/virtual-reactor](https://github.com/bluetyde/virtual-reactor), MIT license detected, first commit `55da9c2`
 
@@ -17,22 +43,22 @@ Review findings are tracked here, one task each. Status of a finding: proposed �
 Close a task only with evidence (a passing test or a recorded decision); a plan edit alone means "documented", not "verified".
 All ten architecture findings and TD-01..09 are **accepted and documented** (2026-09-25); none is implemented yet.
 
-- [ ] Initialization rules: S = 0 for critical equilibrium, reject ρ ≥ 0 source equilibria, explicit initial precursors, poisons and temperatures ([01](docs/plans/01-physics-core.md))
-- [ ] Reference-state contract: stored reference state and reactivity, tables as deltas, labelled calibration ([03](docs/plans/03-library-format.md))
+- [x] 2026-09-27 (verified in Python and TS: `physics_ref/tests/test_engine.py`, `pipeline/tests/test_library.py`, `web/src/sim/`): Initialization rules: S = 0 for critical equilibrium, reject ρ ≥ 0 source equilibria, explicit initial precursors, poisons and temperatures ([01](docs/plans/01-physics-core.md))
+- [x] 2026-09-27 (verified in Python and TS: `physics_ref/tests/test_engine.py`, `pipeline/tests/test_library.py`, `web/src/sim/`): Reference-state contract: stored reference state and reactivity, tables as deltas, labelled calibration ([03](docs/plans/03-library-format.md))
 - [ ] Power, shape and density definitions; tally basis; bin volumes; deposition assumption ([03](docs/plans/03-library-format.md))
-- [ ] Model capabilities (`point-kinetics/lumped-thermal-v1`) and validity statuses with reason codes
+- [x] 2026-09-27 (verified in Python and TS: `physics_ref/tests/test_engine.py`, `pipeline/tests/test_library.py`, `web/src/sim/`): Model capabilities (`point-kinetics/lumped-thermal-v1`) and validity statuses with reason codes
 - [ ] Command scheduling and acknowledgements, event ordering, trip channel declarations, typed predicate format ([ARCHITECTURE](docs/ARCHITECTURE.md), [05](docs/plans/05-operator-ui.md))
-- [ ] Checkpoint contents, session pins and solver restart boundaries ([06](docs/plans/06-instructor.md))
-- [ ] Binary array descriptors, base vs delta shapes, per-table interpolation and range behavior ([03](docs/plans/03-library-format.md))
+- [x] 2026-09-27 (verified in Python and TS: `physics_ref/tests/test_engine.py`, `pipeline/tests/test_library.py`, `web/src/sim/`): Checkpoint contents, session pins and solver restart boundaries ([06](docs/plans/06-instructor.md))
+- [x] 2026-09-27 (verified in Python and TS: `physics_ref/tests/test_engine.py`, `pipeline/tests/test_library.py`, `web/src/sim/`): Binary array descriptors, base vs delta shapes, per-table interpolation and range behavior ([03](docs/plans/03-library-format.md))
 - [x] 2026-09-25: Normative [`docs/library-format.md`](docs/library-format.md) v0.1.0 + `schema/library.schema.json` with 28 stable error codes (TD-02: implemented + verified in Python; TypeScript side pending)
 - [x] 2026-09-25: Synthetic fixture `schema/vectors/synthetic-core` (generated, deterministic) + 30 invalid fixtures covering every error code; stdlib validator `pipeline/library/validate.py`; 10 tests pass on Windows Python 3.14 and WSL Python 3.11
 - [x] 2026-09-26: Initial-state definition in the engine: power `source-equilibrium` / `critical-equilibrium` / `given`, precursors equilibrium or supplied, poisons zero/equilibrium/given; impossible equilibria rejected
 - [x] 2026-09-25: Scaffold part 1: `LICENSE` (MIT), `THIRD_PARTY_NOTICES.md`, `.gitattributes` (LF), `.gitignore`, `pyproject.toml` (fast checks need no packages), `pipeline/environment.yml` (`openmc-vr`, pinned)
-- [ ] Scaffold part 2: create the `openmc-vr` env from the file; `web/` with a committed `package-lock.json`; CI (or the local pre-merge check) runs the fast tests + web build (TD-03)
+- [ ] Scaffold part 2: create the `openmc-vr` env from the file; `web/` with a committed `package-lock.json`; CI (or the local pre-merge check) runs the fast tests + web build (TD-03). *(2026-09-27: `web/` + lockfile done (A5-0); env and pre-merge check open: Next #2, #9)*
 - [x] 2026-09-26: Headless slice in Python (`physics_ref/`): load → initialize (explicit rules, `E_INIT_*`) → commands with seq/status → advance → snapshot → checkpoint → replay, all bit-identical (TD-05 implemented + verified in Python)
 - [ ] Then a minimal panel and primitive viewer (needs the TypeScript port).
       Checkpoint restore must match uninterrupted execution including noise and trips; built with the first stateful runtime, not deferred to M6 (TD-05)
-- [ ] Independent checks: a deliberately perturbed coefficient or event time must fail an independent test; vector changes need a reason (TD-04). Analytic tests + scipy Radau cross-check exist; golden vectors for the TS port not yet
+- [x] 2026-09-27: Independent checks (TD-04): perturbed-coefficient tests (`test_wrong_coefficient_breaks_order`, `..._catches_wrong_gamma`), vector self-test (`test_comparison_catches_real_differences`, ported to TS), and targeted breaks during each verification (logged). Golden vectors reproduced by the TS port (A6-1).
 - [ ] Basic resource bounds in the first worker and recorder; an accelerated synthetic session stays within a measured memory budget (TD-08)
 - [ ] Browser end-to-end check on the same fixture: malformed library, a trip, pause/resume, replay. Only then expand the transport grid
 - [ ] Performance budgets on a named reference laptop: library memory, load time, command latency, replay latency, solver throughput
@@ -41,7 +67,7 @@ All ten architecture findings and TD-01..09 are **accepted and documented** (202
 
 Done 2026-09-26 in `physics_ref/` (25 tests): six-group kinetics with source, lumped fuel/coolant thermal model, table feedback, I/Xe, rods/scram/fire, instruments with lag/noise/faults,
 trips (located or sampled) and interlocks. Analytic checks pass: source multiplication, prompt jump, inhour period, Nordheim–Fuchs (0.1%), xenon peak time (1%), energy balance (1e-4).
-Remaining: ROS3P for long runs; golden vectors.
+ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 
 - [x] 2026-09-26: Point-kinetics solver, six delayed groups (ROS2; inhour period and prompt jump checks pass)
 - [x] 2026-09-26: Lumped fuel and coolant temperature model with heat removal (adiabatic limit checked by Nordheim–Fuchs)
@@ -50,12 +76,15 @@ Remaining: ROS3P for long runs; golden vectors.
 - [x] 2026-09-26: First pulse sweep $1.10–2.20 vs pooled JSI bins (`validation/pulse_comparison.py`): sim/exp ratios 0.51–5.92, inconclusive (unscreened, unmatched)
 - [x] 2026-09-26: Pulse data screening (A3, `agy/pulse-screening`, verified: 757 = 667 kept + 90 excluded)
 - [x] 2026-09-26: C1 condition-matched comparison (`validation/c1_comparison.py`, `docs/validation/m1-c1-results.md`): proposal **NO-GO**; H1 0.614 > 0.405, H2 0.880 > 0.693, s = 2.63 outside [0.5, 2]; slope 3.1–3.8 measured vs 2.0 model
-- [ ] C2: real UZrH1.6 cp(T) and α(T) from sources, rebuild library, re-run C1 with the same protocol
+- [x] 2026-09-27: C2: cp(T), α(T), kinetics cited (Vavtar & Snoj 2021, Švajger et al. 2024); fuel mass 2.363 kg/element, cores 242/246 = 59/65 elements; C1 run 2 still NO-GO
+- [x] 2026-09-27: C7: the $ labels overstate the prompt excess ($0.27 core 242, $0.42 core 246) per trace rise rates; the steep law was a label artifact (`validation/trace_period.py`)
+- [x] 2026-09-27: Run 3 (per-core libraries, trace-derived $, user's criterion): B passes both cores (×1.05 / ×1.03, no calibration); A1 failed by 0.6%, judged mis-specified by the user
 - [x] 2026-09-26: Xenon/iodine: equilibrium derivative zero, post-shutdown peak time within 1%
 - [x] 2026-09-26: Unit tests for all of the above (`physics_ref/tests/test_engine.py`, `validation/tests/`)
-- [x] 2026-09-26: ROS3P (order 3) solver option, ROS2 unchanged: branch `claude/agy-ros3p` (agy + a dispatcher accuracy test), verified, awaiting merge. Open: keep `method` in pins + regenerate engine vectors
-- [x] 2026-09-26: Golden vectors (`python -m physics_ref.vectors`): `agy/golden-vectors` + fix on `claude/golden-vectors-fix` (tolerance comparison, explicit sums), awaiting merge
+- [x] 2026-09-26: ROS3P (order 3) solver option, ROS2 unchanged (merged). 2026-09-27: `method` kept in pins, vectors regenerated (C5)
+- [x] 2026-09-26: Golden vectors (`python -m physics_ref.vectors`), merged; regenerate on Linux Python 3.11 (Windows libm adds last-bit noise)
 - [x] 2026-09-27: Go/no-go: **NO-GO** accepted by the user (C1 proposal); an earlier automatic GO was withdrawn (`docs/reviews/2026-09-26-m1-go-review.md`)
+- [x] 2026-09-27: **M1 GO** (user decision on run 3, option 2: A1's bound mis-specified, failure kept on record). [Results](docs/validation/m1-c1-results.md)
 
 ## Milestone 2: OpenMC library · [plan](docs/plans/02-openmc-pipeline.md)
 
@@ -79,7 +108,7 @@ Remaining: ROS3P for long runs; golden vectors.
 
 ## Milestone 4: Link simulation and view
 
-- [ ] Port the simulation core to TypeScript and match the Python results
+- [x] 2026-09-27: Port the simulation core to TypeScript and match the Python results (A6-1: all 6 golden vectors within tolerance, 71 web tests)
 - [ ] State snapshot and command interface
 - [ ] Interpolate power shapes by rod height and temperature
 - [ ] Live 3D updates while rods move
