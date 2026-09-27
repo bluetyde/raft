@@ -63,8 +63,27 @@ def burned_fuel(burnup: float) -> dict[str, float]:
     return {n: (1 - w) * a.get(n, 0.0) + w * b.get(n, 0.0) for n in sorted(set(a) | set(b)) if n in lib}
 
 
+T_REF = 294.0                                     # K: every material's temperature in the reference model
+# Liquid water at 1 atm, g/cm3, 0-100 C in 10 C steps (standard tables, e.g. IAPWS-95; recalled, not checked against the
+# document). Used only as a ratio to 294 K, so the model's reference water density (svajger2024) is unchanged.
+WATER_DENSITY_C = [0.99984, 0.99970, 0.99821, 0.99565, 0.99222, 0.98803, 0.98320, 0.97778, 0.97182, 0.96535, 0.95835]
+
+
+def water_density_ratio(t_k: float) -> float:
+    """rho_water(T) / rho_water(294 K), linear in the 10 C table; 273.15-373.15 K."""
+    def rho(tk):
+        c = tk - 273.15
+        if not 0.0 <= c <= 100.0:
+            raise ValueError(f"coolant temperature {tk} K outside 273.15-373.15 K")
+        i = min(int(c // 10), 9)
+        w = (c - 10 * i) / 10.0
+        return (1 - w) * WATER_DENSITY_C[i] + w * WATER_DENSITY_C[i + 1]
+    return rho(t_k) / rho(T_REF)
+
+
 def materials(fuel_data: dict, ov: dict | None = None):
-    """`ov` overrides assumed values for sensitivity runs: b4c (g/cm3), graphite (g/cm3), burnup (MWd/kg, every fuel region)."""
+    """`ov` overrides assumed values for sensitivity runs: b4c (g/cm3), graphite (g/cm3), burnup (MWd/kg, every fuel region),
+    tfuel (K, every fuel region), tcool (K, all water: temperature and density)."""
     import openmc
     ov = ov or {}
     m = {}
@@ -75,6 +94,8 @@ def materials(fuel_data: dict, ov: dict | None = None):
     fuel.set_density("sum")
     fuel.add_s_alpha_beta("c_H_in_ZrH")
     fuel.add_s_alpha_beta("c_Zr_in_ZrH")
+    if "tfuel" in ov:
+        fuel.temperature = ov["tfuel"]
     m["fuel"] = fuel
     zr = openmc.Material(name="Zr"); zr.add_element("Zr", 1.0); zr.set_density("g/cm3", 6.49); m["zr"] = zr
     ss = openmc.Material(name="SS304")
@@ -82,7 +103,10 @@ def materials(fuel_data: dict, ov: dict | None = None):
         ss.add_element(el, w, percent_type="wo")
     ss.set_density("g/cm3", fuel_data["cladding"]["densityGPerCm3"]); m["ss"] = ss
     water = openmc.Material(name="water"); water.add_nuclide("H1", 2.0); water.add_nuclide("O16", 1.0)
-    water.set_density("g/cm3", fuel_data["water"]["densityGPerCm3"]); water.add_s_alpha_beta("c_H_in_H2O"); m["water"] = water
+    rho_w = fuel_data["water"]["densityGPerCm3"] * (water_density_ratio(ov["tcool"]) if "tcool" in ov else 1.0)
+    water.set_density("g/cm3", rho_w); water.add_s_alpha_beta("c_H_in_H2O"); m["water"] = water
+    if "tcool" in ov:
+        water.temperature = ov["tcool"]
     gr = openmc.Material(name="graphite"); gr.add_element("C", 1.0); gr.set_density("g/cm3", ov.get("graphite", 1.6))   # assumed for the reflector
     gr.add_s_alpha_beta("c_Graphite"); m["graphite"] = gr
     mo = openmc.Material(name="Mo"); mo.add_element("Mo", 1.0); mo.set_density("g/cm3", 10.2); m["mo"] = mo
@@ -237,6 +261,10 @@ def build(core: str, rods: dict[str, float], particles: int, batches: int, inact
     st.sourcepoint = {"separate": True}
     st.output = {"summary": False}
     st.seed = 1
+    if "tfuel" in ov or "tcool" in ov:
+        # nuclide data exist at 294/600/900 K only: interpolate between them. S(a,b) tables are finer (ZrH every 100 K from 296 K,
+        # H2O about every 25 K); the 10 K tolerance lets 294 K materials use the 296 K ZrH table, as the default method does.
+        st.temperature = {"method": "interpolation", "default": T_REF, "tolerance": 10.0}
     if prompt_only:
         st.create_delayed_neutrons = False          # prompt method: beta_eff = 1 - k_prompt / k
     if kinetics:
@@ -262,6 +290,8 @@ def main(argv=None) -> int:
     ap.add_argument("--prompt", action="store_true", help="no delayed neutrons (prompt method: beta_eff = 1 - k_p/k)")
     ap.add_argument("--b4c", type=float, default=None, help="sensitivity: B4C density, g/cm3 (assumed 2.48)")
     ap.add_argument("--graphite", type=float, default=None, help="sensitivity: graphite density, g/cm3 (assumed 1.6)")
+    ap.add_argument("--tfuel", type=float, default=None, help="fuel temperature, K (default 294; every fuel region)")
+    ap.add_argument("--tcool", type=float, default=None, help="water temperature, K (default 294; all water, density follows)")
     ap.add_argument("--burnup", type=float, default=None,
                     help="calibration: give every fuel region this burnup, MWd/kg (default fresh); see docs/validation/m2-burnup.md")
     ap.add_argument("--json", type=Path, default=None, help="append the result as one JSON line to this file")
@@ -273,7 +303,7 @@ def main(argv=None) -> int:
         a.inactive = 10
         a.batches = a.inactive + active
     rods = {kv.split("=")[0]: float(kv.split("=")[1]) for kv in a.rods.split(",")}
-    overrides = {k: v for k, v in (("b4c", a.b4c), ("graphite", a.graphite), ("burnup", a.burnup)) if v is not None}
+    overrides = {k: v for k, v in (("b4c", a.b4c), ("graphite", a.graphite), ("burnup", a.burnup), ("tfuel", a.tfuel), ("tcool", a.tcool)) if v is not None}
     if a.kinetics and a.inactive < IFP_GENERATIONS:
         ap.error(f"--kinetics needs at least {IFP_GENERATIONS} inactive batches")
     model = build(a.core, rods, a.particles, a.batches, a.inactive, a.source_from,
