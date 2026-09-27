@@ -30,7 +30,7 @@ Status: `ready` (brief can be written now) · `blocked` (needs something first) 
 
 | ID | Task | Files | Oracle / proof of done | Status |
 |---|---|---|---|---|
-| A10 | Primitive 3D viewer from the library's `geometry` (after the M3 renderer decision; dispatcher adds three.js + lockfile) | `web/src/views/explorer/` | Every primitive of the synthetic core and `triga-jsi-246` rendered and pickable by id; e2e screenshot check | blocked on TD-07 decision |
+| A10 | Primitive 3D viewer from the library's `geometry` (after the M3 renderer decision; dispatcher adds three.js + lockfile) | `web/src/views/explorer/` | Every primitive of the synthetic core and `triga-jsi-246` rendered and pickable by id; e2e screenshot check | done by the cloud session in PR #3 (TD-07 decided there), but checked on `triga-jsi-242` and the synthetic core, not `triga-jsi-246` |
 | A7 | Scenario schema + validator + fixtures | `schema/scenario.schema.json`, `pipeline/scenario/` | Every invalid fixture gives its expected code | **on hold (user)**. Step 0 failed (spec still moving); the format design is Claude's when resumed |
 
 New dispatches use branches `claude/agy-<task>` (INSTRUCTIONS.md rule 5).
@@ -39,7 +39,7 @@ Sandbox Node setup landed (2026-09-26): `--node 24` (24.18.0, matches Windows) a
 
 ### Cloud session (browser track, 2026-09-27)
 
-A Claude cloud session works on CI, C6 (Web Worker runtime) and M3 (viewer) in `web/src/runtime/`, `web/src/views/`, `web/src/app/`, `.github/`; its log is `docs/cloud-notes.md`. The local session stays out of those paths and owns engine, schema and OpenMC changes.
+A Claude cloud session works on CI, C6 (Web Worker runtime), M3 (viewer), M4 (live explorer) and M5 (operator panel) in `web/src/runtime/`, `web/src/views/`, `web/src/app/`, `.github/`; its log is `docs/cloud-notes.md`. The local session stays out of those paths and owns engine, schema and OpenMC changes.
 
 ### Claude-only (judgment, data, precision-critical numerics, small changes)
 
@@ -48,7 +48,7 @@ A Claude cloud session works on CI, C6 (Web Worker runtime) and M3 (viewer) in `
 | C1 | M1 condition-matched comparison | physics judgment | done: **NO-GO accepted by the user 2026-09-27** ([results](validation/m1-c1-results.md)) |
 | C3 | OpenMC JSI TRIGA model (M2): benchmark core, then cores 242/246; rod worths vs the measured tables, Λ, β_eff, α(T) | OpenMC transport, nuclear data | ready (TODO Next, track 1); ICSBEP access requested by the user |
 | C4 | Verify each agy result (skill step 4), log, propose merges | dispatcher's job | ongoing |
-| C6 | Web Worker runtime, clock and command bus (ARCHITECTURE runtime loop) | scheduling semantics still open | ready (TODO Next, track 2) |
+| C6 | Web Worker runtime, clock and command bus (ARCHITECTURE runtime loop) | — | **done** 2026-09-27 (cloud session, `6a4be94`); browser e2e check PR #4 |
 | — | Anything like ROS3P: solvers, new numerical methods, coefficient work, precision-critical code | small and precision-critical (skill step 0) | — |
 
 ### Done

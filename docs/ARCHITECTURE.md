@@ -72,7 +72,6 @@ Views never change state directly. They send commands:
 ```ts
 type Command =
   | { type: "rod.move";        rod: string; direction: "in" | "out" | "stop" }
-  | { type: "rod.setTarget";   rod: string; position: number }        // fraction withdrawn, 0–1
   | { type: "rod.fire";        rod: string }                          // transient rod, pulse mode
   | { type: "mode.set";        mode: string }                          // e.g. "steady" | "pulse" | "squareWave"
   | { type: "scram";           reason: string }
@@ -82,6 +81,10 @@ type Command =
   | { type: "time.set";        rate: number; paused: boolean }         // instructor only
   | { type: "time.rewindTo";   simTime: number };                      // instructor only
 ```
+
+`rod.setTarget` (drive a rod to a position) was in the first draft but neither engine implements it; it's dropped until a view needs
+it, and then goes into both engines and the contract fixtures together. The library schema's interlock `blocks` list still accepts
+the name, so no shipped library has to change when it returns.
 
 **Scheduling (the worker is the only authority):** each command carries a client ID. The worker assigns the accepted sim time and a monotonically increasing sequence number,
 and replies `accepted` or `rejected` with a reason (e.g. interlock, paused, already tripped, unknown rod).
@@ -106,16 +109,24 @@ interface SimSnapshot {
     iodine: number; xenon: number;  // atoms/m³ (core-average)
     rods: Record<string, { position: number; moving: "in" | "out" | null }>;
     shape?: Float32Array;           // interpolated power shape, sent only when changed
-    validity: { status: "supported" | "unvalidated" | "outOfDomain"; reasons: string[] };
   };
   indicated: Record<string, number | null>;  // instrument readings; what the operator sees (null = failed)
-  alarms: Alarm[];
+  trips: { latched: string[]; active: string[] };
   tripped: boolean;
+  validity: { status: "supported" | "unvalidated" | "outOfDomain"; reasons: string[] };
+  diagnostics: { ... };             // solver counters; see the schema
 }
 ```
+A sketch; the normative definition is `schema/snapshot.schema.json`.
 
-The **truth/indicated split** is what keeps operator mode realistic. The operator view reads only `indicated` and `alarms`.
-Pulse extrema and integrated energy are tracked inside the worker, so a 30–60 Hz snapshot never misses a millisecond peak.
+The **truth/indicated split** is what keeps operator mode realistic. The operator view reads `indicated`, plus the console's own
+state (rod positions and motion, mode, pumps, trips, validity, time) through one whitelist, `consoleState()` in
+`web/src/views/operator/`; a test checks that no other `truth` field reaches it. **There is no `alarms` field:** the operator view
+derives its annunciator tiles from the library's trips (lit while active, flashing when latched until acknowledged) and from
+failed, over-range and rejected-command states (M5 design D1, `docs/m5-operator-design.md`). Engine-side alarms would be added only
+if the instructor's replay record needs them.
+Pulse extrema and integrated energy are tracked inside the worker, and each snapshot message carries every instrument's minimum and
+maximum over the engine steps since the previous one (`extremes`), so a 30–60 Hz snapshot never misses a millisecond peak.
 
 ### 4. Scenario (content → runtime)
 
