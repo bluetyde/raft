@@ -1,39 +1,79 @@
 /**
- * App entry point. M3: the explorer on a bundled library. The runtime worker (src/runtime) and the
- * operator and instructor views are joined to it in later milestones.
+ * App entry point. M4: the runtime worker (src/runtime) runs the chosen library; the explorer draws
+ * its rods and live power from the snapshots, and the control strip sends commands through the bus.
+ * The operator and instructor views come in M5 and M6.
  */
 
 import "./app.css";
+import { RuntimeClient } from "../runtime/client";
 import { loadLibrary, LibraryError } from "../sim/library";
 import { Explorer } from "../views/explorer/explorer";
+import { elementPowers, rodPositionsFrom } from "../views/explorer/live";
 import { modelFromLibrary } from "../views/explorer/model";
-import { CATALOG, catalogReader } from "./catalog";
+import { CATALOG, catalogFiles, catalogReader } from "./catalog";
+import { Controls } from "./controls";
 
 const app = document.getElementById("app")!;
 const bar = document.createElement("header");
 bar.className = "vr-bar";
 const title = document.createElement("strong");
-title.textContent = "Virtual Reactor · explorer";
+title.textContent = "Virtual Reactor";
 const select = document.createElement("select");
 for (const entry of CATALOG) select.append(new Option(entry.name, entry.name));
 const status = document.createElement("span");
 status.className = "vr-status";
 bar.append(title, select, status);
+const main = document.createElement("div");
+main.className = "vr-main";
 const view = document.createElement("div");
 view.className = "vr-view";
-app.replaceChildren(bar, view);
+const side = document.createElement("aside");
+side.className = "vr-side";
+main.append(view, side);
+app.replaceChildren(bar, main);
 
 const explorer = new Explorer(view);
+let worker: Worker | null = null;
+let client: RuntimeClient | null = null;
+let controls: Controls | null = null;
+let lastSnapshot: Record<string, any> | null = null;
 
 async function show(name: string): Promise<void> {
   const entry = CATALOG.find((e) => e.name === name);
   if (!entry) return;
   status.textContent = `loading ${name}…`;
+  delete app.dataset["ready"];
+  worker?.terminate();
+  worker = null;
+  client = null;
   try {
+    // The main thread reads the library for the geometry; the worker reads it again to run it.
     const lib = await loadLibrary(catalogReader(entry));
-    explorer.show(modelFromLibrary(lib));
+    const model = modelFromLibrary(lib);
+    explorer.show(model);
+    explorer.setLive(true);
+    explorer.setOverlay("live");
+
+    const w = new Worker(new URL("../runtime/worker.ts", import.meta.url), { type: "module" });
+    const c = new RuntimeClient(w, "explorer");
+    worker = w;
+    client = c;
+    const A = model.axialEdgesCm.length - 1;
+    const ctl = new Controls(c, { rods: lib.rods.map((r) => ({ id: r.id, pulseCapable: r.pulseCapable })), modes: lib.modes });
+    controls = ctl;
+    side.replaceChildren(ctl.root);
+    c.on("snapshot", (m) => {
+      lastSnapshot = m.snapshot;
+      explorer.setRodPositions(rodPositionsFrom(m.snapshot));
+      if (m.shape) explorer.setElementPowers(elementPowers(m.shape, model.elements, A, m.snapshot.truth.power));
+      ctl.onSnapshot(m.snapshot);
+    });
+    c.on("clock", (m) => ctl.onClock(m));
+    c.on("fault", (m) => (status.textContent = `runtime fault: ${m.message}`));
+    const info = await c.load({ kind: "files", files: await catalogFiles(entry) });
+
     const s = explorer.stats!;
-    status.textContent = `${lib.id} (${lib.status}): ${s.primitives} primitives, ${s.drawCalls} draw calls`;
+    status.textContent = `${lib.id} (${lib.status}): ${s.primitives} primitives, ${s.drawCalls} draw calls, outer step ${info.outerDt} s`;
     app.dataset["ready"] = "true";
     app.dataset["library"] = lib.id;
   } catch (err) {
@@ -50,4 +90,16 @@ if (initial) {
 }
 
 // For end-to-end checks and the browser console.
-(window as unknown as { vr: unknown }).vr = { explorer, show };
+(window as unknown as { vr: unknown }).vr = {
+  explorer,
+  show,
+  get client() {
+    return client;
+  },
+  get controls() {
+    return controls;
+  },
+  get snapshot() {
+    return lastSnapshot;
+  },
+};

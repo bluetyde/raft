@@ -143,3 +143,11 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 - `scripts/premerge.py` does not run the e2e tests (the script is outside this session's files). Locally: `cd web && npx playwright test -c src/app/e2e/playwright.config.ts`.
 - Branch: `claude/e2e-browser` (from `main` at `6a4be94`). Checks: see the PR.
 
+### 2026-09-27: M4 live explorer (first slice)
+
+- What: the app now runs the chosen library in the runtime worker. The explorer's rods and a live per-element power overlay follow the snapshots,
+  and a control strip (`web/src/app/controls.ts`) sends rod, scram, trip-reset, mode and clock commands through the command bus. Notes: `docs/m4-live-view.md`.
+- New code: `web/src/views/explorer/live.ts` (snapshot to view), explorer live mode and overlay, `web/src/app/controls.ts`, `catalogFiles` in the catalog, app wiring.
+- Tests: 11 new Vitest tests (`live.test.ts`) and 3 new Playwright tests (`app.spec.ts`); a deliberate break (rods not applied) fails both rod tests.
+- Finding: ARCHITECTURE §2 lists `rod.setTarget`, which the engine does not implement (only `rod.move` in/out/stop). Not a request yet; tell the cloud session if M5 should have it.
+- Branch: `claude/m4-live`, based on `claude/m3-viewer` with `claude/e2e-browser` merged in (it needs the `WorkerLike` fix). Merge order: M3, e2e, then M4.
