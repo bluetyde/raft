@@ -171,3 +171,23 @@ from session to session by amounts of order $0.1–0.4, far more than the ±$0.0
 
 **Next:** per-pulse ρ′/Λ from the traces (the prompt period of the initial rise, and the peak-to-energy ratio with our own integration window), which is independent of
 the labels and of γ. Then a run-3 protocol that either restricts each core to its dominant, self-consistent sessions or uses the trace-derived axis, fixed before the run.
+
+### Result: the labels are offset, and the steep law comes from them
+
+`validation/trace_period.py` (report `validation/trace_period_report.json`) fits the initial exponential rise rate ω of every downloaded pulse (136 of 278 are
+clean enough; the rest are low-$ pulses buried in noise) and inverts the engine's own ω($) curve, fitted the same way. The engine curve follows the prompt estimate
+(ρ − β)/Λ to within 4%, and feedback during the fitted part of the rise is below 4% at $2.
+
+| | ω reaches zero at label | ω slope / engine slope | inferred $ − label (median; every session) | Pmax vs (d − 1): labels → inferred |
+|---|---|---|---|---|
+| Core 242 (56 pulses) | $1.21 | 0.87 | −$0.27 (−0.25 … −0.35) | 2.85 → **1.79** |
+| Core 246 (80 pulses) | $1.32 | 0.77 | −$0.42 (−0.39 … −0.45) | 3.51 → **1.71** |
+
+- An error in Λ would change only the slope; the zero crossing would stay at $1.00. The labels therefore overstate the prompt excess by a roughly constant
+  $0.2–0.4 per core (≈150–220 pcm), plus a scale factor that Λ could explain. Candidate causes, not settled: β_eff or rod-worth calibration offsets, and core 246
+  using core 244's rod table.
+- Against the trace-inferred $, measured peak power scales with exponent 1.7–1.8: point-kinetics behaviour (engine 1.96; temperature-dependent α and cp lower it).
+  **The "steeper than any model" law that drove the NO-GO was an artifact of the $ labels.**
+- ω and Pmax together give Λ/γ without any label (Nordheim–Fuchs: Pmax ≈ ω²Λ/(2γ)). That is the handle for the remaining level question
+  (fuel mass, α, Λ) in run 3.
+- Caveat: ω measures ρ′/Λ, so "inferred $" assumes the library's Λ = 40 µs.
