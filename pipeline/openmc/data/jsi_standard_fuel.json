@@ -1,0 +1,88 @@
+{
+ "description": "Standard TRIGA fuel element (12 wt% U, 20% enriched, U-ZrH1.6) and the core-average moderation ratio of the JSI TRIGA core, from open sources only (no ICSBEP data).",
+ "sources": {
+  "svajger2024": "I. Švajger, D. Čalič, A. Pungerčič, A. Trkov, L. Snoj, Evaluation of reactor pulse experiments, Nuclear Engineering and Technology 56 (2024) 1165–1203, doi:10.1016/j.net.2023.11.021 (Table 1; section 4.2)",
+  "pnnl2011": "R. J. McConn Jr et al., Compendium of Material Composition Data for Radiation Transport Modeling, PNNL-15870 Rev. 1 (2011), stainless steel 304 (fractions typed from memory, NOT checked against the document; cladding composition has a negligible effect on fuel temperature feedback)"
+ },
+ "radiiCm": {
+  "zrRod": 0.3175,
+  "fuel": 1.82245,
+  "gap": 1.82626,
+  "clad": 1.87706,
+  "source": "svajger2024 Table 1"
+ },
+ "activeHeightCm": {
+  "value": 38.1,
+  "source": "svajger2024 section 4.2 (h_fuel)"
+ },
+ "fuel": {
+  "atomDensityPerBarnCm": {
+   "U235": 0.000368008,
+   "U238": 0.00146249,
+   "H1": 0.0552527,
+   "Zr90": 0.0177659,
+   "Zr91": 0.00387428,
+   "Zr92": 0.00592196,
+   "Zr94": 0.00600136,
+   "Zr96": 0.000966843
+  },
+  "densityGPerCm3": 6.045,
+  "source": "svajger2024 Table 1"
+ },
+ "zrRod": {
+  "densityGPerCm3": 6.49,
+  "composition": "natural Zr",
+  "source": "svajger2024 Table 1 (density); composition assumed"
+ },
+ "gap": {
+  "composition": "air, modelled as void",
+  "source": "svajger2024 Table 1 (radius); void is our simplification"
+ },
+ "cladding": {
+  "densityGPerCm3": 7.8889,
+  "composition": "SS304, weight fractions from pnnl2011",
+  "source": "svajger2024 Table 1 (density); composition recalled, see sources.pnnl2011",
+  "weightFractions": {
+   "C": 0.0004,
+   "Si": 0.005,
+   "P": 0.00023,
+   "S": 0.00015,
+   "Cr": 0.19,
+   "Mn": 0.01,
+   "Fe": 0.70173,
+   "Ni": 0.0925
+  }
+ },
+ "water": {
+  "densityGPerCm3": 0.99725,
+  "source": "svajger2024 Table 1"
+ },
+ "coreAverageCell": {
+  "coreRadiusCm": 22.098,
+  "fuelVolumeCm3": 22548.0,
+  "waterVolumeCm3": 33036.0,
+  "source": "svajger2024 section 4.2 (active height, radius to the graphite reflector, fuel and water volumes for core 133)",
+  "note": "Equivalent unit cell per fuel element: water area = V_water / (V_fuel / fuel-meat volume per element) / height; cell area = that + the element's outer area. Matches the core-average water-to-fuel ratio, not the grid pitch."
+ },
+ "referenceAlpha": {
+  "temperaturesK": [
+   294,
+   400,
+   500,
+   600,
+   700,
+   800
+  ],
+  "rhoPcm": [
+   1086,
+   392,
+   -526,
+   -1497,
+   -2465,
+   -3447
+  ],
+  "rhoUncPcm": 20,
+  "source": "svajger2024 Table 2 (full 3-D model of core 133, Serpent 2.1.27, ENDF/B-VII.0, fuel temperature only)",
+  "note": "Absolute k is for the whole core and is not comparable with a unit cell; the temperature differences are the comparison target."
+ }
+}
