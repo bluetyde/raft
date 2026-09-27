@@ -124,3 +124,23 @@ something the measured reactivity axis can't support at low $. A fair M1 needs a
 1. **Code-to-code:** match the published IPM/FH with the published inputs (we do: 284 MW at $2 against about 265–290 MW), and
 2. **Code-to-data where the source trusts its data:** within the paper's uncertainty band at d ≥ $2, and a single core only (not pooled
    across configurations).
+
+## C2 pass 3 (2026-09-27): fuel mass
+
+The γ "inconsistency" from pass 2 is resolved, and the library's 84 kg is wrong:
+- **Table 10 of Švajger et al. gives α = 10 pcm/°C** (the value was lost in text extraction). Then γ = α/(mC) = 1 × 10⁻⁴ / (59 × 2.36 kg × 341.6 J/(kg·K))
+  = 2.1 × 10⁻⁹ /J, exactly Vavtar & Snoj's value. The two papers agree: real fuel mass with a round, high-end α.
+- **2.36 kg per element matches the geometry:** fuel meat Ø3.63 × 38.1 cm minus the Ø0.635 cm Zr rod is 382 cm³; U-ZrH1.6 with 12 wt% U is about 6.18 g/cm³
+  (rule of mixtures, U 19.05 and ZrH1.6 5.66 g/cm³); 382 × 6.18 = 2.363 kg.
+- **The C1 cores, from the database's core maps** (trigapulse.ijs.si `242.pdf`, `246.pdf`): both use only standard 12 wt% fuel.
+  Core 242 (26 Sept 2019) has **59** elements in the core; core 246 (23 July 2021) has **65** (two more are in the storage rack, not counted).
+  That is 139 kg and 154 kg of fuel.
+- **84 kg is unsourced:** it came in with the first parameter commit (`15192b3`) with no citation, and equals 36 elements, fewer than any JSI core.
+  It reproduced γ ≈ 2.1 × 10⁻⁹ only because a too-low mass cancelled the figure-read α(T) (6–9 pcm/K, lower than Table 10's 10 pcm/K).
+- **Consequences:**
+  1. A faithful model is one library per core (fuel mass N × 2.363 kg), not one library for both. C1 used one library for two cores
+     that differ by 6 elements (10% of fuel mass, different geometry and rod worths).
+  2. With real mass and the figure-read α(T), γ ≈ 1.3–1.4 × 10⁻⁹, and the model's peak power rises about 1.5×. That lands near the source group's own IPM,
+     which overpredicts the data by about 85% at $2.
+  3. Which α to use (the Fig. 1 curve, Table 2's computed values, or Table 10's constant 10 pcm/K) is a modelling choice. The first two agree within about 10% up to 500 K.
+- **Not changed yet:** the library still has 84 kg. Changing mass or α and re-running C1 is a protocol change, so it waits for the user's decision on the M1 criterion (pass 2).

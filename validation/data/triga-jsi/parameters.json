@@ -140,9 +140,22 @@
         "tOffsetK": 274.15,
         "source": "vavtar2021 eq. 1.8, citing Simnad, GA E-177-833 (1980)"
       },
-      "coreFuelMassKgNote": "assumed 84 kg; consistent with vavtar2021's gamma = 2.1e-9 /J. svajger2024 Table 10 gives 2.36 kg/element, i.e. 132 kg for the library's 56 elements, which with the cited alpha(T), cp(T) gives gamma ~1.3-1.4e-9 /J. The two JSI papers imply different gamma; unresolved (docs/validation/m1-c1-results.md, C2 pass 2).",
+      "coreFuelMassKgNote": "assumed 84 kg, unsourced and wrong (C2 pass 3): it equals 36 elements. svajger2024 Table 10: 2.36 kg/element (matches geometry: 382 cm3 x 6.18 g/cm3). Core 242 has 59 elements (139 kg), core 246 has 65 (154 kg), per the database core maps. Kept until the user decides on the M1 criterion; see docs/validation/m1-c1-results.md.",
       "fuelMassPerElementKg": 2.36,
-      "fuelMassPerElementSource": "svajger2024 Table 10"
+      "fuelMassPerElementSource": "svajger2024 Table 10",
+      "coreElementCounts": {
+        "242": {
+          "elements": 59,
+          "date": "2019-09-26",
+          "fuel": "standard 12 wt% U"
+        },
+        "246": {
+          "elements": 65,
+          "date": "2021-07-23",
+          "fuel": "standard 12 wt% U"
+        },
+        "source": "trigapulse.ijs.si core maps 242.pdf, 246.pdf (read 2026-09-27; 2 elements in the storage rack excluded)"
+      }
     },
     "feedbackCoefficients": {
       "fuelTemperaturePrompt": {
@@ -209,6 +222,10 @@
             ]
           ],
           "range": "5-10e-5 /K, median 7.5e-5, 1 sigma 20%"
+        },
+        "table10Constant": {
+          "alphaPcmPerK": -10.0,
+          "source": "svajger2024 Table 10 (constant used in their theoretical models; gives gamma = 2.1e-9 /J with 59 x 2.36 kg and C = 341.6)"
         }
       },
       "coolantTemperature": {
