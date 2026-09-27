@@ -13,7 +13,7 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 
 ## Requests for the OpenMC session
 
-### R1 (open, 2026-09-27): give the slow web tests more time than Vitest's 5 s default
+### R1 (done 2026-09-27 by the cloud session, user OK): give the slow web tests more time than Vitest's 5 s default
 
 - Problem: on the GitHub runner, `src/sim/engine.test.ts > TestKineticsAnalytic > nordheim-fuchs pulse` takes 3.0–5+ s.
   Locally it takes 1.9 s. On commit `d7e4ba8` it passed in one CI run (3011 ms) and timed out at 5000 ms in the other.
@@ -29,11 +29,12 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   },
   ```
   A per-test timeout on the slow tests in `engine.test.ts` also works, but then every new heavy test needs one too.
+- Done: the user let the cloud session make this one edit to `web/vite.config.ts` (`testTimeout: 30_000`, no other change), on `claude/kind-bohr-p73819`.
 
 ### R2 (information, 2026-09-27): CI has no scipy, so one Python test skips there
 
 - `physics_ref/tests/test_engine.py:353` (`skipUnless(HAVE_SCIPY)`) skips on CI and runs where scipy is installed.
-  This is by design ("fast checks need no packages"). CI does not add scipy unless you want that coverage there.
+  This is by design ("fast checks need no packages"). The user decided CI does not need scipy for now (maybe later).
 
 ## Log
 
@@ -46,10 +47,12 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 
 ### 2026-09-27: CI workflow
 
-- What: `.github/workflows/premerge.yml` runs `python3 scripts/premerge.py` on every push and every pull request.
+- What: `.github/workflows/premerge.yml` runs `python3 scripts/premerge.py` on every pull request and on pushes to `main`.
+  Push runs are limited to `main`, because a push to a PR branch already starts a `pull_request` run (the user left this choice to this session).
   It uses Ubuntu, Python 3.11, Node 24, `npm ci --ignore-scripts` in `web/`, and `VR_PYTHON=python3`.
   A newer run on the same ref cancels an older one.
 - Branch: `claude/kind-bohr-p73819`.
 - Checks: `python3 scripts/premerge.py` in the container (Node 22.22.2): all four stages pass (summary table in the PR).
 - First CI runs on `d7e4ba8` (Python 3.11.16, Node 24.21.0, npm 11.19.0): the `pull_request` run passed.
   The `push` run failed in web-test on a 5 s timeout (request R1). The Python stage took 198–227 s and skipped 1 test (R2).
+- Fix: `testTimeout: 30_000` in `web/vite.config.ts` (R1, user OK), and `push` limited to `main`.
