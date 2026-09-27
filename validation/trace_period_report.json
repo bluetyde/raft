@@ -1,0 +1,2873 @@
+{
+ "hi": 0.2,
+ "lo": 0.02,
+ "method": "Before feedback starts, a pulse rises exponentially at a rate omega set by the prompt excess and the generation time\n(omega ~ (rho - beta) / Lambda). Fuel temperature feedback, fuel mass and gamma don't enter, and neither does the\nlabel. omega is fitted the same way on the measured trace and on the reference engine run over a grid of $,\nso delayed neutrons and the transient rod's finite ejection are in the model, and the engine curve omega($) is\ninverted to give each pulse's inferred $.",
+ "modelCurve": [
+  [
+   1.05,
+   12.963947020642522
+  ],
+  [
+   1.1,
+   19.890872173827454
+  ],
+  [
+   1.1500000000000001,
+   27.4951801121508
+  ],
+  [
+   1.2000000000000002,
+   35.41993304555509
+  ],
+  [
+   1.25,
+   43.510702638691704
+  ],
+  [
+   1.3,
+   51.69474586593126
+  ],
+  [
+   1.35,
+   59.931025893837685
+  ],
+  [
+   1.4000000000000001,
+   68.20751784766875
+  ],
+  [
+   1.4500000000000002,
+   76.50472675654689
+  ],
+  [
+   1.5,
+   84.81887968723149
+  ],
+  [
+   1.55,
+   93.15943059090193
+  ],
+  [
+   1.6,
+   101.49137094783762
+  ],
+  [
+   1.6500000000000001,
+   109.8513159746794
+  ],
+  [
+   1.7000000000000002,
+   118.201291070464
+  ],
+  [
+   1.75,
+   126.59390971937337
+  ],
+  [
+   1.8,
+   134.9621775240364
+  ],
+  [
+   1.85,
+   143.3230171719091
+  ],
+  [
+   1.9000000000000001,
+   151.725802592085
+  ],
+  [
+   1.9500000000000002,
+   160.1035849157026
+  ],
+  [
+   2.0,
+   168.47460905510115
+  ],
+  [
+   2.05,
+   176.84573936267026
+  ],
+  [
+   2.1,
+   185.2549336178233
+  ],
+  [
+   2.1500000000000004,
+   193.61684514163989
+  ],
+  [
+   2.2,
+   202.05684122283242
+  ]
+ ],
+ "pulses": [
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "label": 1.0,
+   "peak_mw": 0.5,
+   "pulse_id": 398,
+   "rod_position": 484.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "label": 1.25,
+   "peak_mw": 2.6,
+   "pulse_id": 399,
+   "rod_position": 453.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "inferred": 1.2246727062720781,
+   "label": 1.5,
+   "noise_mw": 0.05769799929112196,
+   "omega": 39.41235667928548,
+   "peak_mw": 27.4,
+   "points": 1069,
+   "pulse_id": 400,
+   "rod_position": 420.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "label": 1.1,
+   "peak_mw": 1.2,
+   "pulse_id": 401,
+   "rod_position": 461.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "label": 1.2,
+   "peak_mw": 2.2,
+   "pulse_id": 402,
+   "rod_position": 448.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "label": 1.3,
+   "peak_mw": 6.4,
+   "pulse_id": 403,
+   "rod_position": 435.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "inferred": 1.1687896834001779,
+   "label": 1.4,
+   "noise_mw": 0.0769305033609271,
+   "omega": 30.47325208501672,
+   "peak_mw": 17.0,
+   "points": 904,
+   "pulse_id": 404,
+   "rod_position": 422.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "inferred": 1.2555968289991,
+   "label": 1.5,
+   "noise_mw": 0.0769305033609271,
+   "omega": 44.42679644797373,
+   "peak_mw": 34.2,
+   "points": 932,
+   "pulse_id": 405,
+   "rod_position": 408.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "inferred": 1.3316949730146108,
+   "label": 1.6,
+   "noise_mw": 0.0769305033609271,
+   "omega": 56.91571933043671,
+   "peak_mw": 53.7,
+   "points": 791,
+   "pulse_id": 406,
+   "rod_position": 396.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "inferred": 1.4144336464922458,
+   "label": 1.7,
+   "noise_mw": 0.0769305033609271,
+   "omega": 70.60269745292993,
+   "peak_mw": 83.2,
+   "points": 646,
+   "pulse_id": 407,
+   "rod_position": 381.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "inferred": 1.50975654333553,
+   "label": 1.8,
+   "noise_mw": 0.0769305033609271,
+   "omega": 86.44637861390856,
+   "peak_mw": 121.7,
+   "points": 532,
+   "pulse_id": 408,
+   "rod_position": 365.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "inferred": 1.6091568393244722,
+   "label": 1.9,
+   "noise_mw": 0.0769305033609271,
+   "omega": 103.0223844152818,
+   "peak_mw": 173.3,
+   "points": 445,
+   "pulse_id": 409,
+   "rod_position": 348.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "inferred": 1.6145689701083583,
+   "label": 1.9,
+   "noise_mw": 0.0769305033609271,
+   "omega": 103.92728673190915,
+   "peak_mw": 174.0,
+   "points": 444,
+   "pulse_id": 410,
+   "rod_position": 348.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "inferred": 1.7065402505829514,
+   "label": 2.0,
+   "noise_mw": 0.0769305033609271,
+   "omega": 119.29908765068433,
+   "peak_mw": 227.4,
+   "points": 385,
+   "pulse_id": 411,
+   "rod_position": 330.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "inferred": 1.7116469157357075,
+   "label": 2.0,
+   "noise_mw": 0.0769305033609271,
+   "omega": 120.15625351457948,
+   "peak_mw": 229.5,
+   "points": 384,
+   "pulse_id": 412,
+   "rod_position": 330.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "inferred": 1.5241189836655709,
+   "label": 1.8,
+   "noise_mw": 0.0769305033609271,
+   "omega": 88.84219190738128,
+   "peak_mw": 128.1,
+   "points": 513,
+   "pulse_id": 413,
+   "rod_position": 365.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "inferred": 1.3386549287171285,
+   "label": 1.6,
+   "noise_mw": 0.0769305033609271,
+   "omega": 58.062202213391885,
+   "peak_mw": 56.9,
+   "points": 779,
+   "pulse_id": 414,
+   "rod_position": 396.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "inferred": 1.2441932343587108,
+   "label": 1.5,
+   "noise_mw": 0.0769305033609271,
+   "omega": 42.571078580991426,
+   "peak_mw": 31.7,
+   "points": 943,
+   "pulse_id": 415,
+   "rod_position": 411.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "inferred": 1.145465036242393,
+   "label": 1.4,
+   "noise_mw": 0.0769305033609271,
+   "omega": 26.805474894111182,
+   "peak_mw": 14.3,
+   "points": 831,
+   "pulse_id": 416,
+   "rod_position": 425.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "label": 1.3,
+   "peak_mw": 5.1,
+   "pulse_id": 417,
+   "rod_position": 439.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "label": 1.2,
+   "peak_mw": 1.8,
+   "pulse_id": 418,
+   "rod_position": 452.0
+  },
+  {
+   "core": "242",
+   "date": "11.11.2019",
+   "label": 1.1,
+   "peak_mw": 1.1,
+   "pulse_id": 419,
+   "rod_position": 464.0
+  },
+  {
+   "core": "242",
+   "date": "02.12.2019",
+   "label": 1.2,
+   "peak_mw": 1.7,
+   "pulse_id": 420,
+   "rod_position": 456.0
+  },
+  {
+   "core": "242",
+   "date": "02.12.2019",
+   "label": 1.2,
+   "peak_mw": 1.8,
+   "pulse_id": 421,
+   "rod_position": 457.0
+  },
+  {
+   "core": "242",
+   "date": "02.12.2019",
+   "inferred": 1.1402748694449518,
+   "label": 1.4,
+   "noise_mw": 0.0769305033609271,
+   "omega": 26.01612236253109,
+   "peak_mw": 12.9,
+   "points": 796,
+   "pulse_id": 422,
+   "rod_position": 431.0
+  },
+  {
+   "core": "242",
+   "date": "02.12.2019",
+   "inferred": 1.3250514175233559,
+   "label": 1.6,
+   "noise_mw": 0.0769305033609271,
+   "omega": 55.82135566229846,
+   "peak_mw": 51.3,
+   "points": 801,
+   "pulse_id": 423,
+   "rod_position": 403.0
+  },
+  {
+   "core": "242",
+   "date": "02.12.2019",
+   "inferred": 1.5037357442257195,
+   "label": 1.8,
+   "noise_mw": 0.0769305033609271,
+   "omega": 85.44204298478562,
+   "peak_mw": 116.9,
+   "points": 536,
+   "pulse_id": 424,
+   "rod_position": 373.0
+  },
+  {
+   "core": "242",
+   "date": "02.12.2019",
+   "inferred": 1.6839750948972116,
+   "label": 2.0,
+   "noise_mw": 0.0769305033609271,
+   "omega": 115.5251399000521,
+   "peak_mw": 210.4,
+   "points": 397,
+   "pulse_id": 425,
+   "rod_position": 339.0
+  },
+  {
+   "core": "242",
+   "date": "02.12.2019",
+   "inferred": 1.685390030215998,
+   "label": 2.0,
+   "noise_mw": 0.0769305033609271,
+   "omega": 115.76143339353236,
+   "peak_mw": 209.6,
+   "points": 397,
+   "pulse_id": 426,
+   "rod_position": 339.0
+  },
+  {
+   "core": "242",
+   "date": "02.12.2019",
+   "inferred": 1.5926755148434988,
+   "label": 1.9,
+   "noise_mw": 0.0769305033609271,
+   "omega": 100.27082747845301,
+   "peak_mw": 159.7,
+   "points": 458,
+   "pulse_id": 427,
+   "rod_position": 356.0
+  },
+  {
+   "core": "242",
+   "date": "02.12.2019",
+   "label": 1.1,
+   "peak_mw": 1.0,
+   "pulse_id": 428,
+   "rod_position": 469.0
+  },
+  {
+   "core": "242",
+   "date": "02.12.2019",
+   "inferred": 1.2402268052211496,
+   "label": 1.5,
+   "noise_mw": 0.0769305033609271,
+   "omega": 41.9292492958012,
+   "peak_mw": 30.2,
+   "points": 920,
+   "pulse_id": 429,
+   "rod_position": 416.0
+  },
+  {
+   "core": "242",
+   "date": "02.12.2019",
+   "inferred": 1.6918048571402395,
+   "label": 2.0,
+   "noise_mw": 0.0769305033609271,
+   "omega": 116.83270629475604,
+   "peak_mw": 215.3,
+   "points": 398,
+   "pulse_id": 430,
+   "rod_position": 338.0
+  },
+  {
+   "core": "242",
+   "date": "19.06.2020",
+   "label": 1.25,
+   "peak_mw": 2.9,
+   "pulse_id": 431,
+   "rod_position": 443.0
+  },
+  {
+   "core": "242",
+   "date": "19.06.2020",
+   "inferred": 1.2446492951052968,
+   "label": 1.5,
+   "noise_mw": 0.0769305033609271,
+   "omega": 42.64487622941346,
+   "peak_mw": 31.7,
+   "points": 929,
+   "pulse_id": 432,
+   "rod_position": 408.0
+  },
+  {
+   "core": "242",
+   "date": "24.06.2020",
+   "inferred": 1.2941111092828839,
+   "label": 1.5,
+   "noise_mw": 0.0769305033609271,
+   "omega": 50.73084714214389,
+   "peak_mw": 43.8,
+   "points": 858,
+   "pulse_id": 433,
+   "rod_position": 411.0
+  },
+  {
+   "core": "242",
+   "date": "24.06.2020",
+   "inferred": 1.7510933183561668,
+   "label": 2.0,
+   "noise_mw": 0.0769305033609271,
+   "omega": 126.77689333537653,
+   "peak_mw": 254.2,
+   "points": 360,
+   "pulse_id": 434,
+   "rod_position": 332.0
+  },
+  {
+   "core": "242",
+   "date": "24.06.2020",
+   "inferred": 1.692563782224216,
+   "label": 2.0,
+   "noise_mw": 0.0769305033609271,
+   "omega": 116.95944640577146,
+   "peak_mw": 221.8,
+   "points": 388,
+   "pulse_id": 435,
+   "rod_position": 332.0
+  },
+  {
+   "core": "242",
+   "date": "24.06.2020",
+   "inferred": 1.6917928962778161,
+   "label": 2.0,
+   "noise_mw": 0.09616300370544195,
+   "omega": 116.83070883668883,
+   "peak_mw": 220.4,
+   "points": 388,
+   "pulse_id": 436,
+   "rod_position": 332.0
+  },
+  {
+   "core": "242",
+   "date": "09.12.2020",
+   "label": 1.0,
+   "peak_mw": 0.6,
+   "pulse_id": 437,
+   "rod_position": 471.0
+  },
+  {
+   "core": "242",
+   "date": "09.12.2020",
+   "label": 1.25,
+   "peak_mw": 2.6,
+   "pulse_id": 438,
+   "rod_position": 439.0
+  },
+  {
+   "core": "242",
+   "date": "09.12.2020",
+   "inferred": 1.2426271466110916,
+   "label": 1.5,
+   "noise_mw": 0.05769799929112196,
+   "omega": 42.317661478419005,
+   "peak_mw": 30.9,
+   "points": 1051,
+   "pulse_id": 439,
+   "rod_position": 404.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "label": 1.1,
+   "peak_mw": 0.2,
+   "pulse_id": 440,
+   "rod_position": 469.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "label": 1.2,
+   "peak_mw": 1.1,
+   "pulse_id": 441,
+   "rod_position": 456.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "label": 1.3,
+   "peak_mw": 1.9,
+   "pulse_id": 442,
+   "rod_position": 443.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "label": 1.4,
+   "peak_mw": 5.5,
+   "pulse_id": 443,
+   "rod_position": 430.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "inferred": 1.161921996569681,
+   "label": 1.5,
+   "noise_mw": 0.05769799929112196,
+   "omega": 29.384757657903076,
+   "peak_mw": 15.9,
+   "points": 1048,
+   "pulse_id": 444,
+   "rod_position": 416.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "inferred": 1.2515101830623887,
+   "label": 1.6,
+   "noise_mw": 0.05769799929112196,
+   "omega": 43.7578907079644,
+   "peak_mw": 32.7,
+   "points": 1013,
+   "pulse_id": 445,
+   "rod_position": 402.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "inferred": 1.3445955230455,
+   "label": 1.7,
+   "noise_mw": 0.05769799929112196,
+   "omega": 59.040770181805094,
+   "peak_mw": 57.5,
+   "points": 770,
+   "pulse_id": 446,
+   "rod_position": 387.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "inferred": 1.4379159710490301,
+   "label": 1.8,
+   "noise_mw": 0.05769799929112196,
+   "omega": 74.4994525032043,
+   "peak_mw": 90.4,
+   "points": 614,
+   "pulse_id": 447,
+   "rod_position": 371.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "inferred": 1.5398893147766162,
+   "label": 1.9,
+   "noise_mw": 0.05769799929112196,
+   "omega": 91.4728568953695,
+   "peak_mw": 133.3,
+   "points": 497,
+   "pulse_id": 448,
+   "rod_position": 354.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "inferred": 1.6238670369469421,
+   "label": 2.0,
+   "noise_mw": 0.05769799929112196,
+   "omega": 105.48191328443836,
+   "peak_mw": 176.7,
+   "points": 436,
+   "pulse_id": 449,
+   "rod_position": 337.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "label": 1.4,
+   "peak_mw": 6.7,
+   "pulse_id": 450,
+   "rod_position": 430.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "label": 1.4,
+   "peak_mw": 6.8,
+   "pulse_id": 451,
+   "rod_position": 430.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "inferred": 1.6276784592232607,
+   "label": 2.0,
+   "noise_mw": 0.05769799929112196,
+   "omega": 106.11917889852045,
+   "peak_mw": 178.4,
+   "points": 434,
+   "pulse_id": 452,
+   "rod_position": 337.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "label": 1.2,
+   "peak_mw": 1.7,
+   "pulse_id": 453,
+   "rod_position": 447.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "label": 1.3,
+   "peak_mw": 4.8,
+   "pulse_id": 454,
+   "rod_position": 433.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "inferred": 1.168618995333568,
+   "label": 1.4,
+   "noise_mw": 0.05769799929112196,
+   "omega": 30.446198869885443,
+   "peak_mw": 17.0,
+   "points": 1066,
+   "pulse_id": 455,
+   "rod_position": 420.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "inferred": 1.3548540348012859,
+   "label": 1.6,
+   "noise_mw": 0.05769799929112196,
+   "omega": 60.73451349336682,
+   "peak_mw": 60.9,
+   "points": 751,
+   "pulse_id": 456,
+   "rod_position": 390.0
+  },
+  {
+   "core": "242",
+   "date": "11.12.2020",
+   "inferred": 1.7150246759345193,
+   "label": 2.0,
+   "noise_mw": 0.05769799929112196,
+   "omega": 120.7232185793013,
+   "peak_mw": 229.1,
+   "points": 381,
+   "pulse_id": 457,
+   "rod_position": 323.0
+  },
+  {
+   "core": "242",
+   "date": "16.12.2020",
+   "label": 1.2,
+   "peak_mw": 2.5,
+   "pulse_id": 458,
+   "rod_position": 366.0
+  },
+  {
+   "core": "242",
+   "date": "16.12.2020",
+   "label": 1.2,
+   "peak_mw": 2.8,
+   "pulse_id": 459,
+   "rod_position": 366.0
+  },
+  {
+   "core": "242",
+   "date": "16.12.2020",
+   "inferred": 1.1994914871052462,
+   "label": 1.4,
+   "noise_mw": 0.05769799929112196,
+   "omega": 35.33933626446757,
+   "peak_mw": 22.5,
+   "points": 1074,
+   "pulse_id": 460,
+   "rod_position": 331.0
+  },
+  {
+   "core": "242",
+   "date": "16.12.2020",
+   "label": 1.15,
+   "peak_mw": 1.7,
+   "pulse_id": 461,
+   "rod_position": 375.0
+  },
+  {
+   "core": "242",
+   "date": "16.12.2020",
+   "label": 1.2,
+   "peak_mw": 2.9,
+   "pulse_id": 462,
+   "rod_position": 366.0
+  },
+  {
+   "core": "242",
+   "date": "16.12.2020",
+   "label": 1.25,
+   "peak_mw": 6.4,
+   "pulse_id": 464,
+   "rod_position": 358.0
+  },
+  {
+   "core": "242",
+   "date": "16.12.2020",
+   "label": 1.1,
+   "peak_mw": 1.4,
+   "pulse_id": 465,
+   "rod_position": 382.0
+  },
+  {
+   "core": "242",
+   "date": "16.12.2020",
+   "label": 1.23,
+   "peak_mw": 5.9,
+   "pulse_id": 466,
+   "rod_position": 361.0
+  },
+  {
+   "core": "242",
+   "date": "16.12.2020",
+   "label": 1.05,
+   "peak_mw": 1.2,
+   "pulse_id": 467,
+   "rod_position": 390.0
+  },
+  {
+   "core": "242",
+   "date": "07.04.2021",
+   "label": 1.2,
+   "peak_mw": 1.8,
+   "pulse_id": 468,
+   "rod_position": 445.0
+  },
+  {
+   "core": "242",
+   "date": "07.04.2021",
+   "inferred": 1.1606928292194354,
+   "label": 1.4,
+   "noise_mw": 0.05769799929112196,
+   "omega": 29.189940706612997,
+   "peak_mw": 16.1,
+   "points": 1103,
+   "pulse_id": 469,
+   "rod_position": 418.0
+  },
+  {
+   "core": "242",
+   "date": "07.04.2021",
+   "inferred": 1.3412638648168198,
+   "label": 1.6,
+   "noise_mw": 0.05769799929112196,
+   "omega": 58.49196077923131,
+   "peak_mw": 57.9,
+   "points": 741,
+   "pulse_id": 470,
+   "rod_position": 389.0
+  },
+  {
+   "core": "242",
+   "date": "12.04.2021",
+   "label": 1.05,
+   "peak_mw": 0.4,
+   "pulse_id": 471,
+   "rod_position": 460.0
+  },
+  {
+   "core": "242",
+   "date": "12.04.2021",
+   "label": 1.1,
+   "peak_mw": 1.1,
+   "pulse_id": 472,
+   "rod_position": 454.0
+  },
+  {
+   "core": "242",
+   "date": "12.04.2021",
+   "label": 1.2,
+   "peak_mw": 1.8,
+   "pulse_id": 473,
+   "rod_position": 441.0
+  },
+  {
+   "core": "242",
+   "date": "13.04.2021",
+   "label": 1.05,
+   "peak_mw": 0.9,
+   "pulse_id": 474,
+   "rod_position": 437.0
+  },
+  {
+   "core": "242",
+   "date": "13.04.2021",
+   "label": 1.1,
+   "peak_mw": 1.1,
+   "pulse_id": 475,
+   "rod_position": 431.0
+  },
+  {
+   "core": "242",
+   "date": "13.04.2021",
+   "label": 1.15,
+   "peak_mw": 1.4,
+   "pulse_id": 476,
+   "rod_position": 424.0
+  },
+  {
+   "core": "242",
+   "date": "13.04.2021",
+   "label": 1.2,
+   "peak_mw": 2.1,
+   "pulse_id": 477,
+   "rod_position": 417.0
+  },
+  {
+   "core": "242",
+   "date": "13.04.2021",
+   "label": 1.25,
+   "peak_mw": 3.7,
+   "pulse_id": 478,
+   "rod_position": 410.0
+  },
+  {
+   "core": "242",
+   "date": "05.05.2021",
+   "inferred": 1.2394622947896388,
+   "label": 1.5,
+   "noise_mw": 0.05769799929112196,
+   "omega": 41.80553974074313,
+   "peak_mw": 30.5,
+   "points": 1047,
+   "pulse_id": 479,
+   "rod_position": 394.0
+  },
+  {
+   "core": "242",
+   "date": "05.05.2021",
+   "inferred": 1.238557309980033,
+   "label": 1.5,
+   "noise_mw": 0.0769305033609271,
+   "omega": 41.65909926914697,
+   "peak_mw": 30.7,
+   "points": 919,
+   "pulse_id": 480,
+   "rod_position": 394.0
+  },
+  {
+   "core": "242",
+   "date": "12.05.2021",
+   "label": 1.1,
+   "peak_mw": 1.0,
+   "pulse_id": 481,
+   "rod_position": 452.0
+  },
+  {
+   "core": "242",
+   "date": "12.05.2021",
+   "label": 1.1,
+   "peak_mw": 1.5,
+   "pulse_id": 482,
+   "rod_position": 452.0
+  },
+  {
+   "core": "242",
+   "date": "24.05.2021",
+   "label": 1.05,
+   "peak_mw": 0.8,
+   "pulse_id": 483,
+   "rod_position": 454.0
+  },
+  {
+   "core": "242",
+   "date": "24.05.2021",
+   "label": 1.1,
+   "peak_mw": 1.0,
+   "pulse_id": 484,
+   "rod_position": 448.0
+  },
+  {
+   "core": "242",
+   "date": "24.05.2021",
+   "label": 1.15,
+   "peak_mw": 1.2,
+   "pulse_id": 485,
+   "rod_position": 441.0
+  },
+  {
+   "core": "242",
+   "date": "24.05.2021",
+   "label": 1.2,
+   "peak_mw": 1.7,
+   "pulse_id": 486,
+   "rod_position": 434.0
+  },
+  {
+   "core": "242",
+   "date": "24.05.2021",
+   "label": 1.25,
+   "peak_mw": 2.6,
+   "pulse_id": 487,
+   "rod_position": 428.0
+  },
+  {
+   "core": "242",
+   "date": "24.05.2021",
+   "label": 1.3,
+   "peak_mw": 5.0,
+   "pulse_id": 488,
+   "rod_position": 421.0
+  },
+  {
+   "core": "242",
+   "date": "25.05.2021",
+   "label": 1.05,
+   "peak_mw": 0.6,
+   "pulse_id": 489,
+   "rod_position": 437.0
+  },
+  {
+   "core": "242",
+   "date": "25.05.2021",
+   "label": 1.05,
+   "peak_mw": 0.9,
+   "pulse_id": 490,
+   "rod_position": 437.0
+  },
+  {
+   "core": "242",
+   "date": "25.05.2021",
+   "label": 1.1,
+   "peak_mw": 1.2,
+   "pulse_id": 491,
+   "rod_position": 430.0
+  },
+  {
+   "core": "242",
+   "date": "25.05.2021",
+   "label": 1.15,
+   "peak_mw": 1.4,
+   "pulse_id": 492,
+   "rod_position": 424.0
+  },
+  {
+   "core": "242",
+   "date": "25.05.2021",
+   "label": 1.2,
+   "peak_mw": 1.8,
+   "pulse_id": 493,
+   "rod_position": 417.0
+  },
+  {
+   "core": "242",
+   "date": "25.05.2021",
+   "label": 1.25,
+   "peak_mw": 3.2,
+   "pulse_id": 494,
+   "rod_position": 410.0
+  },
+  {
+   "core": "242",
+   "date": "25.05.2021",
+   "label": 1.3,
+   "peak_mw": 6.2,
+   "pulse_id": 495,
+   "rod_position": 402.0
+  },
+  {
+   "core": "242",
+   "date": "25.05.2021",
+   "label": 1.2,
+   "peak_mw": 1.9,
+   "pulse_id": 496,
+   "rod_position": 417.0
+  },
+  {
+   "core": "242",
+   "date": "25.05.2021",
+   "label": 1.25,
+   "peak_mw": 2.9,
+   "pulse_id": 497,
+   "rod_position": 410.0
+  },
+  {
+   "core": "242",
+   "date": "25.05.2021",
+   "label": 1.3,
+   "peak_mw": 6.0,
+   "pulse_id": 498,
+   "rod_position": 402.0
+  },
+  {
+   "core": "242",
+   "date": "25.05.2021",
+   "inferred": 1.1142551913445864,
+   "label": 1.35,
+   "noise_mw": 0.05769799929112196,
+   "omega": 22.05888946790658,
+   "peak_mw": 9.6,
+   "points": 943,
+   "pulse_id": 499,
+   "rod_position": 395.0
+  },
+  {
+   "core": "242",
+   "date": "25.05.2021",
+   "inferred": 1.1569037884098614,
+   "label": 1.4,
+   "noise_mw": 0.05769799929112196,
+   "omega": 28.589396461203826,
+   "peak_mw": 15.5,
+   "points": 1068,
+   "pulse_id": 500,
+   "rod_position": 387.0
+  },
+  {
+   "core": "242",
+   "date": "25.05.2021",
+   "inferred": 1.1977660481200236,
+   "label": 1.45,
+   "noise_mw": 0.05769799929112196,
+   "omega": 35.06586271127654,
+   "peak_mw": 22.0,
+   "points": 1058,
+   "pulse_id": 501,
+   "rod_position": 380.0
+  },
+  {
+   "core": "242",
+   "date": "25.05.2021",
+   "inferred": 1.24218794726398,
+   "label": 1.5,
+   "noise_mw": 0.05769799929112196,
+   "omega": 42.2465922639603,
+   "peak_mw": 30.7,
+   "points": 1025,
+   "pulse_id": 502,
+   "rod_position": 372.0
+  },
+  {
+   "core": "242",
+   "date": "26.05.2021",
+   "inferred": 1.157067690162349,
+   "label": 1.4,
+   "noise_mw": 0.05769799929112196,
+   "omega": 28.61537407908011,
+   "peak_mw": 15.5,
+   "points": 1042,
+   "pulse_id": 503,
+   "rod_position": 395.0
+  },
+  {
+   "core": "242",
+   "date": "26.05.2021",
+   "inferred": 1.3419220636703995,
+   "label": 1.6,
+   "noise_mw": 0.05769799929112196,
+   "omega": 58.60038298067389,
+   "peak_mw": 57.5,
+   "points": 773,
+   "pulse_id": 504,
+   "rod_position": 364.0
+  },
+  {
+   "core": "242",
+   "date": "26.05.2021",
+   "inferred": 1.524113604762554,
+   "label": 1.8,
+   "noise_mw": 0.05769799929112196,
+   "omega": 88.84129464709292,
+   "peak_mw": 128.0,
+   "points": 510,
+   "pulse_id": 505,
+   "rod_position": 327.0
+  },
+  {
+   "core": "242",
+   "date": "26.05.2021",
+   "inferred": 1.720017854362327,
+   "label": 2.0,
+   "noise_mw": 0.05769799929112196,
+   "omega": 121.56133542711231,
+   "peak_mw": 232.6,
+   "points": 380,
+   "pulse_id": 506,
+   "rod_position": 285.0
+  },
+  {
+   "core": "242",
+   "date": "26.05.2021",
+   "inferred": 1.159149515082779,
+   "label": 1.4,
+   "noise_mw": 0.05769799929112196,
+   "omega": 28.94533304198039,
+   "peak_mw": 15.7,
+   "points": 1072,
+   "pulse_id": 507,
+   "rod_position": 395.0
+  },
+  {
+   "core": "242",
+   "date": "26.05.2021",
+   "inferred": 1.3394491421744616,
+   "label": 1.6,
+   "noise_mw": 0.05769799929112196,
+   "omega": 58.19302950212242,
+   "peak_mw": 57.1,
+   "points": 779,
+   "pulse_id": 508,
+   "rod_position": 364.0
+  },
+  {
+   "core": "242",
+   "date": "26.05.2021",
+   "inferred": 1.5306971126423699,
+   "label": 1.8,
+   "noise_mw": 0.05769799929112196,
+   "omega": 89.93949629901932,
+   "peak_mw": 131.0,
+   "points": 509,
+   "pulse_id": 509,
+   "rod_position": 327.0
+  },
+  {
+   "core": "242",
+   "date": "26.05.2021",
+   "inferred": 1.239513279514819,
+   "label": 1.5,
+   "noise_mw": 0.05769799929112196,
+   "omega": 41.8137898540272,
+   "peak_mw": 30.1,
+   "points": 1092,
+   "pulse_id": 510,
+   "rod_position": 380.0
+  },
+  {
+   "core": "242",
+   "date": "26.05.2021",
+   "inferred": 1.4373667406589985,
+   "label": 1.7,
+   "noise_mw": 0.05769799929112196,
+   "omega": 74.40831091750034,
+   "peak_mw": 91.1,
+   "points": 607,
+   "pulse_id": 511,
+   "rod_position": 346.0
+  },
+  {
+   "core": "242",
+   "date": "26.05.2021",
+   "label": 1.3,
+   "peak_mw": 5.5,
+   "pulse_id": 512,
+   "rod_position": 410.0
+  },
+  {
+   "core": "246",
+   "date": "08.12.2021",
+   "label": 1.25,
+   "peak_mw": 51.5,
+   "pulse_id": 513,
+   "rod_position": 553.0
+  },
+  {
+   "core": "246",
+   "date": "08.12.2021",
+   "label": 1.25,
+   "peak_mw": 91.8,
+   "pulse_id": 514,
+   "rod_position": 553.0
+  },
+  {
+   "core": "246",
+   "date": "08.12.2021",
+   "inferred": 1.2424399177549665,
+   "label": 1.65,
+   "noise_mw": 0.0769305033609271,
+   "omega": 42.28736496769713,
+   "peak_mw": 35.2,
+   "points": 974,
+   "pulse_id": 515,
+   "rod_position": 504.0
+  },
+  {
+   "core": "246",
+   "date": "08.12.2021",
+   "label": 1.25,
+   "peak_mw": 14.6,
+   "pulse_id": 516,
+   "rod_position": 553.0
+  },
+  {
+   "core": "246",
+   "date": "08.12.2021",
+   "label": 1.3,
+   "peak_mw": 29.9,
+   "pulse_id": 517,
+   "rod_position": 547.0
+  },
+  {
+   "core": "246",
+   "date": "17.12.2021",
+   "label": 1.25,
+   "peak_mw": 1.5,
+   "pulse_id": 518,
+   "rod_position": 532.0
+  },
+  {
+   "core": "246",
+   "date": "17.12.2021",
+   "inferred": 1.1320876548526342,
+   "label": 1.5,
+   "noise_mw": 0.0769305033609271,
+   "omega": 24.77096034418875,
+   "peak_mw": 13.5,
+   "points": 961,
+   "pulse_id": 519,
+   "rod_position": 502.0
+  },
+  {
+   "core": "246",
+   "date": "17.12.2021",
+   "inferred": 1.3593827672474834,
+   "label": 1.75,
+   "noise_mw": 0.0769305033609271,
+   "omega": 61.48415384640698,
+   "peak_mw": 70.5,
+   "points": 726,
+   "pulse_id": 520,
+   "rod_position": 467.0
+  },
+  {
+   "core": "246",
+   "date": "17.12.2021",
+   "inferred": 1.5359545541123771,
+   "label": 2.0,
+   "noise_mw": 0.0769305033609271,
+   "omega": 90.8164954630926,
+   "peak_mw": 148.6,
+   "points": 503,
+   "pulse_id": 521,
+   "rod_position": 437.0
+  },
+  {
+   "core": "246",
+   "date": "17.12.2021",
+   "label": 1.4,
+   "peak_mw": 5.9,
+   "pulse_id": 522,
+   "rod_position": 516.0
+  },
+  {
+   "core": "246",
+   "date": "17.12.2021",
+   "inferred": 1.2339410558811337,
+   "label": 1.6,
+   "noise_mw": 0.0769305033609271,
+   "omega": 40.91211830319561,
+   "peak_mw": 32.9,
+   "points": 949,
+   "pulse_id": 523,
+   "rod_position": 491.0
+  },
+  {
+   "core": "246",
+   "date": "17.12.2021",
+   "inferred": 1.3996179564785418,
+   "label": 1.8,
+   "noise_mw": 0.0769305033609271,
+   "omega": 68.1442782450415,
+   "peak_mw": 85.9,
+   "points": 661,
+   "pulse_id": 524,
+   "rod_position": 465.0
+  },
+  {
+   "core": "246",
+   "date": "17.12.2021",
+   "inferred": 1.5454294748786757,
+   "label": 2.0,
+   "noise_mw": 0.0769305033609271,
+   "omega": 92.39701664228372,
+   "peak_mw": 154.3,
+   "points": 495,
+   "pulse_id": 525,
+   "rod_position": 439.0
+  },
+  {
+   "core": "246",
+   "date": "20.12.2021",
+   "label": 1.25,
+   "peak_mw": 1.0,
+   "pulse_id": 526,
+   "rod_position": 578.0
+  },
+  {
+   "core": "246",
+   "date": "20.12.2021",
+   "label": 1.3,
+   "peak_mw": 1.5,
+   "pulse_id": 527,
+   "rod_position": 572.0
+  },
+  {
+   "core": "246",
+   "date": "20.12.2021",
+   "label": 1.35,
+   "peak_mw": 2.0,
+   "pulse_id": 528,
+   "rod_position": 566.0
+  },
+  {
+   "core": "246",
+   "date": "20.12.2021",
+   "label": 1.4,
+   "peak_mw": 3.6,
+   "pulse_id": 529,
+   "rod_position": 560.0
+  },
+  {
+   "core": "246",
+   "date": "20.12.2021",
+   "label": 1.45,
+   "peak_mw": 6.0,
+   "pulse_id": 530,
+   "rod_position": 554.0
+  },
+  {
+   "core": "246",
+   "date": "20.12.2021",
+   "inferred": 1.1028080301541459,
+   "label": 1.5,
+   "noise_mw": 0.05769799929112196,
+   "omega": 20.31793469367191,
+   "peak_mw": 9.6,
+   "points": 1094,
+   "pulse_id": 531,
+   "rod_position": 548.0
+  },
+  {
+   "core": "246",
+   "date": "20.12.2021",
+   "inferred": 1.1324339188909762,
+   "label": 1.55,
+   "noise_mw": 0.0769305033609271,
+   "omega": 24.823622311699165,
+   "peak_mw": 13.5,
+   "points": 894,
+   "pulse_id": 532,
+   "rod_position": 542.0
+  },
+  {
+   "core": "246",
+   "date": "20.12.2021",
+   "inferred": 1.1734502088148788,
+   "label": 1.6,
+   "noise_mw": 0.0769305033609271,
+   "omega": 31.211922334043873,
+   "peak_mw": 20.1,
+   "points": 951,
+   "pulse_id": 533,
+   "rod_position": 536.0
+  },
+  {
+   "core": "246",
+   "date": "20.12.2021",
+   "inferred": 1.2501621709496575,
+   "label": 1.7,
+   "noise_mw": 0.0769305033609271,
+   "omega": 43.537246919935704,
+   "peak_mw": 36.5,
+   "points": 940,
+   "pulse_id": 534,
+   "rod_position": 524.0
+  },
+  {
+   "core": "246",
+   "date": "20.12.2021",
+   "inferred": 1.3243434460463175,
+   "label": 1.8,
+   "noise_mw": 0.0769305033609271,
+   "omega": 55.70473463556528,
+   "peak_mw": 58.0,
+   "points": 805,
+   "pulse_id": 535,
+   "rod_position": 511.0
+  },
+  {
+   "core": "246",
+   "date": "20.12.2021",
+   "inferred": 1.404649210023156,
+   "label": 1.9,
+   "noise_mw": 0.0769305033609271,
+   "omega": 68.97902718413624,
+   "peak_mw": 87.8,
+   "points": 661,
+   "pulse_id": 536,
+   "rod_position": 499.0
+  },
+  {
+   "core": "246",
+   "date": "20.12.2021",
+   "inferred": 1.4813295675240208,
+   "label": 2.0,
+   "noise_mw": 0.0769305033609271,
+   "omega": 81.71430306948524,
+   "peak_mw": 120.3,
+   "points": 555,
+   "pulse_id": 537,
+   "rod_position": 486.0
+  },
+  {
+   "core": "246",
+   "date": "19.01.2022",
+   "label": 1.05,
+   "peak_mw": 1.4,
+   "pulse_id": 538,
+   "rod_position": 588.0
+  },
+  {
+   "core": "246",
+   "date": "19.01.2022",
+   "label": 1.05,
+   "peak_mw": 0.2,
+   "pulse_id": 539,
+   "rod_position": 588.0
+  },
+  {
+   "core": "246",
+   "date": "19.01.2022",
+   "label": 1.05,
+   "peak_mw": 0.9,
+   "pulse_id": 540,
+   "rod_position": 588.0
+  },
+  {
+   "core": "246",
+   "date": "19.01.2022",
+   "label": 1.05,
+   "peak_mw": 1.3,
+   "pulse_id": 541,
+   "rod_position": 588.0
+  },
+  {
+   "core": "246",
+   "date": "19.01.2022",
+   "label": 1.05,
+   "peak_mw": 0.2,
+   "pulse_id": 542,
+   "rod_position": 588.0
+  },
+  {
+   "core": "246",
+   "date": "19.01.2022",
+   "label": 1.1,
+   "peak_mw": 0.3,
+   "pulse_id": 543,
+   "rod_position": 582.0
+  },
+  {
+   "core": "246",
+   "date": "19.01.2022",
+   "label": 1.1,
+   "peak_mw": 1.2,
+   "pulse_id": 544,
+   "rod_position": 582.0
+  },
+  {
+   "core": "246",
+   "date": "19.01.2022",
+   "label": 1.1,
+   "peak_mw": 0.2,
+   "pulse_id": 545,
+   "rod_position": 582.0
+  },
+  {
+   "core": "246",
+   "date": "19.01.2022",
+   "label": 1.1,
+   "peak_mw": 0.2,
+   "pulse_id": 546,
+   "rod_position": 582.0
+  },
+  {
+   "core": "246",
+   "date": "19.01.2022",
+   "label": 1.1,
+   "peak_mw": 0.2,
+   "pulse_id": 547,
+   "rod_position": 582.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.15,
+   "peak_mw": 0.9,
+   "pulse_id": 548,
+   "rod_position": 570.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.15,
+   "peak_mw": 0.9,
+   "pulse_id": 549,
+   "rod_position": 570.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.15,
+   "peak_mw": 2.3,
+   "pulse_id": 550,
+   "rod_position": 570.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.15,
+   "peak_mw": 0.9,
+   "pulse_id": 551,
+   "rod_position": 570.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.15,
+   "peak_mw": 0.9,
+   "pulse_id": 552,
+   "rod_position": 570.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.15,
+   "peak_mw": 0.9,
+   "pulse_id": 553,
+   "rod_position": 570.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.05,
+   "peak_mw": 0.4,
+   "pulse_id": 554,
+   "rod_position": 583.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.05,
+   "peak_mw": 2.4,
+   "pulse_id": 555,
+   "rod_position": 582.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.05,
+   "peak_mw": 1.1,
+   "pulse_id": 556,
+   "rod_position": 582.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.1,
+   "peak_mw": 1.1,
+   "pulse_id": 557,
+   "rod_position": 576.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.1,
+   "peak_mw": 0.8,
+   "pulse_id": 558,
+   "rod_position": 576.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.1,
+   "peak_mw": 1.4,
+   "pulse_id": 559,
+   "rod_position": 576.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.15,
+   "peak_mw": 0.9,
+   "pulse_id": 560,
+   "rod_position": 570.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.15,
+   "peak_mw": 0.9,
+   "pulse_id": 561,
+   "rod_position": 570.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.15,
+   "peak_mw": 0.9,
+   "pulse_id": 562,
+   "rod_position": 570.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.2,
+   "peak_mw": 1.2,
+   "pulse_id": 563,
+   "rod_position": 564.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.2,
+   "peak_mw": 1.1,
+   "pulse_id": 564,
+   "rod_position": 564.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.2,
+   "peak_mw": 1.8,
+   "pulse_id": 565,
+   "rod_position": 564.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.25,
+   "peak_mw": 1.4,
+   "pulse_id": 566,
+   "rod_position": 558.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.25,
+   "peak_mw": 1.3,
+   "pulse_id": 567,
+   "rod_position": 558.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.25,
+   "peak_mw": 1.8,
+   "pulse_id": 568,
+   "rod_position": 558.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.3,
+   "peak_mw": 1.8,
+   "pulse_id": 569,
+   "rod_position": 552.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.3,
+   "peak_mw": 1.8,
+   "pulse_id": 570,
+   "rod_position": 552.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.3,
+   "peak_mw": 1.8,
+   "pulse_id": 571,
+   "rod_position": 552.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.35,
+   "peak_mw": 2.7,
+   "pulse_id": 572,
+   "rod_position": 546.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.35,
+   "peak_mw": 2.6,
+   "pulse_id": 573,
+   "rod_position": 546.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.35,
+   "peak_mw": 3.5,
+   "pulse_id": 574,
+   "rod_position": 546.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.4,
+   "peak_mw": 4.6,
+   "pulse_id": 576,
+   "rod_position": 540.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.4,
+   "peak_mw": 4.7,
+   "pulse_id": 577,
+   "rod_position": 540.0
+  },
+  {
+   "core": "246",
+   "date": "20.01.2022",
+   "label": 1.4,
+   "peak_mw": 4.6,
+   "pulse_id": 578,
+   "rod_position": 540.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "label": 1.45,
+   "peak_mw": 7.5,
+   "pulse_id": 579,
+   "rod_position": 536.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "label": 1.45,
+   "peak_mw": 6.8,
+   "pulse_id": 580,
+   "rod_position": 536.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "label": 1.45,
+   "peak_mw": 6.8,
+   "pulse_id": 581,
+   "rod_position": 536.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "label": 1.45,
+   "peak_mw": 6.8,
+   "pulse_id": 582,
+   "rod_position": 536.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.1211045363489807,
+   "label": 1.5,
+   "noise_mw": 0.05769799929112196,
+   "omega": 23.100580039691167,
+   "peak_mw": 12.1,
+   "points": 1150,
+   "pulse_id": 583,
+   "rod_position": 530.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.122399125995415,
+   "label": 1.5,
+   "noise_mw": 0.05769799929112196,
+   "omega": 23.2974692061962,
+   "peak_mw": 12.1,
+   "points": 1141,
+   "pulse_id": 584,
+   "rod_position": 530.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.115498235414576,
+   "label": 1.5,
+   "noise_mw": 0.05769799929112196,
+   "omega": 22.2479392656887,
+   "peak_mw": 11.2,
+   "points": 1058,
+   "pulse_id": 585,
+   "rod_position": 530.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.163404246549268,
+   "label": 1.55,
+   "noise_mw": 0.05769799929112196,
+   "omega": 29.619686955378505,
+   "peak_mw": 18.4,
+   "points": 1158,
+   "pulse_id": 586,
+   "rod_position": 523.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.155261021745879,
+   "label": 1.55,
+   "noise_mw": 0.05769799929112196,
+   "omega": 28.329026062417928,
+   "peak_mw": 17.1,
+   "points": 1092,
+   "pulse_id": 587,
+   "rod_position": 523.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.1618354418005568,
+   "label": 1.55,
+   "noise_mw": 0.05769799929112196,
+   "omega": 29.371039154692735,
+   "peak_mw": 17.8,
+   "points": 1103,
+   "pulse_id": 588,
+   "rod_position": 523.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.1639230491678414,
+   "label": 1.55,
+   "noise_mw": 0.05769799929112196,
+   "omega": 29.70191460684645,
+   "peak_mw": 18.7,
+   "points": 1153,
+   "pulse_id": 589,
+   "rod_position": 523.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.1624444863124945,
+   "label": 1.55,
+   "noise_mw": 0.05769799929112196,
+   "omega": 29.467569700343788,
+   "peak_mw": 18.1,
+   "points": 1129,
+   "pulse_id": 590,
+   "rod_position": 523.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.2025487616594694,
+   "label": 1.6,
+   "noise_mw": 0.05769799929112196,
+   "omega": 35.8323619122468,
+   "peak_mw": 26.1,
+   "points": 1170,
+   "pulse_id": 591,
+   "rod_position": 517.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.2007281367583162,
+   "label": 1.6,
+   "noise_mw": 0.05769799929112196,
+   "omega": 35.53775678043167,
+   "peak_mw": 25.4,
+   "points": 1109,
+   "pulse_id": 592,
+   "rod_position": 517.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.192950788123837,
+   "label": 1.6,
+   "noise_mw": 0.05769799929112196,
+   "omega": 34.30266779567884,
+   "peak_mw": 24.0,
+   "points": 1154,
+   "pulse_id": 593,
+   "rod_position": 517.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.237500836859418,
+   "label": 1.65,
+   "noise_mw": 0.05769799929112196,
+   "omega": 41.48814565714221,
+   "peak_mw": 34.0,
+   "points": 1067,
+   "pulse_id": 594,
+   "rod_position": 511.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.2380435410680553,
+   "label": 1.65,
+   "noise_mw": 0.05769799929112196,
+   "omega": 41.57596355132841,
+   "peak_mw": 34.0,
+   "points": 1056,
+   "pulse_id": 595,
+   "rod_position": 511.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.2326280551454014,
+   "label": 1.65,
+   "noise_mw": 0.05769799929112196,
+   "omega": 40.69965457462705,
+   "peak_mw": 32.7,
+   "points": 1101,
+   "pulse_id": 596,
+   "rod_position": 511.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.2694910902606926,
+   "label": 1.7,
+   "noise_mw": 0.05769799929112196,
+   "omega": 46.70102114348243,
+   "peak_mw": 42.6,
+   "points": 947,
+   "pulse_id": 597,
+   "rod_position": 505.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.2752168467691647,
+   "label": 1.7,
+   "noise_mw": 0.05769799929112196,
+   "omega": 47.638217918962084,
+   "peak_mw": 44.0,
+   "points": 956,
+   "pulse_id": 598,
+   "rod_position": 505.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.2714788166607354,
+   "label": 1.7,
+   "noise_mw": 0.05769799929112196,
+   "omega": 47.026373919119926,
+   "peak_mw": 43.1,
+   "points": 946,
+   "pulse_id": 599,
+   "rod_position": 505.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.30911045372769,
+   "label": 1.75,
+   "noise_mw": 0.05769799929112196,
+   "omega": 53.19547082758205,
+   "peak_mw": 54.6,
+   "points": 849,
+   "pulse_id": 600,
+   "rod_position": 499.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.317504864673092,
+   "label": 1.75,
+   "noise_mw": 0.05769799929112196,
+   "omega": 54.578245211895116,
+   "peak_mw": 57.2,
+   "points": 845,
+   "pulse_id": 601,
+   "rod_position": 498.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.3142783785413006,
+   "label": 1.75,
+   "noise_mw": 0.05769799929112196,
+   "omega": 54.04676034614328,
+   "peak_mw": 56.7,
+   "points": 831,
+   "pulse_id": 602,
+   "rod_position": 498.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.3646888168347424,
+   "label": 1.8,
+   "noise_mw": 0.05769799929112196,
+   "omega": 62.36246338071855,
+   "peak_mw": 73.7,
+   "points": 728,
+   "pulse_id": 603,
+   "rod_position": 492.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.3520327855358494,
+   "label": 1.8,
+   "noise_mw": 0.05769799929112196,
+   "omega": 60.2675125564641,
+   "peak_mw": 68.5,
+   "points": 743,
+   "pulse_id": 604,
+   "rod_position": 492.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.3479252268765631,
+   "label": 1.8,
+   "noise_mw": 0.05769799929112196,
+   "omega": 59.589257645057664,
+   "peak_mw": 67.7,
+   "points": 763,
+   "pulse_id": 605,
+   "rod_position": 492.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.3070458423992386,
+   "label": 1.75,
+   "noise_mw": 0.05769799929112196,
+   "omega": 52.85537648658377,
+   "peak_mw": 54.2,
+   "points": 846,
+   "pulse_id": 606,
+   "rod_position": 499.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.3011127593502796,
+   "label": 1.75,
+   "noise_mw": 0.05769799929112196,
+   "omega": 51.87804581818274,
+   "peak_mw": 52.0,
+   "points": 846,
+   "pulse_id": 607,
+   "rod_position": 499.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.43003380337195,
+   "label": 1.9,
+   "noise_mw": 0.05769799929112196,
+   "omega": 73.19145266577348,
+   "peak_mw": 99.6,
+   "points": 626,
+   "pulse_id": 608,
+   "rod_position": 480.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.423972868148558,
+   "label": 1.9,
+   "noise_mw": 0.05769799929112196,
+   "omega": 72.18567575114025,
+   "peak_mw": 97.7,
+   "points": 628,
+   "pulse_id": 609,
+   "rod_position": 480.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.4234588946925029,
+   "label": 1.9,
+   "noise_mw": 0.05769799929112196,
+   "omega": 72.10038484837011,
+   "peak_mw": 97.7,
+   "points": 626,
+   "pulse_id": 610,
+   "rod_position": 480.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.502100896379297,
+   "label": 2.0,
+   "noise_mw": 0.05769799929112196,
+   "omega": 85.16933235112874,
+   "peak_mw": 134.2,
+   "points": 539,
+   "pulse_id": 611,
+   "rod_position": 467.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.504573914750532,
+   "label": 2.0,
+   "noise_mw": 0.05769799929112196,
+   "omega": 85.58185906334872,
+   "peak_mw": 134.5,
+   "points": 542,
+   "pulse_id": 612,
+   "rod_position": 467.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.4995721092571141,
+   "label": 2.0,
+   "noise_mw": 0.05769799929112196,
+   "omega": 84.74772870575194,
+   "peak_mw": 132.7,
+   "points": 535,
+   "pulse_id": 613,
+   "rod_position": 467.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.511282239562791,
+   "label": 2.0,
+   "noise_mw": 0.05769799929112196,
+   "omega": 86.70088155484875,
+   "peak_mw": 137.8,
+   "points": 529,
+   "pulse_id": 614,
+   "rod_position": 465.0
+  },
+  {
+   "core": "246",
+   "date": "21.01.2022",
+   "inferred": 1.5060306719964043,
+   "label": 2.0,
+   "noise_mw": 0.05769799929112196,
+   "omega": 85.82486222261846,
+   "peak_mw": 135.2,
+   "points": 533,
+   "pulse_id": 615,
+   "rod_position": 465.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "inferred": 1.1138152818101252,
+   "label": 1.5,
+   "noise_mw": 0.05769799929112196,
+   "omega": 21.99198531660562,
+   "peak_mw": 10.9,
+   "points": 1128,
+   "pulse_id": 616,
+   "rod_position": 532.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "inferred": 1.3113221397259913,
+   "label": 1.75,
+   "noise_mw": 0.0769305033609271,
+   "omega": 53.55979213189823,
+   "peak_mw": 55.2,
+   "points": 838,
+   "pulse_id": 617,
+   "rod_position": 500.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "inferred": 1.504719629351651,
+   "label": 2.0,
+   "noise_mw": 0.05769799929112196,
+   "omega": 85.60616586430952,
+   "peak_mw": 135.4,
+   "points": 535,
+   "pulse_id": 618,
+   "rod_position": 469.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.3,
+   "peak_mw": 1.9,
+   "pulse_id": 619,
+   "rod_position": 556.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.05,
+   "peak_mw": 0.7,
+   "pulse_id": 620,
+   "rod_position": 587.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.05,
+   "peak_mw": 0.2,
+   "pulse_id": 621,
+   "rod_position": 587.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.05,
+   "peak_mw": 0.2,
+   "pulse_id": 622,
+   "rod_position": 587.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.05,
+   "peak_mw": 0.2,
+   "pulse_id": 623,
+   "rod_position": 587.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.1,
+   "peak_mw": 0.6,
+   "pulse_id": 624,
+   "rod_position": 580.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.1,
+   "peak_mw": 0.7,
+   "pulse_id": 625,
+   "rod_position": 580.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.1,
+   "peak_mw": 1.4,
+   "pulse_id": 626,
+   "rod_position": 580.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.15,
+   "peak_mw": 2.5,
+   "pulse_id": 627,
+   "rod_position": 574.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.15,
+   "peak_mw": 0.9,
+   "pulse_id": 628,
+   "rod_position": 574.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.15,
+   "peak_mw": 0.8,
+   "pulse_id": 629,
+   "rod_position": 578.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.2,
+   "peak_mw": 1.1,
+   "pulse_id": 630,
+   "rod_position": 568.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.2,
+   "peak_mw": 1.1,
+   "pulse_id": 631,
+   "rod_position": 568.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.2,
+   "peak_mw": 1.0,
+   "pulse_id": 632,
+   "rod_position": 568.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.25,
+   "peak_mw": 2.6,
+   "pulse_id": 633,
+   "rod_position": 562.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.25,
+   "peak_mw": 1.3,
+   "pulse_id": 634,
+   "rod_position": 562.0
+  },
+  {
+   "core": "246",
+   "date": "25.01.2022",
+   "label": 1.25,
+   "peak_mw": 1.3,
+   "pulse_id": 635,
+   "rod_position": 562.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "label": 1.3,
+   "peak_mw": 1.9,
+   "pulse_id": 636,
+   "rod_position": 553.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "label": 1.3,
+   "peak_mw": 1.9,
+   "pulse_id": 637,
+   "rod_position": 553.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "label": 1.3,
+   "peak_mw": 19.5,
+   "pulse_id": 638,
+   "rod_position": 556.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "label": 1.35,
+   "peak_mw": 3.0,
+   "pulse_id": 639,
+   "rod_position": 547.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "label": 1.35,
+   "peak_mw": 2.9,
+   "pulse_id": 640,
+   "rod_position": 547.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "label": 1.35,
+   "peak_mw": 2.9,
+   "pulse_id": 641,
+   "rod_position": 547.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "label": 1.4,
+   "peak_mw": 5.3,
+   "pulse_id": 642,
+   "rod_position": 541.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "label": 1.4,
+   "peak_mw": 4.7,
+   "pulse_id": 643,
+   "rod_position": 541.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "label": 1.4,
+   "peak_mw": 5.0,
+   "pulse_id": 644,
+   "rod_position": 544.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "label": 1.45,
+   "peak_mw": 8.3,
+   "pulse_id": 645,
+   "rod_position": 535.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "label": 1.45,
+   "peak_mw": 7.5,
+   "pulse_id": 646,
+   "rod_position": 535.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.0958739313823835,
+   "label": 1.45,
+   "noise_mw": 0.05769799929112196,
+   "omega": 19.31925280400476,
+   "peak_mw": 9.0,
+   "points": 1055,
+   "pulse_id": 647,
+   "rod_position": 538.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.1312020049355558,
+   "label": 1.5,
+   "noise_mw": 0.05769799929112196,
+   "omega": 24.63626525028845,
+   "peak_mw": 13.3,
+   "points": 1140,
+   "pulse_id": 648,
+   "rod_position": 529.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.1258065921219995,
+   "label": 1.5,
+   "noise_mw": 0.05769799929112196,
+   "omega": 23.815697640515303,
+   "peak_mw": 12.6,
+   "points": 1142,
+   "pulse_id": 649,
+   "rod_position": 529.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.136087872273951,
+   "label": 1.5,
+   "noise_mw": 0.05769799929112196,
+   "omega": 25.37933804602751,
+   "peak_mw": 13.7,
+   "points": 1087,
+   "pulse_id": 650,
+   "rod_position": 532.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.1708757825357177,
+   "label": 1.55,
+   "noise_mw": 0.05769799929112196,
+   "omega": 30.803888489891563,
+   "peak_mw": 19.9,
+   "points": 1118,
+   "pulse_id": 651,
+   "rod_position": 523.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.1708146874584535,
+   "label": 1.55,
+   "noise_mw": 0.05769799929112196,
+   "omega": 30.794205222036226,
+   "peak_mw": 20.2,
+   "points": 1175,
+   "pulse_id": 652,
+   "rod_position": 523.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.1702481293826579,
+   "label": 1.55,
+   "noise_mw": 0.05769799929112196,
+   "omega": 30.704408566574127,
+   "peak_mw": 19.6,
+   "points": 1119,
+   "pulse_id": 653,
+   "rod_position": 523.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.212224884868639,
+   "label": 1.6,
+   "noise_mw": 0.05769799929112196,
+   "omega": 37.39810758105068,
+   "peak_mw": 27.7,
+   "points": 1170,
+   "pulse_id": 654,
+   "rod_position": 517.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.2102953683480635,
+   "label": 1.6,
+   "noise_mw": 0.05769799929112196,
+   "omega": 37.085882109168125,
+   "peak_mw": 27.5,
+   "points": 1151,
+   "pulse_id": 655,
+   "rod_position": 517.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.2041086201572782,
+   "label": 1.6,
+   "noise_mw": 0.05769799929112196,
+   "omega": 36.084771026320134,
+   "peak_mw": 26.1,
+   "points": 1154,
+   "pulse_id": 656,
+   "rod_position": 517.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.297176129737615,
+   "label": 1.7,
+   "noise_mw": 0.05769799929112196,
+   "omega": 51.23253234002175,
+   "peak_mw": 50.4,
+   "points": 870,
+   "pulse_id": 657,
+   "rod_position": 504.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.2869317130278104,
+   "label": 1.7,
+   "noise_mw": 0.05769799929112196,
+   "omega": 49.55571735620384,
+   "peak_mw": 47.5,
+   "points": 905,
+   "pulse_id": 658,
+   "rod_position": 504.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.2864592466905092,
+   "label": 1.7,
+   "noise_mw": 0.05769799929112196,
+   "omega": 49.478383657646056,
+   "peak_mw": 47.4,
+   "points": 886,
+   "pulse_id": 659,
+   "rod_position": 504.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.201288742804832,
+   "label": 1.6,
+   "noise_mw": 0.05769799929112196,
+   "omega": 35.628471467529245,
+   "peak_mw": 25.4,
+   "points": 1142,
+   "pulse_id": 660,
+   "rod_position": 517.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.2906733509930297,
+   "label": 1.7,
+   "noise_mw": 0.05769799929112196,
+   "omega": 50.168151893164534,
+   "peak_mw": 48.9,
+   "points": 881,
+   "pulse_id": 661,
+   "rod_position": 504.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.3635089443697024,
+   "label": 1.8,
+   "noise_mw": 0.05769799929112196,
+   "omega": 62.167159281449536,
+   "peak_mw": 73.7,
+   "points": 723,
+   "pulse_id": 662,
+   "rod_position": 492.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.369002333458828,
+   "label": 1.8,
+   "noise_mw": 0.05769799929112196,
+   "omega": 63.07647909335776,
+   "peak_mw": 75.9,
+   "points": 709,
+   "pulse_id": 663,
+   "rod_position": 492.0
+  },
+  {
+   "core": "246",
+   "date": "26.01.2022",
+   "inferred": 1.3625617559907819,
+   "label": 1.8,
+   "noise_mw": 0.05769799929112196,
+   "omega": 62.01037134151157,
+   "peak_mw": 73.5,
+   "points": 725,
+   "pulse_id": 664,
+   "rod_position": 492.0
+  },
+  {
+   "core": "246",
+   "date": "27.01.2022",
+   "inferred": 1.2007101210852373,
+   "label": 1.6,
+   "noise_mw": 0.05769799929112196,
+   "omega": 35.53484156723272,
+   "peak_mw": 25.8,
+   "points": 1150,
+   "pulse_id": 665,
+   "rod_position": 520.0
+  },
+  {
+   "core": "246",
+   "date": "27.01.2022",
+   "inferred": 1.2909026078415848,
+   "label": 1.7,
+   "noise_mw": 0.05769799929112196,
+   "omega": 50.20567685233886,
+   "peak_mw": 48.9,
+   "points": 881,
+   "pulse_id": 666,
+   "rod_position": 508.0
+  },
+  {
+   "core": "246",
+   "date": "27.01.2022",
+   "inferred": 1.29320409313247,
+   "label": 1.7,
+   "noise_mw": 0.05769799929112196,
+   "omega": 50.582385954488046,
+   "peak_mw": 49.0,
+   "points": 897,
+   "pulse_id": 667,
+   "rod_position": 504.0
+  },
+  {
+   "core": "246",
+   "date": "27.01.2022",
+   "inferred": 1.3729866432867257,
+   "label": 1.8,
+   "noise_mw": 0.05769799929112196,
+   "omega": 63.736001258001075,
+   "peak_mw": 76.9,
+   "points": 709,
+   "pulse_id": 668,
+   "rod_position": 495.0
+  },
+  {
+   "core": "246",
+   "date": "27.01.2022",
+   "inferred": 1.4536127209458984,
+   "label": 1.9,
+   "noise_mw": 0.05769799929112196,
+   "omega": 77.10546104534862,
+   "peak_mw": 110.5,
+   "points": 594,
+   "pulse_id": 669,
+   "rod_position": 479.0
+  },
+  {
+   "core": "246",
+   "date": "27.01.2022",
+   "inferred": 1.4440884489746517,
+   "label": 1.9,
+   "noise_mw": 0.05769799929112196,
+   "omega": 75.5237392798907,
+   "peak_mw": 106.4,
+   "points": 595,
+   "pulse_id": 670,
+   "rod_position": 479.0
+  },
+  {
+   "core": "246",
+   "date": "27.01.2022",
+   "inferred": 1.4421151612476795,
+   "label": 1.9,
+   "noise_mw": 0.05769799929112196,
+   "omega": 75.19628366973042,
+   "peak_mw": 105.6,
+   "points": 605,
+   "pulse_id": 671,
+   "rod_position": 479.0
+  },
+  {
+   "core": "246",
+   "date": "27.01.2022",
+   "inferred": 1.45397628659555,
+   "label": 1.9,
+   "noise_mw": 0.05769799929112196,
+   "omega": 77.1659158535795,
+   "peak_mw": 110.3,
+   "points": 592,
+   "pulse_id": 672,
+   "rod_position": 482.0
+  },
+  {
+   "core": "246",
+   "date": "27.01.2022",
+   "inferred": 1.5367309083995184,
+   "label": 2.0,
+   "noise_mw": 0.05769799929112196,
+   "omega": 90.94599991211626,
+   "peak_mw": 152.4,
+   "points": 503,
+   "pulse_id": 673,
+   "rod_position": 466.0
+  },
+  {
+   "core": "246",
+   "date": "27.01.2022",
+   "inferred": 1.5343517186861044,
+   "label": 2.0,
+   "noise_mw": 0.05769799929112196,
+   "omega": 90.54912485383191,
+   "peak_mw": 150.7,
+   "points": 503,
+   "pulse_id": 674,
+   "rod_position": 466.0
+  },
+  {
+   "core": "246",
+   "date": "27.01.2022",
+   "inferred": 1.538103411140532,
+   "label": 2.0,
+   "noise_mw": 0.05769799929112196,
+   "omega": 91.1749484916533,
+   "peak_mw": 152.1,
+   "points": 507,
+   "pulse_id": 675,
+   "rod_position": 469.0
+  },
+  {
+   "core": "246",
+   "date": "27.01.2022",
+   "inferred": 1.2948930487812211,
+   "label": 1.7,
+   "noise_mw": 0.05769799929112196,
+   "omega": 50.85883567525347,
+   "peak_mw": 49.8,
+   "points": 884,
+   "pulse_id": 676,
+   "rod_position": 504.0
+  },
+  {
+   "core": "246",
+   "date": "27.01.2022",
+   "label": 1.3,
+   "peak_mw": 1.9,
+   "pulse_id": 677,
+   "rod_position": 522.0
+  }
+ ]
+}
