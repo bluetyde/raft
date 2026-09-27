@@ -22,7 +22,7 @@ OUTER_DT = 0.005                     # as in C1
 A_POINTS = [1.5, 1.8, 2.1]
 A_RANGE = (0.75, 1.02)
 B_MIN_DOLLARS = 1.30
-B_GRID = [1.275 + 0.025 * k for k in range(26)]    # $1.275 ... $1.90 (protocol said $1.75; extended after one pulse fell at $1.7515, before any metric was computed)
+B_GRID = [1.25 + 0.025 * k for k in range(27)]    # $1.25 ... $1.90 (protocol said $1.275 ... $1.75; extended so every pulse and the +-$0.03 shifts fit, before any metric was seen)
 B_RMS, B_BIAS, B_SLOPE, B_MIN_N = math.log(1.5), math.log(1.3), 0.4, 20
 SHIFT = 0.03
 
