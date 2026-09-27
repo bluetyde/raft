@@ -87,3 +87,9 @@ report in `validation/c1_report_run2.json` (run 1 stays in `c1_report.json`).
 - **Next suspect: the $ assigned to each measured pulse**, not the physics inputs. A reactivity axis stretched at low $ (for example from the rod
   calibration used for each core, or the prompt-jump correction) would produce exactly this pattern. Švajger et al., NET 56 (2024) 1165–1203,
   compares these same measurements with Fuchs–Hansen; it is the next thing to read (not yet checked: the PDF exceeds the fetch limit).
+- **Energy points the same way.** The pooled pulse comparison (`validation/pulse_comparison_report.json`, regenerated with the cited
+  library) gives measured E1000 ∝ (d − 1)^2.65 against the model's ^0.74. Every pulse model has energy roughly linear in the prompt excess
+  (Nordheim–Fuchs: E = 2ρ′/γ), so a measured exponent near 2.7 is hard to get from any feedback physics. It is easy to get from a compressed
+  or offset reactivity axis, or from an E1000 integration window that varies with pulse size (the window is undocumented).
+- **Also fixed in C2:** `validation/pulse_comparison.py` computed its Nordheim–Fuchs reference from a hardcoded α = 1.05 × 10⁻⁴ /K instead of the
+  library. It now linearises the library's own ρ_fuel(T) and cp(T) over each pulse, and agrees with the engine within 2% at $1.50–$2.00.

@@ -32,12 +32,14 @@ class TestPulseComparison(unittest.TestCase):
 
         self.assertAlmostEqual(sim.rho_dollars, 1.50, places=2)
         self.assertAlmostEqual(sim.rho_prompt_dollars, 0.50, places=2)
-        # 1.50 $ pulse should produce 35-50 MW peak power
-        self.assertGreater(sim.peak_power_mw, 35.0)
-        self.assertLess(sim.peak_power_mw, 55.0)
-        # Energy should be in 2.0 - 3.0 MWs
-        self.assertGreater(sim.energy_mws, 1.8)
-        self.assertLess(sim.energy_mws, 3.5)
+        # Windows from Fuchs-Hansen with Vavtar & Snoj 2021's own inputs (gamma = 2.1e-9 /J, Lambda = 4e-5 s,
+        # beta = 0.007): rho' = 0.0035 gives Pmax = rho'^2 / (2 gamma Lambda) = 72.9 MW and E = 2 rho' / gamma = 3.33 MWs.
+        # Their improved model sits below FH in Pmax and above it in energy (their Fig. 4), hence the asymmetric windows.
+        fh_pmax, fh_energy = 0.0035 ** 2 / (2 * 2.1e-9 * 4e-5) / 1e6, 2 * 0.0035 / 2.1e-9 / 1e6
+        self.assertGreater(sim.peak_power_mw, 0.75 * fh_pmax)
+        self.assertLess(sim.peak_power_mw, 1.10 * fh_pmax)
+        self.assertGreater(sim.energy_mws, 1.0 * fh_energy)
+        self.assertLess(sim.energy_mws, 1.6 * fh_energy)
         # FWHM should be approximately 30-50 ms
         self.assertIsNotNone(sim.fwhm_s)
         self.assertGreater(sim.fwhm_s, 0.025)
