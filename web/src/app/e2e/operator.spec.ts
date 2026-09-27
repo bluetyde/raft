@@ -4,6 +4,8 @@
  */
 
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 async function view(page: Page) {
   return page.evaluate(() => (window as any).vr.operator.lastView);
@@ -85,16 +87,17 @@ test("realism hides the 3D inset and the truth read-out; explorer brings the M4 
 });
 
 test("a pulse peak between snapshots reaches the log chart at full height; the period shows — in pulse mode", async ({ page }) => {
-  // record every snapshot message the page gets
-  await page.evaluate(() => {
+  // a real pulse: the golden pulse vector's start state (pulse mode, rods near critical); it peaks at about 1.8e8 W at 0.14 s
+  const pulse = JSON.parse(readFileSync(fileURLToPath(new URL("../../../../schema/engine-vectors/pulse.json", import.meta.url)), "utf8"));
+  await page.evaluate(async (init) => {
     const w = window as any;
+    await w.vr.show("synthetic-core", { init });
     w.__snaps = [];
     w.vr.client.on("snapshot", (m: any) => w.__snaps.push({ log: m.snapshot.indicated.log, ext: m.extremes?.log?.max ?? null }));
-  });
+  }, pulse.init);
+  await expect(page.locator("#app")).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
+  await expect(page.locator('[data-op="transient:fire"]')).toBeEnabled({ timeout: 10_000 });
   await page.click('[data-op="play"]'); // commands wait for time to move (D2 of the C6 design)
-  await page.selectOption('[data-op="mode"]', "pulse");
-  await expect(page.locator(".vr-operator > .vr-note")).toContainText("mode.set accepted", { timeout: 10_000 });
-  await expect(page.locator('[data-op="transient:fire"]')).toBeEnabled({ timeout: 5_000 });
   await page.click('[data-op="transient:fire"]');
   await expect(page.locator(".vr-operator > .vr-note")).toContainText("rod.fire accepted", { timeout: 10_000 });
   await page.waitForTimeout(1500); // 1.5 s of sim time at 1x: through the pulse
@@ -108,7 +111,11 @@ test("a pulse peak between snapshots reaches the log chart at full height; the p
       chartMax: chart.buffer.max,
     };
   });
-  expect(r.extMax).toBeGreaterThan(r.plainMax); // the peak fell between snapshots
-  expect(r.chartMax).toBe(r.extMax); // and the chart kept it
+  expect(r.extMax).toBeGreaterThan(1e6); // it was a real pulse
+  expect(r.extMax).toBeGreaterThanOrEqual(r.plainMax);
+  // the chart keeps exactly the highest reading the worker saw. (During this pulse the runtime is CPU-bound, about
+  // 60 ms per step, so it often sends a snapshot per step and the peak may also be in a plain snapshot; that the peak
+  // survives between snapshots is tested deterministically in runtime.test.ts and operator.test.ts.)
+  expect(r.chartMax).toBe(r.extMax);
   await expect(page.locator('[data-meter="period"] .vr-value')).toHaveText("—");
 });

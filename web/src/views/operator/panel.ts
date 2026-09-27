@@ -5,14 +5,14 @@
  */
 
 import type { Ack, RuntimeClient } from "../../runtime/client";
-import type { Extreme, FromWorker } from "../../runtime/protocol";
+import type { FromWorker } from "../../runtime/protocol";
 import { formatPeriod, formatPower } from "../explorer/live";
 import { Annunciator } from "./annunciator";
 import { StripChart } from "./chart";
 import { operatorView, type OperatorView } from "./console";
 import { isPegged, kelvinToCelsius, meterReading, metersFrom, unitOf, type InstrumentSpec, type Meter } from "./meters";
 import { PeriodEstimator } from "./period";
-import { StripBuffer } from "./strip";
+import { chartPoints, StripBuffer } from "./strip";
 
 export interface OperatorLibrary {
   instruments: InstrumentSpec[];
@@ -283,11 +283,7 @@ export class OperatorPanel {
         continue;
       }
       const id = c.meter.id;
-      const x: Extreme | undefined = msg.extremes?.[id];
-      const pts: [number, number][] = x ? [[x.tMin, x.min], [x.tMax, x.max]] : [];
-      pts.sort((a, b) => a[0] - b[0]);
-      for (const [tt, v] of pts) if (tt <= t) c.buffer.push(tt, v);
-      c.buffer.push(t, view.indicated[id]);
+      for (const [tt, v] of chartPoints(t, view.indicated[id], msg.extremes?.[id])) c.buffer.push(tt, v);
     }
     for (const c of this.charts) c.chart.draw(t);
 

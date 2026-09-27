@@ -6,7 +6,7 @@ import { Annunciator } from "./annunciator";
 import { CONSOLE_TRUTH_FIELDS, consoleState, operatorView, stripTruthPhysics } from "./console";
 import { isPegged, kelvinToCelsius, meterReading, metersFrom, roleOf, type InstrumentSpec } from "./meters";
 import { PeriodEstimator } from "./period";
-import { StripBuffer } from "./strip";
+import { chartPoints, StripBuffer } from "./strip";
 
 describe("what the operator may read", () => {
   it("consoleState returns only the whitelisted fields, and no truth physics", async () => {
@@ -178,6 +178,23 @@ describe("strip-chart buffer (amendment 1)", () => {
     const pts = b.points().filter((p): p is [number, number] => p !== null);
     expect(Math.max(...pts.map(([t]) => t))).toBeLessThanOrEqual(1.0);
     expect(pts.at(-1)).toEqual([1.0, 2]);
+  });
+});
+
+describe("chart points from a snapshot (amendment 1)", () => {
+  it("adds the extremes since the last snapshot, in time order, then the reading", () => {
+    const ext = { min: 0.5, tMin: 1.23, max: 9e7, tMax: 1.21 };
+    expect(chartPoints(1.3, 2, ext)).toEqual([
+      [1.21, 9e7],
+      [1.23, 0.5],
+      [1.3, 2],
+    ]);
+    // a peak between snapshots reaches the buffer at full height
+    const b = new StripBuffer(600, 3000);
+    b.push(1.0, 1);
+    for (const [t, v] of chartPoints(1.3, 2, ext)) b.push(t, v);
+    expect(b.max).toBe(9e7);
+    expect(chartPoints(1.3, null)).toEqual([[1.3, null]]);
   });
 });
 
