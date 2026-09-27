@@ -203,7 +203,7 @@ and `REJ_SESSION_REPLACED` (a queued command was discarded by a new load or a se
   the clock running one step ahead (4), a rebuilt checkpoint log with one extra command (4), snapshots ignoring `frameAck` (1), and no structural command check (1).
 - **Real Worker:** `worker.ts` does not run under Vitest. A manual smoke run in Chromium (Playwright 1.56, Vite dev server) loaded the synthetic core over `fetch`,
   ran 1.5 s of wall time at 10× (15.08 s of sim time, 44 snapshots), and did a command, a session export, a rewind and a failed load (`E_JSON`).
-  The automated browser test is TODO Next #8.
+  The automated browser test (TODO Next #8) now exists: `web/src/app/e2e/`, run in CI as the `e2e` job.
 
 ## Decisions (approved by the user, 2026-09-27)
 
