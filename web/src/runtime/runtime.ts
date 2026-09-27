@@ -15,6 +15,7 @@ import { CheckpointStore, checkSessionFile, replayCommands, sessionFile } from "
 import {
   PROTOCOL_VERSION,
   type ClockLimit,
+  type Extreme,
   type FromWorker,
   type LibrarySource,
   type SessionFile,
@@ -116,6 +117,7 @@ export class Runtime {
   private lastSnapStep = -1;
   private forceSnapshot = false;
   private forceShape = true;
+  private extremes: Record<string, Extreme> = {};
   private lastShapeRods: Record<string, number> = {};
   private lastShapeTfuel = NaN;
 
@@ -223,6 +225,7 @@ export class Runtime {
   /** Make `eng` the current engine, after a load, rewind or import. The clock stays paused. */
   private install(eng: Engine): void {
     this.eng = eng;
+    this.extremes = {}; // extremes from a discarded timeline are not news
     this.faulted = false;
     this.limited = null;
     this.limitReason = null;
@@ -352,11 +355,32 @@ export class Runtime {
       return false;
     }
     this.maybeCheckpoint(false);
+    this.trackExtremes(e);
     if (e.halted) {
       this.pauseFor("halted", e.halted);
       return false;
     }
     return true;
+  }
+
+  /** Update each instrument's extremes since the last snapshot (amendment 1 of the M5 design). */
+  private trackExtremes(e: Engine): void {
+    const t = e.t;
+    for (const [id, v] of Object.entries(e.indicated)) {
+      if (v === null || !Number.isFinite(v)) continue;
+      const x = this.extremes[id];
+      if (!x) this.extremes[id] = { min: v, tMin: t, max: v, tMax: t };
+      else {
+        if (v < x.min) {
+          x.min = v;
+          x.tMin = t;
+        }
+        if (v > x.max) {
+          x.max = v;
+          x.tMax = t;
+        }
+      }
+    }
   }
 
   private pauseFor(limit: ClockLimit, reason: string): void {
@@ -509,8 +533,10 @@ export class Runtime {
     this.lastSnapStep = e.stepIndex;
     this.lastSnapWall = now;
     this.awaitingFrameAck = true;
-    if (shape) this.host.post({ kind: "snapshot", snapshot, shape }, [shape.buffer]);
-    else this.host.post({ kind: "snapshot", snapshot });
+    const extremes = this.extremes;
+    this.extremes = {};
+    if (shape) this.host.post({ kind: "snapshot", snapshot, shape, extremes }, [shape.buffer]);
+    else this.host.post({ kind: "snapshot", snapshot, extremes });
   }
 
   private shapeDue(snapshot: Record<string, any>): boolean {

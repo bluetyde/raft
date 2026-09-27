@@ -1,6 +1,6 @@
 # M5: operator panel (design)
 
-Status: **proposal, 2026-09-27. Waiting for the user's approval. No panel code exists yet.**
+Status: **approved by the user on 2026-09-27: D1–D6 as recommended (all option a), with three amendments (section 7).** Implemented on the same branch: `web/src/views/operator/`, the layouts in `web/src/app/main.ts`, and per-step instrument extremes in the runtime.
 Scope: the operator view of [plan 05](plans/05-operator-ui.md) (TODO M5 "Instrument panel", "once the snapshot-to-panel mapping is designed") and the split layout.
 Out of scope: scenarios, because the scenario format (A7) is on hold by the user's decision; the instructor view (M6).
 
@@ -53,6 +53,7 @@ All parts are built from the library's lists. There is no reactor-specific layou
 ## 4. Layout
 
 - **Split (default):** the operator panel on the left, and the M4 explorer as a smaller live 3D inset on the right. A key (`Tab`) swaps which one is large.
+  As built, the inset is 3D only: the explorer's own panel and the M4 truth read-out are hidden, so nothing on screen in split shows truth values.
 - **Realism:** hides the 3D inset and the M4 truth read-out. Only instruments show.
 - **Explorer:** the M4 view (3D with the truth read-out and controls).
 
@@ -81,9 +82,32 @@ A toggle in the header chooses the mode. The choice is kept in `localStorage` as
   - realism mode hides the 3D inset and the truth read-out.
 - **Truth guard:** the operator view is built with a snapshot whose `truth` physics fields are removed. It must still render every meter.
 
-## Decisions for the user
+## 7. Amendments from the user (2026-09-27)
 
-| # | Question | Options | Recommendation |
+1. **Charts keep the extremes.** The thinning keeps the minimum and the maximum of each 0.2 s bucket, not a single sample, so pulse peaks survive.
+   A test checks that a 10 ms spike survives at full height.
+   Because snapshots come at about 30 Hz, a 10 ms spike could fall between two snapshots before the chart sees it.
+   So the runtime also sends, with each snapshot, each instrument's minimum and maximum over every engine step since the last snapshot (`extremes`).
+   The chart stores those as points. This is a runtime change only; it reads `engine.indicated` after each step.
+2. **The derived period is careful about its input.** It skips null readings, pegged readings (outside the instrument's range) and points from before a rewind.
+   It shows "—" when too few points remain in the window, and in pulse mode. A test runs it with the library's lag and noise on.
+   Consequences found while building it:
+   - The meter reads only up to about 7× real time. Snapshots come at about 30 Hz of wall time, so at 10× they are 0.33 s of sim time apart,
+     and a 2 s window then holds fewer than the 8 readings it needs. Above that rate it shows "—".
+   - With the libraries' log-channel noise (1–2 % per reading), a 2 s window measures periods from a few seconds to tens of seconds.
+     A slope smaller than three times its standard error reads as steady (∞), so noise never shows a short, alarming period (tested).
+     A first version used two times; a screenshot showed it reading −103 s on noise while the true period was thousands of seconds.
+3. **ARCHITECTURE.md is not edited here.** The local session will change §3 to say that alarms are derived in the view.
+
+Notes:
+- **Interlock-rejection tiles are not in replays.** They come from the acknowledgements of this view's own commands, which a session file does not record.
+  A replay or a rewind shows the trip, instrument and over-range tiles again, but not the interlock rejections from before.
+- **The truth-guard test keeps the `consoleState` fields.** It removes only the physics fields of `truth`
+  (power, period, temperatures, reactivity, precursors, iodine, xenon, energy, heat removed, peak values, shape). Rods, mode and pumps stay, because the panel may read them.
+
+## Decisions (approved 2026-09-27)
+
+| # | Question | Options | Recommendation (chosen) |
 |---|---|---|---|
 | D1 | Where do alarms come from, when the engine has none? | (a) The view derives annunciator tiles: one per library trip (lit while active, flashing when it latches until acknowledged), plus "instrument failed" (reading `null`), "over range", and "command rejected by interlock". (b) Ask the other session for engine alarms in the snapshot (engine, schema and Python change). | **(a)** now. The tiles come from data the snapshot already has. Ask for (b) only if the instructor view needs alarms in the replay record. |
 | D2 | Rod positions: the plan wants position indicators, but positions are only in `truth.rods`. | (a) Treat rod position, motion, mode and pumps as console state (section 2), labelled "position indicator (ideal)". (b) Ask for rod-position instruments in the library format (a new truth signal per rod, with lag and faults). | **(a)**. Rod positions come from drive encoders on a real console, and an ideal indicator is honest if it is labelled. (b) becomes useful when M6 needs a "rod position indicator failed" fault. |

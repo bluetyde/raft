@@ -1,7 +1,8 @@
 /**
- * App entry point. M4: the runtime worker (src/runtime) runs the chosen library; the explorer draws
- * its rods and live power from the snapshots, and the control strip sends commands through the bus.
- * The operator and instructor views come in M5 and M6.
+ * App entry point. The runtime worker (src/runtime) runs the chosen library.
+ * - M5 operator panel (instruments only) and the M4 explorer (3D, truth read-out and controls).
+ * - Layouts (docs/m5-operator-design.md section 4): split (default), realism (instruments only), explorer.
+ * The instructor view comes in M6.
  */
 
 import "./app.css";
@@ -10,6 +11,7 @@ import { loadLibrary, LibraryError } from "../sim/library";
 import { Explorer } from "../views/explorer/explorer";
 import { elementPowers, rodPositionsFrom } from "../views/explorer/live";
 import { modelFromLibrary } from "../views/explorer/model";
+import { OperatorPanel } from "../views/operator/panel";
 import { CATALOG, catalogFiles, catalogReader } from "./catalog";
 import { Controls } from "./controls";
 
@@ -22,14 +24,21 @@ const select = document.createElement("select");
 for (const entry of CATALOG) select.append(new Option(entry.name, entry.name));
 const status = document.createElement("span");
 status.className = "vr-status";
-bar.append(title, select, status);
+type Layout = "split" | "realism" | "explorer";
+const LAYOUTS: Layout[] = ["split", "realism", "explorer"];
+const layoutSelect = document.createElement("select");
+for (const l of LAYOUTS) layoutSelect.append(new Option(l, l));
+layoutSelect.dataset["op"] = "layout";
+bar.append(title, select, layoutSelect, status);
 const main = document.createElement("div");
 main.className = "vr-main";
+const opBox = document.createElement("div");
+opBox.className = "vr-opbox";
 const view = document.createElement("div");
 view.className = "vr-view";
 const side = document.createElement("aside");
 side.className = "vr-side";
-main.append(view, side);
+main.append(opBox, view, side);
 app.replaceChildren(bar, main);
 
 const explorer = new Explorer(view);
@@ -37,6 +46,40 @@ let worker: Worker | null = null;
 let client: RuntimeClient | null = null;
 let controls: Controls | null = null;
 let lastSnapshot: Record<string, any> | null = null;
+let operator: OperatorPanel | null = null;
+
+function storedLayout(): Layout {
+  try {
+    const v = localStorage.getItem("vr.layout");
+    if (v && (LAYOUTS as string[]).includes(v)) return v as Layout;
+  } catch {
+    // storage can be blocked; the default is fine
+  }
+  return "split";
+}
+
+/** Show a layout: split = operator panel large with a 3D inset; realism = instruments only; explorer = the M4 view. */
+function setLayout(l: Layout): void {
+  app.dataset["layout"] = l;
+  layoutSelect.value = l;
+  opBox.hidden = l === "explorer";
+  view.hidden = l === "realism";
+  side.hidden = l !== "explorer";
+  explorer.setCompact(l === "split");
+  try {
+    localStorage.setItem("vr.layout", l);
+  } catch {
+    // a convenience only
+  }
+}
+layoutSelect.onchange = () => setLayout(layoutSelect.value as Layout);
+// Tab swaps which one is large in the split layout.
+window.addEventListener("keydown", (e) => {
+  const t = e.target as HTMLElement | null;
+  if (e.key !== "Tab" || app.dataset["layout"] !== "split" || (t && ["INPUT", "SELECT", "BUTTON"].includes(t.tagName))) return;
+  e.preventDefault();
+  main.classList.toggle("vr-swap");
+});
 
 async function show(name: string): Promise<void> {
   const entry = CATALOG.find((e) => e.name === name);
@@ -59,11 +102,19 @@ async function show(name: string): Promise<void> {
     worker = w;
     client = c;
     const A = model.axialEdgesCm.length - 1;
-    const ctl = new Controls(c, { rods: lib.rods.map((r) => ({ id: r.id, pulseCapable: r.pulseCapable })), modes: lib.modes });
+    const rods = lib.rods.map((r) => ({ id: r.id, pulseCapable: r.pulseCapable }));
+    const ctl = new Controls(c, { rods, modes: lib.modes });
     controls = ctl;
     side.replaceChildren(ctl.root);
+    operator?.dispose();
+    const op = new OperatorPanel(c, { instruments: lib.instruments, trips: lib.trips, interlocks: lib.interlocks, rods, modes: lib.modes });
+    operator = op;
+    opBox.replaceChildren(op.root);
+    c.on("rewound", () => op.onRewound());
+    c.on("clock", (m) => op.onClock(m));
     c.on("snapshot", (m) => {
       lastSnapshot = m.snapshot;
+      op.onSnapshot(m);
       explorer.setRodPositions(rodPositionsFrom(m.snapshot));
       if (m.shape) explorer.setElementPowers(elementPowers(m.shape, model.elements, A, m.snapshot.truth.power));
       ctl.onSnapshot(m.snapshot);
@@ -83,6 +134,7 @@ async function show(name: string): Promise<void> {
 }
 
 select.onchange = () => void show(select.value);
+setLayout(storedLayout());
 const initial = CATALOG.find((e) => e.name === "triga-jsi-242") ?? CATALOG[0];
 if (initial) {
   select.value = initial.name;
@@ -102,4 +154,8 @@ if (initial) {
   get snapshot() {
     return lastSnapshot;
   },
+  get operator() {
+    return operator;
+  },
+  setLayout,
 };

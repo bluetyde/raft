@@ -43,6 +43,14 @@ export type ToWorker =
   | { kind: "session.import"; file: SessionFile }
   | { kind: "frameAck" };
 
+/** The lowest and highest non-null reading of one instrument over some steps, with their sim times. */
+export interface Extreme {
+  min: number;
+  tMin: number;
+  max: number;
+  tMax: number;
+}
+
 export interface LoadedInfo {
   libraryId: string;
   digest: string;
@@ -62,7 +70,13 @@ export type FromWorker =
       reason: string | null;
       t: number;
     }
-  | { kind: "snapshot"; snapshot: Record<string, any>; shape?: Float32Array }
+  | {
+      kind: "snapshot";
+      snapshot: Record<string, any>;
+      shape?: Float32Array;
+      /** Each instrument's extremes over every engine step since the previous snapshot (so a chart keeps a peak between snapshots). */
+      extremes?: Record<string, Extreme>;
+    }
   | { kind: "events"; events: Record<string, any>[] }
   | {
       kind: "clock";

@@ -74,11 +74,14 @@ export class RuntimeClient {
     });
   }
 
-  /** Send an engine command. Resolves with the engine's result, after the step that applied it. */
-  command(cmd: Record<string, unknown>, onQueued?: (q: Queued) => void): Promise<Ack> {
+  /**
+   * Send an engine command. Resolves with the engine's result, after the step that applied it.
+   * `clientId` names the sending view in the command log (default: the client's own id).
+   */
+  command(cmd: Record<string, unknown>, onQueued?: (q: Queued) => void, clientId: string = this.clientId): Promise<Ack> {
     const clientSeq = this.nextClientSeq++;
     const p = new Promise<Ack>((resolve) => this.acks.set(clientSeq, { resolve, onQueued }));
-    this.send({ kind: "command", clientSeq, clientId: this.clientId, cmd });
+    this.send({ kind: "command", clientSeq, clientId, cmd });
     return p;
   }
 
