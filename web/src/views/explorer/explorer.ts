@@ -219,6 +219,12 @@ export class Explorer {
     if (this.core) this.buildRodSliders(this.core.model);
   }
 
+  /** Compact mode (an inset next to the operator panel): the explorer's own panel is hidden. */
+  setCompact(on: boolean): void {
+    this.panel.hidden = on;
+    this.dirty = true;
+  }
+
   get rodPositions(): Record<string, number> {
     return this.core ? this.core.rodPositions : {};
   }

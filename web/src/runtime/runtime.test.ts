@@ -436,3 +436,50 @@ describe("halt and solver faults", () => {
     expect(host.last("ack")).toMatchObject({ reason: "REJ_HALTED" });
   });
 });
+
+describe("instrument extremes between snapshots (M5 amendment 1)", () => {
+  it("a pulse peak between snapshots arrives in `extremes`, at the value a step-by-step run sees", async () => {
+    const L = await loadSyntheticCore();
+    const init = { rods: nearCriticalRods(L, -0.0005), mode: "pulse" };
+    const { host, rt } = await loadedRuntime({}, { init, seed: 5 });
+    await send(rt, { kind: "command", clientSeq: 1, clientId: "op", cmd: { type: "rod.fire", rod: "transient" } });
+    // step 60 steps (0.6 s, through the pulse) while the main thread never acknowledges a frame
+    await send(rt, { kind: "frameAck" });
+    host.out = [];
+    for (let i = 0; i < 60; i++) await send(rt, { kind: "step", n: 1 });
+    await send(rt, { kind: "frameAck" }); // now the held-back snapshot goes out, with everything since
+    const snaps = host.of("snapshot");
+    const maxSeen = Math.max(...snaps.map((m) => m.extremes?.["log"]?.max ?? -Infinity));
+
+    // the same run step by step, reading every step's indicated value
+    const e = new Engine(L, init, 5);
+    e.submit({ type: "rod.fire", rod: "transient" }, "op");
+    let maxEvery = -Infinity;
+    let tAt = 0;
+    for (let i = 0; i < 60; i++) {
+      e.step();
+      const v = e.indicated["log"];
+      if (v !== null && v !== undefined && v > maxEvery) {
+        maxEvery = v;
+        tAt = e.t;
+      }
+    }
+    expect(maxSeen).toBe(maxEvery);
+    const x = snaps.find((m) => m.extremes?.["log"]?.max === maxEvery)!.extremes!["log"]!;
+    expect(x.tMax).toBeCloseTo(tAt, 12);
+    // and the plain snapshot values alone miss it (that is why extremes exist)
+    const plainMax = Math.max(...snaps.map((m) => m.snapshot.indicated["log"] ?? -Infinity));
+    expect(plainMax).toBeLessThan(maxEvery);
+  });
+
+  it("a rewind drops extremes from the discarded timeline", async () => {
+    const { host, rt } = await loadedRuntime();
+    await send(rt, { kind: "command", clientSeq: 1, clientId: "op", cmd: { type: "fault.reactivity", deltaRho: 0.004 } });
+    await send(rt, { kind: "step", n: 50 }); // snapshot held back: extremes pile up
+    await send(rt, { kind: "rewind", step: 0 });
+    await send(rt, { kind: "frameAck" });
+    const last = host.last("snapshot")!;
+    expect(last.snapshot.t).toBe(0);
+    expect(last.extremes).toEqual({});
+  });
+});

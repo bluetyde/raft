@@ -151,3 +151,139 @@ body,
   font-size: 20px;
   opacity: 0.8;
 }
+
+/* M5 operator panel and layouts */
+.vr-opbox {
+  flex: 1.4;
+  min-width: 0;
+  overflow: auto;
+  padding: 10px 14px;
+}
+
+#app[data-layout="split"] .vr-view {
+  flex: 1;
+}
+
+.vr-main.vr-swap .vr-opbox {
+  flex: 0.8;
+}
+
+.vr-main.vr-swap .vr-view {
+  flex: 1.6;
+}
+
+.vr-operator section {
+  margin-bottom: 12px;
+}
+
+.vr-operator h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+}
+
+.vr-meter {
+  display: grid;
+  grid-template-columns: 150px 1fr 110px 50px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vr-bar-track {
+  height: 10px;
+  background: #081524;
+  border: 1px solid #22405e;
+}
+
+.vr-bar-fill {
+  height: 100%;
+  width: 0;
+  background: #7fd3a8;
+}
+
+.vr-flag {
+  color: #ffb74d;
+  font-weight: bold;
+}
+
+.vr-rodrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.vr-light {
+  padding: 1px 6px;
+  border: 1px solid #22405e;
+  border-radius: 3px;
+  font-size: 11px;
+  opacity: 0.35;
+}
+
+.vr-light.on {
+  opacity: 1;
+  background: #2e7d32;
+  color: #fff;
+}
+
+.vr-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.vr-tile {
+  padding: 4px 6px;
+  font-size: 12px;
+  border: 1px solid #22405e;
+  background: #0b1a2a;
+  opacity: 0.45;
+}
+
+.vr-tile.lit {
+  opacity: 1;
+  background: #8a1c1c;
+  color: #fff;
+}
+
+.vr-tile.flashing {
+  opacity: 1;
+  color: #fff;
+  animation: vr-flash 0.8s steps(1) infinite;
+}
+
+@keyframes vr-flash {
+  0% {
+    background: #c62828;
+  }
+  50% {
+    background: #3a0d0d;
+  }
+}
+
+.vr-cover {
+  border: 1px dashed #e5584f;
+}
+
+.vr-chart {
+  margin-bottom: 6px;
+}
+
+.vr-chart-title {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.vr-chart canvas {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: 70px;
+}

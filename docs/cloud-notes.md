@@ -162,4 +162,21 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   - no rated power, so no percent power.
   The recommended options need none of these. Possible later requests, only if the user picks those options: engine alarms (D1b), rod-position instruments (D2b), an indicated period (D3b), `plant.ratedPower` (D4b).
 - Branch: `claude/m5-operator-design`, based on `claude/m4-live`.
+- User decision (2026-09-27): approved with D1–D6 = option a, and three amendments: min/max chart thinning (with a 10 ms spike test),
+  a careful derived period (skips null, pegged and pre-rewind points; "—" when too few points or in pulse mode; tested with lag and noise),
+  and no edit to ARCHITECTURE.md from the cloud session.
+- **For the local session:** the user said the local session will change ARCHITECTURE §3 to say that alarms are derived in the view (not `snapshot.alarms`).
+
+### 2026-09-27: M5 operator panel implemented
+
+- What: `web/src/views/operator/` (`console.ts` the operator-view rule, `meters.ts`, `period.ts`, `strip.ts`, `annunciator.ts`, `chart.ts`, `panel.ts`),
+  the split / realism / explorer layouts in `web/src/app/main.ts`, and per-step instrument extremes in the runtime snapshot message (`extremes`).
+  The operator panel reads snapshots only through `operatorView` and sends commands with `clientId: "operator"`.
+- Findings while building it (recorded in `docs/m5-operator-design.md` §7):
+  - the derived period needs at least 8 readings in its 2 s window, so it reads only up to about 7× real time (30 Hz snapshots); above that it shows "—";
+  - with 1–2 % log-channel noise, the slope must exceed 3 standard errors to show a period (2 let noise read as long random periods);
+  - a manual SCRAM latches a trip called `manual`, which is not a library trip, so the annunciator adds a `manual` tile.
+- Tests: 17 new Vitest tests (`operator.test.ts`: truth guard, meters, derived period with the library's lag and noise, 10 ms spike, annunciator),
+  2 new runtime tests (extremes), and 6 new Playwright tests (`operator.spec.ts`). Four deliberate breaks were each caught.
+- Branch: `claude/m5-operator-design`. Checks: see the PR.
 
