@@ -217,7 +217,7 @@ Sensitivity to the inferred $ (±$0.03, not scored): RMS 0.10–0.17, bias −0.
 
 **Proposal under the fixed rules: NO-GO**, because A1 fails at $1.5 by 0.6%. Why it fails: the A1 upper bound (1.02) assumed Fuchs–Hansen is an upper bound,
 because the published IPM sits below it. But delayed neutrons returning during the pulse *raise* the peak in a point-kinetics model with a step-like insertion.
-This repo's own analytic test already showed it (`test_nordheim_fuchs_pulse`: the full model is 3.4% above Nordheim–Fuchs), and the effect is largest near
+This repo's own analytic test already showed it (`test_delayed_return_raises_the_peak`: the full model is 3.4% above Nordheim–Fuchs for the synthetic core), and the effect is largest near
 prompt critical. The IPM's lower peak comes from its rod worth varying with height during ejection and from heat removal, which the thresholds should have
 considered. That was an error in writing the protocol (Claude's), not a finding about the engine. Whether to accept A1 as mis-specified is the user's decision;
 the rules are not changed here.
