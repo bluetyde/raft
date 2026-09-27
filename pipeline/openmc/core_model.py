@@ -59,7 +59,8 @@ def burned_fuel(burnup: float) -> dict[str, float]:
     w = 0.0 if j == i else (burnup - bus[i]) / (bus[j] - bus[i])
     a, b = table[i]["atomDensityPerBarnCm"], table[j]["atomDensityPerBarnCm"]
     lib = {name for m in openmc.data.DataLibrary.from_xml().libraries if m["type"] == "neutron" for name in m["materials"]}
-    return {n: (1 - w) * a.get(n, 0.0) + w * b.get(n, 0.0) for n in set(a) | set(b) if n in lib}
+    # sorted: a set's order changes between processes, which changes the random-number stream and so the result
+    return {n: (1 - w) * a.get(n, 0.0) + w * b.get(n, 0.0) for n in sorted(set(a) | set(b)) if n in lib}
 
 
 def materials(fuel_data: dict, ov: dict | None = None):
