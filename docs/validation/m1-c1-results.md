@@ -227,3 +227,11 @@ What run 3 shows: with cited inputs and no calibration, the engine reproduces ea
 - The inferred $ depends on Λ = 40 µs, so B tests the cited γ against Λ jointly, not each on its own.
 - B covers $1.30–1.75 on the corrected axis only. Below $1.30 the traces are too noisy for the rise-rate fit.
 - Rod worth shapes, fireTime and geometry are still `assumed`.
+
+### Decision (user, 2026-09-27): GO for M1 as redefined
+
+The user chose to treat A1's upper bound (1.02) as mis-specified, not as a test failure: delayed-neutron return raises the peak above Fuchs–Hansen, as
+`test_delayed_return_raises_the_peak` documented before run 3, and the miss is 0.6% at one of three points, in the predicted direction. **A1 as written failed,
+and that stays on record.** The alternative, a run 4 with a corrected bound, was declined because any new bound would be chosen after seeing 1.026.
+Open caveats: B tests γ and Λ jointly (Λ = 40 µs assumed); rod worth shapes, fireTime and geometry are still `assumed` (M2 replaces them with OpenMC values);
+B covers $1.30–1.75 only.
