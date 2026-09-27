@@ -179,3 +179,14 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 - Tests: 17 new Vitest tests (`operator.test.ts`: truth guard, meters, derived period with the library's lag and noise, 10 ms spike, annunciator),
   2 new runtime tests (extremes), and 6 new Playwright tests (`operator.spec.ts`). Four deliberate breaks were each caught.
 - Branch: `claude/m5-operator-design`. Checks: see the PR.
+
+### 2026-09-27: M6 instructor view design (proposal, waiting for the user)
+
+- What: `docs/m6-instructor-design.md`. No code yet. Decisions D1–D6 are open for the user.
+- Findings the other session may want to know (plan 06 assumes things the engines do not have):
+  - no rod faults (stuck, will not scram, drop) and no instrument drift;
+  - `fault.reactivity` adds to a running total, with no fault id and no clear (ARCHITECTURE §2 lists `fault.inject` and `fault.clear` with ids);
+  - the snapshot does not list active instrument faults (the runtime can read the engine's public `faults` field, so this is not a request).
+  The recommended options need no engine change for the first slice. Possible later requests, only if the user picks those options:
+  `fault.rod` and instrument drift in both engines (D3a), and an ARCHITECTURE change from "one owner" to "one shared worker" (D2a).
+- Branch: `claude/m6-instructor-design`, based on `main` at `1442af9`.
