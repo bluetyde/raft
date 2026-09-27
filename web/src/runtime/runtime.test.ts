@@ -483,3 +483,97 @@ describe("instrument extremes between snapshots (M5 amendment 1)", () => {
     expect(last.extremes).toEqual({});
   });
 });
+
+describe("coarse sessions and active faults (M6, docs/m6-instructor-design.md)", () => {
+  const COARSE = { config: { outerDt: 1 } };
+
+  async function commandAck(host: FakeHost, rt: Runtime, clientSeq: number, cmd: Record<string, unknown>) {
+    await send(rt, { kind: "command", clientSeq, clientId: "t", cmd });
+    await send(rt, { kind: "step", n: 1 });
+    return host.of("ack").find((a) => a.clientSeq === clientSeq)!;
+  }
+
+  it("a coarse session rejects rod firing and pulse mode with REJ_COARSE_STEP, and keeps them out of the log", async () => {
+    const { host, rt } = await loadedRuntime({}, COARSE);
+    expect(host.last("loaded")!.outerDt).toBe(1);
+    const fire = await commandAck(host, rt, 1, { type: "rod.fire", rod: "transient" });
+    expect(fire).toMatchObject({ status: "rejected", reason: "REJ_COARSE_STEP", seq: null });
+    const pulse = await commandAck(host, rt, 2, { type: "mode.set", mode: "pulse" });
+    expect(pulse).toMatchObject({ status: "rejected", reason: "REJ_COARSE_STEP", seq: null });
+    const steady = await commandAck(host, rt, 3, { type: "mode.set", mode: "steady" });
+    expect(steady.status).toBe("accepted");
+    expect(rt.engine!.commandLog.map((c: any) => c.cmd.type)).toEqual(["mode.set"]);
+    expect(rt.engine!.mode).toBe("steady");
+  });
+
+  it("a fine session passes the same commands to the engine", async () => {
+    const { host, rt } = await loadedRuntime();
+    const pulse = await commandAck(host, rt, 1, { type: "mode.set", mode: "pulse" });
+    expect(pulse.status).toBe("accepted");
+    const fire = await commandAck(host, rt, 2, { type: "rod.fire", rod: "transient" });
+    expect(fire.reason).not.toBe("REJ_COARSE_STEP");
+    expect(rt.engine!.commandLog).toHaveLength(2);
+  });
+
+  it("a coarse session cannot load in pulse mode", async () => {
+    const host = new FakeHost();
+    const rt = new Runtime(host);
+    await send(rt, {
+      kind: "load",
+      protocol: 1,
+      source: { kind: "files", files: readFolder(syntheticCoreDir) },
+      init: { mode: "pulse" },
+      config: { outerDt: 1 },
+    });
+    expect(rt.engine).toBeNull();
+    expect(host.last("loadFailed")!.issues.map((i) => i.code)).toEqual(["E_COARSE_PULSE"]);
+  });
+
+  it("a coarse session file with a rod firing does not import", async () => {
+    const { host, rt } = await loadedRuntime({}, COARSE);
+    await send(rt, { kind: "step", n: 3 });
+    await send(rt, { kind: "session.export" });
+    const file = structuredClone(host.last("session")!.file);
+    file.session.commands.push({ seq: 1, step: 1, t: 1, clientId: "t", cmd: { type: "rod.fire", rod: "transient" } });
+    await send(rt, { kind: "session.import", file });
+    expect(host.last("error")).toMatchObject({ request: "session.import", code: "E_SESSION" });
+    expect(host.last("error")!.message).toContain("coarse session");
+  });
+
+  it("a coarse session runs at 3600x on the fake clock", async () => {
+    const { host, rt } = await loadedRuntime({}, COARSE);
+    await send(rt, { kind: "time", rate: 3600, paused: false });
+    host.advance(2000);
+    await rt.idle();
+    expect(rt.engine!.t).toBeGreaterThanOrEqual(3600 * 2 - 2);
+  });
+
+  it("a trip on the coarse step comes within one outer step of the fine session's trip", async () => {
+    const lib = await loadSyntheticCore();
+    const tripTime = (outerDt: number) => {
+      const e = new Engine(lib, { rods: { regulating: 0.6584003609387292, safety: 1.0, transient: 0.0 } }, 1, { outerDt });
+      e.submit({ type: "rod.move", rod: "transient", direction: "out" });
+      while (!e.events.some((ev: any) => ev.type === "trip") && e.t < 60) e.step();
+      return e.events.find((ev: any) => ev.type === "trip")!.t as number;
+    };
+    const fine = tripTime(0.01);
+    const coarse = tripTime(1);
+    expect(Math.abs(coarse - fine)).toBeLessThanOrEqual(1);
+  });
+
+  it("each snapshot message lists the active faults, and a clear removes an instrument fault", async () => {
+    const { host, rt } = await loadedRuntime();
+    expect(host.last("snapshot")!.faults).toEqual({ instruments: {}, extraRho: 0 });
+    await send(rt, { kind: "command", clientSeq: 1, clientId: "instructor", cmd: { type: "fault.instrument", instrument: "log", kind: "stuck" } });
+    await send(rt, { kind: "command", clientSeq: 2, clientId: "instructor", cmd: { type: "fault.instrument", instrument: "linear", kind: "dead" } });
+    await send(rt, { kind: "command", clientSeq: 3, clientId: "instructor", cmd: { type: "fault.reactivity", deltaRho: 0.001 } });
+    await send(rt, { kind: "step", n: 1 });
+    await send(rt, { kind: "frameAck" });
+    expect(host.last("snapshot")!.faults).toEqual({ instruments: { log: "stuck", linear: "dead" }, extraRho: 0.001 });
+    expect(host.last("snapshot")!.snapshot.indicated.linear).toBeNull();
+    await send(rt, { kind: "command", clientSeq: 4, clientId: "instructor", cmd: { type: "fault.instrument", instrument: "log", kind: "clear" } });
+    await send(rt, { kind: "step", n: 1 });
+    await send(rt, { kind: "frameAck" });
+    expect(host.last("snapshot")!.faults!.instruments).toEqual({ linear: "dead" });
+  });
+});

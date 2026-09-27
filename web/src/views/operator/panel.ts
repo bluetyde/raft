@@ -5,7 +5,7 @@
  */
 
 import type { Ack, RuntimeClient } from "../../runtime/client";
-import type { FromWorker } from "../../runtime/protocol";
+import { RUNTIME_REJECTIONS, type FromWorker } from "../../runtime/protocol";
 import { formatPeriod, formatPower } from "../explorer/live";
 import { Annunciator } from "./annunciator";
 import { StripChart } from "./chart";
@@ -58,6 +58,7 @@ export class OperatorPanel {
   private coverTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly play: HTMLButtonElement;
   private readonly clockText: HTMLElement;
+  private readonly rate: HTMLSelectElement;
   private paused = true;
   private lastT = -Infinity;
   /** The last view the panel drew (for tests: the panel never holds more than this). */
@@ -153,6 +154,7 @@ export class OperatorPanel {
     this.play = el("button", { textContent: "▶ run", onclick: () => this.client.setTime({ paused: !this.paused }) });
     this.play.dataset["op"] = "play";
     const rate = el("select", {}, RATES.map((r) => el("option", { value: String(r), textContent: `${r}×` })));
+    this.rate = rate;
     rate.value = "1";
     rate.dataset["op"] = "rate";
     rate.onchange = () => this.client.setTime({ rate: Number(rate.value) });
@@ -226,7 +228,7 @@ export class OperatorPanel {
     if (ack.status === "rejected") {
       const reason = ack.reason ?? "";
       const il = /^REJ_INTERLOCK:(.+)$/.exec(reason);
-      const text = il ? this.lib.interlocks.find((x) => x.id === il[1])?.reason : undefined;
+      const text = il ? this.lib.interlocks.find((x) => x.id === il[1])?.reason : RUNTIME_REJECTIONS[reason];
       this.annunciator.interlockRejected(reason, text);
       this.renderTiles();
       this.message.textContent = `${what} rejected: ${reason}${text ? ` (${text})` : ""}`;
@@ -239,6 +241,10 @@ export class OperatorPanel {
   onClock(m: Extract<FromWorker, { kind: "clock" }>): void {
     this.paused = m.paused;
     this.play.textContent = m.paused ? "▶ run" : "⏸ pause";
+    // the rate can also come from the instructor panel, so the menu follows the clock (and gains that rate if it lacks it)
+    const rate = String(m.rate);
+    if (![...this.rate.options].some((o) => o.value === rate)) this.rate.append(new Option(`${m.rate}×`, rate));
+    this.rate.value = rate;
     this.clockText.textContent = m.paused ? "paused" : `${m.achievedRate.toPrecision(3)}× achieved`;
   }
 
