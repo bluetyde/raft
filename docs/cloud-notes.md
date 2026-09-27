@@ -31,6 +31,20 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   A per-test timeout on the slow tests in `engine.test.ts` also works, but then every new heavy test needs one too.
 - Done: the user let the cloud session make this one edit to `web/vite.config.ts` (`testTimeout: 30_000`, no other change), on `claude/kind-bohr-p73819`.
 
+### R3 (future, not blocking, 2026-09-27): change `outerDt` during a session
+
+- The runtime can reach high speeds only with a long outer step, and `outerDt` is fixed per session (D1 option T2, chosen by the user).
+  A pulse needs 10 ms steps, and a xenon wait can use 1–2 s steps. One session cannot do both today.
+- Request, for when M6 needs it: let a session change `outerDt` at a logged boundary, with replay and checkpoints still deterministic.
+  This means time is no longer `stepIndex × outerDt`, in both engines. Measurements: `docs/c6-runtime-design.md` §2.
+
+### R4 (future, not blocking, 2026-09-27): engine step cost
+
+- Measured on `triga-jsi-242` (Node 22, one core): 54 µs per steady 10 ms step, and about 320 µs per step during a rod-scram-xenon transient (31× real time at 10 ms).
+  For a 13-value state this is slow, so profiling (allocations per step, for example) could give a few times more speed.
+- The cost is per outer step and almost independent of `outerDt`. A 1 s outer step gave the same results to 4e-8 relative and 1993× real time.
+- Only if the other session has time. The golden vectors must still pass.
+
 ### R2 (information, 2026-09-27): CI has no scipy, so one Python test skips there
 
 - `physics_ref/tests/test_engine.py:353` (`skipUnless(HAVE_SCIPY)`) skips on CI and runs where scipy is installed.
@@ -67,6 +81,8 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   - `engine.session()` has no end step, so the runtime's session file adds one.
 - Measured step cost (Node 22, one core): about 55–90 µs per 10 ms outer step, so at most about 150× real time. The cost is per step, so 3600× needs a longer `outerDt`.
   One pulse step on the synthetic core takes about 60 ms.
-- Possible request R3 (only if the user picks D1 option T3): let a session change `outerDt` at a logged boundary. Not requested yet.
+- User decisions (2026-09-27): D1 = T2 (`outerDt` fixed per session), D2 = queue commands while paused, D3 = truncate after a rewind, D4 = no role check.
+- The user asked for the speed findings to be noted: a 4-hour transient at `outerDt` 10 ms / 0.1 s / 1 s gave 31× / 238× / 1993× real time with the same results (to 4e-8).
+  Future requests R3 (change `outerDt` during a session) and R4 (engine step cost) are above.
 - Branch: `claude/c6-runtime-design` (based on `claude/kind-bohr-p73819`, because this file is not on `main` yet).
 
