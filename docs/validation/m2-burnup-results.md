@@ -43,6 +43,45 @@ burned-fuel nuclide order came from a Python set, so each process drew a differe
 - **What B246 is not:** the reactor's burnup. It is one number that makes this model critical, so it also absorbs the model's other
   biases (nuclear data, the `assumed` geometry, uniform instead of per-element burnup, depletion at 294 K and constant power).
 
+## After the tests: the rod-worth curve at B246 (not part of the protocol)
+
+`validation/m2_rod_curves.py` (report `validation/m2_rod_curves_report.json`); points in `validation/m2_scurve_points.jsonl`,
+20,000 × 150 each, worth W(s) = ρ(T = 0) − ρ(T = s), core 242, other rods at the measured critical positions:
+
+| steps | 150 | 300 | 450 | 600 | 750 | 900 |
+|---|---|---|---|---|---|---|
+| model at B246 (pcm) | 52 ± 107 | 453 ± 101 | 951 ± 105 | 1960 ± 98 | 2753 ± 104 | 3052 ± 107 |
+| measured s242 (pcm) | 53 | 360 | 1012 | 1887 | 2675 | 3034 |
+| fresh-fuel model (pcm, m2-core.md) | 88 | 186 | 850 | 1664 | 2466 | 2694 |
+
+**Every point agrees with the table within 1σ.** The fresh-fuel model's too-narrow curve (half the measured worth at 300 steps) was the
+missing burnup: burned fuel flattens the axial flux, which spreads the rod's worth over more of its travel. (The points share the
+T = 0 run, so their errors are correlated.)
+
+### Core 246 against its pulses' rod table (measured on core 244)
+
+Same method, core 246 at its own critical rods (K 536.6, R 535), against `s246` (headed core 244, 8 June 2021; no open map of core 244):
+
+| steps | 150 | 300 | 450 | 600 | 750 | 900 |
+|---|---|---|---|---|---|---|
+| model at B246 (pcm) | 190 ± 92 | 239 ± 94 | 947 ± 97 | 1776 ± 106 | 2416 ± 91 | 2598 ± 93 |
+| measured s246 = core 244 (pcm) | 59 | 362 | 999 | 1840 | 2600 | 2937 |
+
+The core 246 model's transient rod is worth **12% less than core 244's table** in total (−339 ± 93 pcm, 3.6σ), with the gap growing
+toward full insertion, while the same method reproduced core 242's own table. The likeliest reading: **core 244's table does not
+describe core 246** (a different loading around the rod). This is consistent in direction with C7, where core 246's pulse labels
+(made with this table) overstated the prompt excess more than core 242's ($0.42 vs $0.27); a quantitative link is not made here.
+Caveats: B246's uncertainty (next section) and one shared T = 0 run per curve.
+
+## Post-hoc check: ρ of core 246 at B246 itself
+
+A run of core 246 at exactly B246 (the curve's T = 0 point, after the nuclide-order fix, so an independent random stream) gives
+**ρ = +179 ± 61 pcm**, not ≈ 0. The fit interpolated between two grid points whose own scatter (22 → 24 → 26 MWd/kg: −518, then
+−225 pcm per 2 MWd/kg) is larger than their quoted errors suggest, so **B246's ±0.3 MWd/kg understates its uncertainty**; this point
+alone suggests B246 ≈ 24.5. Not refitted (protocol). Effect on T1, estimated with T2's slope: core 242 would read about −450 pcm
+instead of −309, still inside the 500 pcm bound but with little margin. A refit, if wanted, is a new protocol with more particles
+per grid point.
+
 ## What this changes for M2
 
 The calibrated model reproduces an independent critical state (core 242) within 309 pcm, the measured burnup reactivity coefficient
