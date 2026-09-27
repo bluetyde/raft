@@ -190,7 +190,7 @@ def generate_fixtures(out: Path = DEFAULT_OUT) -> tuple[int, int]:
         }
         (cmd_dir / f"{name}.json").write_text(
             json.dumps(content, indent=1, sort_keys=True, allow_nan=False) + "\n",
-            encoding="utf-8",
+            encoding="utf-8", newline="\n",   # LF on Windows too
         )
 
     lib = Library(SYNTHETIC_CORE)
@@ -208,7 +208,7 @@ def generate_fixtures(out: Path = DEFAULT_OUT) -> tuple[int, int]:
         }
         (snap_dir / f"{name}.json").write_text(
             json.dumps(content, indent=1, sort_keys=True, allow_nan=False) + "\n",
-            encoding="utf-8",
+            encoding="utf-8", newline="\n",   # LF on Windows too
         )
 
     return len(cmds), len(snaps)

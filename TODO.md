@@ -32,10 +32,11 @@ Order matters: M2 replaces the `assumed` inputs that M1's caveats rest on, and t
 10. [ ] **[codex]** The TS port (`web/src/`), which the M1 review didn't cover. (The engine line and M1 were reviewed 2026-09-27; 8 findings fixed.)
 11. [ ] Find the JSI Research Reactor Simulator's source and license (independent comparison, reference only).
 
-**Standalone kinetics engine (decided 2026-09-27: yes, but not before the API settles)**
+**Standalone kinetics engine: KIRK, Kernel for Independent Reactor Kinetics** ([bluetyde/kirk](https://github.com/bluetyde/kirk), private, seeded 2026-09-27 from `1534780`; its `NOTES.md` has its own next steps)
 12. [ ] Rule from now on: keep `physics_ref/` and `web/src/sim/` separable. No imports from views, `pipeline/` or `validation/` except through one small library-loader module.
-13. [ ] After C6: define a plain parameter API for the engine (parameters in, state out) and make our library format an adapter over it.
-14. [ ] At M9 (open release): split the engine into its own MIT repo (Python and npm packages, the same golden vectors), and make this project depend on it.
+13. [ ] **Decide the source of truth before the next engine change** (proposed: engine work happens in KIRK, and this repo pulls it). Until then, any engine fix lands in both repos. The plain parameter API is KIRK's NOTES item 1.
+14. [ ] Switch this project to depend on KIRK (Python package `kirk-kinetics`, npm `kirk-kinetics`) and retire `physics_ref/` and `web/src/sim/`; at the latest by M9.
+15. [ ] Perf: the in-step trip locator bisects period-threshold "crossings" through ±∞ at steady state (+28% right-hand-side calls; KIRK NOTES item 2). Fix in KIRK, then pull here.
     Why it's worth it: an MIT, dependency-free, browser-capable point-kinetics engine with deterministic replay and pulse validation fills a gap
     (PyRK has no license; openpointkinetics is GPL and dormant). Why not yet: the API will change with C6 and M2.
 
@@ -157,7 +158,7 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 - [ ] Confirm the license (MIT, provisional since 2026-09-25) and check that every reused file is permissive with its notice kept
 - [ ] Public repo, README, docs for the library format, library-authoring guide
 - [ ] Ship example libraries (TRIGA plus the second reactor)
-- [ ] Split the kinetics engine into its own repo (Next #14)
+- [x] 2026-09-27: Kinetics engine split into KIRK ([bluetyde/kirk](https://github.com/bluetyde/kirk)); switching this project over is Next #14
 - [ ] **[codex]** Codex review of the whole repo before it goes public (license notices, secrets, data provenance)
 
 ## Ideas / later
