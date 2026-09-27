@@ -31,6 +31,20 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   A per-test timeout on the slow tests in `engine.test.ts` also works, but then every new heavy test needs one too.
 - Done: the user let the cloud session make this one edit to `web/vite.config.ts` (`testTimeout: 30_000`, no other change), on `claude/kind-bohr-p73819`.
 
+### R3 (future, not blocking, 2026-09-27): change `outerDt` during a session
+
+- The runtime can reach high speeds only with a long outer step, and `outerDt` is fixed per session (D1 option T2, chosen by the user).
+  A pulse needs 10 ms steps, and a xenon wait can use 1–2 s steps. One session cannot do both today.
+- Request, for when M6 needs it: let a session change `outerDt` at a logged boundary, with replay and checkpoints still deterministic.
+  This means time is no longer `stepIndex × outerDt`, in both engines. Measurements: `docs/c6-runtime-design.md` §2.
+
+### R4 (future, not blocking, 2026-09-27): engine step cost
+
+- Measured on `triga-jsi-242` (Node 22, one core): 54 µs per steady 10 ms step, and about 320 µs per step during a rod-scram-xenon transient (31× real time at 10 ms).
+  For a 13-value state this is slow, so profiling (allocations per step, for example) could give a few times more speed.
+- The cost is per outer step and almost independent of `outerDt`. A 1 s outer step gave the same results to 4e-8 relative and 1993× real time.
+- Only if the other session has time. The golden vectors must still pass.
+
 ### R2 (information, 2026-09-27): CI has no scipy, so one Python test skips there
 
 - `physics_ref/tests/test_engine.py:353` (`skipUnless(HAVE_SCIPY)`) skips on CI and runs where scipy is installed.
@@ -56,3 +70,28 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 - First CI runs on `d7e4ba8` (Python 3.11.16, Node 24.21.0, npm 11.19.0): the `pull_request` run passed.
   The `push` run failed in web-test on a 5 s timeout (request R1). The Python stage took 198–227 s and skipped 1 test (R2).
 - Fix: `testTimeout: 30_000` in `web/vite.config.ts` (R1, user OK), and `push` limited to `main`.
+
+### 2026-09-27: C6 runtime design (proposal, waiting for the user)
+
+- What: `docs/c6-runtime-design.md`, the design for the Web Worker runtime (clock, command bus, snapshot and event stream, history). No code yet.
+  It uses only the engine's public API and the command and snapshot schemas. No engine or schema change is needed for the recommended options.
+- Findings from the engine code that the other session may want to know:
+  - `time.set` and `time.rewindTo` from ARCHITECTURE §2 are not engine commands (the engine rejects them). The design keeps time control in the runtime.
+  - `engine.checkpoint()` copies the whole command log, so the runtime stores checkpoints without it and rebuilds it from its own log.
+  - `engine.session()` has no end step, so the runtime's session file adds one.
+- Measured step cost (Node 22, one core): about 55–90 µs per 10 ms outer step, so at most about 150× real time. The cost is per step, so 3600× needs a longer `outerDt`.
+  One pulse step on the synthetic core takes about 60 ms.
+- User decisions (2026-09-27): D1 = T2 (`outerDt` fixed per session), D2 = queue commands while paused, D3 = truncate after a rewind, D4 = no role check.
+- The user asked for the speed findings to be noted: a 4-hour transient at `outerDt` 10 ms / 0.1 s / 1 s gave 31× / 238× / 1993× real time with the same results (to 4e-8).
+  Future requests R3 (change `outerDt` during a session) and R4 (engine step cost) are above.
+- Branch: `claude/c6-runtime-design` (based on `claude/kind-bohr-p73819`, because this file is not on `main` yet).
+
+### 2026-09-27: C6 runtime implemented
+
+- What: `web/src/runtime/` (`protocol.ts`, `runtime.ts`, `history.ts`, `readers.ts`, `worker.ts`, `client.ts`), built on the engine's public API only.
+  No change to `web/src/sim/`, `web/src/library/`, `web/src/contracts/` or `schema/`. Design and decisions: `docs/c6-runtime-design.md`.
+- Tests: 39 new Vitest tests in `web/src/runtime/*.test.ts` (fake clock; the main oracle compares a runtime session with `Engine.replay` and a plain loop).
+  Five targeted breaks, each caught. A manual Chromium smoke run of the real worker passed. Automated browser e2e is still TODO Next #8.
+- Behaviour to know: a rewind to a step keeps the commands logged at that step queued, the same as `Engine.replay`.
+- Branch: `claude/c6-runtime-design`. Checks: see the PR.
+
