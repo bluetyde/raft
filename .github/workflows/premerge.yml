@@ -35,3 +35,24 @@ jobs:
         run: python3 --version && node --version && npm --version
       - name: Pre-merge checks
         run: python3 scripts/premerge.py
+
+  e2e:
+    # Browser end-to-end check of the runtime worker (web/src/app/e2e/), on the production build.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci --ignore-scripts
+      - name: Install Chromium for Playwright
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end tests
+        working-directory: web
+        run: npx playwright test -c src/app/e2e/playwright.config.ts

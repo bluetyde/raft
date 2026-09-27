@@ -6,10 +6,10 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 
 ## Scope of the cloud session
 
-- Owns: `web/src/runtime/`, `web/src/views/`, `web/src/app/`, `web/index.html`, `web/package.json` and its lockfile (dependencies only), `.github/`, this file, and its own design docs under `docs/`.
+- Owns: `web/src/runtime/`, `web/src/views/`, `web/src/app/`, `web/index.html`, `web/vite.config.ts` (user OK, 2026-09-27), `web/package.json` and its lockfile (dependencies only), `.github/`, this file, and its own design docs under `docs/`.
 - Does not edit: `physics_ref/`, `web/src/sim/`, `web/src/library/`, `web/src/contracts/`, `schema/`, `pipeline/`, `validation/`, `libraries/`.
   Engine or schema changes come here as requests, because the Python and TypeScript engines must stay in step.
-- Works on branches with pull requests only. It never pushes to `main` or merges into it.
+- Works on branches with pull requests only. It never pushes to `main`. It merges a pull request only when the user asks for that pull request.
 
 ## Requests for the OpenMC session
 
@@ -44,6 +44,11 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   For a 13-value state this is slow, so profiling (allocations per step, for example) could give a few times more speed.
 - The cost is per outer step and almost independent of `outerDt`. A 1 s outer step gave the same results to 4e-8 relative and 1993× real time.
 - Only if the other session has time. The golden vectors must still pass.
+
+### R7 (open, 2026-09-27): TODO Next #8 is done
+
+- The browser end-to-end check on the synthetic fixture exists (malformed library, a trip, pause/resume, replay): `web/src/app/e2e/`, CI job `e2e`.
+  Request: tick TODO Next #8 and the matching item under "Contracts", and update the agent board. Those files are outside the cloud session's scope.
 
 ### R2 (information, 2026-09-27): CI has no scipy, so one Python test skips there
 
@@ -94,4 +99,24 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   Five targeted breaks, each caught. A manual Chromium smoke run of the real worker passed. Automated browser e2e is still TODO Next #8.
 - Behaviour to know: a rewind to a step keeps the commands logged at that step queued, the same as `Engine.replay`.
 - Branch: `claude/c6-runtime-design`. Checks: see the PR.
+
+### 2026-09-27: merges (user request)
+
+- The user asked the cloud session to merge the CI and C6 pull requests, but not M3:
+  `claude/kind-bohr-p73819` (CI) was merged into `main` as `0002c02`, and `claude/c6-runtime-design` (C6) as `6a4be94`, both with merge commits.
+- The M3 pull request (`claude/m3-viewer`, bluetyde/virtual-reactor#3) stays open for the user's review. It also carries this file's M3 entry and requests R5 and R6,
+  so those reach `main` only when M3 merges.
+
+### 2026-09-27: browser end-to-end check (TODO Next #8)
+
+- What: `web/src/app/e2e/` (harness page, `runtime.spec.ts`, `playwright.config.ts`) and the CI job `e2e`. Five tests run the real runtime worker in Chromium on the production build:
+  two malformed libraries (`E_JSON`, `E_DIGEST_MISMATCH`); the period trip, which fires at the golden vector's time (`period-trip.json`, within 1e-9 s) with the vector's peak power and time;
+  pause and resume; and replay (export from one worker, import into another, and a rewind, each giving the same snapshot).
+- Two deliberate breaks were each caught (replay re-submitting checkpointed commands; pause doing nothing).
+- Fix found by this work: the C6 client's `WorkerLike` type did not accept a real DOM `Worker` (its tests used an in-memory fake). Fixed, with a compile-time check in `client.test.ts`.
+- `web/vite.config.ts`: `VR_E2E=1` adds the harness page to the build. Normal builds are unchanged.
+- Dependency: `@playwright/test` 1.63.0 (Apache-2.0), pinned exactly; lockfile regenerated with npm 11.19.0, additions only (`@playwright/test`, `playwright`, `playwright-core`).
+  In a container whose Playwright browsers are older, set `VR_CHROMIUM` to a Chromium executable (here `/opt/pw-browsers/chromium`, Chromium 141).
+- `scripts/premerge.py` does not run the e2e tests (the script is outside this session's files). Locally: `cd web && npx playwright test -c src/app/e2e/playwright.config.ts`.
+- Branch: `claude/e2e-browser` (from `main` at `6a4be94`). Checks: see the PR.
 
