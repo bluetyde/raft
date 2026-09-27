@@ -41,6 +41,21 @@ class TestMiniSchema(unittest.TestCase):
         self.assertEqual(v.errors("x"), [])
         self.assertTrue(v.errors(3))
 
+    def test_javascript_parity(self):
+        # The TypeScript port must give the same results; these are the cases where plain Python differs.
+        self.assertTrue(Validator({"const": 1}).errors(True))            # Python: True == 1
+        self.assertTrue(Validator({"enum": [0, "a"]}).errors(False))     # Python: False == 0
+        self.assertTrue(Validator({"const": True}).errors(1))
+        self.assertEqual(Validator({"const": 1}).errors(1.0), [])       # JSON has one number type
+        self.assertEqual(Validator({"enum": [[1, {"a": True}]]}).errors([1.0, {"a": True}]), [])
+        self.assertTrue(Validator({"enum": [[1, {"a": True}]]}).errors([1, {"a": 1}]))
+        v = Validator({"type": "string", "pattern": "^[a-z]+$"})
+        self.assertEqual(v.errors("core"), [])
+        self.assertTrue(v.errors("core\n"))                             # Python "$" matches before a final newline
+        self.assertEqual(Validator({"type": "string", "pattern": "a\\$"}).errors("a$"), [])  # escaped "$" stays literal
+        self.assertEqual(Validator({"type": "string", "minLength": 2}).errors("\U0001F600a"), [])
+        self.assertTrue(Validator({"type": "string", "minLength": 2}).errors("\U0001F600"))  # one code point, two UTF-16 units
+
 
 class TestHelpers(unittest.TestCase):
     def test_interp(self):
@@ -59,6 +74,16 @@ class TestFixtures(unittest.TestCase):
     def test_synthetic_core_is_valid(self):
         issues = validate_library(VECTORS / "synthetic-core")
         self.assertEqual(issues, [], "\n".join(f"{i.code} {i.path} {i.message}" for i in issues))
+
+    def test_nonstandard_json_constants_are_rejected(self):
+        # JavaScript's JSON.parse rejects NaN/Infinity; Python's json.loads accepts them by default.
+        text = (VECTORS / "synthetic-core" / "manifest.json").read_text(encoding="utf-8")
+        for token in ("NaN", "Infinity", "-Infinity"):
+            with tempfile.TemporaryDirectory() as tmp:
+                (Path(tmp) / "manifest.json").write_text(
+                    text.replace('"schemaVersion"', f'"x": {token}, "schemaVersion"', 1), encoding="utf-8")
+                codes = [i.code for i in validate_library(tmp)]
+                self.assertEqual(codes, ["E_JSON"], token)
 
     def test_every_invalid_fixture_fails_with_exactly_its_codes(self):
         cases = sorted(p for p in (VECTORS / "invalid").iterdir() if p.is_dir())
