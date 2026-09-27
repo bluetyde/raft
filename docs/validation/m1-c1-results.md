@@ -80,7 +80,7 @@ report in `validation/c1_report_run2.json` (run 1 stays in `c1_report.json`).
 
 - **The engine matches the published model with the published inputs.** Uncalibrated, a $2.00 step gives 284 MW peak, 6.9 MWs energy and a
   196 K core-average fuel rise. Vavtar & Snoj's own Fuchs–Hansen and improved pulse models give about 290 MW and 265 MW at $2 (their Fig. 2 and 4).
-  Measured medians at $2.00: 222 MW (core 246), 138 MW (core 242); E1000 6.0 MWs; instrumented-element rise ~250 K.
+  Measured medians at $2.00: 138 MW (core 246), 222 MW (core 242), so the engine is 2.06× and 1.28× high. E1000 6.0 MWs; instrumented-element rise ~250 K. *(Corrected 2026-09-27: this line first had the two cores swapped, and the summary to the user said "within 1.3× of core 246"; it is core 242.)*
 - **The disagreement is at low $.** Measured peak power falls with (d − 1)^3.1–3.8, and no point-kinetics model with these inputs does that:
   realistic cp(T) and α(T) move together (γ nearly constant), so the square law survives. Fitting s to the whole range therefore pushes s up
   (to 4.0) to pull the model down at low $, and it then misses both ends.
@@ -100,7 +100,7 @@ This is the JSI group's own comparison of the same pulse database with Fuchs–H
 It settles the question C1 raised:
 
 - **Their model shows the same misfit.** On a single core (4 April 2018, their Fig. 42) the IPM "always predicts higher maximum power than
-  experiments": about 85% higher at $2 and 9% at $3. That is the steep low-$ behaviour C1 found (our uncalibrated engine: +28% at $2 against core 246).
+  experiments": about 85% higher at $2 and 9% at $3. That is the steep low-$ behaviour C1 found (our uncalibrated engine at $2: +28% against core 242, +106% against core 246; corrected, first written with the cores swapped).
 - **Their explanation:** the inserted reactivity comes from rod-calibration curves and carries about 5% uncertainty (Table 14). It shifts with
   core composition (number and position of fuel elements). Measurements at low power are noisier, and their conclusions say the theoretical models
   "can only be applied at higher reactivity". Across core configurations, the measured peak power moves the opposite way from the models
@@ -144,3 +144,50 @@ The γ "inconsistency" from pass 2 is resolved, and the library's 84 kg is wrong
      which overpredicts the data by about 85% at $2.
   3. Which α to use (the Fig. 1 curve, Table 2's computed values, or Table 10's constant 10 pcm/K) is a modelling choice. The first two agree within about 10% up to 500 K.
 - **Not changed yet:** the library still has 84 kg. Changing mass or α and re-running C1 is a protocol change, so it waits for the user's decision on the M1 criterion (pass 2).
+- *Correction to pass 3:* the 6 extra elements in core 246 do **not** explain its lower measured peaks. Point kinetics predicts *higher* peaks with more fuel
+  (smaller γ), and the data show the opposite, the same trend Švajger et al. report (§9.3). The per-core libraries are still right, but they won't close that gap.
+
+## C7 (2026-09-27): the $ axis
+
+**Traces.** The processed traces (`RawDataProcessed*.txt`) are 400,000 rows: power [MW], T1 [°C], T2 [°C], and a constant. The interval is **50 µs**
+(20 s records; not documented). Two checks on pulse 521: peak at sample 6252 against t ≈ 0.31 s on its chart, and summing ±1000 samples reproduces the database's
+E1000 = 6.2 MWs only for dt = 4.997 × 10⁻⁵ s. So E1000 always integrates a fixed ±50 ms window. A $2 pulse is already 37 ms wide at half maximum and lower-$
+pulses are wider, so E1000 cuts off more energy as $ falls. That alone steepens its apparent scaling. The database's `fwhm_s` is rounded to 0.1 s and is unusable.
+`validation/fetch_trace_windows.py` keeps [peak − 0.5 s, peak + 1.5 s] of each trace (float32, gitignored).
+
+**Rod tables.** The database links one pulse-rod table per core (`s242.pdf`, `s246.pdf`):
+- `s242` was measured on core 242 on 19 Oct 2020 (a year after the 2019 pulses); total worth 3033.7 pcm = $4.33, so β = 700.6 pcm.
+- `s246` is headed **core 244**, measured 8 June 2021: core 246's pulses (Dec 2021 – Jan 2022) use another core's calibration.
+
+**The labels are nominal, and the offset varies by session.** For each pulse, C = (database pcm) + W(rod position from the table) is constant if the
+label follows the table with a fixed offset. Within a session it is (spread of a few pcm). Between sessions it isn't:
+- Core 246: C ≈ 2332 (17 Dec 2021), 2592 (20 Dec 2021), 2474–2506 (the January 2022 sessions, 135 of 148 pulses).
+- Core 242: C from 1446 (16 Dec 2020) and 1680 (13 Apr and 25 May 2021) to 1892 (2 Dec 2019).
+
+Pulses with the same label but different C are physically different: **within every label, peak power follows C.** In core 246 the 20 Dec 2021 session is lowest at every label
+($1.50: 9.6 MW against 11–14; $2.00: 120 against 135–154 MW) and 17 Dec 2021 highest. So the recorded $ is a target, and the actual insertion varied
+from session to session by amounts of order $0.1–0.4, far more than the ±$0.05 C1 allowed for. How C maps to the true insertion depends on the pulsing procedure
+(the critical positions of the other rods), which the database doesn't document.
+
+**Next:** per-pulse ρ′/Λ from the traces (the prompt period of the initial rise, and the peak-to-energy ratio with our own integration window), which is independent of
+the labels and of γ. Then a run-3 protocol that either restricts each core to its dominant, self-consistent sessions or uses the trace-derived axis, fixed before the run.
+
+### Result: the labels are offset, and the steep law comes from them
+
+`validation/trace_period.py` (report `validation/trace_period_report.json`) fits the initial exponential rise rate ω of every downloaded pulse (136 of 278 are
+clean enough; the rest are low-$ pulses buried in noise) and inverts the engine's own ω($) curve, fitted the same way. The engine curve follows the prompt estimate
+(ρ − β)/Λ to within 4%, and feedback during the fitted part of the rise is below 4% at $2.
+
+| | ω reaches zero at label | ω slope / engine slope | inferred $ − label (median; every session) | Pmax vs (d − 1): labels → inferred |
+|---|---|---|---|---|
+| Core 242 (56 pulses) | $1.21 | 0.87 | −$0.27 (−0.25 … −0.35) | 2.85 → **1.79** |
+| Core 246 (80 pulses) | $1.32 | 0.77 | −$0.42 (−0.39 … −0.45) | 3.51 → **1.71** |
+
+- An error in Λ would change only the slope; the zero crossing would stay at $1.00. The labels therefore overstate the prompt excess by a roughly constant
+  $0.2–0.4 per core (≈150–220 pcm), plus a scale factor that Λ could explain. Candidate causes, not settled: β_eff or rod-worth calibration offsets, and core 246
+  using core 244's rod table.
+- Against the trace-inferred $, measured peak power scales with exponent 1.7–1.8: point-kinetics behaviour (engine 1.96; temperature-dependent α and cp lower it).
+  **The "steeper than any model" law that drove the NO-GO was an artifact of the $ labels.**
+- ω and Pmax together give Λ/γ without any label (Nordheim–Fuchs: Pmax ≈ ω²Λ/(2γ)). That is the handle for the remaining level question
+  (fuel mass, α, Λ) in run 3.
+- Caveat: ω measures ρ′/Λ, so "inferred $" assumes the library's Λ = 40 µs.
