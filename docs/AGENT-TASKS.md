@@ -13,12 +13,13 @@ How to brief, preflight, run and verify is in the same file (steps 1–6).
 
 ### Evidence from this project (2026-09-26)
 
-About 1,200 lines written by agy across three tasks; break-even at best in Claude usage. Brief + preflight + verification + fixes cost about as much as writing the code:
+First three tasks (~1,200 lines): break-even at best in Claude usage; brief + preflight + verification + fixes cost about as much as writing the code. The clear wins were the ones step 0 favours: large, mechanical, contract already fixed, strong oracle:
 
 | Task | Result | Cost beyond the brief |
 |---|---|---|
 | Golden vectors (`agy/golden-vectors`) | ~320 lines, correct as specified | Rewrote its main test: byte identity (my brief's error) → tolerance comparison; found and fixed the Python 3.12 `sum()` issue in the engine |
 | Pulse screening (`agy/pulse-screening`) | ~600 lines, correct first time | Verification only. **The clear win** |
+| Command/snapshot schemas, A8 (`claude/agy-contracts`) | ~600 lines (2 schemas, validator, 17 invalid fixtures, 11 tests), correct first time, no reruns | One brief (contract already fixed by the engine's code), preflight, verification: 4 targeted source breaks all caught. **A textbook step-0 win** |
 | ROS3P (`claude/agy-ros3p`) | ~250 lines, correct on the 4th run | 3 failed runs (background stall, blocked web fetch, stopped by the user); coefficients from the paper; a feasibility prototype that already was ROS3P; an added test for the γᵢ coefficients. **A net loss: this kind of task is Claude-only now** |
 
 ## Board
@@ -31,8 +32,7 @@ Status: `ready` (brief can be written now) · `blocked` (needs something first) 
 |---|---|---|---|---|
 | A5 | `web/` scaffold (Vite + TS + Vitest) and a TypeScript library validator | `web/` | The **30 broken fixtures** in `schema/vectors/invalid/` each give exactly their `expected.json` codes; the synthetic core validates | **blocked on sandbox Node setup**: agy's commands have no network, each run starts from a fresh clone without `node_modules`, and the sandbox's Node 18 is likely too old for the TS/Vite toolchain. Waiting for the runner's pre-agy `npm ci` step (committed lockfile, network, outside agy's sandbox) and Node 24 in the sandbox |
 | A6 | TypeScript port of the engine (`physics_ref`: engine, library, numerics) | `web/src/sim/` | Vitest runs every vector in `schema/engine-vectors/` within its declared tolerances | **blocked on sandbox Node setup** (as A5), on A5 itself, and on C5 (which regenerates the vectors) |
-| A7 | Scenario schema + validator + valid/invalid fixtures (typed predicates, plan 05) | `schema/scenario.schema.json`, `pipeline/scenario/`, fixtures | Every invalid fixture gives its expected code | ready |
-| A8 | Command and snapshot schemas + fixtures (ARCHITECTURE interfaces) | `schema/command.schema.json`, `schema/snapshot.schema.json` | Snapshots from the golden-vector scenarios validate; invalid fixtures fail with expected codes | ready |
+| A7 | Scenario schema + validator + valid/invalid fixtures (typed predicates, plan 05) | `schema/scenario.schema.json`, `pipeline/scenario/`, fixtures | Every invalid fixture gives its expected code | **blocked on the format design** (step 0 failed: spec still moving). Claude is designing it; the implementation can be delegated afterwards |
 
 New dispatches use branches `claude/agy-<task>` (INSTRUCTIONS.md rule 5).
 
@@ -55,6 +55,7 @@ New dispatches use branches `claude/agy-<task>` (INSTRUCTIONS.md rule 5).
 | A2 | Golden engine vectors | `main` via `agy/golden-vectors` + `claude/golden-vectors-fix` |
 | A3 | Pulse data screening | `main` via `agy/pulse-screening` |
 | A4 | Relabel unverified library values `assumed` (done by Claude in the M1 review) | `main` via `claude/m1-review` |
+| A8 | Command and snapshot schemas + validator + fixtures | `main` via `claude/agy-contracts` |
 
 ### Codex review points
 
