@@ -16,9 +16,11 @@ async function readout(page: Page, key: string): Promise<string> {
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#app")).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
-  await page.selectOption(".vr-bar select", "synthetic-core");
+  await page.selectOption(".vr-bar select >> nth=0", "synthetic-core");
   await expect(page.locator("#app")).toHaveAttribute("data-library", "synthetic-core", { timeout: 30_000 });
   await expect(page.locator("#app")).toHaveAttribute("data-ready", "true");
+  // these checks are for the M4 explorer layout (3D, truth read-out and controls)
+  await page.selectOption('[data-op="layout"]', "explorer");
 });
 
 test("withdrawing a rod moves it in the 3D view, raises power, and colours the fuel by live power", async ({ page }) => {
