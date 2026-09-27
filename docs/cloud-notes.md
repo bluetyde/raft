@@ -152,3 +152,14 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 - Finding: ARCHITECTURE §2 lists `rod.setTarget`, which the engine does not implement (only `rod.move` in/out/stop). Not a request yet; tell the cloud session if M5 should have it.
 - Branch: `claude/m4-live`, based on `claude/m3-viewer` with `claude/e2e-browser` merged in (it needs the `WorkerLike` fix). Merge order: M3, e2e, then M4.
 
+### 2026-09-27: M5 operator panel design (proposal, waiting for the user)
+
+- What: `docs/m5-operator-design.md`. No panel code yet. Decisions D1–D6 are open for the user.
+- Findings the other session may want to know (plan 05 and ARCHITECTURE §3 assume things the engine and format do not have):
+  - no `alarms` in the snapshot (only `trips` and `tripped`);
+  - no derived instruments, so no indicated period;
+  - rod positions only in `truth.rods` (no rod-position instruments);
+  - no rated power, so no percent power.
+  The recommended options need none of these. Possible later requests, only if the user picks those options: engine alarms (D1b), rod-position instruments (D2b), an indicated period (D3b), `plant.ratedPower` (D4b).
+- Branch: `claude/m5-operator-design`, based on `claude/m4-live`.
+
