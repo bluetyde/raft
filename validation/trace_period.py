@@ -98,6 +98,8 @@ def engine_trace(dollars: float, p0: float = 1.0, t_max: float = 1.5, library_pa
     e = pulse_engine(library_path, dollars, SIM_DT, p0)
     out = []
     while e.t < t_max:
+        if e.halted:  # a halted engine makes no progress (M1 review finding 3)
+            raise RuntimeError(f"engine halted: {e.halted}")
         e.step()
         out.append(e.snapshot()["truth"]["power"] / 1e6)
         if e.t > e.peak_time + 0.1 and out[-1] < 0.01 * e.peak_power / 1e6:
