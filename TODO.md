@@ -55,7 +55,7 @@ Remaining: ROS3P for long runs; golden vectors.
 - [x] 2026-09-26: Unit tests for all of the above (`physics_ref/tests/test_engine.py`, `validation/tests/`)
 - [x] 2026-09-26: ROS3P (order 3) solver option, ROS2 unchanged: branch `claude/agy-ros3p` (agy + a dispatcher accuracy test), verified, awaiting merge. Open: keep `method` in pins + regenerate engine vectors
 - [x] 2026-09-26: Golden vectors (`python -m physics_ref.vectors`): `agy/golden-vectors` + fix on `claude/golden-vectors-fix` (tolerance comparison, explicit sums), awaiting merge
-- [ ] Go/no-go: C1 proposes NO-GO (awaiting the user's decision); an earlier automatic GO was withdrawn (`docs/reviews/2026-09-26-m1-go-review.md`)
+- [x] 2026-09-27: Go/no-go: **NO-GO** accepted by the user (C1 proposal); an earlier automatic GO was withdrawn (`docs/reviews/2026-09-26-m1-go-review.md`)
 
 ## Milestone 2: OpenMC library · [plan](docs/plans/02-openmc-pipeline.md)
 
