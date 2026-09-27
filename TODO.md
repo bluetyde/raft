@@ -34,8 +34,7 @@ Order matters: M2 replaces the `assumed` inputs that M1's caveats rest on, and t
 
 **Standalone kinetics engine: KIRK, Kernel for Independent Reactor Kinetics** ([bluetyde/kirk](https://github.com/bluetyde/kirk), private, seeded 2026-09-27 from `1534780`; its `NOTES.md` has its own next steps)
 12. [ ] Rule from now on: keep `physics_ref/` and `web/src/sim/` separable. No imports from views, `pipeline/` or `validation/` except through one small library-loader module.
-13. [ ] **Decide the source of truth before the next engine change** (proposed: engine work happens in KIRK, and this repo pulls it). Until then, any engine fix lands in both repos. The plain parameter API is KIRK's NOTES item 1.
-14. [ ] Switch this project to depend on KIRK (Python package `kirk-kinetics`, npm `kirk-kinetics`) and retire `physics_ref/` and `web/src/sim/`; at the latest by M9.
+13. [x] 2026-09-27: Source of truth decided (user): **engine work continues here** (`physics_ref/`, `web/src/sim/`). KIRK is an independent project that evolves on its own; neither repo depends on the other. Porting a fix across is a deliberate choice, not an obligation.
     Why it's worth it: an MIT, dependency-free, browser-capable point-kinetics engine with deterministic replay and pulse validation fills a gap
     (PyRK has no license; openpointkinetics is GPL and dormant). Why not yet: the API will change with C6 and M2.
 
@@ -157,7 +156,7 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 - [ ] Confirm the license (MIT, provisional since 2026-09-25) and check that every reused file is permissive with its notice kept
 - [ ] Public repo, README, docs for the library format, library-authoring guide
 - [ ] Ship example libraries (TRIGA plus the second reactor)
-- [x] 2026-09-27: Kinetics engine split into KIRK ([bluetyde/kirk](https://github.com/bluetyde/kirk)); switching this project over is Next #14
+- [x] 2026-09-27: Kinetics engine split off as KIRK ([bluetyde/kirk](https://github.com/bluetyde/kirk)), an independent project; this repo keeps its own engine
 - [ ] **[codex]** Codex review of the whole repo before it goes public (license notices, secrets, data provenance)
 
 ## Ideas / later
