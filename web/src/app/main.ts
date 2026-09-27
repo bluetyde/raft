@@ -81,7 +81,8 @@ window.addEventListener("keydown", (e) => {
   main.classList.toggle("vr-swap");
 });
 
-async function show(name: string): Promise<void> {
+/** Load a library into a fresh runtime. `opts` sets the engine's initial state, seed and config (default: the library's reference state). */
+async function show(name: string, opts: { init?: Record<string, any>; seed?: number; config?: Record<string, any> } = {}): Promise<void> {
   const entry = CATALOG.find((e) => e.name === name);
   if (!entry) return;
   status.textContent = `loading ${name}…`;
@@ -121,7 +122,7 @@ async function show(name: string): Promise<void> {
     });
     c.on("clock", (m) => ctl.onClock(m));
     c.on("fault", (m) => (status.textContent = `runtime fault: ${m.message}`));
-    const info = await c.load({ kind: "files", files: await catalogFiles(entry) });
+    const info = await c.load({ kind: "files", files: await catalogFiles(entry) }, opts);
 
     const s = explorer.stats!;
     status.textContent = `${lib.id} (${lib.status}): ${s.primitives} primitives, ${s.drawCalls} draw calls, outer step ${info.outerDt} s`;

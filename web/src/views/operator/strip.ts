@@ -99,3 +99,18 @@ export class StripBuffer {
     return m;
   }
 }
+
+/**
+ * The points one snapshot adds to a chart: the extremes since the previous snapshot (amendment 1:
+ * a peak between snapshots), then the snapshot's own reading, in time order.
+ */
+export function chartPoints(
+  t: number,
+  reading: number | null | undefined,
+  extreme?: { min: number; tMin: number; max: number; tMax: number },
+): [number, number | null | undefined][] {
+  const pts: [number, number][] = extreme ? [[extreme.tMin, extreme.min], [extreme.tMax, extreme.max]] : [];
+  pts.sort((a, b) => a[0] - b[0]);
+  return [...pts.filter(([tt]) => tt <= t), [t, reading]];
+}
+
