@@ -36,7 +36,6 @@ Order matters: M2 replaces the `assumed` inputs that M1's caveats rest on, and t
 12. [ ] Rule from now on: keep `physics_ref/` and `web/src/sim/` separable. No imports from views, `pipeline/` or `validation/` except through one small library-loader module.
 13. [ ] **Decide the source of truth before the next engine change** (proposed: engine work happens in KIRK, and this repo pulls it). Until then, any engine fix lands in both repos. The plain parameter API is KIRK's NOTES item 1.
 14. [ ] Switch this project to depend on KIRK (Python package `kirk-kinetics`, npm `kirk-kinetics`) and retire `physics_ref/` and `web/src/sim/`; at the latest by M9.
-15. [ ] Perf: the in-step trip locator bisects period-threshold "crossings" through ±∞ at steady state (+28% right-hand-side calls; KIRK NOTES item 2). Fix in KIRK, then pull here.
     Why it's worth it: an MIT, dependency-free, browser-capable point-kinetics engine with deterministic replay and pulse validation fills a gap
     (PyRK has no license; openpointkinetics is GPL and dormant). Why not yet: the API will change with C6 and M2.
 
