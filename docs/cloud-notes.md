@@ -151,4 +151,3 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 - Tests: 11 new Vitest tests (`live.test.ts`) and 3 new Playwright tests (`app.spec.ts`); a deliberate break (rods not applied) fails both rod tests.
 - Finding: ARCHITECTURE §2 lists `rod.setTarget`, which the engine does not implement (only `rod.move` in/out/stop). Not a request yet; tell the cloud session if M5 should have it.
 - Branch: `claude/m4-live`, based on `claude/m3-viewer` with `claude/e2e-browser` merged in (it needs the `WorkerLike` fix). Merge order: M3, e2e, then M4.
-
