@@ -1,8 +1,10 @@
 """Full-core OpenMC model of a JSI TRIGA Mark II core configuration, from open data only.
 
 Inputs: pipeline/openmc/data/jsi_standard_fuel.json (fuel element, materials), jsi_core_geometry.json (grid, reflector, rods,
-steps), jsi_core_occupancy.json (which position holds what, from the database core maps). Every fuel element is fresh
-(burnup unknown), so absolute k-eff is biased high; see docs/validation/m2-core.md.
+steps), jsi_core_occupancy.json (which position holds what, from the database core maps). Fuel is fresh by default (per-element
+burnup is not in the open sources); `--burnup B` gives every fuel region one burnup from jsi_fuel_depleted.json (pin_depletion.py),
+a calibration parameter (docs/validation/m2-burnup-protocol.md). Also: `--kinetics` (beta_eff, Lambda by IFP), `--prompt`,
+`--b4c` / `--graphite` density sensitivities, `--json` results.
 
 Simplifications, all labelled `assumed` (no open JSI value found):
 - B4C 2.48 g/cm3; reflector graphite 1.6 g/cm3 (as the element end plugs); aluminum 2.7 g/cm3;
@@ -30,6 +32,7 @@ STEP_CM = 38.1 / 700.0
 RINGS = {"A": 1, "B": 6, "C": 12, "D": 18, "E": 24, "F": 30}
 ROD_AT = {"T": "C4", "V": "C10", "K": "D10", "R": "D1"}
 ZMIN, ZMAX = -80.0, 80.0
+IFP_GENERATIONS = 10                               # IFP chain length; must not exceed the inactive batches
 
 
 def position_xy(label: str, ring_radius: dict) -> tuple[float, float]:
@@ -43,15 +46,56 @@ def absorber_bottom(rod: str, steps: float) -> float:
     return -HALF_FUEL + (900.0 - steps) * STEP_CM
 
 
-def materials(fuel_data: dict):
+def burned_fuel(burnup: float) -> dict[str, float]:
+    """Fuel atom densities at `burnup` MWd/kg, linear between the steps of jsi_fuel_depleted.json (pin_depletion.py), restricted to
+    nuclides with transport data in the cross-section library."""
+    import openmc.data
+    table = json.loads((DATA / "jsi_fuel_depleted.json").read_text(encoding="utf-8"))["steps"]
+    bus = [r["burnupMWdPerKg"] for r in table]
+    if not bus[0] <= burnup <= bus[-1]:
+        raise ValueError(f"burnup {burnup} outside the table ({bus[0]}..{bus[-1]} MWd/kg)")
+    i = max(j for j, b in enumerate(bus) if b <= burnup)
+    j = min(i + 1, len(bus) - 1)
+    w = 0.0 if j == i else (burnup - bus[i]) / (bus[j] - bus[i])
+    a, b = table[i]["atomDensityPerBarnCm"], table[j]["atomDensityPerBarnCm"]
+    lib = {name for m in openmc.data.DataLibrary.from_xml().libraries if m["type"] == "neutron" for name in m["materials"]}
+    # sorted: a set's order changes between processes, which changes the random-number stream and so the result
+    return {n: (1 - w) * a.get(n, 0.0) + w * b.get(n, 0.0) for n in sorted(set(a) | set(b)) if n in lib}
+
+
+T_REF = 294.0                                     # K: every material's temperature in the reference model
+# Liquid water at 1 atm, g/cm3, 0-100 C in 10 C steps (standard tables, e.g. IAPWS-95; recalled, not checked against the
+# document). Used only as a ratio to 294 K, so the model's reference water density (svajger2024) is unchanged.
+WATER_DENSITY_C = [0.99984, 0.99970, 0.99821, 0.99565, 0.99222, 0.98803, 0.98320, 0.97778, 0.97182, 0.96535, 0.95835]
+
+
+def water_density_ratio(t_k: float) -> float:
+    """rho_water(T) / rho_water(294 K), linear in the 10 C table; 273.15-373.15 K."""
+    def rho(tk):
+        c = tk - 273.15
+        if not 0.0 <= c <= 100.0:
+            raise ValueError(f"coolant temperature {tk} K outside 273.15-373.15 K")
+        i = min(int(c // 10), 9)
+        w = (c - 10 * i) / 10.0
+        return (1 - w) * WATER_DENSITY_C[i] + w * WATER_DENSITY_C[i + 1]
+    return rho(t_k) / rho(T_REF)
+
+
+def materials(fuel_data: dict, ov: dict | None = None):
+    """`ov` overrides assumed values for sensitivity runs: b4c (g/cm3), graphite (g/cm3), burnup (MWd/kg, every fuel region),
+    tfuel (K, every fuel region), tcool (K, all water: temperature and density)."""
     import openmc
+    ov = ov or {}
     m = {}
     fuel = openmc.Material(name="U-ZrH1.6")
-    for nuc, n in fuel_data["fuel"]["atomDensityPerBarnCm"].items():
+    comp = burned_fuel(ov["burnup"]) if "burnup" in ov else fuel_data["fuel"]["atomDensityPerBarnCm"]
+    for nuc, n in comp.items():
         fuel.add_nuclide(nuc, n)
     fuel.set_density("sum")
     fuel.add_s_alpha_beta("c_H_in_ZrH")
     fuel.add_s_alpha_beta("c_Zr_in_ZrH")
+    if "tfuel" in ov:
+        fuel.temperature = ov["tfuel"]
     m["fuel"] = fuel
     zr = openmc.Material(name="Zr"); zr.add_element("Zr", 1.0); zr.set_density("g/cm3", 6.49); m["zr"] = zr
     ss = openmc.Material(name="SS304")
@@ -59,13 +103,16 @@ def materials(fuel_data: dict):
         ss.add_element(el, w, percent_type="wo")
     ss.set_density("g/cm3", fuel_data["cladding"]["densityGPerCm3"]); m["ss"] = ss
     water = openmc.Material(name="water"); water.add_nuclide("H1", 2.0); water.add_nuclide("O16", 1.0)
-    water.set_density("g/cm3", fuel_data["water"]["densityGPerCm3"]); water.add_s_alpha_beta("c_H_in_H2O"); m["water"] = water
-    gr = openmc.Material(name="graphite"); gr.add_element("C", 1.0); gr.set_density("g/cm3", 1.6)   # assumed for the reflector
+    rho_w = fuel_data["water"]["densityGPerCm3"] * (water_density_ratio(ov["tcool"]) if "tcool" in ov else 1.0)
+    water.set_density("g/cm3", rho_w); water.add_s_alpha_beta("c_H_in_H2O"); m["water"] = water
+    if "tcool" in ov:
+        water.temperature = ov["tcool"]
+    gr = openmc.Material(name="graphite"); gr.add_element("C", 1.0); gr.set_density("g/cm3", ov.get("graphite", 1.6))   # assumed for the reflector
     gr.add_s_alpha_beta("c_Graphite"); m["graphite"] = gr
     mo = openmc.Material(name="Mo"); mo.add_element("Mo", 1.0); mo.set_density("g/cm3", 10.2); m["mo"] = mo
     al = openmc.Material(name="Al"); al.add_element("Al", 1.0); al.set_density("g/cm3", 2.7); m["al"] = al   # assumed
     b4c = openmc.Material(name="B4C"); b4c.add_element("B", 4.0); b4c.add_element("C", 1.0)
-    b4c.set_density("g/cm3", 2.48); m["b4c"] = b4c                                                        # assumed
+    b4c.set_density("g/cm3", ov.get("b4c", 2.48)); m["b4c"] = b4c                                                       # assumed
     return m
 
 
@@ -94,12 +141,14 @@ def layered_cells(x, y, r_pos, layers, fill_default, zbounds):
     return pos, cells
 
 
-def build(core: str, rods: dict[str, float], particles: int, batches: int, inactive: int, source_from: Path | None = None):
+def build(core: str, rods: dict[str, float], particles: int, batches: int, inactive: int, source_from: Path | None = None,
+          kinetics: bool = False, prompt_only: bool = False, overrides: dict | None = None):
     import openmc
     fd = json.loads((DATA / "jsi_standard_fuel.json").read_text(encoding="utf-8"))
     geo = json.loads((DATA / "jsi_core_geometry.json").read_text(encoding="utf-8"))
     occ = json.loads((DATA / "jsi_core_occupancy.json").read_text(encoding="utf-8"))["cores"][core]
-    M = materials(fd)
+    ov = overrides or {}
+    M = materials(fd, ov)
     rr = geo["grid"]["ringRadiiCm"]
     rad = fd["radiiCm"]
     zb_s, zt_s = openmc.ZPlane(ZMIN, boundary_type="vacuum"), openmc.ZPlane(ZMAX, boundary_type="vacuum")
@@ -165,6 +214,9 @@ def build(core: str, rods: dict[str, float], particles: int, batches: int, inact
             else:
                 layers = []                       # channels and empty positions: water (assumed)
             cyl, pc = layered_cells(x, y, r_pos, layers, M["water"], (zb_s, zt_s))
+            for c in pc:
+                if c.fill is M["fuel"]:
+                    c.name = lab                  # fuel cells carry their grid position (shapes.py bins power by it)
             pos_cyls.append(cyl)
             cells += pc
 
@@ -209,6 +261,16 @@ def build(core: str, rods: dict[str, float], particles: int, batches: int, inact
     st.sourcepoint = {"separate": True}
     st.output = {"summary": False}
     st.seed = 1
+    if "tfuel" in ov or "tcool" in ov:
+        # nuclide data exist at 294/600/900 K only: interpolate between them. S(a,b) tables are finer (ZrH every 100 K from 296 K,
+        # H2O about every 25 K); the 10 K tolerance lets 294 K materials use the 296 K ZrH table, as the default method does.
+        st.temperature = {"method": "interpolation", "default": T_REF, "tolerance": 10.0}
+    if prompt_only:
+        st.create_delayed_neutrons = False          # prompt method: beta_eff = 1 - k_prompt / k
+    if kinetics:
+        # iterated fission probability (IFP): beta_eff per group and the generation time Lambda, from the same run
+        st.ifp_n_generation = IFP_GENERATIONS
+        model.add_kinetics_parameters_tallies(num_groups=6)
     return model
 
 
@@ -224,6 +286,15 @@ def main(argv=None) -> int:
                     help="testing only: 4000 particles x 60 batches (20 inactive), about 10x faster, about 3x the statistical error")
     ap.add_argument("--source-from", type=Path, default=None, help="source.h5 from an earlier run; inactive batches default to 10")
     ap.add_argument("--save-source", type=Path, default=None, help="copy this run's final fission source (source.h5) here")
+    ap.add_argument("--kinetics", action="store_true", help="also tally beta_eff (6 groups) and Lambda by IFP")
+    ap.add_argument("--prompt", action="store_true", help="no delayed neutrons (prompt method: beta_eff = 1 - k_p/k)")
+    ap.add_argument("--b4c", type=float, default=None, help="sensitivity: B4C density, g/cm3 (assumed 2.48)")
+    ap.add_argument("--graphite", type=float, default=None, help="sensitivity: graphite density, g/cm3 (assumed 1.6)")
+    ap.add_argument("--tfuel", type=float, default=None, help="fuel temperature, K (default 294; every fuel region)")
+    ap.add_argument("--tcool", type=float, default=None, help="water temperature, K (default 294; all water, density follows)")
+    ap.add_argument("--burnup", type=float, default=None,
+                    help="calibration: give every fuel region this burnup, MWd/kg (default fresh); see docs/validation/m2-burnup.md")
+    ap.add_argument("--json", type=Path, default=None, help="append the result as one JSON line to this file")
     a = ap.parse_args(argv)
     if a.quick:
         a.particles, a.batches, a.inactive = 4000, 60, 20
@@ -232,7 +303,11 @@ def main(argv=None) -> int:
         a.inactive = 10
         a.batches = a.inactive + active
     rods = {kv.split("=")[0]: float(kv.split("=")[1]) for kv in a.rods.split(",")}
-    model = build(a.core, rods, a.particles, a.batches, a.inactive, a.source_from)
+    overrides = {k: v for k, v in (("b4c", a.b4c), ("graphite", a.graphite), ("burnup", a.burnup), ("tfuel", a.tfuel), ("tcool", a.tcool)) if v is not None}
+    if a.kinetics and a.inactive < IFP_GENERATIONS:
+        ap.error(f"--kinetics needs at least {IFP_GENERATIONS} inactive batches")
+    model = build(a.core, rods, a.particles, a.batches, a.inactive, a.source_from,
+                  kinetics=a.kinetics, prompt_only=a.prompt, overrides=overrides)
     import openmc
     if a.plot:
         a.plot.mkdir(parents=True, exist_ok=True)
@@ -246,6 +321,7 @@ def main(argv=None) -> int:
         sp = model.run(cwd=tmp, output=False)
         with openmc.StatePoint(sp) as sp_:
             k = sp_.keff
+            kin = sp_.get_kinetics_parameters() if a.kinetics else None
         if a.save_source is not None:
             import shutil
             srcs = sorted(Path(tmp).glob("source*.h5"), key=lambda p: p.stat().st_mtime)   # OpenMC names it source.<batch>.h5
@@ -254,6 +330,19 @@ def main(argv=None) -> int:
             shutil.copy(srcs[-1], a.save_source)
     rho = (k.nominal_value - 1) / k.nominal_value
     print(f"core {a.core} rods {rods}: k = {k.nominal_value:.5f} +- {k.std_dev:.5f}  (rho = {rho*1e5:.0f} pcm = ${rho/0.007:.2f})")
+    out = {"core": a.core, "rods": rods, "overrides": overrides, "prompt": a.prompt, "particles": a.particles,
+           "batches": a.batches, "inactive": a.inactive, "k": k.nominal_value, "kStd": k.std_dev}
+    if kin is not None:
+        groups = kin.beta_effective
+        beta = sum(groups)
+        lam = kin.generation_time
+        print(f"  beta_eff = {beta.nominal_value*1e5:.1f} +- {beta.std_dev*1e5:.1f} pcm;  Lambda = {lam.nominal_value*1e6:.2f} +- {lam.std_dev*1e6:.2f} us")
+        print("  groups (pcm): " + ", ".join(f"{g.nominal_value*1e5:.1f}" for g in groups))
+        out.update(betaEff=beta.nominal_value, betaEffStd=beta.std_dev, betaGroups=[g.nominal_value for g in groups],
+                   betaGroupsStd=[g.std_dev for g in groups], lambdaS=lam.nominal_value, lambdaStdS=lam.std_dev)
+    if a.json is not None:
+        with a.json.open("a", encoding="utf-8", newline="\n") as f:
+            f.write(json.dumps(out) + "\n")
     return 0
 
 
