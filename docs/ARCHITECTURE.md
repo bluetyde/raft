@@ -82,6 +82,10 @@ type Command =
   | { type: "time.rewindTo";   simTime: number };                      // instructor only
 ```
 
+`time.set` and `time.rewindTo` are runtime commands, not engine commands: the worker handles them (the engine rejects them) and
+refuses them from an operator window. As built, faults are `fault.instrument` (stuck, dead, clear) and `fault.reactivity`; the
+rod faults, instrument drift and an exact reactivity clear are the engine request D3a (M6 design).
+
 `rod.setTarget` (drive a rod to a position) was in the first draft but neither engine implements it; it's dropped until a view needs
 it, and then goes into both engines and the contract fixtures together. The library schema's interlock `blocks` list still accepts
 the name, so no shipped library has to change when it returns.
@@ -145,7 +149,10 @@ JSON: library ID, initial state, allowed controls, scripted events, goals and ch
 - **History:** a checkpoint of the full state at **canonical restart boundaries** (the solver restarts there in normal runs too, so replay is identical), plus the command log.
   Rewind restores the nearest earlier checkpoint and replays commands. Plots use a lighter ring buffer of scalar values.
   Checkpoint contents and session pins are defined in [plans/06](plans/06-instructor.md).
-- **One owner:** all authoritative state lives in one worker. A mirrored window detects owner loss, disables its controls and reports the disconnection.
+- **One shared worker:** all authoritative state lives in one worker. Windows of the same session (`?session=<id>`) connect to it as a
+  SharedWorker (one dedicated worker in one window where a browser has none), so no window owns the state and closing one doesn't stop
+  the simulation. The worker enforces each window's role: an operator window can't send time, step, rewind, import, branch, note or
+  `fault.*` commands (M6 design D2 and amendment 3, `docs/m6-instructor-design.md`). Roles are not authenticated in v1.
 - **Resource limits:** plot buffers, pending view updates and retained checkpoints are bounded, with stated eviction rules.
   Stale display updates are coalesced; authoritative events never are. What's still exportable at the limit is defined in [plans/06](plans/06-instructor.md).
   Ownership of binary arrays sent between worker and views (transfer vs copy) is defined before the first transfer.
