@@ -239,3 +239,23 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   Four deliberate breaks were each caught (no prefix check, no branch on rewind, notes kept on rewind, CSV one step late).
 - Branch: `claude/m6-history`, based on `main` at `f543532`. Checks: see the PR.
 
+### 2026-09-28: M6 slice S3 (two windows) implemented
+
+- What: one runtime for several windows (`web/src/runtime/runtime.ts`), a SharedWorker entry (`shared-worker.ts`), and roles enforced by the worker (amendment 3).
+  Windows with the same `?session=<id>` share one session, and "open operator window" opens the second window.
+  The operator window cannot send time, step, rewind, import, branch switch, notes or `fault.*` commands. `pump.set` stays allowed (a plant control).
+  Roles are not authenticated. That is on purpose for v1 (plan 06: nothing to protect).
+- Fixes: the client runs every listener and sends its frame ack even when a listener throws (a stale shape handler stopped the snapshot stream after a library change). `load` resets the rate to 1×.
+- Tests: 8 new runtime tests (`windows.test.ts`), 1 new client test, 3 new URL tests (`connection.test.ts`), and 6 new Playwright tests (`windows.spec.ts`, with several pages in one browser context).
+  Four deliberate breaks were each caught (no role check, replies to every window, one frame gate for all windows, no state on attach).
+- With S3, the M6 items in plan 06 are built, except the faults that wait for the engine (D3a) and branch overlay charts (a later slice).
+- Branch: `claude/m6-two-windows`, based on `main` at `1d23921`. Checks: see the PR.
+
+### R8 (open, 2026-09-28): update TODO and ARCHITECTURE for M6
+
+- TODO: M6 "History buffer, rewind, time speed-up" and "Fault injection UI" are built (the fault UI has the faults that the engine has now; the rest wait for D3a).
+  The milestone's Codex review is still to do.
+- ARCHITECTURE: "One owner: ... a mirrored window detects owner loss" is now "one shared worker; the worker enforces each window's role" (the user said the local session makes this change).
+  Also §2's comments "instructor only" on `time.set` and `time.rewindTo`: the worker now enforces this per window.
+- Both files are outside the cloud session's scope.
+

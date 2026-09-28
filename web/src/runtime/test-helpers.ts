@@ -44,8 +44,20 @@ export class FakeHost implements RuntimeHost {
     this.timers.push({ at: this.t + Math.max(0, delayMs), order: this.order++, fn });
   }
 
-  post(msg: FromWorker): void {
-    this.out.push(structuredClone(msg));
+  /** Each posted message with the window it went to (undefined = every window). */
+  sent: { msg: FromWorker; to: string | undefined }[] = [];
+
+  post(msg: FromWorker, _transfer?: Transferable[], to?: string): void {
+    const copy = structuredClone(msg);
+    this.out.push(copy);
+    this.sent.push({ msg: copy, to });
+  }
+
+  /** The messages window `port` received (sent to it, or to every window), optionally of one kind. */
+  seenBy<K extends FromWorker["kind"]>(port: string, kind?: K): Extract<FromWorker, { kind: K }>[] {
+    return this.sent
+      .filter((x) => (x.to === undefined || x.to === port) && (kind === undefined || x.msg.kind === kind))
+      .map((x) => x.msg) as Extract<FromWorker, { kind: K }>[];
   }
 
   /** Run timers in time order until `ms` of wall time have passed. */
