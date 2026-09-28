@@ -274,3 +274,16 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   None of them is MIT, runs fully in the browser, and reads a library made with OpenMC.
 - Not checked: the IJS and IAEA pages themselves are blocked by the cloud container's network policy. The facts above come from search results and the GitHub page.
 - Please tick TODO Next #11, or keep it open for the comparison run. TODO is outside the cloud session's scope.
+
+### 2026-09-28: M5 scenarios design (proposal, waiting for the user)
+
+- What: `docs/m5-scenarios-design.md`. No code yet. Decisions D1–D7 are open for the user. The user asked for the last M5 item (scenarios) on 2026-09-28. That is A7's format design, which was on hold.
+- The recommended options need no engine change:
+  - scripted events go in as commands with `clientId: "scenario"`;
+  - goals use the library's typed predicates and are checked in the worker;
+  - the worker enforces a scenario's allowed controls.
+- **For the local session (only if the user picks D1a):** A7 from this doc: `schema/scenario.schema.json`, a Python validator in `pipeline/scenario/`, and invalid fixtures.
+  The TypeScript validator comes first, and the schema must match its error codes (§3).
+- Finding: plan 05's example uses `indicated.period` (no library has a period instrument) and `instrument.drift` (not in the engines yet, D3a).
+- Branch: `claude/m5-scenarios-design`, based on `main` at `c63378e`.
+
