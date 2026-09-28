@@ -40,7 +40,7 @@ app = FastAPI(lifespan=lifespan)
 def evaluate_hypotheses(premise: str, hypotheses: list[str]) -> str:
     """Run a single forward pass of the cross encoder over all hypotheses."""
     if not model or not tokenizer:
-        return hypotheses[0] if hypotheses else ""
+        raise RuntimeError("Model is not loaded. Cannot evaluate hypotheses.")
         
     if not hypotheses:
         return ""
@@ -99,11 +99,13 @@ async def websocket_endpoint(websocket: WebSocket, role: str):
                 await websocket.send_json({"error": "Missing premise or hypotheses"})
                 continue
                 
-            best_choice = evaluate_hypotheses(premise, hypotheses)
-            
-            await websocket.send_json({
-                "choice": best_choice
-            })
+            try:
+                # Run inference in a threadpool so it doesn't block the async loop (Finding 6 partially)
+                best_choice = await asyncio.to_thread(evaluate_hypotheses, premise, hypotheses)
+                await websocket.send_json({"choice": best_choice})
+            except Exception as e:
+                logger.error(f"Inference error: {e}")
+                await websocket.send_json({"error": str(e)})
             
     except WebSocketDisconnect:
         logger.info(f"Client {role} disconnected")

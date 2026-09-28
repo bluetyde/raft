@@ -523,4 +523,8 @@ export class InstructorPanel {
     this.bar.replaceChildren(...marks);
     this.bar.dataset["end"] = this.timeline.endT.toFixed(2);
   }
+
+  dispose(): void {
+    this.copilot.disconnect();
+  }
 }

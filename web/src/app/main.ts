@@ -218,6 +218,7 @@ async function build(info: LoadedInfo): Promise<void> {
       { timeControls: role !== "operator" },
     );
     opBox.replaceChildren(operator.root);
+    instructor?.dispose();
     instructor = new InstructorPanel(
       client,
       { instruments: lib.instruments, pumps: lib.pumps },

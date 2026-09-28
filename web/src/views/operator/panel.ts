@@ -414,5 +414,6 @@ export class OperatorPanel {
   dispose(): void {
     window.removeEventListener("keydown", this.onKey);
     this.closeCover();
+    this.copilot.disconnect();
   }
 }
