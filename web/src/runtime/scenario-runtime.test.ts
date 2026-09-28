@@ -166,6 +166,56 @@ describe("scenario runtime: goals (D3a)", () => {
   });
 });
 
+describe("scenario runtime: the instructor ends a scenario (SC2)", () => {
+  async function metFirst() {
+    const r = await loadedRuntime({}, { scenario: scenario("synthetic-power-ascension") });
+    await cmd(r.rt, { type: "rod.move", rod: "safety", direction: "out" });
+    await cmd(r.rt, { type: "rod.move", rod: "regulating", direction: "out" });
+    await send(r.rt, { kind: "step", n: 20500 }); // the first goal is met at about 194 s
+    return r;
+  }
+
+  it("fails the goals not met yet, at that time, and makes the score final", async () => {
+    const { host, rt } = await metFirst();
+    const t = rt.engine!.t;
+    await send(rt, { kind: "scenario.end" });
+    const v = host.last("scenario")!.scenario!;
+    expect(v.goals.map((g) => g.status)).toEqual(["met", "failed", "failed"]);
+    expect(v.goals[1]!.t).toBeCloseTo(t, 9);
+    expect(v).toMatchObject({ done: true, score: { met: 1, failed: 2, total: 3, trips: 0 } });
+    expect(v.endedAt).toBeCloseTo(t, 9);
+    expect(v.score.lastGoalT).toBe(v.goals[0]!.t);
+    // the goals stay as they are while time goes on, and a second end changes nothing
+    const n = host.of("scenario").length;
+    await send(rt, { kind: "step", n: 2000 });
+    await send(rt, { kind: "scenario.end" });
+    expect(host.of("scenario").length).toBe(n);
+  });
+
+  it("a rewind to before the end undoes it; a rewind to after it keeps it", async () => {
+    const { host, rt } = await metFirst();
+    const endStep = rt.engine!.stepIndex;
+    await send(rt, { kind: "scenario.end" });
+    const ended = host.last("scenario")!.scenario!;
+    await send(rt, { kind: "step", n: 1500 }); // makes a checkpoint after the end (at 22000)
+    // after the end, from the checkpoint at 21000 (after it) and from the one at 20000 (before it: the replay applies the end again)
+    for (const step of [endStep + 1000, endStep + 300]) {
+      await send(rt, { kind: "rewind", step });
+      expect(host.last("scenario")!.scenario!).toEqual(ended);
+    }
+    await send(rt, { kind: "rewind", step: endStep - 10 });
+    const v = host.last("scenario")!.scenario!;
+    expect(v.endedAt).toBeNull();
+    expect(v.goals.map((g) => g.status)).toEqual(["met", "open", "waiting"]);
+  });
+
+  it("is an error without a scenario", async () => {
+    const { host, rt } = await loadedRuntime();
+    await send(rt, { kind: "scenario.end" });
+    expect(host.last("error")).toMatchObject({ request: "scenario.end", code: "E_NO_SCENARIO" });
+  });
+});
+
 describe("scenario runtime: session files version 3", () => {
   it("record the scenario and its resolved thresholds, and import only with the same scenario", async () => {
     const sc = withEvents();
@@ -283,7 +333,9 @@ describe("headless runs of the shipped scenarios", () => {
       const operator = id.includes("ascension") ? ascensionOperator() : scramOperator();
       const { view, rejected } = await play(files, scenario(id), operator);
       expect(view.goals.map((g) => [g.id, g.status])).toEqual(view.goals.map((g) => [g.id, "met"]));
-      expect(view.score).toEqual({ met: view.goals.length, failed: 0, total: view.goals.length, trips: 0 });
+      const last = Math.max(...view.goals.map((g) => g.t!));
+      expect(view.score).toEqual({ met: view.goals.length, failed: 0, total: view.goals.length, trips: 0, lastGoalT: last });
+      expect(view.endedAt).toBeNull();
       expect(rejected).toEqual([]);
     }, 120_000);
   }

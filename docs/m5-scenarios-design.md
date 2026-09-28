@@ -202,13 +202,29 @@ Each slice is its own PR, with its own Vitest and Playwright tests.
     The goal tracker's state is kept at each checkpoint, so a rewind, a branch switch and an import give the same goals as a run without them;
   - session files version 3 with `scenario: {id, digest, thresholds}`. An import needs the same scenario (its digest must match);
   - `web/src/app/scenarios/`: the two approved scenarios for `triga-jsi-242`, and copies for `synthetic-core` (the scram copy has one scripted event, a stuck pool thermometer at 60 s);
-  - the instructor panel: a scenario picker, the goals with their status and time, the score, and "scripted" marks on the timeline. The operator's scenario strip (D7) is SC2.
+  - the instructor panel: a scenario picker, the goals with their status and time, the score, and "scripted" marks on the timeline. The operator's scenario strip (D7) is SC2 (§11).
 - **Findings from runs on `triga-jsi-242` and `synthetic-core`:**
   - After a scram from a *rising* power, the period stays far from −80 s: it creeps from −11 s to −49 s in 150 s, because the precursors are not in equilibrium.
     After 20 minutes at steady power, the period enters −90 to −70 s about 225 s after the scram and stays there.
     So the scram-and-restart scenario first asks for 10 minutes of steady power, and the negative-period goal has 400 s. The §3 example was wrong about this.
   - A "positive period" goal is met a few seconds after the rods start out, while the core is still subcritical (subcritical multiplication). So power ascension uses power goals only.
   - With every rod out, fuel-temperature feedback holds `triga-jsi-242` near 100 kW, below the 275 kW power-high trip.
+
+## 11. Slice SC2: what is built
+
+- **The operator's scenario strip (D7a)**, at the top of the operator panel (`web/src/views/operator/scenario.ts` and `panel.ts`):
+  - the title, the brief, and the goals with their status and time;
+  - hints behind a button, and the elapsed sim time;
+  - the final score when the scenario is done: goals met, unexpected trips, and the time of the last goal.
+  The strip shows the worker's scenario view only (goal statuses and times), never truth values.
+- **Controls:** the operator panel disables the controls that the scenario does not allow, with the title "not allowed in this scenario". The worker still refuses them (D4a), for example from the console or another view.
+- **`faultsVisible` (M6 D4b):** with it, the operator panel has an "instructor fault active" tile, with the usual alarm sequence. Without it, the tile does not exist.
+- **The instructor ends a scenario:** `scenario.end` (instructor only, like the other forbidden requests of M6 amendment 3).
+  - The goals that are not met yet fail at that step, and the score is final. `ScenarioView` has `endedAt`, and the score has `lastGoalT`.
+  - The end is not in the command log, so the runtime keeps its step. A replay across that step applies the end again. A rewind to before it undoes it.
+  - The end belongs to the timeline where it happened: after a branch switch, it stays only if the shared part includes it.
+- **Not in SC2 (after the M2 libraries, as the user decided):** the other three scenarios, and the 1/M plot for the approach to critical.
+- **Found while building SC2:** after a load, the `scenario` message comes after the first snapshot. The fault tile first waited for the next snapshot, which never comes while the session is paused. The panel now updates the tile when the scenario message arrives.
 
 ## Decisions (approved by the user, 2026-09-28)
 

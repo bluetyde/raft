@@ -134,6 +134,11 @@ export class RuntimeClient {
     this.send({ kind: "annotation.delete", id });
   }
 
+  /** End the running scenario (instructor only): the goals not met yet fail, and the score is final. */
+  endScenario(): void {
+    this.send({ kind: "scenario.end" });
+  }
+
   /** Make another branch the current timeline. Resolves like a rewind; the clock is paused. */
   switchBranch(id: number): Promise<Msg<"rewound">> {
     const done = this.next(["rewound", "error"], "branch.switch");
