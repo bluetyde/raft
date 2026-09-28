@@ -10,7 +10,7 @@ import torch
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("jev-server")
 
-MODEL_ID = "v6543210/openJev-1.5B"
+MODEL_ID = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 # Global state
 model = None
