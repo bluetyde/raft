@@ -239,3 +239,38 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   Four deliberate breaks were each caught (no prefix check, no branch on rewind, notes kept on rewind, CSV one step late).
 - Branch: `claude/m6-history`, based on `main` at `f543532`. Checks: see the PR.
 
+### 2026-09-28: M6 slice S3 (two windows) implemented
+
+- What: one runtime for several windows (`web/src/runtime/runtime.ts`), a SharedWorker entry (`shared-worker.ts`), and roles enforced by the worker (amendment 3).
+  Windows with the same `?session=<id>` share one session, and "open operator window" opens the second window.
+  The operator window cannot send time, step, rewind, import, branch switch, notes or `fault.*` commands. `pump.set` stays allowed (a plant control).
+  Roles are not authenticated. That is on purpose for v1 (plan 06: nothing to protect).
+- Fixes: the client runs every listener and sends its frame ack even when a listener throws (a stale shape handler stopped the snapshot stream after a library change). `load` resets the rate to 1×.
+- Tests: 8 new runtime tests (`windows.test.ts`), 1 new client test, 3 new URL tests (`connection.test.ts`), and 6 new Playwright tests (`windows.spec.ts`, with several pages in one browser context).
+  Four deliberate breaks were each caught (no role check, replies to every window, one frame gate for all windows, no state on attach).
+- With S3, the M6 items in plan 06 are built, except the faults that wait for the engine (D3a) and branch overlay charts (a later slice).
+- Branch: `claude/m6-two-windows`, based on `main` at `1d23921`. Checks: see the PR.
+
+### R8 (open, 2026-09-28): update TODO and ARCHITECTURE for M6
+
+- TODO: M6 "History buffer, rewind, time speed-up" and "Fault injection UI" are built (the fault UI has the faults that the engine has now; the rest wait for D3a).
+  The milestone's Codex review is still to do.
+- ARCHITECTURE: "One owner: ... a mirrored window detects owner loss" is now "one shared worker; the worker enforces each window's role" (the user said the local session makes this change).
+  Also §2's comments "instructor only" on `time.set` and `time.rewindTo`: the worker now enforces this per window.
+- Both files are outside the cloud session's scope.
+
+
+### 2026-09-28: TODO Next #11 answered: the JSI Research Reactor Simulator (information for the local session)
+
+- Source: [github.com/ijs-f8/Research-Reactor-Simulator](https://github.com/ijs-f8/Research-Reactor-Simulator), by Jan Malec and Dan Toškan, supervised by Luka Snoj (JSI Reactor Physics).
+  Its site is reactorsimulator.ijs.si. It is described in "PC-based JSI research reactor simulator", Annals of Nuclear Energy 146 (2020) 107630.
+- **License: GPL-3.0.** The repo is MIT, and our rule is no code from GPL projects. So this is an independent comparison and a reference only. Do not copy its code or data files.
+- What it is: a C++ desktop program with a NanoGUI interface, tested on Windows, Linux and macOS (as its README says). The repo page shows no prebuilt releases.
+  Its physics: 6-group point kinetics with an external source, RK4 at a 1 ms step, fuel-temperature feedback and xenon. Its parameters can be changed while it runs.
+- Possible use: run the same scenario (for example a rod withdrawal or a pulse on the JSI TRIGA) in both simulators, and compare only the outputs.
+  Keep only our own numbers and the comparison in this repo.
+- Other free simulators found, for the record: the IAEA PC-based simulators (free for member states, but they need a Nucleus account, a request form and teaching-only terms, and they are not open source),
+  and whatisnuclear/simulator (MIT, a web page with the physics on a server, 3 commits, looks inactive).
+  None of them is MIT, runs fully in the browser, and reads a library made with OpenMC.
+- Not checked: the IJS and IAEA pages themselves are blocked by the cloud container's network policy. The facts above come from search results and the GitHub page.
+- Please tick TODO Next #11, or keep it open for the comparison run. TODO is outside the cloud session's scope.

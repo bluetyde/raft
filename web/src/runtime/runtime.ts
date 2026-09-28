@@ -16,7 +16,11 @@ import { CheckpointStore, checkSessionFile, replayCommands, sessionFile } from "
 import {
   isCoarse,
   MAX_BRANCHES,
+  OPERATOR_FORBIDDEN,
   PROTOCOL_VERSION,
+  ROLES,
+  type LoadedInfo,
+  type Role,
   type Annotation,
   type BranchInfo,
   type Mark,
@@ -36,7 +40,8 @@ export interface RuntimeHost {
   now(): number;
   /** Run `fn` after `delayMs` (0 = yield, so pending messages are handled first). */
   schedule(fn: () => void, delayMs: number): void;
-  post(msg: FromWorker, transfer?: Transferable[]): void;
+  /** Send to one window (`to`, a port id), or to every window when `to` is undefined. */
+  post(msg: FromWorker, transfer?: Transferable[], to?: string): void;
   fetch?: FetchLike;
 }
 
@@ -101,6 +106,28 @@ function checkpointInto(store: CheckpointStore, eng: Engine, every: number, alwa
   return false;
 }
 
+/**
+ * One connected window: a port of the shared worker, or the one window ("main") of a dedicated worker.
+ * Each window has its own snapshot pacing (frame acks), power-shape state and instrument extremes.
+ */
+class Port {
+  awaitingFrameAck = false;
+  lastSnapWall = -Infinity;
+  lastSnapStep = -1;
+  forceSnapshot = true;
+  forceShape = true;
+  extremes: Record<string, Extreme> = {};
+  lastShapeRods: Record<string, number> = {};
+  lastShapeTfuel = NaN;
+  constructor(
+    readonly id: string,
+    public role: Role | null,
+  ) {}
+}
+
+/** The port id of a dedicated worker's one window. */
+export const MAIN_PORT = "main";
+
 export class Runtime {
   readonly options: RuntimeOptions;
   private lib: Library | null = null;
@@ -121,16 +148,11 @@ export class Runtime {
   private lastClockKey = "";
 
   private eventCursor = 0;
-  private pendingAcks = new Map<number, number>(); // engine seq -> clientSeq
+  private pendingAcks = new Map<number, { clientSeq: number; port: string }>(); // engine seq -> who asked
 
-  private awaitingFrameAck = false;
-  private lastSnapWall = -Infinity;
-  private lastSnapStep = -1;
-  private forceSnapshot = false;
-  private forceShape = true;
-  private extremes: Record<string, Extreme> = {};
-  private lastShapeRods: Record<string, number> = {};
-  private lastShapeTfuel = NaN;
+  private ports = new Map<string, Port>();
+  /** The window whose message is being handled: replies go there. */
+  private replyTo = MAIN_PORT;
 
   private history: CheckpointStore;
   private checkpointEvery = 1;
@@ -153,12 +175,35 @@ export class Runtime {
   ) {
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.history = new CheckpointStore(this.options.maxCheckpoints);
+    this.ports.set(MAIN_PORT, new Port(MAIN_PORT, "full"));
   }
 
-  /** Handle one message. Messages are handled in arrival order; a load finishes before the next message. */
-  receive(msg: ToWorker): void {
+  /**
+   * A window connects (shared worker). Its role is null until it sends `attach`.
+   * A shared worker has no "main" window, so it calls `disconnect(MAIN_PORT)` first.
+   */
+  connect(id: string, role: Role | null = null): void {
+    this.ports.set(id, new Port(id, role));
+  }
+
+  /** A window is gone: stop sending to it, and forget its pending acknowledgements. */
+  disconnect(id: string): void {
+    this.ports.delete(id);
+    for (const [seq, p] of this.pendingAcks) if (p.port === id) this.pendingAcks.delete(seq);
+  }
+
+  /** The connected windows and their roles (for tests and the host). */
+  windows(): { id: string; role: Role | null }[] {
+    return [...this.ports.values()].map((p) => ({ id: p.id, role: p.role }));
+  }
+
+  /** Handle one message from window `from`. Messages are handled in arrival order; a load finishes before the next message. */
+  receive(msg: ToWorker, from: string = MAIN_PORT): void {
     this.inbox = this.inbox
-      .then(() => this.handle(msg))
+      .then(() => {
+        this.replyTo = from;
+        return this.handle(msg, from);
+      })
       .catch((err: unknown) => this.host.post({ kind: "fault", message: String(err) }));
   }
 
@@ -172,12 +217,22 @@ export class Runtime {
     return this.eng;
   }
 
-  private async handle(msg: ToWorker): Promise<void> {
+  private async handle(msg: ToWorker, from: string): Promise<void> {
+    const port = this.ports.get(from);
+    if (!port) return; // a window that already detached
+    if (msg.kind === "attach") return this.attach(port, msg.role);
+    if (msg.kind === "detach") return this.disconnect(from);
+    if (msg.kind === "frameAck") return this.frameAck(port);
+    if (port.role === null) return this.error(msg.kind, "E_NOT_ATTACHED", "send attach (with a role) first");
+    // amendment 3: the worker, not the view, decides what an operator window may send
+    if (port.role === "operator" && OPERATOR_FORBIDDEN.includes(msg.kind)) {
+      return this.error(msg.kind, "E_ROLE", `an operator window cannot send ${msg.kind}`);
+    }
     switch (msg.kind) {
       case "load":
         return this.load(msg.source, msg.init, msg.seed, msg.config);
       case "command":
-        return this.command(msg.clientSeq, msg.clientId, msg.cmd);
+        return this.command(msg.clientSeq, msg.clientId, msg.cmd, port.role);
       case "time":
         return this.setTime(msg.rate, msg.paused);
       case "step":
@@ -194,15 +249,45 @@ export class Runtime {
         return this.deleteAnnotation(msg.id);
       case "branch.switch":
         return this.switchBranch(msg.id);
-      case "frameAck":
-        return this.frameAck();
       default:
         this.error((msg as { kind: string }).kind as ToWorker["kind"], "E_UNKNOWN_MESSAGE", "unknown message kind");
     }
   }
 
   private error(request: ToWorker["kind"], code: string, message: string): void {
-    this.host.post({ kind: "error", request, code, message });
+    this.reply({ kind: "error", request, code, message });
+  }
+
+  /** Send to the window whose message is being handled. */
+  private reply(msg: FromWorker, transfer?: Transferable[]): void {
+    this.host.post(msg, transfer, this.replyTo);
+  }
+
+  private attach(port: Port, role: Role): void {
+    if (!ROLES.includes(role)) return this.error("attach", "E_BAD_ARGUMENT", `role must be one of ${ROLES.join(", ")}`);
+    port.role = role;
+    this.reply({ kind: "attached", role, loaded: this.loadedInfo() });
+    // a new window needs the current state now, not at the next change
+    if (this.eng) {
+      port.forceSnapshot = true;
+      port.forceShape = true;
+      port.awaitingFrameAck = false;
+      this.host.post(this.clockMessage(), undefined, port.id);
+      this.host.post({ kind: "history", checkpointSteps: this.history.steps(), thinned: this.history.thinned }, undefined, port.id);
+      this.host.post(this.timelineMessage(), undefined, port.id);
+      this.maybeSnapshot();
+    }
+  }
+
+  private loadedInfo(): LoadedInfo | null {
+    const e = this.eng;
+    const lib = this.lib;
+    if (!e || !lib) return null;
+    return { libraryId: lib.manifest.id, digest: lib.digest, pins: e.pins(), outerDt: e.config.outerDt };
+  }
+
+  private forEachPort(fn: (p: Port) => void): void {
+    for (const p of this.ports.values()) fn(p);
   }
 
   // ---- loading ----
@@ -216,7 +301,7 @@ export class Runtime {
     this.stopClock();
     // A failed load keeps the previous library and engine, paused; the clock message says so.
     const fail = (issues: Issue[]) => {
-      this.host.post({ kind: "loadFailed", protocol: PROTOCOL_VERSION, issues });
+      this.reply({ kind: "loadFailed", protocol: PROTOCOL_VERSION, issues });
       this.afterChange();
     };
     let lib: Library;
@@ -239,6 +324,7 @@ export class Runtime {
     this.rejectPending("REJ_SESSION_REPLACED");
     this.lib = lib;
     this.history.clear();
+    this.rate = 1; // a new session starts at 1x, paused (as a new worker did before the shared worker)
     this.install(eng);
     this.branches = [];
     this.current = { id: 1, parent: null, forkStep: 0 };
@@ -247,53 +333,51 @@ export class Runtime {
     this.annotations = [];
     this.nextAnnotationId = 1;
     this.timelineDirty = true;
-    this.host.post({
-      kind: "loaded",
-      protocol: PROTOCOL_VERSION,
-      libraryId: lib.manifest.id,
-      digest: lib.digest,
-      pins: eng.pins(),
-      outerDt: eng.config.outerDt,
-    });
+    // every window hears of a new session, so an attached window can rebuild its panels
+    this.host.post({ kind: "loaded", protocol: PROTOCOL_VERSION, ...this.loadedInfo()! });
     this.afterChange();
   }
 
   /** Make `eng` the current engine, after a load, rewind or import. The clock stays paused. */
   private install(eng: Engine): void {
     this.eng = eng;
-    this.extremes = {}; // extremes from a discarded timeline are not news
+
     this.faulted = false;
     this.limited = null;
     this.limitReason = null;
     this.eventCursor = eng.events.length; // events from building this state (replay) are not news
     this.checkpointEvery = everySteps(this.options.checkpointEveryS, eng.config.outerDt);
     this.maybeCheckpoint(true);
-    this.forceShape = true;
-    this.forceSnapshot = true;
-    this.awaitingFrameAck = false;
+    this.forEachPort((p) => {
+      p.extremes = {}; // extremes from a discarded timeline are not news
+      p.forceShape = true;
+      p.forceSnapshot = true;
+      p.awaitingFrameAck = false;
+    });
   }
 
   // ---- commands ----
 
-  private command(clientSeq: number, clientId: string, cmd: unknown): void {
+  private command(clientSeq: number, clientId: string, cmd: unknown, role: Role | null): void {
     const e = this.eng;
-    const reject = (reason: string) =>
-      this.host.post({ kind: "ack", clientSeq, seq: null, status: "rejected", reason, t: e ? e.t : 0 });
+    const reject = (reason: string) => this.reply({ kind: "ack", clientSeq, seq: null, status: "rejected", reason, t: e ? e.t : 0 });
     if (!e) return reject("REJ_NO_LIBRARY");
     if (typeof clientId !== "string" || validateCommand(cmd).length > 0) return reject("REJ_SCHEMA");
+    const type = String((cmd as Record<string, unknown>)["type"]);
+    if (role === "operator" && type.startsWith("fault.")) return reject("REJ_ROLE");
     if (this.faulted) return reject("REJ_FAULTED");
     if (e.halted) return reject("REJ_HALTED");
     // Checked here, before the engine, so the rejected command is not in the log and replays stay the same.
     if (isCoarse(e.config.outerDt) && isPulseCommand(cmd as Record<string, any>)) return reject("REJ_COARSE_STEP");
     const seq = e.submit(cmd as Record<string, any>, clientId);
-    this.pendingAcks.set(seq, clientSeq);
-    this.host.post({ kind: "queued", clientSeq, seq, step: e.stepIndex, t: e.t });
+    this.pendingAcks.set(seq, { clientSeq, port: this.replyTo });
+    this.reply({ kind: "queued", clientSeq, seq, step: e.stepIndex, t: e.t });
   }
 
   private rejectPending(reason: string): void {
     const t = this.eng ? this.eng.t : 0;
-    for (const [seq, clientSeq] of this.pendingAcks) {
-      this.host.post({ kind: "ack", clientSeq, seq, status: "rejected", reason, t });
+    for (const [seq, p] of this.pendingAcks) {
+      this.host.post({ kind: "ack", clientSeq: p.clientSeq, seq, status: "rejected", reason, t }, undefined, p.port);
     }
     this.pendingAcks.clear();
   }
@@ -318,7 +402,7 @@ export class Runtime {
       this.samples = [];
     } else if (paused === true && !this.paused) {
       this.stopClock();
-      this.forceSnapshot = true;
+      this.forEachPort((p) => (p.forceSnapshot = true));
     }
     this.anchor();
     if (!this.paused) this.scheduleTick(0);
@@ -403,11 +487,15 @@ export class Runtime {
 
   /** Update each instrument's extremes since the last snapshot (amendment 1 of the M5 design). */
   private trackExtremes(e: Engine): void {
+    for (const p of this.ports.values()) this.extremesInto(p.extremes, e);
+  }
+
+  private extremesInto(extremes: Record<string, Extreme>, e: Engine): void {
     const t = e.t;
     for (const [id, v] of Object.entries(e.indicated)) {
       if (v === null || !Number.isFinite(v)) continue;
-      const x = this.extremes[id];
-      if (!x) this.extremes[id] = { min: v, tMin: t, max: v, tMax: t };
+      const x = extremes[id];
+      if (!x) extremes[id] = { min: v, tMin: t, max: v, tMax: t };
       else {
         if (v < x.min) {
           x.min = v;
@@ -425,7 +513,7 @@ export class Runtime {
     this.stopClock();
     this.limited = limit;
     this.limitReason = reason;
-    this.forceSnapshot = true;
+    this.forEachPort((p) => (p.forceSnapshot = true));
   }
 
   private stepN(n: number): void {
@@ -438,7 +526,7 @@ export class Runtime {
     for (let i = 0; i < n; i++) {
       if (!this.stepOnce()) break;
     }
-    this.forceSnapshot = true;
+    this.forEachPort((p) => (p.forceSnapshot = true));
     this.afterChange();
   }
 
@@ -496,7 +584,7 @@ export class Runtime {
   private exportSession(): void {
     const e = this.eng;
     if (!e) return this.error("session.export", "E_NO_LIBRARY", "nothing is loaded");
-    this.host.post({ kind: "session", file: this.fileOf(e) });
+    this.reply({ kind: "session", file: this.fileOf(e) });
   }
 
   /** The current timeline as a version 2 session file (with its annotations and branch). */
@@ -623,13 +711,7 @@ export class Runtime {
     }
     if (this.timelineDirty && this.eng) {
       this.timelineDirty = false;
-      this.host.post({
-        kind: "timeline",
-        current: summarize(this.eng, this.current, this.annotations.length),
-        branches: this.branches.map((b) => b.summary),
-        marks: [...this.marks],
-        annotations: structuredClone(this.annotations),
-      });
+      this.host.post(this.timelineMessage());
     }
   }
 
@@ -645,53 +727,71 @@ export class Runtime {
     if (marks.length > 0 || batch.some((ev) => ev.type === "command")) this.timelineDirty = true;
     for (const ev of batch) {
       if (ev.type !== "command") continue;
-      const clientSeq = this.pendingAcks.get(ev.seq);
-      if (clientSeq === undefined) continue;
+      const who = this.pendingAcks.get(ev.seq);
+      if (who === undefined) continue;
       this.pendingAcks.delete(ev.seq);
-      this.host.post({ kind: "ack", clientSeq, seq: ev.seq, status: ev.status, reason: ev.reason, t: ev.t });
+      this.host.post({ kind: "ack", clientSeq: who.clientSeq, seq: ev.seq, status: ev.status, reason: ev.reason, t: ev.t }, undefined, who.port);
     }
   }
 
-  private frameAck(): void {
-    this.awaitingFrameAck = false;
+  private frameAck(port: Port): void {
+    port.awaitingFrameAck = false;
     this.maybeSnapshot();
   }
 
+  /** Send a snapshot to each window that is ready for one. The snapshot and the power shape are computed once. */
   private maybeSnapshot(): void {
     const e = this.eng;
     if (!e) return;
-    const changed = this.forceSnapshot || e.stepIndex !== this.lastSnapStep;
-    if (!changed || this.awaitingFrameAck) return;
     const now = this.host.now();
-    if (!this.forceSnapshot && !this.paused && now - this.lastSnapWall < 1000 / this.options.snapshotHz) return;
-    const snapshot = e.snapshot(false);
-    let shape: Float32Array | undefined;
-    if (this.shapeDue(snapshot)) {
-      shape = Float32Array.from(e.shape());
-      this.forceShape = false;
-      this.lastShapeTfuel = snapshot.truth.fuelTemp;
-      this.lastShapeRods = {};
-      for (const [rid, r] of Object.entries<any>(snapshot.truth.rods)) this.lastShapeRods[rid] = r.position;
+    let snapshot: Record<string, any> | null = null;
+    let shape: Float32Array | null = null;
+    let faults: { instruments: Record<string, string>; extraRho: number } | null = null;
+    for (const p of this.ports.values()) {
+      if (p.role === null) continue;
+      const changed = p.forceSnapshot || e.stepIndex !== p.lastSnapStep;
+      if (!changed || p.awaitingFrameAck) continue;
+      if (!p.forceSnapshot && !this.paused && now - p.lastSnapWall < 1000 / this.options.snapshotHz) continue;
+      snapshot ??= e.snapshot(false);
+      faults ??= { instruments: { ...e.faults }, extraRho: e.extraRho };
+      let own: Float32Array | undefined;
+      if (this.shapeDue(p, snapshot)) {
+        shape ??= Float32Array.from(e.shape());
+        own = Float32Array.from(shape); // each window gets its own buffer to transfer
+        p.forceShape = false;
+        p.lastShapeTfuel = snapshot.truth.fuelTemp;
+        p.lastShapeRods = {};
+        for (const [rid, r] of Object.entries<any>(snapshot.truth.rods)) p.lastShapeRods[rid] = r.position;
+      }
+      p.forceSnapshot = false;
+      p.lastSnapStep = e.stepIndex;
+      p.lastSnapWall = now;
+      p.awaitingFrameAck = true;
+      const extremes = p.extremes;
+      p.extremes = {};
+      if (own) this.host.post({ kind: "snapshot", snapshot, shape: own, extremes, faults }, [own.buffer], p.id);
+      else this.host.post({ kind: "snapshot", snapshot, extremes, faults }, undefined, p.id);
     }
-    this.forceSnapshot = false;
-    this.lastSnapStep = e.stepIndex;
-    this.lastSnapWall = now;
-    this.awaitingFrameAck = true;
-    const extremes = this.extremes;
-    this.extremes = {};
-    const faults = { instruments: { ...e.faults }, extraRho: e.extraRho };
-    if (shape) this.host.post({ kind: "snapshot", snapshot, shape, extremes, faults }, [shape.buffer]);
-    else this.host.post({ kind: "snapshot", snapshot, extremes, faults });
   }
 
-  private shapeDue(snapshot: Record<string, any>): boolean {
-    if (this.forceShape) return true;
-    if (Math.abs(snapshot.truth.fuelTemp - this.lastShapeTfuel) > this.options.shapeTempTol) return true;
+  private shapeDue(p: Port, snapshot: Record<string, any>): boolean {
+    if (p.forceShape) return true;
+    if (Math.abs(snapshot.truth.fuelTemp - p.lastShapeTfuel) > this.options.shapeTempTol) return true;
     for (const [rid, r] of Object.entries<any>(snapshot.truth.rods)) {
-      const before = this.lastShapeRods[rid];
+      const before = p.lastShapeRods[rid];
       if (before === undefined || Math.abs(r.position - before) > this.options.shapeRodTol) return true;
     }
     return false;
+  }
+
+  private timelineMessage(): Extract<FromWorker, { kind: "timeline" }> {
+    return {
+      kind: "timeline",
+      current: summarize(this.eng!, this.current, this.annotations.length),
+      branches: this.branches.map((b) => b.summary),
+      marks: [...this.marks],
+      annotations: structuredClone(this.annotations),
+    };
   }
 
   private maybeClock(): void {
@@ -704,7 +804,12 @@ export class Runtime {
     if (key === this.lastClockKey && (this.paused || now - this.lastClockPost < this.options.clockReportMs)) return;
     this.lastClockKey = key;
     this.lastClockPost = now;
-    this.host.post({
+    this.host.post(this.clockMessage(limited));
+  }
+
+  private clockMessage(limited: ClockLimit = this.limited): Extract<FromWorker, { kind: "clock" }> {
+    const e = this.eng;
+    return {
       kind: "clock",
       rate: this.rate,
       achievedRate: this.achievedRate(),
@@ -713,6 +818,6 @@ export class Runtime {
       reason: this.limitReason,
       t: e ? e.t : 0,
       step: e ? e.stepIndex : 0,
-    });
+    };
   }
 }

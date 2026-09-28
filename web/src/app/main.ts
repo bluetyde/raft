@@ -3,10 +3,16 @@
  * - M5 operator panel (instruments only) and the M4 explorer (3D, truth read-out and controls).
  * - Layouts (docs/m5-operator-design.md section 4): split (default), realism (instruments only), explorer.
  * - M6 instructor view (docs/m6-instructor-design.md): the instructor layout shows the operator panel next to the instructor panel.
+ * - Two windows (M6 slice S3): windows with the same `?session=<id>` share one SharedWorker. `?role=operator` makes an
+ *   operator window: instruments only, and the worker refuses its time, rewind and fault requests.
+ *
+ * The page keeps one runtime connection for its whole life. Every window builds its panels when the worker says
+ * a session was loaded (`loaded`, or the answer to `attach`), so all windows show the same library.
  */
 
 import "./app.css";
-import { RuntimeClient } from "../runtime/client";
+import type { RuntimeClient } from "../runtime/client";
+import type { FromWorker, LoadedInfo, Role } from "../runtime/protocol";
 import { loadLibrary, LibraryError } from "../sim/library";
 import { Explorer } from "../views/explorer/explorer";
 import { elementPowers, rodPositionsFrom } from "../views/explorer/live";
@@ -14,23 +20,51 @@ import { modelFromLibrary } from "../views/explorer/model";
 import { InstructorPanel } from "../views/instructor/panel";
 import { OperatorPanel } from "../views/operator/panel";
 import { CATALOG, catalogFiles, catalogReader } from "./catalog";
+import { connect, windowParams, windowUrl } from "./connection";
 import { Controls } from "./controls";
 
+type Layout = "split" | "realism" | "explorer" | "instructor";
+const LAYOUTS_FOR: Record<Role, Layout[]> = {
+  full: ["split", "realism", "explorer", "instructor"],
+  instructor: ["instructor", "explorer"],
+  operator: ["split", "realism"],
+};
+
+const params = windowParams(location.search);
+if (params.fresh) {
+  // keep the session id in the URL, so a reload (or a second window) finds the same session
+  history.replaceState(null, "", windowUrl(location.href, params.session, params.role));
+}
+const conn = connect(params, "explorer");
+const client: RuntimeClient = conn.client;
+const role: Role = conn.role;
+const layouts = LAYOUTS_FOR[role];
+
 const app = document.getElementById("app")!;
+app.dataset["role"] = role;
+app.dataset["shared"] = String(conn.shared);
 const bar = document.createElement("header");
 bar.className = "vr-bar";
 const title = document.createElement("strong");
 title.textContent = "Virtual Reactor";
 const select = document.createElement("select");
 for (const entry of CATALOG) select.append(new Option(entry.name, entry.name));
+select.disabled = role === "operator"; // an operator window cannot load (the worker refuses it too)
+const layoutSelect = document.createElement("select");
+for (const l of layouts) layoutSelect.append(new Option(l, l));
+layoutSelect.dataset["op"] = "layout";
+const windowText = document.createElement("span");
+windowText.className = "vr-note";
+windowText.dataset["op"] = "window";
+windowText.textContent = conn.shared ? `${role} window, session ${conn.session}` : "one window (this browser has no SharedWorker)";
+const openOperator = document.createElement("button");
+openOperator.textContent = "open operator window";
+openOperator.dataset["op"] = "open-operator";
+openOperator.hidden = !conn.shared || role === "operator";
+openOperator.onclick = () => window.open(windowUrl(location.href, conn.session, "operator"), "_blank");
 const status = document.createElement("span");
 status.className = "vr-status";
-type Layout = "split" | "realism" | "explorer" | "instructor";
-const LAYOUTS: Layout[] = ["split", "realism", "explorer", "instructor"];
-const layoutSelect = document.createElement("select");
-for (const l of LAYOUTS) layoutSelect.append(new Option(l, l));
-layoutSelect.dataset["op"] = "layout";
-bar.append(title, select, layoutSelect, status);
+bar.append(title, select, layoutSelect, windowText, openOperator, status);
 const main = document.createElement("div");
 main.className = "vr-main";
 const opBox = document.createElement("div");
@@ -45,22 +79,29 @@ main.append(opBox, view, side, instBox);
 app.replaceChildren(bar, main);
 
 const explorer = new Explorer(view);
-let worker: Worker | null = null;
-let client: RuntimeClient | null = null;
 let controls: Controls | null = null;
-let lastSnapshot: Record<string, any> | null = null;
 let operator: OperatorPanel | null = null;
 let instructor: InstructorPanel | null = null;
 let current: string | null = null;
+let lastSnapshot: Record<string, any> | null = null;
+let elementsOf: ((m: Extract<FromWorker, { kind: "snapshot" }>) => void) | null = null;
+
+// The latest state messages, so panels built after they arrived can show them at once.
+const latest: {
+  snapshot?: Extract<FromWorker, { kind: "snapshot" }>;
+  shaped?: Extract<FromWorker, { kind: "snapshot" }>;
+  clock?: Extract<FromWorker, { kind: "clock" }>;
+  timeline?: Extract<FromWorker, { kind: "timeline" }>;
+} = {};
 
 function storedLayout(): Layout {
   try {
-    const v = localStorage.getItem("vr.layout");
-    if (v && (LAYOUTS as string[]).includes(v)) return v as Layout;
+    const v = localStorage.getItem(`vr.layout.${role}`);
+    if (v && (layouts as string[]).includes(v)) return v as Layout;
   } catch {
     // storage can be blocked; the default is fine
   }
-  return "split";
+  return layouts[0]!;
 }
 
 /**
@@ -68,6 +109,7 @@ function storedLayout(): Layout {
  * instructor = the operator panel next to the instructor panel.
  */
 function setLayout(l: Layout): void {
+  if (!layouts.includes(l)) return;
   app.dataset["layout"] = l;
   layoutSelect.value = l;
   opBox.hidden = l === "explorer";
@@ -76,7 +118,7 @@ function setLayout(l: Layout): void {
   instBox.hidden = l !== "instructor";
   explorer.setCompact(l === "split");
   try {
-    localStorage.setItem("vr.layout", l);
+    localStorage.setItem(`vr.layout.${role}`, l);
   } catch {
     // a convenience only
   }
@@ -90,67 +132,107 @@ window.addEventListener("keydown", (e) => {
   main.classList.toggle("vr-swap");
 });
 
-/** Load a library into a fresh runtime. `opts` sets the engine's initial state, seed and config (default: the library's reference state). */
-async function show(name: string, opts: { init?: Record<string, any>; seed?: number; config?: Record<string, any> } = {}): Promise<void> {
-  const entry = CATALOG.find((e) => e.name === name);
-  if (!entry) return;
-  status.textContent = `loading ${name}…`;
-  current = name;
+// ---- messages from the worker, to whichever panels exist now ----
+
+client.on("snapshot", (m) => {
+  latest.snapshot = m;
+  if (m.shape) latest.shaped = m;
+  lastSnapshot = m.snapshot;
+  operator?.onSnapshot(m);
+  instructor?.onSnapshot(m);
+  controls?.onSnapshot(m.snapshot);
+  explorer.setRodPositions(rodPositionsFrom(m.snapshot));
+  elementsOf?.(m);
+});
+client.on("clock", (m) => {
+  latest.clock = m;
+  operator?.onClock(m);
+  instructor?.onClock(m);
+  controls?.onClock(m);
+});
+client.on("timeline", (m) => {
+  latest.timeline = m;
+  instructor?.onTimeline(m);
+});
+client.on("rewound", (m) => {
+  operator?.onRewound();
+  instructor?.onRewound(m.t);
+});
+client.on("loaded", (m) => {
+  // a new session: state from the old one must not reach the new panels (the new state follows this message)
+  delete latest.snapshot;
+  delete latest.shaped;
+  delete latest.clock;
+  delete latest.timeline;
+  elementsOf = null; // the old model cannot take the new library's power shape
+  const { kind: _k, protocol: _p, ...info } = m;
+  void adopt(info);
+});
+client.on("fault", (m) => (status.textContent = `runtime fault: ${m.message}`));
+
+let adopting: Promise<void> = Promise.resolve();
+
+/** Build this window's panels for the session the worker has loaded. Every window does this, whoever loaded it. */
+function adopt(info: LoadedInfo): Promise<void> {
+  adopting = adopting.then(() => build(info));
+  return adopting;
+}
+
+async function build(info: LoadedInfo): Promise<void> {
+  const entry = CATALOG.find((e) => e.name === info.libraryId);
+  if (!entry) {
+    status.textContent = `the session runs ${info.libraryId}, which this app does not ship`;
+    return;
+  }
   delete app.dataset["ready"];
-  worker?.terminate();
-  worker = null;
-  client = null;
+  current = entry.name;
+  select.value = entry.name;
   try {
-    // The main thread reads the library for the geometry; the worker reads it again to run it.
+    // The main thread reads the library for the geometry and the panels; the worker runs its own copy.
     const lib = await loadLibrary(catalogReader(entry));
     const model = modelFromLibrary(lib);
     explorer.show(model);
     explorer.setLive(true);
     explorer.setOverlay("live");
-
-    const w = new Worker(new URL("../runtime/worker.ts", import.meta.url), { type: "module" });
-    const c = new RuntimeClient(w, "explorer");
-    worker = w;
-    client = c;
     const A = model.axialEdgesCm.length - 1;
+    elementsOf = (m) => {
+      if (m.shape) explorer.setElementPowers(elementPowers(m.shape, model.elements, A, m.snapshot.truth.power));
+    };
     const rods = lib.rods.map((r) => ({ id: r.id, pulseCapable: r.pulseCapable }));
-    const ctl = new Controls(c, { rods, modes: lib.modes });
-    controls = ctl;
-    side.replaceChildren(ctl.root);
+    controls = new Controls(client, { rods, modes: lib.modes });
+    side.replaceChildren(controls.root);
     operator?.dispose();
-    const op = new OperatorPanel(c, { instruments: lib.instruments, trips: lib.trips, interlocks: lib.interlocks, rods, modes: lib.modes });
-    operator = op;
-    opBox.replaceChildren(op.root);
-    const inst = new InstructorPanel(
-      c,
+    operator = new OperatorPanel(
+      client,
+      { instruments: lib.instruments, trips: lib.trips, interlocks: lib.interlocks, rods, modes: lib.modes },
+      { timeControls: role !== "operator" },
+    );
+    opBox.replaceChildren(operator.root);
+    instructor = new InstructorPanel(
+      client,
       { instruments: lib.instruments, pumps: lib.pumps },
       {
-        restart: (outerDt) => void show(name, { ...opts, config: { ...opts.config, outerDt } }),
+        restart: (outerDt) => void show(entry.name, { config: { ...info.pins["config"], outerDt } }),
         files: () => catalogFiles(entry),
         libraryId: lib.id,
       },
     );
-    instructor = inst;
-    instBox.replaceChildren(inst.root);
-    c.on("rewound", (m) => {
-      op.onRewound();
-      inst.onRewound(m.t);
-    });
-    c.on("clock", (m) => op.onClock(m));
-    c.on("clock", (m) => inst.onClock(m));
-    c.on("timeline", (m) => inst.onTimeline(m));
-    c.on("snapshot", (m) => {
-      lastSnapshot = m.snapshot;
-      op.onSnapshot(m);
-      inst.onSnapshot(m);
-      explorer.setRodPositions(rodPositionsFrom(m.snapshot));
-      if (m.shape) explorer.setElementPowers(elementPowers(m.shape, model.elements, A, m.snapshot.truth.power));
-      ctl.onSnapshot(m.snapshot);
-    });
-    c.on("clock", (m) => ctl.onClock(m));
-    c.on("fault", (m) => (status.textContent = `runtime fault: ${m.message}`));
-    const info = await c.load({ kind: "files", files: await catalogFiles(entry) }, opts);
-    inst.setSession(info.outerDt);
+    instructor.setSession(info.outerDt);
+    instBox.replaceChildren(instructor.root);
+    // state that arrived while this was building
+    if (latest.shaped) elementsOf(latest.shaped);
+    if (latest.snapshot) {
+      operator.onSnapshot(latest.snapshot);
+      instructor.onSnapshot(latest.snapshot);
+      controls.onSnapshot(latest.snapshot.snapshot);
+      explorer.setRodPositions(rodPositionsFrom(latest.snapshot.snapshot));
+    }
+    if (latest.clock) {
+      operator.onClock(latest.clock);
+      instructor.onClock(latest.clock);
+      controls.onClock(latest.clock);
+    }
+    if (latest.timeline) instructor.onTimeline(latest.timeline);
 
     const s = explorer.stats!;
     status.textContent = `${lib.id} (${lib.status}): ${s.primitives} primitives, ${s.drawCalls} draw calls, outer step ${info.outerDt} s`;
@@ -158,25 +240,48 @@ async function show(name: string, opts: { init?: Record<string, any>; seed?: num
     app.dataset["library"] = lib.id;
   } catch (err) {
     const issues = err instanceof LibraryError ? err.issues.map((i) => `${i.code} ${i.path}`).join("; ") : String(err);
-    status.textContent = `could not load ${name}: ${issues}`;
+    status.textContent = `could not load ${entry.name}: ${issues}`;
+  }
+}
+
+/** Load a library as a new session. `opts` sets the engine's initial state, seed and config (default: the library's reference state). */
+async function show(name: string, opts: { init?: Record<string, any>; seed?: number; config?: Record<string, any> } = {}): Promise<void> {
+  const entry = CATALOG.find((e) => e.name === name);
+  if (!entry) return;
+  status.textContent = `loading ${name}…`;
+  delete app.dataset["ready"];
+  try {
+    await client.load({ kind: "files", files: await catalogFiles(entry) }, opts);
+    await adopting; // the `loaded` message came before the load's answer, so its build is queued
+  } catch (err) {
+    status.textContent = `could not load ${name}: ${String(err)}`;
+    if (current) app.dataset["ready"] = "true"; // the worker keeps the previous session
   }
 }
 
 select.onchange = () => void show(select.value);
 setLayout(storedLayout());
-const initial = CATALOG.find((e) => e.name === "triga-jsi-242") ?? CATALOG[0];
-if (initial) {
-  select.value = initial.name;
-  void show(initial.name);
-}
+
+// Attach first: if this session already runs (another window, or a reload), show it; otherwise load the default library.
+void (async () => {
+  const { loaded } = await client.attach(role);
+  if (loaded) return adopt(loaded);
+  if (role === "operator") {
+    status.textContent = "waiting for the instructor window to load a library";
+    return;
+  }
+  const initial = CATALOG.find((e) => e.name === "triga-jsi-242") ?? CATALOG[0];
+  if (initial) return show(initial.name);
+})();
 
 // For end-to-end checks and the browser console.
 (window as unknown as { vr: unknown }).vr = {
   explorer,
   show,
-  get client() {
-    return client;
-  },
+  client,
+  role,
+  shared: conn.shared,
+  session: conn.session,
   get controls() {
     return controls;
   },

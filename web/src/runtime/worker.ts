@@ -1,8 +1,9 @@
 /**
- * Web Worker entry point: one Runtime per worker. Start it from the main thread with
- * `new Worker(new URL("./runtime/worker.ts", import.meta.url), { type: "module" })`.
+ * Web Worker entry point: one Runtime per worker, with one window (port "main", role "full").
+ * Start it from the main thread with `new Worker(new URL("./runtime/worker.ts", import.meta.url), { type: "module" })`.
  */
 
+import { workerClock } from "./host";
 import type { ToWorker } from "./protocol";
 import { Runtime } from "./runtime";
 
@@ -13,21 +14,8 @@ interface WorkerScope {
 
 const scope = globalThis as unknown as WorkerScope;
 
-// A MessageChannel yields to pending messages without setTimeout's minimum delay.
-const channel = new MessageChannel();
-const queue: (() => void)[] = [];
-channel.port1.onmessage = () => queue.shift()?.();
-
 const runtime = new Runtime({
-  now: () => performance.now(),
-  schedule: (fn, delayMs) => {
-    if (delayMs <= 0) {
-      queue.push(fn);
-      channel.port2.postMessage(null);
-    } else {
-      setTimeout(fn, delayMs);
-    }
-  },
+  ...workerClock(),
   post: (msg, transfer) => scope.postMessage(msg, transfer ?? []),
 });
 
