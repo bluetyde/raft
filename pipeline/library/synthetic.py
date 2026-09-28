@@ -406,6 +406,9 @@ def invalid_cases() -> list[tuple[str, list[str], Callable]]:
         ("pulse-rod-without-firetime", ["E_SCHEMA"], fire_time_missing),
         ("duplicate-element", ["E_DUPLICATE_ID", "E_GEOMETRY_ID"], dup_element),
         ("rod-unknown", ["E_ROD_UNKNOWN"], ghost_rod),
+        # a non-empty jointChecked (the OpenMC libraries have one): its rods are an object keyed by rod id
+        ("joint-checked-rod-unknown", ["E_ROD_UNKNOWN"],
+         setp(["domain", "jointChecked"], [{"rods": {"ghost": 0.5}, "maxShapeErr": 0.1, "rhoErr": 1e-4}])),
         ("synthetic-source-in-experimental", ["E_SOURCE_SYNTHETIC"], setp(["status"], "experimental")),
         ("path-unsafe", ["E_PATH_UNSAFE"], setp(["arrays", "base", "file"], "../base.f32")),
         ("file-missing", ["E_FILE_MISSING"], setp(["arrays", "base", "file"], "arrays/missing.f32")),

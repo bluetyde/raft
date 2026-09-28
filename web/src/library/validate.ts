@@ -248,7 +248,7 @@ class Checker {
     }
     for (let i = 0; i < m.domain.jointChecked.length; i++) {
       const jc = m.domain.jointChecked[i];
-      for (const rid of jc.rods) {
+      for (const rid of Object.keys(jc.rods)) {
         if (!rods.has(rid)) {
           this.add("E_ROD_UNKNOWN", `$.domain.jointChecked[${i}]`, `unknown rod '${rid}'`);
         }
