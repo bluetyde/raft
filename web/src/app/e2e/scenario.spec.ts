@@ -42,12 +42,11 @@ test("the instructor starts a scenario; its goals show; a control it does not al
   await expect(box.locator('[data-goal="ten-percent"]')).toHaveAttribute("data-status", "waiting");
   await expect(inst(page, "scenario-score")).toHaveText("goals met 0 of 3, unexpected trips 0");
 
-  // the scenario allows rod.move and scram only: the mode switch is refused, with the reason text
+  // the scenario allows rod.move and scram only: the panel disables the mode switch (SC2), and the worker refuses it anyway
+  await expect(page.locator('[data-op="mode"]')).toBeDisabled();
   await page.click('[data-op="play"]');
-  await page.selectOption('[data-op="mode"]', "pulse");
-  const note = page.locator(".vr-operator > .vr-note");
-  await expect(note).toContainText("mode.set rejected: REJ_SCENARIO", { timeout: 10_000 });
-  await expect(note).toContainText("the scenario does not allow this control");
+  const ack = await page.evaluate(() => (window as any).vr.client.command({ type: "mode.set", mode: "pulse" }, undefined, "operator"));
+  expect(ack).toMatchObject({ status: "rejected", reason: "REJ_SCENARIO" });
 
   await page.click('[data-op="safety:out"]');
   await page.click('[data-op="regulating:out"]');
@@ -76,4 +75,59 @@ test("a scripted event shows on the timeline, and the session file names the sce
   await inst(page, "import").setInputFiles(path);
   await expect(inst(page, "export-message")).toContainText("imported", { timeout: 30_000 });
   expect(await page.evaluate(() => (window as any).vr.instructor.scenario.id)).toBe("synthetic-scram-and-restart");
+});
+
+// ---- slice SC2: the operator's scenario strip, the end of a scenario, and faultsVisible ----
+
+test("the operator window shows the scenario strip; disallowed controls are off; a goal met shows; the end shows the score", async ({ page, context }) => {
+  await start(page, "synthetic-power-ascension");
+  const session = new URL(page.url()).searchParams.get("session");
+  const b = await context.newPage();
+  await b.goto(`/?session=${session}&role=operator`);
+  await ready(b);
+
+  const strip = b.locator('[data-op="scenario"]');
+  await expect(strip).toBeVisible();
+  await expect(strip).toContainText("Scenario: Power ascension");
+  await expect(strip.locator('[data-goal="one-percent"]')).toHaveAttribute("data-status", "open");
+  await expect(b.locator('[data-op="scenario-hints"]')).toBeHidden();
+  await b.click('[data-op="scenario-hint-toggle"]');
+  await expect(b.locator('[data-op="scenario-hints"] li')).toHaveCount(3);
+  // the scenario allows rod.move and scram only
+  await expect(b.locator('[data-op="mode"]')).toBeDisabled();
+  await expect(b.locator('[data-op="reset"]')).toBeDisabled();
+  await expect(b.locator('[data-op="safety:out"]')).toBeEnabled();
+  await expect(b.locator('[data-op="scram-cover"]')).toBeEnabled();
+
+  await b.click('[data-op="safety:out"]');
+  await b.click('[data-op="regulating:out"]');
+  await inst(page, "rate").selectOption("100");
+  await inst(page, "play").click();
+  await expect(strip.locator('[data-goal="one-percent"]')).toHaveAttribute("data-status", "met", { timeout: 30_000 });
+  await expect(strip.locator('[data-goal="one-percent"]')).toContainText("(at ");
+  await expect(b.locator('[data-op="scenario-elapsed"]')).toContainText("elapsed ");
+  await expect(b.locator('[data-op="scenario-score"]')).toBeHidden();
+
+  await inst(page, "scenario-end").click();
+  const score = b.locator('[data-op="scenario-score"]');
+  await expect(score).toBeVisible({ timeout: 10_000 });
+  await expect(score).toHaveText(/^Score: 1 of 3 goals met, 0 unexpected trips, last goal at \d+:\d\d\. The instructor ended the scenario\.$/);
+  await expect(strip.locator('[data-goal="hold"]')).toHaveAttribute("data-status", "failed");
+  await expect(inst(page, "scenario-score")).toContainText("ended at t =");
+});
+
+test("with faultsVisible, the operator panel lights an instructor-fault tile; without it, there is no tile", async ({ page }) => {
+  await start(page, "synthetic-power-ascension");
+  await expect(page.locator('[data-tile="instructor:fault"]')).toHaveCount(0);
+  const visible = JSON.parse(readFileSync(new URL("../scenarios/synthetic-power-ascension.json", import.meta.url), "utf8"));
+  visible.faultsVisible = true;
+  await page.evaluate((sc) => (window as any).vr.show("synthetic-core", { scenario: sc }), visible);
+  await expect.poll(() => page.evaluate(() => (window as any).vr.operator?.scenario?.faultsVisible), { timeout: 30_000 }).toBe(true);
+  await ready(page);
+  const tile = page.locator('[data-tile="instructor:fault"]');
+  await expect(tile).toHaveAttribute("data-state", "off");
+  await inst(page, "fault-instrument").selectOption("log");
+  await inst(page, "fault-stuck").click();
+  await inst(page, "step").click();
+  await expect(tile).toHaveAttribute("data-state", "flashing", { timeout: 10_000 });
 });

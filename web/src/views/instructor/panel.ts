@@ -176,6 +176,7 @@ export class InstructorPanel {
       if (sc) opts.startScenario?.(sc);
     });
     startScenario.disabled = (opts.scenarios ?? []).length === 0;
+    const endScenario = button("end scenario", "scenario-end", () => this.client.endScenario());
     this.scenarioBox = el("div", { className: "vr-inst-scenario" });
     this.scenarioBox.dataset["inst"] = "scenario";
     this.scenarioBox.textContent = "no scenario";
@@ -197,7 +198,7 @@ export class InstructorPanel {
       ]),
       el("section", {}, [
         el("h3", { textContent: "Scenario" }),
-        el("div", { className: "vr-row" }, [scenarioSelect, startScenario]),
+        el("div", { className: "vr-row" }, [scenarioSelect, startScenario, endScenario]),
         this.scenarioBox,
       ]),
       el("section", {}, [el("h3", { textContent: "Timeline (click to rewind)" }), this.bar, this.confirmBox]),
@@ -327,7 +328,9 @@ export class InstructorPanel {
     const s = sc.score;
     const score = el("div", { className: "vr-inst-score" });
     score.dataset["inst"] = "scenario-score";
-    score.textContent = `goals met ${s.met} of ${s.total}${s.failed ? `, failed ${s.failed}` : ""}, unexpected trips ${s.trips}${sc.done ? " (done)" : ""}`;
+    score.textContent =
+      `goals met ${s.met} of ${s.total}${s.failed ? `, failed ${s.failed}` : ""}, unexpected trips ${s.trips}` +
+      `${sc.endedAt !== null ? ` (ended at t = ${sc.endedAt.toFixed(1)} s)` : sc.done ? " (done)" : ""}`;
     this.scenarioBox.replaceChildren(
       el("strong", { textContent: sc.title }),
       el("div", { className: "vr-inst-note", textContent: sc.brief }),

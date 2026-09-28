@@ -45,10 +45,15 @@ export interface ScenarioView {
   outerDt: number;
   goals: { id: string; text: string; status: "waiting" | "open" | "met" | "failed"; t: number | null }[];
   events: { step: number; t: number; note: string }[];
-  /** Goals met and failed of all goals, and the trips the scenario did not expect (a manual scram is not counted). */
-  score: { met: number; failed: number; total: number; trips: number };
-  /** Every goal is met or failed. */
+  /**
+   * Goals met and failed of all goals, the trips the scenario did not expect (a manual scram is not counted),
+   * and the time of the last goal met (null if none).
+   */
+  score: { met: number; failed: number; total: number; trips: number; lastGoalT: number | null };
+  /** Every goal is met or failed (because it was reached, it timed out, or the instructor ended the scenario). */
   done: boolean;
+  /** When the instructor ended the scenario (s), or null. */
+  endedAt: number | null;
 }
 
 /** A note on the timeline, at an engine step. */
@@ -132,6 +137,7 @@ export const OPERATOR_FORBIDDEN: readonly ToWorker["kind"][] = [
   "branch.switch",
   "annotate",
   "annotation.delete",
+  "scenario.end",
 ];
 
 /** Why the clock runs slower than requested, or is stopped. */
@@ -158,6 +164,8 @@ export type ToWorker =
   | { kind: "annotate"; text: string; step?: number }
   | { kind: "annotation.delete"; id: number }
   | { kind: "branch.switch"; id: number }
+  /** The instructor ends the running scenario: the goals not met yet fail at this step, and the score is final. */
+  | { kind: "scenario.end" }
   /** A window says which role it has. A shared worker needs it before any other message. */
   | { kind: "attach"; role: Role }
   /** A window closes (sent on pagehide), so the worker stops sending to it. */

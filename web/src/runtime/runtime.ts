@@ -174,6 +174,8 @@ export class Runtime {
   private tracker: GoalTracker | null = null;
   private trackerAt = new Map<number, GoalTracker>();
   private scenarioDirty = false;
+  /** The step at which the instructor ended the scenario on this timeline, or null. */
+  private scenarioEndStep: number | null = null;
 
   private inbox: Promise<void> = Promise.resolve();
 
@@ -257,6 +259,8 @@ export class Runtime {
         return this.deleteAnnotation(msg.id);
       case "branch.switch":
         return this.switchBranch(msg.id);
+      case "scenario.end":
+        return this.endScenario();
       default:
         this.error((msg as { kind: string }).kind as ToWorker["kind"], "E_UNKNOWN_MESSAGE", "unknown message kind");
     }
@@ -349,6 +353,7 @@ export class Runtime {
     this.history.clear();
     this.rate = 1; // a new session starts at 1x, paused (as a new worker did before the shared worker)
     this.scenario = prepared;
+    this.scenarioEndStep = null;
     this.tracker = prepared ? new GoalTracker(prepared.goals) : null;
     this.tracker?.evaluate(eng);
     this.trackerAt = new Map();
@@ -544,10 +549,12 @@ export class Runtime {
 
   /** The after-step callback for a replay: the checkpoint rule, then the goal tracker (and its state at each new checkpoint). */
   private replayHook(tracker: GoalTracker | null, trackerAt: Map<number, GoalTracker>): (st: CheckpointStore, x: Engine) => void {
+    const endStep = this.scenarioEndStep;
     return (st, x) => {
       const added = checkpointInto(st, x, this.checkpointEvery, false);
       if (tracker) {
         tracker.evaluate(x);
+        if (endStep !== null && x.stepIndex === endStep) tracker.endAt(x.t); // the end is not in the command log
         if (added) trackerAt.set(x.stepIndex, tracker.clone());
       }
     };
@@ -661,6 +668,7 @@ export class Runtime {
     if (this.scenario) {
       this.tracker = tracker;
       this.trackerAt = trackerAt;
+      if (this.scenarioEndStep !== null && step < this.scenarioEndStep) this.scenarioEndStep = null; // the end is undone
       this.scenarioDirty = true;
     }
     this.install(ne);
@@ -736,6 +744,8 @@ export class Runtime {
     if (sc) {
       this.tracker = tracker;
       this.trackerAt = trackerAt;
+      // the end belongs to the timeline where it happened: it stays only if the shared part includes it
+      if (this.scenarioEndStep !== null && this.scenarioEndStep > built.fromStep) this.scenarioEndStep = null;
       this.scenarioDirty = true;
     }
     this.install(built.engine);
@@ -829,6 +839,7 @@ export class Runtime {
     this.timelineDirty = true;
     this.history = store;
     this.scenario = prepared;
+    this.scenarioEndStep = null;
     this.tracker = tracker;
     this.trackerAt = trackerAt;
     this.scenarioDirty = true;
@@ -937,6 +948,7 @@ export class Runtime {
     const goals = tr.view();
     const expected = new Set(["manual", ...(sc.file.expectTrips ?? [])]);
     const trips = this.marks.filter((m) => m.kind === "trip" && !expected.has(m.label.slice("trip ".length))).length;
+    const metTimes = goals.filter((g) => g.status === "met").map((g) => g.t!);
     const view: ScenarioView = {
       id: sc.file.id,
       title: sc.file.title,
@@ -952,10 +964,24 @@ export class Runtime {
         failed: goals.filter((g) => g.status === "failed").length,
         total: goals.length,
         trips,
+        lastGoalT: metTimes.length > 0 ? Math.max(...metTimes) : null,
       },
       done: tr.done(),
+      endedAt: this.scenarioEndStep !== null ? this.scenarioEndStep * sc.outerDt : null,
     };
     return { kind: "scenario", scenario: view };
+  }
+
+  private endScenario(): void {
+    const e = this.eng;
+    if (!e || !this.scenario || !this.tracker) return this.error("scenario.end", "E_NO_SCENARIO", "no scenario is running");
+    if (this.scenarioEndStep !== null || this.tracker.done()) return; // already over
+    this.scenarioEndStep = e.stepIndex;
+    this.tracker.endAt(e.t);
+    // the checkpoint at this step (if any) must hold the ended goals, so a rewind here keeps the end
+    if (this.trackerAt.has(e.stepIndex)) this.trackerAt.set(e.stepIndex, this.tracker.clone());
+    this.scenarioDirty = true;
+    this.afterChange();
   }
 
   /** The running scenario, for tests. */

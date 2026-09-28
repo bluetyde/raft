@@ -5,13 +5,14 @@
  */
 
 import type { Ack, RuntimeClient } from "../../runtime/client";
-import { RUNTIME_REJECTIONS, type FromWorker } from "../../runtime/protocol";
+import { RUNTIME_REJECTIONS, type FromWorker, type ScenarioView } from "../../runtime/protocol";
 import { formatPeriod, formatPower } from "../explorer/live";
 import { Annunciator } from "./annunciator";
 import { StripChart } from "./chart";
 import { operatorView, type OperatorView } from "./console";
 import { isPegged, kelvinToCelsius, meterReading, metersFrom, unitOf, type InstrumentSpec, type Meter } from "./meters";
 import { PeriodEstimator } from "./period";
+import { allowedTypes, formatElapsed, goalLine, scoreText } from "./scenario";
 import { chartPoints, StripBuffer } from "./strip";
 
 export interface OperatorLibrary {
@@ -63,6 +64,14 @@ export class OperatorPanel {
   private lastT = -Infinity;
   /** The last view the panel drew (for tests: the panel never holds more than this). */
   lastView: OperatorView | null = null;
+  /** The running scenario as the worker last sent it (goal statuses only), or null. */
+  scenario: ScenarioView | null = null;
+  private readonly scenarioBox: HTMLElement;
+  private readonly elapsed: HTMLElement;
+  /** Each control with the command type it sends, so a scenario's allowed controls can disable the others (D7a). */
+  private readonly controls: { el: HTMLButtonElement | HTMLSelectElement; type: string }[] = [];
+  /** Whether an instructor fault was active at the last snapshot (for the faultsVisible tile). */
+  private faultActive = false;
 
   constructor(
     private readonly client: RuntimeClient,
@@ -115,6 +124,7 @@ export class OperatorPanel {
       const b = (label: string, cmd: Record<string, unknown>, op: string) => {
         const btn = el("button", { textContent: label, onclick: () => void this.send(cmd) });
         btn.dataset["op"] = `${r.id}:${op}`;
+        this.controls.push({ el: btn, type: String(cmd["type"]) });
         return btn;
       };
       const buttons = [
@@ -148,6 +158,12 @@ export class OperatorPanel {
     this.scram.hidden = true;
     const reset = el("button", { textContent: "reset trips", onclick: () => void this.send({ type: "trip.reset" }) });
     reset.dataset["op"] = "reset";
+    this.controls.push({ el: this.mode, type: "mode.set" }, { el: reset, type: "trip.reset" }, { el: this.scramCover, type: "scram" }, { el: this.scram, type: "scram" });
+
+    this.elapsed = el("span", { className: "vr-scn-elapsed" });
+    this.elapsed.dataset["op"] = "scenario-elapsed";
+    this.scenarioBox = el("section", { className: "vr-scenario", hidden: true });
+    this.scenarioBox.dataset["op"] = "scenario";
 
     this.tileBox = el("div", { className: "vr-tiles" });
     const ack = el("button", { textContent: "acknowledge", onclick: () => this.acknowledge() });
@@ -179,6 +195,7 @@ export class OperatorPanel {
 
     this.message = el("div", { className: "vr-note" });
     this.root = el("div", { className: "vr-operator" }, [
+      this.scenarioBox,
       el("section", {}, [el("h3", { textContent: "Instruments" }), ...meterRows, periodRow]),
       el("section", {}, [el("h3", { textContent: "Annunciator" }), this.tileBox, ack]),
       el("section", {}, [el("h3", { textContent: "Rods" }), ...rodRows]),
@@ -303,11 +320,69 @@ export class OperatorPanel {
       e.pos.textContent = `${(100 * r.position).toFixed(1)} %${r.moving ? (r.moving === "out" ? " ▲" : " ▼") : ""}`;
       e.down.classList.toggle("on", r.position <= 1e-6);
       e.up.classList.toggle("on", r.position >= 1 - 1e-6);
-      if (e.fire) e.fire.disabled = view.console.mode !== "pulse";
+      if (e.fire) e.fire.disabled = view.console.mode !== "pulse" || !this.allows("rod.fire");
     }
     if (this.mode.value !== view.console.mode) this.mode.value = view.console.mode;
     this.annunciator.update(view.console.trips, states);
+    // a scenario with faultsVisible shows one tile while an instructor fault is active (M6 D4b); otherwise there is no tile
+    const f = msg.faults;
+    this.faultActive = f !== undefined && (Object.keys(f.instruments).length > 0 || Math.abs(f.extraRho) > 1e-15);
+    this.annunciator.instructorFault(this.scenario?.faultsVisible === true, this.faultActive);
     this.renderTiles();
+    if (this.scenario) this.elapsed.textContent = `elapsed ${formatElapsed(t)}`;
+  }
+
+  private allows(type: string): boolean {
+    const allowed = allowedTypes(this.scenario);
+    return allowed === null || allowed.has(type);
+  }
+
+  /** The worker's scenario view (D7a): the strip, and the controls the scenario allows. Null when no scenario runs. */
+  onScenario(v: ScenarioView | null): void {
+    this.scenario = v;
+    for (const c of this.controls) {
+      const ok = this.allows(c.type);
+      c.el.disabled = !ok;
+      c.el.title = ok ? "" : "not allowed in this scenario";
+    }
+    // the scenario message can come after the snapshot, so the tile is set here too (with the last snapshot's faults)
+    this.annunciator.instructorFault(v?.faultsVisible === true, this.faultActive);
+    this.renderTiles();
+    if (!v) {
+      this.scenarioBox.hidden = true;
+      this.scenarioBox.replaceChildren();
+      return;
+    }
+    const hints = el("ul", { className: "vr-scn-hints", hidden: true }, v.hints.map((h) => el("li", { textContent: h })));
+    hints.dataset["op"] = "scenario-hints";
+    const hintButton = el("button", {
+      textContent: `hints (${v.hints.length})`,
+      disabled: v.hints.length === 0,
+      onclick: () => (hints.hidden = !hints.hidden),
+    });
+    hintButton.dataset["op"] = "scenario-hint-toggle";
+    const goals = el(
+      "ol",
+      { className: "vr-scn-goals" },
+      v.goals.map((g) => {
+        const li = el("li", { className: g.status, textContent: goalLine(g) });
+        li.dataset["goal"] = g.id;
+        li.dataset["status"] = g.status;
+        return li;
+      }),
+    );
+    const score = scoreText(v);
+    const scoreEl = el("div", { className: "vr-scn-score", textContent: score ?? "", hidden: score === null });
+    scoreEl.dataset["op"] = "scenario-score";
+    this.scenarioBox.hidden = false;
+    this.scenarioBox.replaceChildren(
+      el("h3", { textContent: `Scenario: ${v.title}` }),
+      el("p", { className: "vr-scn-brief", textContent: v.brief }),
+      goals,
+      el("div", { className: "vr-row" }, [hintButton, this.elapsed]),
+      hints,
+      scoreEl,
+    );
   }
 
   private renderTiles(): void {
