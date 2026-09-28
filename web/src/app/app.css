@@ -447,3 +447,25 @@ body,
 .vr-inst-scroll th {
   white-space: nowrap;
 }
+
+/* M5 scenarios (slice SC1) */
+.vr-inst-mark.scripted {
+  background: #81c784;
+}
+
+.vr-inst-goals {
+  margin: 6px 0;
+  padding-left: 22px;
+}
+
+.vr-inst-goals li.met {
+  color: #7fd3a8;
+}
+
+.vr-inst-goals li.failed {
+  color: #e5584f;
+}
+
+.vr-inst-goals li.waiting {
+  opacity: 0.6;
+}

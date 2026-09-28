@@ -62,7 +62,7 @@ export class RuntimeClient {
   /** Load a library. Resolves with its pins, or rejects with LoadError and the validator's issues. */
   load(
     source: LibrarySource,
-    opts: { init?: Record<string, any>; seed?: number; config?: Record<string, any> } = {},
+    opts: { init?: Record<string, any>; seed?: number; config?: Record<string, any>; scenario?: unknown } = {},
   ): Promise<LoadedInfo> {
     const transfer = source.kind === "files" ? Object.values(source.files) : [];
     const done = this.next(["loaded", "loadFailed", "error"], "load");
@@ -106,9 +106,10 @@ export class RuntimeClient {
     return done.then((m) => this.orThrow(m, "session").file);
   }
 
-  importSession(file: SessionFile): Promise<Msg<"rewound">> {
+  /** Import a session file. A version 3 file that runs a scenario needs that scenario file too. */
+  importSession(file: SessionFile, scenario?: unknown): Promise<Msg<"rewound">> {
     const done = this.next(["rewound", "error"], "session.import");
-    this.send({ kind: "session.import", file });
+    this.send(scenario === undefined ? { kind: "session.import", file } : { kind: "session.import", file, scenario });
     return done.then((m) => this.orThrow(m, "rewound"));
   }
 

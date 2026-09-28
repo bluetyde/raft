@@ -166,7 +166,7 @@ test("a rewind keeps the old timeline as a branch; compare shows fork step and c
   await expect(branches.locator('[data-branch="2"] td').nth(2)).not.toHaveText("0");
 });
 
-test("the session file downloads as version 2 with its notes, and imports again", async ({ page }) => {
+test("the session file downloads as version 3 with its notes, and imports again", async ({ page }) => {
   await runTo(page, 1);
   await inst(page, "note-text").fill("keep me");
   await inst(page, "note-add").click();
@@ -175,7 +175,8 @@ test("the session file downloads as version 2 with its notes, and imports again"
   expect(dl.suggestedFilename()).toMatch(/^synthetic-core-t\d{4}\.\d{2}s\.session\.json$/);
   const path = await dl.path();
   const file = JSON.parse(readFileSync(path, "utf8"));
-  expect(file.version).toBe(2);
+  expect(file.version).toBe(3); // version 3 since M5 scenarios
+  expect(file.scenario).toBeUndefined();
   expect(file.annotations.map((a: any) => a.text)).toEqual(["keep me"]);
   const end = file.endStep * 0.01;
 

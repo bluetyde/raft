@@ -274,3 +274,32 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   None of them is MIT, runs fully in the browser, and reads a library made with OpenMC.
 - Not checked: the IJS and IAEA pages themselves are blocked by the cloud container's network policy. The facts above come from search results and the GitHub page.
 - Please tick TODO Next #11, or keep it open for the comparison run. TODO is outside the cloud session's scope.
+
+### 2026-09-28: M5 scenarios design (proposal, waiting for the user)
+
+- What: `docs/m5-scenarios-design.md`. No code yet. Decisions D1–D7 are open for the user. The user asked for the last M5 item (scenarios) on 2026-09-28. That is A7's format design, which was on hold.
+- The recommended options need no engine change:
+  - scripted events go in as commands with `clientId: "scenario"`;
+  - goals use the library's typed predicates and are checked in the worker;
+  - the worker enforces a scenario's allowed controls.
+- **For the local session (only if the user picks D1a):** A7 from this doc: `schema/scenario.schema.json`, a Python validator in `pipeline/scenario/`, and invalid fixtures.
+  The TypeScript validator comes first, and the schema must match its error codes (§3).
+- Finding: plan 05's example uses `indicated.period` (no library has a period instrument) and `instrument.drift` (not in the engines yet, D3a).
+- Branch: `claude/m5-scenarios-design`, based on `main` at `c63378e`.
+- User decision (2026-09-28): D1–D5 and D7 = (a). D6 = (b): scram-and-restart and power ascension now; approach to critical, pulse and xenon after the M2 OpenMC libraries.
+  Five amendments: rod presets `"reference"` and `"shutdown"` with unknown rods refused; resolved `fromTrip` thresholds in the version 3 session file;
+  scripted events get their seq when their boundary is reached, before operator commands; no `fault.reactivity` steps unless `period-short` is expected; operator-facing goals use `indicated.*` where an instrument exists.
+- **For the local session:** the user said you will do A7 after SC1: `schema/scenario.schema.json`, a Python validator and shared invalid fixtures, from `docs/m5-scenarios-design.md` §3 and §9–10 (the TypeScript validator's codes are the reference).
+  You will also propose a lagged period instrument, which would also give `indicated.period`.
+
+### 2026-09-28: M5 scenarios slice SC1 implemented
+
+- What: `web/src/runtime/scenario.ts` (format, validator, goal tracker), the runtime's scenario support (scripted events, allowed controls, goals after each step, the `scenario` message), session files version 3, two scenarios for `triga-jsi-242` with `synthetic-core` copies, and a scenario picker and goals list in the instructor panel.
+- Findings (in the design doc §10):
+  - after a scram from a rising power, the period stays far from −80 s. After 20 minutes at steady power it settles at −90 to −70 s. So the scram scenario first asks for 10 minutes of steady power;
+  - a "positive period" goal is met while the core is still subcritical (subcritical multiplication), so power ascension uses power goals only;
+  - with every rod out, feedback holds `triga-jsi-242` near 100 kW, below the 275 kW power-high trip.
+- Tests: 13 validator and tracker tests, 14 runtime tests (including the amendment 3 case, and a headless run of every shipped scenario with a scripted operator: all goals met, no unexpected trip), 1 new session-file test, and 2 Playwright tests.
+  Five deliberate breaks were each caught (events submitted late, controls not enforced, goals fresh after a rewind, thresholds not recorded, no truth-goal check). The rewind test was made stronger when the third break first passed.
+- Branch: `claude/m5-scenarios-design`. Checks: see the PR.
+
