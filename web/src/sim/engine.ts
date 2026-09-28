@@ -7,7 +7,7 @@
 import { Library, Table } from "./library";
 import { MASK64, SplitMix64, luFactor, luSolve, type LUFactored } from "./numerics";
 
-export const ENGINE_VERSION = "0.1.0";
+export const ENGINE_VERSION = "0.2.0";
 export const CAPABILITY = "point-kinetics/lumped-thermal-v1";
 
 export interface EngineConfig {
@@ -457,6 +457,10 @@ export class Engine {
 
   private _scramAll(t: number): void {
     for (const rid of Object.keys(this.motions)) {
+      const fault = Object.hasOwn(this.faults, `rod.${rid}`) ? this.faults[`rod.${rid}`] : undefined;
+      if (fault === "stuck" || fault === "no-scram") {
+        continue;
+      }
       const x = this.rodPosition(rid, t);
       if (x <= 0.0) {
         this.motions[rid] = { kind: "still", t0: t, x0: 0.0 };
@@ -907,6 +911,9 @@ export class Engine {
         continue;
       }
       v = v * (1.0 + ins.noise * z);
+      if (typeof fault === "object" && fault !== null && (fault as any).kind === "drift") {
+        v *= (1.0 + ((fault as any).rate ?? 0.0) * (t - ((fault as any).t0 ?? t)));
+      }
       const [low, high] = ins.range;
       this.indicated[iid] = Math.min(high, Math.max(low, v));
     }
@@ -1005,6 +1012,9 @@ export class Engine {
       } else if (direction !== "in" && direction !== "out" && direction !== "stop") {
         status = "rejected";
         reason = "REJ_BAD_ARGUMENT";
+      } else if (this.faults[`rod.${rid}`] === "stuck" || this.faults[`rod.${rid}`] === "drop") {
+        status = "rejected";
+        reason = "REJ_ROD_STUCK";
       } else if (il) {
         status = "rejected";
         reason = `REJ_INTERLOCK:${il.id}`;
@@ -1032,6 +1042,9 @@ export class Engine {
       } else if (!this.lib.rodById[rid]!.pulseCapable) {
         status = "rejected";
         reason = "REJ_NOT_PULSE_CAPABLE";
+      } else if (this.faults[`rod.${rid}`] === "stuck" || this.faults[`rod.${rid}`] === "drop") {
+        status = "rejected";
+        reason = "REJ_ROD_STUCK";
       } else if (il) {
         status = "rejected";
         reason = `REJ_INTERLOCK:${il.id}`;
@@ -1083,7 +1096,11 @@ export class Engine {
         this.latched = [];
       }
     } else if (ctype === "fault.reactivity") {
-      this.extraRho += Number(cmd.deltaRho ?? 0.0);
+      if (cmd.kind === "clear") {
+        this.extraRho = 0.0;
+      } else {
+        this.extraRho += Number(cmd.deltaRho ?? 0.0);
+      }
     } else if (ctype === "fault.instrument") {
       const iid = cmd.instrument;
       const kind = cmd.kind;
@@ -1094,6 +1111,31 @@ export class Engine {
         delete this.faults[iid];
       } else if (kind === "stuck" || kind === "dead") {
         this.faults[iid] = kind;
+      } else if (kind === "drift") {
+        const rate = Number(cmd.rate ?? 0.0);
+        if (rate !== 0.0) {
+          this.faults[iid] = { kind: "drift", rate, t0: t, v0: this.indicated[iid] } as any;
+        }
+      } else {
+        status = "rejected";
+        reason = "REJ_BAD_ARGUMENT";
+      }
+    } else if (ctype === "fault.rod") {
+      const rid = cmd.rod;
+      const kind = cmd.kind;
+      if (typeof rid !== "string" || !Object.hasOwn(this.lib.rodById, rid)) {
+        status = "rejected";
+        reason = "REJ_UNKNOWN_ROD";
+      } else if (kind === "clear") {
+        delete this.faults[`rod.${rid}`];
+      } else if (kind === "stuck" || kind === "no-scram" || kind === "drop") {
+        this.faults[`rod.${rid}`] = kind;
+        if (kind === "drop") {
+          const x = this.rodPosition(rid, t);
+          if (x > 0.0) {
+            this.motions[rid] = { kind: "scram", t0: t, tau0: this.lib.rodById[rid]!.scramTau(x) };
+          }
+        }
       } else {
         status = "rejected";
         reason = "REJ_BAD_ARGUMENT";

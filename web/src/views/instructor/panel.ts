@@ -56,9 +56,12 @@ function describe(ack: Ack): string {
   return `rejected: ${ack.reason}${text ? ` (${text})` : ""}`;
 }
 
+import { JevCopilot, createCopilotButton } from "../copilot";
+
 export class InstructorPanel {
   readonly root: HTMLElement;
   readonly timeline = new Timeline();
+  private readonly copilot: JevCopilot;
   private outerDt = 0.01;
   private paused = true;
   private readonly play: HTMLButtonElement;
@@ -190,7 +193,18 @@ export class InstructorPanel {
     this.exportText = el("div", { className: "vr-inst-message" });
     this.exportText.dataset["inst"] = "export-message";
 
+    this.copilot = new JevCopilot(client, "instructor");
+    const copilotBtn = createCopilotButton(this.copilot);
+
+    const hdr = el("div", { className: "vr-row" }, [
+      el("h2", { textContent: "Instructor Panel" }),
+      copilotBtn
+    ]);
+    hdr.style.justifyContent = "space-between";
+    hdr.style.marginBottom = "10px";
+
     this.root = el("div", { className: "vr-instructor" }, [
+      hdr,
       el("section", {}, [
         el("h3", { textContent: "Time" }),
         el("div", { className: "vr-row" }, [this.play, this.rate, step, this.clockText]),
@@ -255,6 +269,7 @@ export class InstructorPanel {
   }
 
   onSnapshot(m: SnapshotMsg): void {
+    this.copilot.onSnapshot(m, this.scenario);
     const s = m.snapshot;
     this.lastSnapshot = s;
     this.lastFaults = m.faults;

@@ -41,6 +41,8 @@ function display(m: Meter, v: number): string {
 const RATES = [0.1, 1, 10, 100];
 const SCRAM_COVER_MS = 5000;
 
+import { JevCopilot, createCopilotButton } from "../copilot";
+
 export class OperatorPanel {
   readonly root: HTMLElement;
   readonly meters: Meter[];
@@ -48,6 +50,7 @@ export class OperatorPanel {
   readonly period = new PeriodEstimator();
   readonly annunciator: Annunciator;
   readonly charts: { meter: Meter | "period"; buffer: StripBuffer; chart: StripChart }[] = [];
+  private readonly copilot: JevCopilot;
   private readonly meterEls = new Map<string, { bar: HTMLElement; value: HTMLElement; flag: HTMLElement }>();
   private readonly periodEl: HTMLElement;
   private readonly rodEls = new Map<string, { pos: HTMLElement; down: HTMLElement; up: HTMLElement; fire?: HTMLButtonElement }>();
@@ -194,7 +197,18 @@ export class OperatorPanel {
     }
 
     this.message = el("div", { className: "vr-note" });
+    this.copilot = new JevCopilot(client, "operator");
+    const copilotBtn = createCopilotButton(this.copilot);
+
+    const hdr = el("div", { className: "vr-row" }, [
+      el("h2", { textContent: "Operator Panel" }),
+      copilotBtn
+    ]);
+    hdr.style.justifyContent = "space-between";
+    hdr.style.marginBottom = "10px";
+
     this.root = el("div", { className: "vr-operator" }, [
+      hdr,
       this.scenarioBox,
       el("section", {}, [el("h3", { textContent: "Instruments" }), ...meterRows, periodRow]),
       el("section", {}, [el("h3", { textContent: "Annunciator" }), this.tileBox, ack]),
@@ -276,6 +290,7 @@ export class OperatorPanel {
   }
 
   onSnapshot(msg: SnapshotMsg): void {
+    this.copilot.onSnapshot(msg);
     const view = operatorView(msg.snapshot);
     this.lastView = view;
     const t = view.console.t;

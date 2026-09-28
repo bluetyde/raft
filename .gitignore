@@ -10,3 +10,5 @@ summary.h5
 .vscode/
 .DS_Store
 validation/data/jsi-pulses/traces/
+venv/
+jev-server/venv/

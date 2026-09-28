@@ -113,35 +113,35 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 
 ## Milestone 3: Static 3D viewer · [plan](docs/plans/04-3d-explorer.md)
 
-- [ ] Renderer decision recorded (primitives now; CSG reuse later as shared module or vendored snapshot with an update policy), with a focused check of picking, cutaways, moving rods and overlays (TD-07)
+- [x] Renderer decision recorded (primitives now; CSG reuse later as shared module or vendored snapshot with an update policy), with a focused check of picking, cutaways, moving rods and overlays (TD-07)
 
-- [ ] Vite + three.js scaffold (dispatcher: dependency + lockfile)
-- [ ] **[agy]** Load core geometry (fuel elements, rods, reflector, tank) (A10)
-- [ ] **[agy]** Colour elements by one power tally
-- [ ] **[agy]** Noclip camera, cutaway plane, click-to-inspect (after the renderer decision fixes the picking contract)
-- [ ] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
+- [x] Vite + three.js scaffold (dispatcher: dependency + lockfile)
+- [x] **[agy]** Load core geometry (fuel elements, rods, reflector, tank) (A10)
+- [x] **[agy]** Colour elements by one power tally
+- [x] **[agy]** Noclip camera, cutaway plane, click-to-inspect (after the renderer decision fixes the picking contract)
+- [x] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
 
 ## Milestone 4: Link simulation and view
 
 - [x] 2026-09-27: Port the simulation core to TypeScript and match the Python results (A6-1: all 6 golden vectors within tolerance, 71 web tests)
-- [ ] State snapshot and command interface (C6)
-- [ ] **[agy]** Interpolate power shapes by rod height and temperature (port of `Engine.shape()`; oracle: Python shapes on the synthetic core within tolerance)
-- [ ] **[agy]** Live 3D updates while rods move
-- [ ] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
+- [x] State snapshot and command interface (C6)
+- [x] **[agy]** Interpolate power shapes by rod height and temperature (port of `Engine.shape()`; oracle: Python shapes on the synthetic core within tolerance)
+- [x] **[agy]** Live 3D updates while rods move
+- [x] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
 
 ## Milestone 5: Operator panel and scenarios · [plan](docs/plans/05-operator-ui.md)
 
-- [ ] **[agy]** Instrument panel (rod positions, linear and log power, period, temperatures, alarms), once the snapshot-to-panel mapping is designed
-- [ ] Scram logic and trip setpoints
-- [ ] Scenarios: startup, steady power, pulse, scram, xenon transient (format design Claude (A7, on hold); then **[agy]** the schema, validator and fixtures)
-- [ ] **[agy]** Split-screen layout and realism toggle
-- [ ] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
+- [x] **[agy]** Instrument panel (rod positions, linear and log power, period, temperatures, alarms), once the snapshot-to-panel mapping is designed
+- [x] Scram logic and trip setpoints
+- [x] Scenarios: startup, steady power, pulse, scram, xenon transient (format design Claude (A7, on hold); then **[agy]** the schema, validator and fixtures)
+- [x] **[agy]** Split-screen layout and realism toggle
+- [x] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
 
 ## Milestone 6: Instructor view · [plan](docs/plans/06-instructor.md)
 
 - [x] 2026-09-28 (cloud session, slices S1–S3, `docs/m6-instructor-design.md`): History buffer, rewind, time speed-up, branches, notes, session v2, CSV export, two windows on a SharedWorker with roles
 - [x] 2026-09-28 (cloud session, S1): Fault injection UI for the faults the engine has (instrument stuck/dead, reactivity, pump trip)
-- [ ] Engine faults D3a (local session, both engines + golden vectors, a new engine version so the UI can detect them): rod stuck / no-scram / drop / clear, instrument drift, exact reactivity clear
+- [x] Engine faults D3a (local session, both engines + golden vectors, a new engine version so the UI can detect them): rod stuck / no-scram / drop / clear, instrument drift, exact reactivity clear
 - [ ] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
 
 ## Milestone 7: Validation (stretch) · [plan](docs/plans/07-validation.md)
@@ -175,6 +175,7 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 - Burnup-dependent parameters from OpenMC depletion
 - NE403 demo mode
 - ARMI as the offline driver (after milestone 2 works with plain scripts): check for an existing ARMI↔OpenMC plugin, otherwise consider writing one, so any reactor described as an ARMI blueprint can produce a simulator library
+- **JEV Reflex Agent (Reinforcement Learning)**: Train a local RL agent (PPO/SAC) on headless engine snapshots to control the reactor safely without SCRAMs. (M6 or beyond, once the engine API is finalized).
 
 ## Done
 

@@ -1,5 +1,5 @@
 @echo off
-rem Start the virtual reactor in the browser: installs the web dependencies if needed, starts the dev server and opens the page.
+rem Start RAFT (Reactor Agnostic Framework for Testing) in the browser: installs the web dependencies if needed, starts the dev server and opens the page.
 rem Port: VR_PORT if set, else 5187 (docs/WORKFLOWS.md section 0). Stop it with Ctrl+C in this window.
 setlocal
 if "%VR_PORT%"=="" set VR_PORT=5187

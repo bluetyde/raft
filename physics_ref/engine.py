@@ -21,7 +21,7 @@ import math
 from .library import Library
 from .numerics import SplitMix64, lu_factor, lu_solve
 
-ENGINE_VERSION = "0.1.0"
+ENGINE_VERSION = "0.2.0"
 CAPABILITY = "point-kinetics/lumped-thermal-v1"
 
 DEFAULT_CONFIG = {
@@ -297,6 +297,8 @@ class Engine:
 
     def _scram_all(self, t: float) -> None:
         for rid in self.motions:
+            if self.faults.get(f"rod.{rid}") in ("stuck", "no-scram"):
+                continue
             x = self.rod_position(rid, t)
             if x <= 0.0:
                 self.motions[rid] = {"kind": "still", "t0": t, "x0": 0.0}
@@ -558,6 +560,8 @@ class Engine:
             if fault == "stuck" and iid in self.indicated:
                 continue
             v = v * (1.0 + ins["noise"] * z)
+            if isinstance(fault, dict) and fault.get("kind") == "drift":
+                v *= (1.0 + fault.get("rate", 0.0) * (t - fault.get("t0", t)))
             lo, hi = ins["range"]
             self.indicated[iid] = min(hi, max(lo, v))
 
@@ -616,6 +620,8 @@ class Engine:
                 status, reason = "rejected", "REJ_UNKNOWN_ROD"
             elif direction not in ("in", "out", "stop"):
                 status, reason = "rejected", "REJ_BAD_ARGUMENT"
+            elif self.faults.get(f"rod.{rid}") in ("stuck", "drop"):
+                status, reason = "rejected", "REJ_ROD_STUCK"
             elif il:
                 status, reason = "rejected", f"REJ_INTERLOCK:{il['id']}"
             elif direction == "out" and tripped:
@@ -636,6 +642,8 @@ class Engine:
                 status, reason = "rejected", "REJ_UNKNOWN_ROD"
             elif not self.lib.rod_by_id[rid].pulse_capable:
                 status, reason = "rejected", "REJ_NOT_PULSE_CAPABLE"
+            elif self.faults.get(f"rod.{rid}") in ("stuck", "drop"):
+                status, reason = "rejected", "REJ_ROD_STUCK"
             elif il:
                 status, reason = "rejected", f"REJ_INTERLOCK:{il['id']}"
             elif tripped:
@@ -673,7 +681,10 @@ class Engine:
             else:
                 self.latched = []
         elif ctype == "fault.reactivity":
-            self.extra_rho += float(cmd.get("deltaRho", 0.0))
+            if cmd.get("kind") == "clear":
+                self.extra_rho = 0.0
+            else:
+                self.extra_rho += float(cmd.get("deltaRho", 0.0))
         elif ctype == "fault.instrument":
             iid, kind = cmd.get("instrument"), cmd.get("kind")
             if iid not in {i["id"] for i in self.lib.instruments}:

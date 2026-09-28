@@ -1,0 +1,9 @@
+{
+  "premise": "ROLE: Simulation Instructor. GOAL: Provide a challenging but solvable scenario for the operator. CURRENT STATE: {\"title\":\"Synthetic Power Ascension\",\"brief\":\"Start up to 100 kW\"}. Power is 5.000e+4 W.",
+  "hypotheses": [
+    "The operator is busy. I will wait and observe.",
+    "I will trigger an instrument drift fault to confuse the operator.",
+    "I will jam a control rod (stuck) to see how they react.",
+    "The scenario is complete. I will end the simulation."
+  ]
+}

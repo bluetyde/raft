@@ -1,4 +1,4 @@
-# Virtual Reactor
+# RAFT (Reactor Agnostic Framework for Testing)
 
 An open reactor modeller. Take a reactor model, generate its physics library with OpenMC,
 then run it live in the browser. Operate it from a control-room panel, or fly through the core and watch the power distribution change.
