@@ -92,6 +92,7 @@ describe("two windows on one runtime (D2a)", () => {
       { kind: "annotation.delete", id: 1 },
       { kind: "load", protocol: 1, source: { kind: "files", files: {} } },
       { kind: "session.import", file: {} as never },
+      { kind: "scenario.end" },
     ];
     expect(forbidden.map((m) => m.kind).sort()).toEqual([...OPERATOR_FORBIDDEN].sort());
     for (const m of forbidden) await to("B", m);

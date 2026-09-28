@@ -12,7 +12,7 @@ export type TileState = "off" | "flashing" | "lit";
 export interface Tile {
   id: string;
   label: string;
-  kind: "trip" | "failed" | "range" | "interlock";
+  kind: "trip" | "failed" | "range" | "interlock" | "instructor";
   state: TileState;
   /** For interlock tiles: the reason text of the last rejection. */
   detail?: string;
@@ -55,6 +55,20 @@ export class Annunciator {
       this.set(`failed:${i.id}`, i.failed);
       this.set(`range:${i.id}`, i.pegged);
     }
+  }
+
+  /**
+   * A scenario with `faultsVisible` (M6 D4b): one tile that says an instructor fault is active, with the usual sequence.
+   * Without it, the tile does not exist, and the operator sees faults only through the instruments.
+   */
+  instructorFault(visible: boolean, active: boolean): void {
+    const id = "instructor:fault";
+    if (!visible) {
+      this.tiles.delete(id);
+      return;
+    }
+    if (!this.tiles.has(id)) this.add(id, "instructor fault active", "instructor");
+    this.set(id, active);
   }
 
   /** An own command was rejected with REJ_INTERLOCK:<id>. The tile flashes until acknowledged, then goes off (an event, not a condition). */

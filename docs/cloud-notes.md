@@ -302,4 +302,16 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 - Tests: 13 validator and tracker tests, 14 runtime tests (including the amendment 3 case, and a headless run of every shipped scenario with a scripted operator: all goals met, no unexpected trip), 1 new session-file test, and 2 Playwright tests.
   Five deliberate breaks were each caught (events submitted late, controls not enforced, goals fresh after a rewind, thresholds not recorded, no truth-goal check). The rewind test was made stronger when the third break first passed.
 - Branch: `claude/m5-scenarios-design`. Checks: see the PR.
+- Merged into `main` on 2026-09-28 (user OK).
+
+### 2026-09-28: M5 scenarios slice SC2 implemented
+
+- What: the operator's scenario strip (brief, goals with status and time, hints, elapsed time, final score), controls that the scenario does not allow disabled in the operator panel,
+  the "instructor fault active" tile for scenarios with `faultsVisible`, and `scenario.end` (instructor only) with an "end scenario" button.
+  Details in `docs/m5-scenarios-design.md` §11.
+- Still open, as the user decided: approach to critical (with the 1/M plot), pulse and xenon, after the M2 OpenMC libraries.
+- **For the local session:** `scenario.end` is a new runtime request that an operator window may not send. ARCHITECTURE §2's list of runtime requests may want it. The request is not in the command log, so replays do not show it: the runtime keeps its step.
+- Tests: 3 new runtime tests (end, rewind across the end, no scenario), 5 new unit tests (strip text, score, allowed controls, fault tile), and 2 new Playwright tests (operator window strip and end score, `faultsVisible` tile).
+  One SC1 Playwright test changed: it switched the mode select to get `REJ_SCENARIO`, but SC2 disables that select. It now checks that the select is disabled, and sends the command directly to check the worker's refusal.
+- Branch: `claude/m5-scenarios-sc2`, based on `main` at `63cfe6e`. Checks: see the PR.
 

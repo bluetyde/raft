@@ -469,3 +469,48 @@ body,
 .vr-inst-goals li.waiting {
   opacity: 0.6;
 }
+
+/* M5 scenarios (slice SC2): the operator's scenario strip */
+.vr-scenario {
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  border: 1px solid #2e6b8f;
+  background: #0f2a40;
+}
+
+.vr-scn-brief {
+  margin: 4px 0 6px;
+}
+
+.vr-scn-goals {
+  margin: 4px 0 6px;
+  padding-left: 22px;
+}
+
+.vr-scn-goals li.met {
+  color: #7fd3a8;
+}
+
+.vr-scn-goals li.failed {
+  color: #e5584f;
+}
+
+.vr-scn-goals li.waiting {
+  opacity: 0.6;
+}
+
+.vr-scn-hints {
+  margin: 4px 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+.vr-scn-score {
+  margin-top: 6px;
+  font-weight: bold;
+}
+
+.vr-scn-elapsed {
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}

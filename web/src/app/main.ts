@@ -159,6 +159,7 @@ client.on("timeline", (m) => {
 client.on("scenario", (m) => {
   latest.scenario = m;
   instructor?.onScenario(m);
+  operator?.onScenario(m.scenario);
 });
 client.on("rewound", (m) => {
   operator?.onRewound();
@@ -243,7 +244,10 @@ async function build(info: LoadedInfo): Promise<void> {
       controls.onClock(latest.clock);
     }
     if (latest.timeline) instructor.onTimeline(latest.timeline);
-    if (latest.scenario) instructor.onScenario(latest.scenario);
+    if (latest.scenario) {
+      instructor.onScenario(latest.scenario);
+      operator.onScenario(latest.scenario.scenario);
+    }
 
     const s = explorer.stats!;
     status.textContent = `${lib.id} (${lib.status}): ${s.primitives} primitives, ${s.drawCalls} draw calls, outer step ${info.outerDt} s`;

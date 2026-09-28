@@ -413,6 +413,19 @@ export class GoalTracker {
     return changed;
   }
 
+  /** The instructor ends the scenario at time `t`: every goal that is not met fails. True when a goal changed. */
+  endAt(t: number): boolean {
+    let changed = false;
+    for (const st of this.states) {
+      if (st.status === "met" || st.status === "failed") continue;
+      st.status = "failed";
+      st.t = t;
+      st.holdSince = null;
+      changed = true;
+    }
+    return changed;
+  }
+
   /** The goals as the views show them. */
   view(): { id: string; text: string; status: GoalStatus; t: number | null }[] {
     return this.goals.map((g, i) => ({ id: g.id, text: g.text, status: this.states[i]!.status, t: this.states[i]!.t }));
