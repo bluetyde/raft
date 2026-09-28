@@ -2,9 +2,9 @@ import type { RuntimeClient } from "../runtime/client";
 import type { FromWorker } from "../runtime/protocol";
 
 class PIDController {
-  private kp = 0.5;
-  private ki = 0.05;
-  private kd = 0.1;
+  private kp = 0.2;
+  private ki = 0.01;
+  private kd = 1.5;
 
   private target: number | null = null;
   private integral = 0;
@@ -53,7 +53,7 @@ class PIDController {
 
     const output = (this.kp * error) + (this.ki * this.integral) + (this.kd * derivative);
     
-    const threshold = 0.05; // Deadband to avoid chattering
+    const threshold = 0.1; // Wider deadband to avoid chattering
     if (output > threshold) return "out";
     if (output < -threshold) return "in";
     return "stop";
