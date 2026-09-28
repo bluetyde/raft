@@ -15,9 +15,9 @@ describe("library catalog", () => {
     ]);
   });
 
-  it("ships the synthetic core and triga-jsi-242, each with its arrays", () => {
+  it("ships the synthetic core, triga-jsi-242 and the two OpenMC libraries, each with its arrays", () => {
     const names = CATALOG.map((e) => e.name);
-    expect(names).toEqual(["synthetic-core", "triga-jsi-242"]);
+    expect(names).toEqual(["synthetic-core", "triga-jsi-242", "triga-jsi-242-openmc", "triga-jsi-246-openmc"]);
     for (const e of CATALOG) {
       expect(e.files.has("manifest.json")).toBe(true);
       expect([...e.files.keys()].some((k) => k.startsWith("arrays/"))).toBe(true);

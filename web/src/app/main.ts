@@ -259,7 +259,18 @@ async function build(info: LoadedInfo): Promise<void> {
   }
 }
 
-/** Load a library as a new session. `opts` sets the engine's initial state, seed and config (default: the library's reference state). */
+/** Every rod fully in, from the library's manifest: a shut-down start that is subcritical for any library. A library whose
+ * reference state is its measured critical state (the M2 OpenMC libraries) has no source equilibrium there
+ * (E_INIT_NO_EQUILIBRIUM); the older libraries' reference rods are already all in, so for them this is the reference state. */
+function shutdownInit(files: Record<string, ArrayBuffer>): Record<string, any> | undefined {
+  const manifest = files["manifest.json"];
+  if (!manifest) return undefined;
+  const rods = (JSON.parse(new TextDecoder().decode(manifest)) as { reactivity?: { rods?: { id: string }[] } }).reactivity?.rods;
+  return rods ? { rods: Object.fromEntries(rods.map((r) => [r.id, 0])) } : undefined;
+}
+
+/** Load a library as a new session. `opts` sets the engine's initial state, seed and config (default: all rods in, see
+ * shutdownInit; a scenario brings its own). */
 async function show(
   name: string,
   opts: { init?: Record<string, any>; seed?: number; config?: Record<string, any>; scenario?: unknown } = {},
@@ -269,7 +280,9 @@ async function show(
   status.textContent = `loading ${name}…`;
   delete app.dataset["ready"];
   try {
-    await client.load({ kind: "files", files: await catalogFiles(entry) }, opts);
+    const files = await catalogFiles(entry);
+    const init = opts.init ?? (opts.scenario === undefined ? shutdownInit(files) : undefined);
+    await client.load({ kind: "files", files }, init === undefined ? opts : { ...opts, init });
     await adopting; // the `loaded` message came before the load's answer, so its build is queued
   } catch (err) {
     status.textContent = `could not load ${name}: ${String(err)}`;
