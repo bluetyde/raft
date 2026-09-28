@@ -7,7 +7,12 @@ import type { LibraryReader } from "../library/platform";
 
 // Paths are relative to this file. Add a library folder here to ship it.
 const FILES = import.meta.glob(
-  ["../../../schema/vectors/synthetic-core/**/*", "../../../libraries/triga-jsi-242/**/*"],
+  [
+    "../../../schema/vectors/synthetic-core/**/*",
+    "../../../libraries/triga-jsi-242/**/*",
+    "../../../libraries/triga-jsi-242-openmc/**/*",
+    "../../../libraries/triga-jsi-246-openmc/**/*",
+  ],
   { query: "?url", import: "default", eager: true },
 ) as Record<string, string>;
 
