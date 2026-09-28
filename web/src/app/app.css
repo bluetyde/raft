@@ -410,3 +410,40 @@ body,
     border-top: 1px solid #22405e;
   }
 }
+
+/* M6 slice S2: notes, branches, export */
+.vr-inst-mark.note {
+  background: #4fc3f7;
+}
+
+.vr-inst-mark.fork {
+  width: 2px;
+  background: #fff;
+}
+
+.vr-inst-notes {
+  margin: 4px 0 10px;
+  padding-left: 18px;
+}
+
+.vr-inst-notes button {
+  font-size: 11px;
+}
+
+.vr-inst-table tr.current td {
+  font-weight: bold;
+}
+
+.vr-instructor input[type="text"] {
+  min-width: 220px;
+}
+
+.vr-inst-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.vr-inst-scroll td,
+.vr-inst-scroll th {
+  white-space: nowrap;
+}

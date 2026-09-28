@@ -4,7 +4,8 @@
  */
 
 import type { Ack, RuntimeClient } from "../../runtime/client";
-import { RUNTIME_REJECTIONS, type ActiveFaults, type FromWorker } from "../../runtime/protocol";
+import { RUNTIME_REJECTIONS, type ActiveFaults, type BranchSummary, type FromWorker, type SessionFile } from "../../runtime/protocol";
+import { download, timeTag, traceInWorker } from "./export";
 import { formatPeriod, formatPower } from "../explorer/live";
 import { kelvinToCelsius } from "../operator/meters";
 import { faultLabel, instrumentFault, pumpFault, reactivityFault, WAITING_FOR_ENGINE, type InstrumentFaultKind } from "./faults";
@@ -20,10 +21,15 @@ export interface InstructorLibrary {
 export interface InstructorOptions {
   /** Start a new session of the same library with this outer step (the step is fixed per session). */
   restart(outerDt: number): void;
+  /** The library's files again (the CSV worker loads its own copy). */
+  files(): Promise<Record<string, ArrayBuffer>>;
+  /** The library id, for file names. */
+  libraryId: string;
 }
 
 type SnapshotMsg = Extract<FromWorker, { kind: "snapshot" }>;
 type ClockMsg = Extract<FromWorker, { kind: "clock" }>;
+type TimelineMsg = Extract<FromWorker, { kind: "timeline" }>;
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Partial<HTMLElementTagNameMap[K]> = {}, children: (Node | string)[] = []) {
   const e = document.createElement(tag);
@@ -61,6 +67,12 @@ export class InstructorPanel {
   private readonly truthTable: HTMLElement;
   private readonly bars: HTMLElement;
   private readonly rhoInput: HTMLInputElement;
+  private readonly noteInput: HTMLInputElement;
+  private readonly noteList: HTMLElement;
+  private readonly compare: HTMLElement;
+  private readonly exportText: HTMLElement;
+  private lastTimeline: TimelineMsg | null = null;
+  private lastSnapshot: Record<string, any> | null = null;
   /** The last faults and snapshot the panel drew (for tests). */
   lastFaults: ActiveFaults | undefined;
 
@@ -131,6 +143,29 @@ export class InstructorPanel {
     this.bars = el("div", { className: "vr-inst-bars" });
     this.bars.dataset["inst"] = "reactivity";
 
+    // ---- history: notes and branches ----
+    this.noteInput = el("input", { type: "text", placeholder: "note at the current time", maxLength: 500 });
+    this.noteInput.dataset["inst"] = "note-text";
+    const addNote = button("add note", "note-add", () => {
+      const text = this.noteInput.value.trim();
+      if (!text) return;
+      this.client.annotate(text);
+      this.noteInput.value = "";
+    });
+    this.noteList = el("ul", { className: "vr-inst-notes" });
+    this.noteList.dataset["inst"] = "notes";
+    this.compare = el("table", { className: "vr-inst-table" });
+    this.compare.dataset["inst"] = "branches";
+
+    // ---- export ----
+    const exportSession = button("session file", "export-session", () => void this.exportSession());
+    const exportCsv = button("CSV (every 0.1 s)", "export-csv", () => void this.exportCsv());
+    const importInput = el("input", { type: "file", accept: ".json,application/json" });
+    importInput.dataset["inst"] = "import";
+    importInput.onchange = () => void this.importFile(importInput);
+    this.exportText = el("div", { className: "vr-inst-message" });
+    this.exportText.dataset["inst"] = "export-message";
+
     this.root = el("div", { className: "vr-instructor" }, [
       el("section", {}, [
         el("h3", { textContent: "Time" }),
@@ -138,6 +173,18 @@ export class InstructorPanel {
         el("div", { className: "vr-row" }, ["outer step: ", this.stepText, outer, restart]),
       ]),
       el("section", {}, [el("h3", { textContent: "Timeline (click to rewind)" }), this.bar, this.confirmBox]),
+      el("section", {}, [
+        el("h3", { textContent: "Notes" }),
+        el("div", { className: "vr-row" }, [this.noteInput, addNote]),
+        this.noteList,
+        el("h3", { textContent: "Branches (compare)" }),
+        el("div", { className: "vr-inst-scroll" }, [this.compare]),
+      ]),
+      el("section", {}, [
+        el("h3", { textContent: "Export and import" }),
+        el("div", { className: "vr-row" }, [exportSession, exportCsv, "import:", importInput]),
+        this.exportText,
+      ]),
       el("section", {}, [
         el("h3", { textContent: "Faults" }),
         el("div", { className: "vr-row" }, ["instrument", insSelect, ...insButtons]),
@@ -180,6 +227,7 @@ export class InstructorPanel {
 
   onSnapshot(m: SnapshotMsg): void {
     const s = m.snapshot;
+    this.lastSnapshot = s;
     this.lastFaults = m.faults;
     this.timeline.setEnd(s.t);
     const tr = s.truth;
@@ -226,6 +274,109 @@ export class InstructorPanel {
     const lines = activeFaultLines(m.faults, tr.pumps);
     this.activeList.replaceChildren(...(lines.length ? lines : ["none"]).map((l) => el("li", { textContent: l })));
     this.drawTimeline();
+    this.drawCompare();
+  }
+
+  /** The worker's timeline: marks, notes, and the branches for the compare table. */
+  onTimeline(m: TimelineMsg): void {
+    this.lastTimeline = m;
+    const fork = m.current.parent !== null ? m.current.forkStep * this.outerDt : null;
+    this.timeline.set(m.marks, m.annotations, fork);
+    this.noteList.replaceChildren(
+      ...m.annotations.map((a) => {
+        const li = el("li", {}, [
+          `t = ${a.t.toFixed(2)} s: ${a.text} `,
+          button("delete", `note-delete-${a.id}`, () => this.client.deleteAnnotation(a.id)),
+        ]);
+        li.dataset["note"] = String(a.id);
+        return li;
+      }),
+    );
+    this.drawTimeline();
+    this.drawCompare();
+  }
+
+  /** Amendment 4: each branch's fork step and command count next to its final values. The current row uses the latest snapshot. */
+  private drawCompare(): void {
+    const m = this.lastTimeline;
+    if (!m) return;
+    const head = ["branch", "parent", "fork step", "commands", "notes", "end t", "power", "fuel", "xenon", "tripped", ""];
+    const row = (b: BranchSummary, current: boolean) => {
+      const f = current && this.lastSnapshot ? this.liveFinal(this.lastSnapshot) : b.final;
+      const tr = el("tr", { className: current ? "current" : "" }, [
+        el("td", { textContent: `${b.id}${current ? " (current)" : ""}` }),
+        el("td", { textContent: b.parent === null ? "—" : String(b.parent) }),
+        el("td", { textContent: String(b.forkStep) }),
+        el("td", { textContent: String(b.commandCount) }),
+        el("td", { textContent: String(current ? m.annotations.length : b.annotationCount) }),
+        el("td", { textContent: `${f.t.toFixed(2)} s` }),
+        el("td", { textContent: formatPower(f.power) }),
+        el("td", { textContent: `${kelvinToCelsius(f.fuelTemp).toFixed(2)} °C` }),
+        el("td", { textContent: f.xenon.toPrecision(4) }),
+        el("td", { textContent: f.tripped ? `yes (${f.latched.join(", ") || "active"})` : "no" }),
+        el("td", {}, current ? [] : [button("switch", `branch-switch-${b.id}`, () => void this.switchTo(b.id))]),
+      ]);
+      tr.dataset["branch"] = String(b.id);
+      return tr;
+    };
+    this.compare.replaceChildren(
+      el("tr", {}, head.map((h) => el("th", { textContent: h }))),
+      row(m.current, true),
+      ...[...m.branches].reverse().map((b) => row(b, false)),
+    );
+  }
+
+  private liveFinal(s: Record<string, any>): BranchSummary["final"] {
+    return {
+      t: s.t,
+      power: s.truth.power,
+      fuelTemp: s.truth.fuelTemp,
+      coolantTemp: s.truth.coolantTemp,
+      xenon: s.truth.xenon,
+      tripped: s.tripped,
+      latched: [...s.trips.latched],
+    };
+  }
+
+  private async switchTo(id: number): Promise<void> {
+    try {
+      const m = await this.client.switchBranch(id);
+      this.message.textContent = `switched to branch ${id} (step ${m.step})`;
+    } catch (err) {
+      this.message.textContent = `switch failed: ${String(err)}`;
+    }
+  }
+
+  private async exportSession(): Promise<void> {
+    const file = await this.client.exportSession();
+    const t = file.endStep * this.outerDt;
+    download(`${this.opts.libraryId}-${timeTag(t)}.session.json`, JSON.stringify(file), "application/json");
+    this.exportText.textContent = `session file: ${file.session.commands.length} commands, ${file.annotations?.length ?? 0} notes, t = ${t.toFixed(2)} s`;
+  }
+
+  private async exportCsv(): Promise<void> {
+    this.exportText.textContent = "writing the CSV (replaying the session in a separate worker)…";
+    const file = await this.client.exportSession();
+    const reply = await traceInWorker(await this.opts.files(), file, 0.1);
+    if (!reply.ok) {
+      this.exportText.textContent = `CSV failed: ${reply.message}`;
+      return;
+    }
+    download(`${this.opts.libraryId}-${timeTag(file.endStep * this.outerDt)}.csv`, reply.csv, "text/csv");
+    this.exportText.textContent = `CSV: ${reply.rows} rows`;
+  }
+
+  private async importFile(input: HTMLInputElement): Promise<void> {
+    const f = input.files?.[0];
+    if (!f) return;
+    try {
+      const file = JSON.parse(await f.text()) as SessionFile;
+      const m = await this.client.importSession(file);
+      this.exportText.textContent = `imported ${f.name}: step ${m.step}, t = ${m.t.toFixed(2)} s`;
+    } catch (err) {
+      this.exportText.textContent = `import failed: ${String(err)}`;
+    }
+    input.value = "";
   }
 
   onClock(m: ClockMsg): void {
@@ -234,11 +385,6 @@ export class InstructorPanel {
     this.rate.value = String(m.rate);
     const limit = m.limited ? ` (limited: ${m.limited}${m.reason ? `, ${m.reason}` : ""})` : "";
     this.clockText.textContent = `${m.paused ? "paused" : `${m.achievedRate.toFixed(1)}× achieved`}${limit}, step ${m.step}`;
-  }
-
-  onEvents(events: Record<string, any>[]): void {
-    this.timeline.onEvents(events);
-    this.drawTimeline();
   }
 
   onRewound(t: number): void {
@@ -251,7 +397,7 @@ export class InstructorPanel {
     const t = step * this.outerDt;
     this.confirmBox.hidden = false;
     this.confirmBox.replaceChildren(
-      `Rewind to step ${step} (t = ${t.toFixed(2)} s)? Later actions go to the old timeline. `,
+      `Rewind to step ${step} (t = ${t.toFixed(2)} s)? The current timeline is kept as a branch. `,
       button("rewind", "rewind-yes", () => void this.rewind()),
       button("cancel", "rewind-no", () => this.closeConfirm()),
     );
@@ -278,12 +424,10 @@ export class InstructorPanel {
     const ack = await this.client.command(cmd, undefined, "instructor");
     const label = faultLabel(cmd as Record<string, any>);
     if (ack.status === "accepted") {
-      this.timeline.onFault(ack.t, label);
       this.message.textContent = `${label}: accepted at t = ${ack.t.toFixed(2)} s`;
     } else {
       this.message.textContent = `${label}: ${describe(ack)}`;
     }
-    this.drawTimeline();
   }
 
   private drawTimeline(): void {
