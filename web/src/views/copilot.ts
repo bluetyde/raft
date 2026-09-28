@@ -1,6 +1,66 @@
 import type { RuntimeClient } from "../runtime/client";
 import type { FromWorker } from "../runtime/protocol";
 
+class PIDController {
+  private kp = 0.5;
+  private ki = 0.05;
+  private kd = 0.1;
+
+  private target: number | null = null;
+  private integral = 0;
+  private prevError = 0;
+  private lastT: number | null = null;
+
+  public isEnabled(): boolean {
+    return this.target !== null;
+  }
+
+  public setTarget(target: number): void {
+    if (this.target === target) return;
+    console.log(`[PID] Target set to ${target.toExponential(2)} W`);
+    this.target = target;
+    this.integral = 0;
+    this.prevError = 0;
+    this.lastT = null;
+  }
+
+  public disable(): void {
+    if (this.target !== null) console.log(`[PID] Disabled`);
+    this.target = null;
+  }
+
+  public update(current: number, t: number): string | null {
+    if (this.target === null) return null;
+    if (this.lastT === null) {
+      this.lastT = t;
+      return null;
+    }
+    
+    const dt = t - this.lastT;
+    if (dt <= 0) return null;
+    this.lastT = t;
+
+    // Use log10 error to handle 0W vs 10kW smoothly
+    const logTarget = Math.log10(Math.max(this.target, 1e-6));
+    const logCurrent = Math.log10(Math.max(current, 1e-6));
+    const error = logTarget - logCurrent;
+
+    this.integral += error * dt;
+    this.integral = Math.max(-10, Math.min(10, this.integral)); // Anti-windup
+    
+    const derivative = (error - this.prevError) / dt;
+    this.prevError = error;
+
+    const output = (this.kp * error) + (this.ki * this.integral) + (this.kd * derivative);
+    
+    const threshold = 0.05; // Deadband to avoid chattering
+    if (output > threshold) return "out";
+    if (output < -threshold) return "in";
+    return "stop";
+  }
+}
+
+
 export class JevCopilot {
   private ws: WebSocket | null = null;
   private client: RuntimeClient;
@@ -12,6 +72,9 @@ export class JevCopilot {
   private rodPositions: Record<string, number> = {};
   /** Latest moving state of rods from the most recent snapshot. */
   private rodMoving: Record<string, string | null> = {};
+  
+  private pid = new PIDController();
+  private lastPower: number = 0;
 
   constructor(client: RuntimeClient, role: "operator" | "instructor") {
     this.client = client;
@@ -79,6 +142,9 @@ export class JevCopilot {
       const power    = s.indicated?.["log"]       ?? truth.power ?? 0;
       const period   = truth.period ?? 0;
       const fuelTemp = (truth["temp.fuel"] ?? 293.15) - 273.15; // K to C
+      const t        = truth.t ?? 0;
+
+      this.lastPower = power;
 
       // Cache rod states
       const rods = truth.rods ?? {};
@@ -86,11 +152,23 @@ export class JevCopilot {
         this.rodPositions[id] = rods[id]?.position ?? 1; // default to 1 (withdrawn) if missing
         this.rodMoving[id]    = rods[id]?.moving ?? null;
       }
+      
+      // Execute fast Reflex PID Loop (30Hz)
+      if (this.pid.isEnabled()) {
+        const pidCmd = this.pid.update(power, t);
+        if (pidCmd !== null) {
+          const currentMoving = this.rodMoving["regulating"];
+          if (currentMoving !== pidCmd) {
+            this.client.command({ type: "rod.move", rod: "regulating", direction: pidCmd }, undefined, this.role);
+            this.rodMoving["regulating"] = pidCmd; // optimistic
+          }
+        }
+      }
 
       const rodDesc = [
-        `Shim: ${(this.rodPositions["shim"]       * 100).toFixed(0)}%`,
-        `Safety: ${(this.rodPositions["safety"]   * 100).toFixed(0)}%`,
-        `Regulating: ${(this.rodPositions["regulating"] * 100).toFixed(0)}%`,
+        `Shim: ${((this.rodPositions["shim"] ?? 1)       * 100).toFixed(0)}%`,
+        `Safety: ${((this.rodPositions["safety"] ?? 1)   * 100).toFixed(0)}%`,
+        `Regulating: ${((this.rodPositions["regulating"] ?? 1) * 100).toFixed(0)}%`,
       ].join(", ");
 
       // Determine reactor phase
@@ -155,28 +233,41 @@ export class JevCopilot {
   private executeChoice(choice: string): void {
     if (this.role === "operator") {
       const desiredMoving: Record<string, string | null> = { shim: null, safety: null, regulating: null };
+      let updatePid = false;
 
       if (choice.includes("pull ONE control rod UP")) {
+        this.pid.disable();
         const AT_LIMIT = 0.99;
-        if (this.rodPositions["shim"] < AT_LIMIT) desiredMoving["shim"] = "out";
-        else if (this.rodPositions["safety"] < AT_LIMIT) desiredMoving["safety"] = "out";
-        else if (this.rodPositions["regulating"] < AT_LIMIT) desiredMoving["regulating"] = "out";
+        if ((this.rodPositions["shim"] ?? 1) < AT_LIMIT) desiredMoving["shim"] = "out";
+        else if ((this.rodPositions["safety"] ?? 1) < AT_LIMIT) desiredMoving["safety"] = "out";
+        else if ((this.rodPositions["regulating"] ?? 1) < AT_LIMIT) desiredMoving["regulating"] = "out";
       } else if (choice.includes("push the regulating rod DOWN")) {
+        this.pid.disable();
         desiredMoving["regulating"] = "in";
       } else if (choice.includes("STOP the control rods")) {
-        // all desired moving = null
+        // Let the PID handle holding the current power with the regulating rod
+        updatePid = true;
       } else if (choice.includes("manual SCRAM")) {
+        this.pid.disable();
         this.client.command({ type: "scram" }, undefined, this.role);
         return;
       }
 
       // Reconcile desired state with current engine state
       for (const id of ["shim", "safety", "regulating"]) {
+        // If PID is taking over regulating, skip manual reconcile for it
+        if (updatePid && id === "regulating") continue;
+
         const current = this.rodMoving[id];
         const desired = desiredMoving[id];
         if (current !== desired) {
           this.client.command({ type: "rod.move", rod: id, direction: desired ?? "stop" }, undefined, this.role);
         }
+      }
+
+      // Set target power for PID
+      if (updatePid && this.lastPower > 0) {
+        this.pid.setTarget(this.lastPower);
       }
     } else {
       if (choice.includes("jam a control rod")) {
