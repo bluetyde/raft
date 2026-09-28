@@ -52,6 +52,7 @@ test("the instructor starts a scenario; its goals show; a control it does not al
   await page.click('[data-op="regulating:out"]');
   await inst(page, "rate").selectOption("100");
   await expect(box.locator('[data-goal="one-percent"]')).toHaveAttribute("data-status", "met", { timeout: 30_000 });
+  await page.click('[data-op="play"]'); // pause, so a slow runner does not reach the next goal before the checks below
   await expect(box.locator('[data-goal="ten-percent"]')).toHaveAttribute("data-status", "open");
   await expect(inst(page, "scenario-score")).toContainText("goals met 1 of 3");
 });
@@ -104,6 +105,10 @@ test("the operator window shows the scenario strip; disallowed controls are off;
   await inst(page, "rate").selectOption("100");
   await inst(page, "play").click();
   await expect(strip.locator('[data-goal="one-percent"]')).toHaveAttribute("data-status", "met", { timeout: 30_000 });
+  // pause at once: at 100x the next goal is only about 4 s of wall time away, and a slow runner could reach it
+  await inst(page, "play").click();
+  await expect(inst(page, "play")).toHaveText("play", { timeout: 10_000 });
+  await expect(strip.locator('[data-goal="ten-percent"]')).toHaveAttribute("data-status", "open");
   await expect(strip.locator('[data-goal="one-percent"]')).toContainText("(at ");
   await expect(b.locator('[data-op="scenario-elapsed"]')).toContainText("elapsed ");
   await expect(b.locator('[data-op="scenario-score"]')).toBeHidden();
