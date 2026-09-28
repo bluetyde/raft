@@ -111,6 +111,22 @@ export class RuntimeClient {
     return done.then((m) => this.orThrow(m, "rewound"));
   }
 
+  /** Add a note at `step` (default: the current step). The next `timeline` message lists it. */
+  annotate(text: string, step?: number): void {
+    this.send(step === undefined ? { kind: "annotate", text } : { kind: "annotate", text, step });
+  }
+
+  deleteAnnotation(id: number): void {
+    this.send({ kind: "annotation.delete", id });
+  }
+
+  /** Make another branch the current timeline. Resolves like a rewind; the clock is paused. */
+  switchBranch(id: number): Promise<Msg<"rewound">> {
+    const done = this.next(["rewound", "error"], "branch.switch");
+    this.send({ kind: "branch.switch", id });
+    return done.then((m) => this.orThrow(m, "rewound"));
+  }
+
   private orThrow<K extends Kind>(m: FromWorker, kind: K): Msg<K> {
     if (m.kind === "error") throw new Error(`${m.code}: ${m.message}`);
     if (m.kind !== kind) throw new Error(`expected ${kind}, got ${m.kind}`);
