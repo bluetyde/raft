@@ -176,14 +176,29 @@ and `REJ_SESSION_REPLACED` (a queued command was discarded by a new load or a se
   The golden vectors must still pass, and this is the other session's work (request R4).
 - More workers do not help: one timeline is computed one step after another.
 
-## 10. Limits (first cut for TD-08)
+## 10. Limits and Resource Bounds (TD-08)
 
 | Item | Limit | At the limit |
 |---|---|---|
-| Unacknowledged snapshots | 1 | Newer snapshots replace older ones before sending |
-| Stored checkpoints | 128 (about 1.1 KB each without the log, measured) | Thin the older half |
-| Events to send | none | Never dropped. Only commands, trips, halts and restores make events, so the volume is small |
-| Engine `commandLog` and `events` | none (engine-owned) | About 120 B per command and 95 B per event as JSON (measured). The budget is set in the TD-08 task |
+| Unacknowledged snapshots | 1 per window | Newer snapshots coalesce and replace older ones before sending; extremes accumulate across all intervening steps (M5 amendment 1). |
+| Binary array transfer | 1 buffer per shape update | Buffer ownership transferred via `Transferable` (`[own.buffer]`) to eliminate worker-to-window copy overhead. |
+| Stored checkpoints | 128 default (`maxCheckpoints`) | Bounded in `CheckpointStore`; thin the older half while preserving step 0 and the latest checkpoint. Stored without command log to prevent quadratic growth. |
+| Retained branches | 32 (`MAX_BRANCHES`) | Oldest timeline dropped when creating the 33rd branch. |
+| Strip charts | 3,000 buckets over 600 s window | Hard bound of 6,000 items (including gaps); evicts older points and keeps bucket min/max. |
+| Events to send | none | Never dropped. Commands, trips, halts, and restores dispatch immediately regardless of frame backpressure. |
+| Engine `commandLog` and `events` | Append-only | About 120 B per command and 95 B per event as JSON. Exportable session files pin the exact command sequence and initial state so replaying from step 0 is 100% deterministic even when intermediate checkpoints have been thinned. |
+
+### TD-08 Measured Verification (`web/src/runtime/bounds.test.ts`)
+- **Backpressure & Coalescing**: 50 unacknowledged simulation steps emit at most 1 snapshot; authoritative trip and command acks dispatch without blocking; acknowledged frames immediately receive the latest snapshot and extremes.
+- **Buffer Ownership**: Shape updates transfer the underlying `ArrayBuffer` without cloning.
+- **Checkpoint Thinning & Replay**: Checkpoint store caps at quota, drops older intermediate checkpoints, and rewinding to both preserved and thinned steps succeeds.
+- **Exportability**: Exported session files after checkpoint thinning successfully import and reconstruct the exact engine state and trajectory.
+- **Memory & Latency Benchmark**:
+  - Environment: Windows 11 x64, 16 CPUs, Node.js v24.18.0.
+  - 4,000 fine simulation steps under continuous operator commands (`rod.move`) and frame backpressure ran in ~300 ms.
+  - Heap growth: **< 3.5 MB** (well under the 35 MB budget).
+  - Command acknowledgment latency: 0 steps delay.
+  - Post-run rewind and forward replay: bit-identical.
 
 ## 11. Tests (Vitest, Node, fake clock)
 

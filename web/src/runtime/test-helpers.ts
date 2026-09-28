@@ -46,11 +46,23 @@ export class FakeHost implements RuntimeHost {
 
   /** Each posted message with the window it went to (undefined = every window). */
   sent: { msg: FromWorker; to: string | undefined }[] = [];
+  /** Captured transfers with each post. */
+  transfers: { msg: FromWorker; transfer: Transferable[] | undefined; to: string | undefined }[] = [];
 
-  post(msg: FromWorker, _transfer?: Transferable[], to?: string): void {
+  post(msg: FromWorker, transfer?: Transferable[], to?: string): void {
     const copy = structuredClone(msg);
     this.out.push(copy);
     this.sent.push({ msg: copy, to });
+    this.transfers.push({ msg: copy, transfer, to });
+  }
+
+  /** Drain accumulated message buffers so long sessions do not grow memory in the test host. */
+  drain(): FromWorker[] {
+    const copy = [...this.out];
+    this.out = [];
+    this.sent = [];
+    this.transfers = [];
+    return copy;
   }
 
   /** The messages window `port` received (sent to it, or to every window), optionally of one kind. */

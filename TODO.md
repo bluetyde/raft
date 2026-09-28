@@ -68,7 +68,7 @@ All ten architecture findings and TD-01..09 are **accepted and documented** (202
 - [ ] Then a minimal panel and primitive viewer (needs the TypeScript port).
       Checkpoint restore must match uninterrupted execution including noise and trips; built with the first stateful runtime, not deferred to M6 (TD-05)
 - [x] 2026-09-27: Independent checks (TD-04): perturbed-coefficient tests (`test_wrong_coefficient_breaks_order`, `..._catches_wrong_gamma`), vector self-test (`test_comparison_catches_real_differences`, ported to TS), and targeted breaks during each verification (logged). Golden vectors reproduced by the TS port (A6-1).
-- [ ] **[agy]** Basic resource bounds in the first worker and recorder (after C6); an accelerated synthetic session stays within a measured memory budget (TD-08)
+- [x] 2026-09-28: **[agy]** Basic resource bounds in the first worker and recorder (TD-08): backpressure coalescing unacknowledged frames without dropping events; shape Float32Array ownership transferred via Transferable; checkpoint store bounded to maxCheckpoints with older-half thinning; 32 branch limit; exportable session file replays bit-identically after thinning; accelerated synthetic session memory budget (< 3.5 MB heap growth over 4,000 fine steps in ~300 ms, 0-step command latency, verified by web/src/runtime/bounds.test.ts)
 - [x] 2026-09-27 (Next #8, PR #4): Browser end-to-end check on the same fixture: malformed library, a trip, pause/resume, replay. Only then expand the transport grid
 - [ ] Performance budgets on a named reference laptop (Claude sets the budgets; **[agy]** writes the benchmark harness): library memory, load time, command latency, replay latency, solver throughput
 
