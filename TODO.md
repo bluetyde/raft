@@ -175,6 +175,12 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 - Burnup-dependent parameters from OpenMC depletion
 - NE403 demo mode
 - ARMI as the offline driver (after milestone 2 works with plain scripts): check for an existing ARMI↔OpenMC plugin, otherwise consider writing one, so any reactor described as an ARMI blueprint can produce a simulator library
+- **AI Copilot Model Evaluation (System One / Jev format)**: Test various cross-encoder decision models in `server.py` to find the most accurate and lowest-latency driver for the reactor:
+  - [ ] `v6543210/openJev-1.5B` (currently integrated, lightweight)
+  - [ ] `openjev/openjev` (the flagship 27B model, requires major hardware)
+  - [ ] `jaredpalmer/kev-0.8b` (ultra-lightweight 1.6GB)
+  - [ ] `sky7350/Mica-v0.1-4B` (highly accurate 4B model, native TypeSafe /v1/systemone format, robust against prompt injection)
+  - [ ] Standard cross-encoders (e.g. `BAAI/bge-reranker-v2-m3` or `cross-encoder/ms-marco-MiniLM-L-6-v2`)
 - **JEV Reflex Agent (Reinforcement Learning)**: Train a local RL agent (PPO/SAC) on headless engine snapshots to control the reactor safely without SCRAMs. (M6 or beyond, once the engine API is finalized).
 
 ## Done
