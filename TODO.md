@@ -101,12 +101,13 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 - [x] 2026-09-27 (`pipeline/runs/cache.py`, `pipeline/tests/test_run_cache.py`, targeted breaks): **Gate before any large sweep (TD-06):** changing model content invalidates a run; changing only extraction rebuilds derived data; an interrupted run can't be read as complete
 
 - [x] 2026-09-27 (`docs/validation/m2-core.md`, `m2-burnup-results.md`): Build the JSI TRIGA OpenMC model from open data; check k-eff at the measured critical rod positions (Next #1, #4). Uniform burnup calibrated on core 246 (23.7 MWd/kg effective), tested on core 242 (−309 pcm) and the measured burnup coefficient; transient-rod curve of core 242 within 1σ of its table
-- [ ] Integral and differential rod-worth curves for each control rod
+- [x] 2026-09-28 (`docs/validation/m2-libraries.md`): Integral and differential rod-worth curves for each control rod (both cores; transient rod of core 242 within 1% of its measured table)
 - [x] 2026-09-27 (IFP, `m2-core.md`): β_eff and Λ (737 ± 11 pcm, 40.6 µs fresh; 724 ± 25 pcm, 45.5 µs at the calibrated burnup)
-- [ ] Fuel and coolant temperature coefficients
-- [ ] 3D power mesh tallies over the state grid; estimate compute cost first
+- [x] 2026-09-28 (`m2-libraries.md`): Fuel and coolant temperature coefficients (fuel −8 to −14 pcm/K; coolant positive, about +12 pcm/K, consistent with the UT Austin SAR)
+- [x] 2026-09-28 (`pipeline/openmc/sweep.py`, `shapes.py`): 3D power shapes over the state grid (fuel region × 15 axial bins, separable form; 83 cases, ~5 h); holdout errors in `m2-libraries.md`
 - [x] 2026-09-27 (agy, verified; `pipeline/library/export_openmc.py`): Export script: OpenMC outputs → browser data files. Found and fixed a TS validator crash on non-empty `jointChecked`
-- [ ] Run the sweep (`python -m pipeline.openmc.sweep --core 242 --core 246`, 83 cases, running 2026-09-27), export both cores, validate in Python and TS, report the holdout errors, re-run run 3 Part B as a regression
+- [x] 2026-09-28: Sweep run (83/83), `libraries/triga-jsi-242-openmc` and `-246-openmc` exported and valid in Python and TS, holdout errors reported, run 3 Part B regression passes (`m2-libraries.md`)
+- [ ] Optional: a rod-pairs family if multi-rod-deep states matter (two core-246 holdouts off by +590/+914 pcm); a refit of B246 with more particles (`m2-burnup-results.md` post-hoc check)
 - [ ] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
 
 ## Milestone 3: Static 3D viewer · [plan](docs/plans/04-3d-explorer.md)
