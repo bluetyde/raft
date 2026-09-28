@@ -67,6 +67,8 @@ export class OperatorPanel {
   constructor(
     private readonly client: RuntimeClient,
     private readonly lib: OperatorLibrary,
+    /** timeControls: false in an operator window, where the instructor sets the time (the worker refuses it anyway). */
+    private readonly opts: { timeControls?: boolean } = {},
   ) {
     this.meters = metersFrom(lib.instruments);
     const power = this.meters.filter((m) => m.role === "power");
@@ -182,12 +184,13 @@ export class OperatorPanel {
       el("section", {}, [el("h3", { textContent: "Rods" }), ...rodRows]),
       el("section", { className: "vr-row" }, [el("label", {}, ["mode ", this.mode]), reset, this.scramCover, this.scram]),
       el("section", {}, [el("h3", { textContent: "Strip charts" }), ...this.charts.map((c) => c.chart.root)]),
-      el("section", { className: "vr-row" }, [
-        el("span", { className: "vr-note", textContent: "time (instructor):" }),
-        this.play,
-        rate,
-        this.clockText,
-      ]),
+      el(
+        "section",
+        { className: "vr-row" },
+        this.opts.timeControls === false
+          ? [el("span", { className: "vr-note", textContent: "time (set by the instructor):" }), this.clockText]
+          : [el("span", { className: "vr-note", textContent: "time (instructor):" }), this.play, rate, this.clockText],
+      ),
       this.message,
     ]);
     window.addEventListener("keydown", this.onKey);

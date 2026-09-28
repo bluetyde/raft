@@ -35,6 +35,9 @@ function pair() {
 // Compile-time check: a real DOM Worker must fit WorkerLike (tsc fails here if it stops fitting).
 const workerFits: (w: Worker) => WorkerLike = (w) => w;
 void workerFits;
+// The same for a SharedWorker's port (M6 slice S3).
+const portFits: (p: MessagePort) => WorkerLike = (p) => p;
+void portFits;
 
 describe("RuntimeClient", () => {
   it("load resolves with the pins, or rejects with the validator's issues", async () => {
@@ -131,5 +134,22 @@ describe("readers", () => {
     expect(Array.from((await reader.read("manifest.json"))!)).toEqual([1, 2]);
     expect(await reader.read("constructor")).toBeNull();
     expect(await reader.read("toString")).toBeNull();
+  });
+});
+
+describe("RuntimeClient frame acks", () => {
+  it("runs every listener and asks for the next snapshot, even when one listener throws", () => {
+    const sent: unknown[] = [];
+    const worker: WorkerLike = { onmessage: null, onerror: null, postMessage: (msg) => sent.push(msg) };
+    const client = new RuntimeClient(worker);
+    let later = 0;
+    client.on("snapshot", () => {
+      throw new Error("view bug");
+    });
+    client.on("snapshot", () => later++);
+    const deliver = () => worker.onmessage!({ data: { kind: "snapshot", snapshot: { t: 0 } } } as MessageEvent);
+    expect(deliver).toThrow("view bug");
+    expect(sent).toEqual([{ kind: "frameAck" }]);
+    expect(later).toBe(1); // the other views still get the message
   });
 });

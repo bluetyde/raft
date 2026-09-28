@@ -91,6 +91,25 @@ export interface ActiveFaults {
   extraRho: number;
 }
 
+/**
+ * What a window may do (docs/m6-instructor-design.md, D2a and amendment 3). The worker enforces it.
+ * "full" is the one window of a dedicated worker, or a window with both panels.
+ */
+export type Role = "full" | "instructor" | "operator";
+export const ROLES: readonly Role[] = ["full", "instructor", "operator"];
+
+/** Requests an operator window may not send. It may also not send fault commands (`fault.*`). */
+export const OPERATOR_FORBIDDEN: readonly ToWorker["kind"][] = [
+  "load",
+  "time",
+  "step",
+  "rewind",
+  "session.import",
+  "branch.switch",
+  "annotate",
+  "annotation.delete",
+];
+
 /** Why the clock runs slower than requested, or is stopped. */
 export type ClockLimit = "cpu" | "halted" | "solver" | null;
 
@@ -112,6 +131,10 @@ export type ToWorker =
   | { kind: "annotate"; text: string; step?: number }
   | { kind: "annotation.delete"; id: number }
   | { kind: "branch.switch"; id: number }
+  /** A window says which role it has. A shared worker needs it before any other message. */
+  | { kind: "attach"; role: Role }
+  /** A window closes (sent on pagehide), so the worker stops sending to it. */
+  | { kind: "detach" }
   | { kind: "frameAck" };
 
 /** The lowest and highest non-null reading of one instrument over some steps, with their sim times. */
@@ -131,6 +154,8 @@ export interface LoadedInfo {
 
 export type FromWorker =
   | ({ kind: "loaded"; protocol: number } & LoadedInfo)
+  /** The answer to `attach`: the role, and what is loaded now (null if nothing). */
+  | { kind: "attached"; role: Role; loaded: LoadedInfo | null }
   | { kind: "loadFailed"; protocol: number; issues: Issue[] }
   | { kind: "queued"; clientSeq: number; seq: number; step: number; t: number }
   | {
