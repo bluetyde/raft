@@ -203,8 +203,10 @@ async function build(info: LoadedInfo): Promise<void> {
     explorer.setLive(true);
     explorer.setOverlay("live");
     const A = model.axialEdgesCm.length - 1;
+    let lastShape: ArrayLike<number> | null = null;
     elementsOf = (m) => {
-      if (m.shape) explorer.setElementPowers(elementPowers(m.shape, model.elements, A, m.snapshot.truth.power));
+      if (m.shape) lastShape = m.shape;
+      if (lastShape) explorer.setElementPowers(elementPowers(lastShape, model.elements, A, m.snapshot.truth.power));
     };
     const rods = lib.rods.map((r) => ({ id: r.id, pulseCapable: r.pulseCapable }));
     controls = new Controls(client, { rods, modes: lib.modes });

@@ -45,7 +45,7 @@ export interface MeterReading {
 export function meterReading(m: Meter, v: number | null | undefined): MeterReading {
   if (v === null || v === undefined || !Number.isFinite(v)) return { fraction: 0, peg: null, failed: true };
   const [lo, hi] = m.range;
-  const peg: Peg = v > hi ? "over" : v < lo ? "under" : null;
+  const peg: Peg = v >= hi ? "over" : v <= lo ? "under" : null;
   let f: number;
   if (m.scale === "log") {
     const a = Math.log10(lo);
@@ -59,7 +59,7 @@ export function meterReading(m: Meter, v: number | null | undefined): MeterReadi
 
 /** True when the reading is outside the instrument's range (the meter is pegged). */
 export function isPegged(m: Meter, v: number | null | undefined): boolean {
-  return v !== null && v !== undefined && Number.isFinite(v) && (v > m.range[1] || v < m.range[0]);
+  return v !== null && v !== undefined && Number.isFinite(v) && (v >= m.range[1] || v <= m.range[0]);
 }
 
 /** Kelvin to degrees Celsius, for display only (ARCHITECTURE conventions: convert in one place). */

@@ -178,9 +178,9 @@ describe("goal tracker (D3a)", () => {
     expect(tr.view().map((g) => [g.status, g.t])).toEqual([
       ["met", 1],
       ["failed", 5], // opened at 1, not met by 1 + 3 s
-      ["waiting", null],
+      ["failed", 5],
     ]);
-    expect(tr.done()).toBe(false);
+    expect(tr.done()).toBe(true);
     const copy = tr.clone();
     at(0);
     copy.evaluate(e);

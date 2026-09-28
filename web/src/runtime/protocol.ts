@@ -31,7 +31,7 @@ export interface SessionFile {
   /** Version 2: where this timeline came from, in the runtime that wrote the file. */
   branch?: BranchInfo;
   /** Version 3: the scenario this session runs, and its `fromTrip` thresholds as resolved for the library (amendment 2). */
-  scenario?: { id: string; digest: string; thresholds: Record<string, number | [number, number]> };
+  scenario?: { id: string; digest: string; thresholds: Record<string, number | [number, number]>; endStep?: number | null };
 }
 
 /** A running scenario as the views show it. */

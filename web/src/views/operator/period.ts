@@ -41,10 +41,10 @@ export class PeriodEstimator {
     const last = this.pts.at(-1);
     if (last && t < last[0]) this.pts = [];
     if (last && t === last[0]) return; // the same snapshot twice
-    if (reading === null || reading === undefined || !Number.isFinite(reading) || reading <= 0 || pegged) return;
-    this.pts.push([t, Math.log(reading)]);
     const from = t - this.options.windowS;
     while (this.pts.length > 0 && this.pts[0]![0] < from) this.pts.shift();
+    if (reading === null || reading === undefined || !Number.isFinite(reading) || reading <= 0 || pegged) return;
+    this.pts.push([t, Math.log(reading)]);
   }
 
   /** The period, or null ("—") when there are too few points or the reactor is in pulse mode. */

@@ -690,7 +690,7 @@ export class Runtime {
     return sessionFile(e, {
       annotations: this.annotations,
       branch: this.current,
-      ...(sc ? { scenario: { id: sc.file.id, digest: sc.digest, thresholds: sc.thresholds } } : {}),
+      ...(sc ? { scenario: { id: sc.file.id, digest: sc.digest, thresholds: sc.thresholds, endStep: this.scenarioEndStep } } : {}),
     });
   }
 
@@ -792,6 +792,7 @@ export class Runtime {
     let ne: Engine;
     let prepared: PreparedScenario | null = null;
     let tracker: GoalTracker | null = null;
+    let endStep: number | null = null;
     const trackerAt = new Map<number, GoalTracker>();
     try {
       const f = checkSessionFile(file, lib);
@@ -817,10 +818,12 @@ export class Runtime {
         trackerAt.set(0, tracker.clone());
       }
       const t = tracker;
+      endStep = f.scenario && "endStep" in f.scenario ? (f.scenario.endStep ?? null) : null;
       replayCommands(ne, s.commands, f.endStep, (x) => {
         const added = checkpointInto(store, x, every, false);
         if (t) {
           t.evaluate(x);
+          if (endStep !== null && x.stepIndex === endStep) t.endAt(x.t);
           if (added) trackerAt.set(x.stepIndex, t.clone());
         }
       });
@@ -839,7 +842,7 @@ export class Runtime {
     this.timelineDirty = true;
     this.history = store;
     this.scenario = prepared;
-    this.scenarioEndStep = null;
+    this.scenarioEndStep = endStep;
     this.tracker = tracker;
     this.trackerAt = trackerAt;
     this.scenarioDirty = true;

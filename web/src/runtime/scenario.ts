@@ -174,6 +174,24 @@ export function validateScenario(obj: unknown, lib: Library): Issue[] {
   }
   const coarse = typeof f.outerDt === "number" && isCoarse(f.outerDt);
   if (f.seed !== undefined && !Number.isInteger(f.seed)) out.push(issue("E_SCN_FIELD", "/seed", "seed must be an integer"));
+  if (f.hints !== undefined && (!Array.isArray(f.hints) || !f.hints.every((x) => typeof x === "string"))) {
+    out.push(issue("E_SCN_FIELD", "/hints", "hints must be an array of strings"));
+  }
+  if (f.expectTrips !== undefined && (!Array.isArray(f.expectTrips) || !f.expectTrips.every((x) => typeof x === "string"))) {
+    out.push(issue("E_SCN_FIELD", "/expectTrips", "expectTrips must be an array of strings"));
+  }
+  if (typeof f.controls !== "object" || f.controls === null || !Array.isArray(f.controls.allow) || !f.controls.allow.every((x) => typeof x === "string")) {
+    out.push(issue("E_SCN_CONTROL", "/controls/allow", "controls.allow must be an array of strings"));
+  }
+  if (f.faultsVisible !== undefined && typeof f.faultsVisible !== "boolean") {
+    out.push(issue("E_SCN_FIELD", "/faultsVisible", "faultsVisible must be a boolean"));
+  }
+  if (f.events !== undefined && (!Array.isArray(f.events) || !f.events.every((e) => typeof e === "object" && e !== null && typeof e.at === "number" && typeof e.cmd === "object" && e.cmd !== null))) {
+    out.push(issue("E_SCN_EVENT", "/events", "events must be an array of {at: number, cmd: object}"));
+  }
+  if (!Array.isArray(f.goals)) out.push(issue("E_SCN_FIELD", "/goals", "goals must be an array"));
+  if (out.length > 0) return out;
+
   const tripIds = new Set(lib.trips.map((t: any) => t.id as string));
   for (const [i, t] of (f.expectTrips ?? []).entries()) {
     if (t !== "manual" && !tripIds.has(t)) out.push(issue("E_SCN_FIELD", `/expectTrips/${i}`, `unknown trip ${String(t)}`));
@@ -386,28 +404,32 @@ export class GoalTracker {
       const st = this.states[i]!;
       if (st.status === "waiting") {
         const parent = g.after === undefined ? null : this.states.find((s) => s.id === g.after)!;
-        if (parent === null || parent.status === "met") {
+        if (parent !== null && parent.status === "failed") {
+          st.status = "failed";
+          st.t = t;
+          changed = true;
+        } else if (parent === null || parent.status === "met") {
           st.status = "open";
           st.openedAt = t;
           changed = true;
         }
       }
       if (st.status !== "open") return;
+      if (g.within !== undefined && t - st.openedAt! > g.within + eps) {
+        st.status = "failed";
+        st.t = t;
+        changed = true;
+        return;
+      }
       if (evalPredicate(g.check, get)) {
         st.holdSince ??= t;
         if (t - st.holdSince >= (g.for ?? 0) - eps) {
           st.status = "met";
           st.t = t;
           changed = true;
-          return;
         }
       } else {
         st.holdSince = null;
-      }
-      if (g.within !== undefined && t - st.openedAt! > g.within + eps) {
-        st.status = "failed";
-        st.t = t;
-        changed = true;
       }
     });
     return changed;
