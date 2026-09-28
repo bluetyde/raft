@@ -14,7 +14,7 @@ echo Installing/Verifying dependencies...
 call pip install -r requirements.txt || goto error
 
 echo Starting OpenJev AI Server on ws://localhost:8000 ...
-python server.py || goto error
+python server.py %* || goto error
 pause
 exit /b 0
 
