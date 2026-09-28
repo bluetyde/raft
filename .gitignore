@@ -1,14 +1,26 @@
+# Python
 __pycache__/
 *.pyc
 .pytest_cache/
+venv/
+jev-server/venv/
+
+# Node
 node_modules/
 web/dist/
+
+# Data / simulation artifacts
 pipeline/cache/
 *.h5
 statepoint*.h5
 summary.h5
+validation/data/jsi-pulses/traces/
+
+# OS / editors
 .vscode/
 .DS_Store
-validation/data/jsi-pulses/traces/
-venv/
-jev-server/venv/
+
+# Local launch scripts (machine-specific, not committed)
+run-viewer.cmd
+run-virtual-reactor.cmd
+virtual-reactor.bat
