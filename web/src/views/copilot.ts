@@ -6,6 +6,8 @@ export class JevCopilot {
   private client: RuntimeClient;
   private role: "operator" | "instructor";
   private enabled: boolean = false;
+  /** Track the last choice so we only act when the decision changes. */
+  private lastChoice: string | null = null;
 
   constructor(client: RuntimeClient, role: "operator" | "instructor") {
     this.client = client;
@@ -33,6 +35,7 @@ export class JevCopilot {
       console.log("[JevCopilot] Disconnected");
       this.enabled = false;
       this.ws = null;
+      this.lastChoice = null;
     };
     this.ws.onerror = (err) => {
       console.error("[JevCopilot] WebSocket error:", err);
@@ -103,6 +106,11 @@ export class JevCopilot {
       }
       const choice = msg.choice;
       if (!choice) return;
+
+      // Only act when the decision changes — avoids hammering the engine
+      // with the same rod command every tick when nothing has changed.
+      if (choice === this.lastChoice) return;
+      this.lastChoice = choice;
 
       console.log(`[JevCopilot] AI chose: ${choice}`);
       this.executeChoice(choice);
