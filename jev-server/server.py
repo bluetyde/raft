@@ -9,8 +9,7 @@ import torch
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("jev-server")
-
-MODEL_ID = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+MODEL_ID = "cross-encoder/nli-deberta-v3-small"
 
 # Global state
 model = None
@@ -56,6 +55,10 @@ def evaluate_hypotheses(premise: str, hypotheses: list[str]) -> str:
         
         if logits.dim() == 0:
             scores = logits.unsqueeze(0)
+        elif len(logits.shape) > 1 and logits.shape[-1] == 3:
+            # For 3-class NLI models (Contradiction, Entailment, Neutral)
+            # Typically Entailment is index 1.
+            scores = logits[:, 1]
         elif len(logits.shape) > 1:
             scores = logits[:, -1]
         else:

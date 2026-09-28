@@ -4,3 +4,4 @@ websockets
 torch
 transformers
 accelerate
+sentencepiece
