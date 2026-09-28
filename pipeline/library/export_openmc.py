@@ -169,8 +169,11 @@ def export(summary: dict[str, Any], out_dir: Path | str, created: str | None = N
         if len(rod_cases) < 1:
             raise ValueError(f"rod {rod_letter} has fewer than 2 worth points")
 
+    for field in ("core", "burnup"):
+        if field not in summary:
+            raise ValueError(f"summary has no {field!r}")
     core = str(summary["core"])
-    burnup = summary.get("burnup", 23.675258421961058)
+    burnup = summary["burnup"]
     created_date = created or datetime.date.today().isoformat()
 
     out_dir = Path(out_dir)
@@ -511,9 +514,11 @@ def export(summary: dict[str, Any], out_dir: Path | str, created: str | None = N
         rod_id = ROD_ID_MAP[letter]
         pos = core_model.ROD_AT[letter]
         x, y = core_model.position_xy(pos, ring_radii)
+        # at x = 0 (fully in) the absorber's bottom is at the bottom of the fuel and the follower fuel hangs below it
+        # (core_model.absorber_bottom); the viewer moves both up by x * travelCm
         geometry_primitives.append({
             "type": "cylinder",
-            "center": [round(x, 4), round(y, 4), 0.0],
+            "center": [round(x, 4), round(y, 4), round(-core_model.HALF_FUEL + h_abs_ff / 2.0, 6)],
             "radius": r_abs_ff,
             "height": h_abs_ff,
             "material": "b4c",
@@ -521,7 +526,7 @@ def export(summary: dict[str, Any], out_dir: Path | str, created: str | None = N
         })
         geometry_primitives.append({
             "type": "cylinder",
-            "center": [round(x, 4), round(y, 4), -38.1],
+            "center": [round(x, 4), round(y, 4), round(-core_model.HALF_FUEL - h_abs_ff / 2.0, 6)],
             "radius": r_abs_ff,
             "height": h_abs_ff,
             "material": "fuel",
@@ -536,7 +541,7 @@ def export(summary: dict[str, Any], out_dir: Path | str, created: str | None = N
     xt, yt = core_model.position_xy(pos_t, ring_radii)
     geometry_primitives.append({
         "type": "cylinder",
-        "center": [round(xt, 4), round(yt, 4), 0.0],
+        "center": [round(xt, 4), round(yt, 4), round(-core_model.HALF_FUEL + h_abs_t / 2.0, 6)],
         "radius": r_abs_t,
         "height": h_abs_t,
         "material": "b4c",
@@ -656,7 +661,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     summary = json.loads(args.summary.read_text(encoding="utf-8"))
-    core = str(summary.get("core", "242"))
+    if "core" not in summary:
+        raise ValueError(f"{args.summary}: summary has no 'core'")
+    core = str(summary["core"])
 
     out_dir = args.out or (REPO_ROOT / "libraries" / f"triga-jsi-{core}-openmc")
     report_path = args.report or (REPO_ROOT / "pipeline" / "openmc" / "results" / f"export_{core}.json")

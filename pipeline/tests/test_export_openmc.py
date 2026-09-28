@@ -280,6 +280,28 @@ class TestExportOpenMC(unittest.TestCase):
                 h2 = hashlib.sha256(bytes2).hexdigest()
                 self.assertEqual(h1, h2, f"Hash mismatch for {rel_path}")
 
+    # Added by Claude (dispatcher) after verification, not by agy.
+    def test_k_rod_geometry_at_full_insertion(self):
+        """At x = 0 every absorber's bottom sits at the bottom of the fuel and each follower's fuel hangs just below it."""
+        with tempfile.TemporaryDirectory() as t:
+            export(synthetic_summary("242"), t, created="2026-09-27")
+            prims = json.loads((Path(t) / "manifest.json").read_text(encoding="utf-8"))["geometry"]["primitives"]
+        absorbers = [p for p in prims if p.get("material") == "b4c"]
+        followers = [p for p in prims if p.get("rod") and p.get("material") == "fuel"]
+        self.assertEqual(sorted(p["rod"] for p in absorbers), ["regulating", "safety", "shim", "transient"])
+        self.assertEqual(len(followers), 3)
+        for p in absorbers:
+            self.assertAlmostEqual(p["center"][2] - p["height"] / 2, -core_model.HALF_FUEL, places=5)
+        for p in followers:
+            self.assertAlmostEqual(p["center"][2] + p["height"] / 2, -core_model.HALF_FUEL, places=5)
+
+    def test_l_missing_core_or_burnup_is_refused(self):
+        for field in ("core", "burnup"):
+            s = synthetic_summary("242")
+            del s[field]
+            with tempfile.TemporaryDirectory() as t, self.assertRaises(ValueError):
+                export(s, t, created="2026-09-27")
+
 
 if __name__ == "__main__":
     unittest.main()
