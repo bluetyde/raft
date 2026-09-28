@@ -11,10 +11,15 @@ import type { LibraryReader } from "../library/platform";
 import type { Issue } from "../library/validate";
 import { Engine, InitError } from "../sim/engine";
 import { LibraryError, loadLibrary, type Library } from "../sim/library";
+import { buildBranch, marksBefore, marksFrom, summarize, type Branch } from "./branches";
 import { CheckpointStore, checkSessionFile, replayCommands, sessionFile } from "./history";
 import {
   isCoarse,
+  MAX_BRANCHES,
   PROTOCOL_VERSION,
+  type Annotation,
+  type BranchInfo,
+  type Mark,
   type ClockLimit,
   type Extreme,
   type FromWorker,
@@ -131,6 +136,15 @@ export class Runtime {
   private checkpointEvery = 1;
   private historyDirty = false;
 
+  // branches, marks and annotations (docs/m6-instructor-design.md, D1 and D6)
+  private current: BranchInfo = { id: 1, parent: null, forkStep: 0 };
+  private nextBranchId = 2;
+  private branches: Branch[] = [];
+  private marks: Mark[] = [];
+  private annotations: Annotation[] = [];
+  private nextAnnotationId = 1;
+  private timelineDirty = false;
+
   private inbox: Promise<void> = Promise.resolve();
 
   constructor(
@@ -174,6 +188,12 @@ export class Runtime {
         return this.exportSession();
       case "session.import":
         return this.importSession(msg.file);
+      case "annotate":
+        return this.annotate(msg.text, msg.step);
+      case "annotation.delete":
+        return this.deleteAnnotation(msg.id);
+      case "branch.switch":
+        return this.switchBranch(msg.id);
       case "frameAck":
         return this.frameAck();
       default:
@@ -220,6 +240,13 @@ export class Runtime {
     this.lib = lib;
     this.history.clear();
     this.install(eng);
+    this.branches = [];
+    this.current = { id: 1, parent: null, forkStep: 0 };
+    this.nextBranchId = 2;
+    this.marks = [];
+    this.annotations = [];
+    this.nextAnnotationId = 1;
+    this.timelineDirty = true;
     this.host.post({
       kind: "loaded",
       protocol: PROTOCOL_VERSION,
@@ -436,7 +463,7 @@ export class Runtime {
       return this.error("rewind", "E_BAD_ARGUMENT", `step must be an integer in [0, ${e.stepIndex}]`);
     }
     this.stopClock();
-    const previous = sessionFile(e);
+    const previous = this.fileOf(e);
     const log = e.commandLog;
     // Build the new state first; the store and engine change only if the replay succeeds.
     const store = this.history.copy();
@@ -450,7 +477,15 @@ export class Runtime {
     } catch (err) {
       return this.error("rewind", "E_REPLAY", String(err));
     }
-    if (step < e.stepIndex) this.rejectPending("REJ_REWOUND");
+    if (step < e.stepIndex) {
+      this.rejectPending("REJ_REWOUND");
+      // the discarded future is kept as a branch (D1a); the new timeline forks from it at `step`
+      this.saveBranch(e, previous);
+      this.current = { id: this.nextBranchId++, parent: this.current.id, forkStep: step };
+      this.marks = marksBefore(this.marks, ne.t, ne.config.outerDt);
+      this.annotations = this.annotations.filter((a) => a.step <= step);
+      this.timelineDirty = true;
+    }
     this.history = store;
     this.install(ne);
     this.historyDirty = true;
@@ -461,7 +496,81 @@ export class Runtime {
   private exportSession(): void {
     const e = this.eng;
     if (!e) return this.error("session.export", "E_NO_LIBRARY", "nothing is loaded");
-    this.host.post({ kind: "session", file: sessionFile(e) });
+    this.host.post({ kind: "session", file: this.fileOf(e) });
+  }
+
+  /** The current timeline as a version 2 session file (with its annotations and branch). */
+  private fileOf(e: Engine): SessionFile {
+    return sessionFile(e, { annotations: this.annotations, branch: this.current });
+  }
+
+  /** Keep the current timeline (ending in `e`) as a branch. At the limit, the oldest branch goes. */
+  private saveBranch(e: Engine, file: SessionFile): void {
+    this.branches.push({
+      info: { ...this.current },
+      file,
+      marks: [...this.marks],
+      summary: summarize(e, this.current, this.annotations.length),
+    });
+    while (this.branches.length > MAX_BRANCHES) this.branches.shift();
+    this.timelineDirty = true;
+  }
+
+  private switchBranch(id: number): void {
+    const e = this.eng;
+    const lib = this.lib;
+    if (!e || !lib) return this.error("branch.switch", "E_NO_LIBRARY", "nothing is loaded");
+    const i = this.branches.findIndex((b) => b.info.id === id);
+    if (i < 0) return this.error("branch.switch", "E_NO_BRANCH", `no branch ${id}`);
+    const target = this.branches[i]!;
+    let built: ReturnType<typeof buildBranch>;
+    try {
+      built = buildBranch(lib, e, this.history, target.file, (st, x) => checkpointInto(st, x, this.checkpointEvery, false));
+    } catch (err) {
+      return this.error("branch.switch", "E_REPLAY", String(err));
+    }
+    this.stopClock();
+    const previous = this.fileOf(e);
+    this.rejectPending("REJ_BRANCH_SWITCHED");
+    this.branches.splice(i, 1);
+    this.saveBranch(e, previous);
+    this.current = { ...target.info };
+    this.marks = [...target.marks];
+    this.annotations = structuredClone(target.file.annotations ?? []);
+    this.lastSwitchFrom = built.fromStep;
+    this.history = built.store;
+    this.install(built.engine);
+    this.historyDirty = true;
+    this.timelineDirty = true;
+    this.host.post({ kind: "rewound", step: built.engine.stepIndex, t: built.engine.t, previous });
+    this.afterChange();
+  }
+
+  /** The step the last branch switch started its replay from (0 = no shared checkpoint). For tests. */
+  lastSwitchFrom = -1;
+
+  private annotate(text: string, step: number | undefined): void {
+    const e = this.eng;
+    if (!e) return this.error("annotate", "E_NO_LIBRARY", "nothing is loaded");
+    if (typeof text !== "string" || text.trim().length === 0 || text.length > 500) {
+      return this.error("annotate", "E_BAD_ARGUMENT", "the text must have 1 to 500 characters");
+    }
+    const at = step ?? e.stepIndex;
+    if (!Number.isInteger(at) || at < 0 || at > e.stepIndex) {
+      return this.error("annotate", "E_BAD_ARGUMENT", `step must be an integer in [0, ${e.stepIndex}]`);
+    }
+    this.annotations.push({ id: this.nextAnnotationId++, step: at, t: at * e.config.outerDt, text: text.trim() });
+    this.annotations.sort((a, b) => a.step - b.step || a.id - b.id);
+    this.timelineDirty = true;
+    this.afterChange();
+  }
+
+  private deleteAnnotation(id: number): void {
+    const n = this.annotations.length;
+    this.annotations = this.annotations.filter((a) => a.id !== id);
+    if (this.annotations.length === n) return this.error("annotation.delete", "E_BAD_ARGUMENT", `no annotation ${id}`);
+    this.timelineDirty = true;
+    this.afterChange();
   }
 
   private importSession(file: SessionFile): void {
@@ -485,8 +594,15 @@ export class Runtime {
       return this.error("session.import", "E_SESSION", String(err));
     }
     this.stopClock();
-    const previous = sessionFile(e);
+    const previous = this.fileOf(e);
     this.rejectPending("REJ_SESSION_REPLACED");
+    // the replaced timeline is kept as a branch; the imported one starts a new tree (its ids came from another runtime)
+    if (e.stepIndex > 0 || e.commandLog.length > 0) this.saveBranch(e, previous);
+    this.current = { id: this.nextBranchId++, parent: null, forkStep: 0 };
+    this.marks = marksFrom(ne.events, ne.commandLog);
+    this.annotations = structuredClone(file.annotations ?? []);
+    this.nextAnnotationId = Math.max(this.nextAnnotationId, ...this.annotations.map((a) => a.id + 1));
+    this.timelineDirty = true;
     this.history = store;
     this.install(ne);
     this.historyDirty = true;
@@ -505,6 +621,16 @@ export class Runtime {
       this.historyDirty = false;
       this.host.post({ kind: "history", checkpointSteps: this.history.steps(), thinned: this.history.thinned });
     }
+    if (this.timelineDirty && this.eng) {
+      this.timelineDirty = false;
+      this.host.post({
+        kind: "timeline",
+        current: summarize(this.eng, this.current, this.annotations.length),
+        branches: this.branches.map((b) => b.summary),
+        marks: [...this.marks],
+        annotations: structuredClone(this.annotations),
+      });
+    }
   }
 
   private flushEvents(): void {
@@ -513,6 +639,10 @@ export class Runtime {
     const batch = e.events.slice(this.eventCursor);
     this.eventCursor = e.events.length;
     this.host.post({ kind: "events", events: batch });
+    const marks = marksFrom(batch, e.commandLog);
+    if (marks.length > 0) this.marks.push(...marks);
+    // a new mark, or a command that changes the current branch's command count in the compare table
+    if (marks.length > 0 || batch.some((ev) => ev.type === "command")) this.timelineDirty = true;
     for (const ev of batch) {
       if (ev.type !== "command") continue;
       const clientSeq = this.pendingAcks.get(ev.seq);
@@ -569,7 +699,8 @@ export class Runtime {
     const now = this.host.now();
     let limited = this.limited;
     if (!this.paused && now - this.lastCpuLimitWall < 1000) limited = "cpu";
-    const key = `${this.rate}|${this.paused}|${limited}|${this.limitReason}`;
+    // while paused, the step changes only by a step, rewind, switch or import, and the clock message must name the new step
+    const key = `${this.rate}|${this.paused}|${limited}|${this.limitReason}${this.paused && e ? `|${e.stepIndex}` : ""}`;
     if (key === this.lastClockKey && (this.paused || now - this.lastClockPost < this.options.clockReportMs)) return;
     this.lastClockKey = key;
     this.lastClockPost = now;

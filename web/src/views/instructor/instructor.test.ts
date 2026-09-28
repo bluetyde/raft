@@ -3,7 +3,7 @@ import { Engine } from "../../sim/engine";
 import { loadSyntheticCore } from "../../sim/testing";
 import { faultLabel, instrumentFault, pumpFault, reactivityFault, WAITING_FOR_ENGINE } from "./faults";
 import { formatOuterStep, OUTER_STEPS, ratesFor } from "./time";
-import { isFaultCommand, Timeline } from "./timeline";
+import { Timeline } from "./timeline";
 import { activeFaultLines, formatPcm, formatSignal, instrumentRows, PCM, reactivityBars } from "./truth";
 
 describe("time settings (D5, amendment 1)", () => {
@@ -24,19 +24,23 @@ describe("time settings (D5, amendment 1)", () => {
 });
 
 describe("timeline", () => {
-  it("marks trips and rejected commands, and maps the bar to steps", () => {
+  it("shows the worker's marks, the notes and the branch point in time order, and maps the bar to steps", () => {
     const tl = new Timeline();
-    tl.onEvents([
-      { type: "command", seq: 1, clientId: "operator", t: 1, status: "accepted", reason: null },
-      { type: "command", seq: 2, clientId: "operator", t: 2, status: "rejected", reason: "REJ_TRIPPED" },
-      { type: "trip", id: "period-short", t: 3 },
-    ]);
-    tl.onFault(4, "log: stuck");
+    tl.set(
+      [
+        { kind: "rejected", t: 2, label: "operator: REJ_TRIPPED" },
+        { kind: "trip", t: 3, label: "trip period-short" },
+      ],
+      [{ id: 1, step: 400, t: 4, text: "note" }],
+      1,
+    );
     expect(tl.markers().map((m) => [m.kind, m.t])).toEqual([
+      ["fork", 1],
       ["rejected", 2],
       ["trip", 3],
-      ["fault", 4],
+      ["note", 4],
     ]);
+    expect(tl.endT).toBe(4);
     tl.setEnd(10);
     expect(tl.position(5)).toBe(0.5);
     expect(tl.stepAt(0.5, 0.01)).toBe(500);
@@ -44,19 +48,16 @@ describe("timeline", () => {
     expect(tl.stepAt(-1, 0.01)).toBe(0);
   });
 
-  it("drops markers after a rewind point, and a reset clears all", () => {
+  it("ends at the rewind point, and a reset clears all", () => {
     const tl = new Timeline();
-    tl.onEvents([{ type: "trip", id: "a", t: 1 }, { type: "trip", id: "b", t: 5 }]);
+    tl.set([{ kind: "trip", t: 5, label: "b" }], [], null);
     tl.rewoundTo(2);
-    expect(tl.markers().map((m) => m.t)).toEqual([1]);
     expect(tl.endT).toBe(2);
-    tl.reset();
+    tl.set([], [], null);
     expect(tl.markers()).toHaveLength(0);
-  });
-
-  it("knows the fault commands", () => {
-    expect(["fault.instrument", "fault.reactivity", "pump.set"].every(isFaultCommand)).toBe(true);
-    expect(isFaultCommand("rod.move")).toBe(false);
+    tl.setEnd(3);
+    tl.reset();
+    expect(tl.endT).toBe(0);
   });
 });
 

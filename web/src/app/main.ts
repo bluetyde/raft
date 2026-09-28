@@ -124,7 +124,11 @@ async function show(name: string, opts: { init?: Record<string, any>; seed?: num
     const inst = new InstructorPanel(
       c,
       { instruments: lib.instruments, pumps: lib.pumps },
-      { restart: (outerDt) => void show(name, { ...opts, config: { ...opts.config, outerDt } }) },
+      {
+        restart: (outerDt) => void show(name, { ...opts, config: { ...opts.config, outerDt } }),
+        files: () => catalogFiles(entry),
+        libraryId: lib.id,
+      },
     );
     instructor = inst;
     instBox.replaceChildren(inst.root);
@@ -134,7 +138,7 @@ async function show(name: string, opts: { init?: Record<string, any>; seed?: num
     });
     c.on("clock", (m) => op.onClock(m));
     c.on("clock", (m) => inst.onClock(m));
-    c.on("events", (m) => inst.onEvents(m.events));
+    c.on("timeline", (m) => inst.onTimeline(m));
     c.on("snapshot", (m) => {
       lastSnapshot = m.snapshot;
       op.onSnapshot(m);

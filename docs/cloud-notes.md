@@ -226,3 +226,16 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 - Tests: 7 new runtime tests, 10 new Vitest tests (`instructor.test.ts`), and 5 new Playwright tests (`instructor.spec.ts`).
   Three deliberate breaks were each caught (no coarse check, no faults in the snapshot message, markers kept after a rewind).
 - Branch: `claude/m6-instructor-design`. Checks: see the PR.
+
+### 2026-09-28: M6 slice S2 (history: branches, notes, export) implemented
+
+- What: branches in the runtime (`web/src/runtime/branches.ts`), with a switch that starts from the latest shared checkpoint.
+  Also notes, session files version 2 (notes and branch; version 1 still imports), and CSV traces from a replay in a separate worker (`trace.ts`, `trace-worker.ts`).
+  The instructor panel has notes, a compare table (amendment 4: fork step and command count next to the final values), and export and import.
+- The worker now owns the timeline marks (`timeline` message), so S3's two windows see the same timeline.
+- Fix: while paused, the runtime sends the clock message again when the step changes. Before, the time bar showed an old step after a rewind.
+- Tests: 13 new runtime tests (`branches.test.ts`), including the main oracle: after a rewind and a different command, a switch back gives the old end state, and the shared-checkpoint path equals a replay from step 0.
+  The CSV rows equal a step-by-step run's snapshots. 4 new Playwright tests (notes, branches and compare, session download and import, CSV download).
+  Four deliberate breaks were each caught (no prefix check, no branch on rewind, notes kept on rewind, CSV one step late).
+- Branch: `claude/m6-history`, based on `main` at `f543532`. Checks: see the PR.
+

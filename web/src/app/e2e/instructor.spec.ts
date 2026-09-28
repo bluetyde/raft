@@ -4,6 +4,7 @@
  */
 
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
 
 const inst = (page: Page, name: string) => page.locator(`[data-inst="${name}"]`);
 
@@ -114,4 +115,88 @@ test("a click on the timeline asks first, then rewinds to that step and pauses",
   const t = await snapshotT(page);
   expect(t).toBeGreaterThan(end * 0.4);
   await expect(inst(page, "play")).toHaveText("play");
+});
+
+// ---- slice S2: notes, branches, export and import ----
+
+async function runTo(page: Page, t: number) {
+  await inst(page, "rate").selectOption("10");
+  await inst(page, "play").click();
+  await expect.poll(() => snapshotT(page), { timeout: 20_000 }).toBeGreaterThan(t);
+  await inst(page, "play").click();
+  await expect(inst(page, "play")).toHaveText("play", { timeout: 5_000 });
+}
+
+test("a note appears in the list and on the timeline, and can be deleted", async ({ page }) => {
+  await runTo(page, 1);
+  await inst(page, "note-text").fill("before the rod move");
+  await inst(page, "note-add").click();
+  await expect(inst(page, "notes")).toContainText("before the rod move");
+  await expect(inst(page, "timeline").locator('[data-kind="note"]')).toHaveCount(1);
+  await inst(page, "notes").locator("button").click();
+  await expect(inst(page, "notes").locator("li")).toHaveCount(0);
+  await expect(inst(page, "timeline").locator('[data-kind="note"]')).toHaveCount(0);
+});
+
+test("a rewind keeps the old timeline as a branch; compare shows fork step and commands; a switch goes back", async ({ page }) => {
+  await inst(page, "fault-instrument").selectOption("log");
+  await inst(page, "fault-stuck").click();
+  await runTo(page, 4);
+  const end = await snapshotT(page);
+  const box = (await inst(page, "timeline").boundingBox())!;
+  await inst(page, "timeline").click({ position: { x: box.width / 2, y: box.height / 2 } });
+  await inst(page, "rewind-yes").click();
+  await expect(inst(page, "message")).toContainText("rewound to step", { timeout: 10_000 });
+  // the time bar names the new step, although the rate and pause did not change
+  const rewoundStep = /rewound to step (\d+)/.exec((await inst(page, "message").textContent())!)![1];
+  await expect(page.locator(".vr-inst-clock")).toContainText(`step ${rewoundStep}`);
+
+  const branches = inst(page, "branches");
+  await expect(branches.locator('[data-branch="2"]')).toContainText("(current)");
+  const old = branches.locator('[data-branch="1"]');
+  await expect(old.locator("td").nth(2)).toHaveText("0"); // fork step
+  await expect(old.locator("td").nth(3)).toHaveText("1"); // one command: the stuck fault
+  await expect(old.locator("td").nth(5)).toHaveText(`${end.toFixed(2)} s`);
+  await expect(inst(page, "timeline").locator('[data-kind="fork"]')).toHaveCount(1);
+
+  await inst(page, "branch-switch-1").click();
+  await expect(inst(page, "message")).toContainText("switched to branch 1", { timeout: 10_000 });
+  await expect.poll(() => snapshotT(page), { timeout: 10_000 }).toBeCloseTo(end, 9);
+  await expect(branches.locator('[data-branch="1"]')).toContainText("(current)");
+  await expect(branches.locator('[data-branch="2"] td').nth(2)).not.toHaveText("0");
+});
+
+test("the session file downloads as version 2 with its notes, and imports again", async ({ page }) => {
+  await runTo(page, 1);
+  await inst(page, "note-text").fill("keep me");
+  await inst(page, "note-add").click();
+  await expect(inst(page, "notes")).toContainText("keep me");
+  const [dl] = await Promise.all([page.waitForEvent("download"), inst(page, "export-session").click()]);
+  expect(dl.suggestedFilename()).toMatch(/^synthetic-core-t\d{4}\.\d{2}s\.session\.json$/);
+  const path = await dl.path();
+  const file = JSON.parse(readFileSync(path, "utf8"));
+  expect(file.version).toBe(2);
+  expect(file.annotations.map((a: any) => a.text)).toEqual(["keep me"]);
+  const end = file.endStep * 0.01;
+
+  await inst(page, "notes").locator("button").click();
+  await expect(inst(page, "notes").locator("li")).toHaveCount(0);
+  await inst(page, "import").setInputFiles(path);
+  await expect(inst(page, "export-message")).toContainText("imported", { timeout: 20_000 });
+  await expect(inst(page, "notes")).toContainText("keep me");
+  await expect.poll(() => snapshotT(page), { timeout: 10_000 }).toBeCloseTo(end, 9);
+});
+
+test("the CSV comes from a separate worker, with one row every 0.1 s", async ({ page }) => {
+  await runTo(page, 2);
+  const endStep = Math.round((await snapshotT(page)) / 0.01);
+  const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 30_000 }), inst(page, "export-csv").click()]);
+  expect(dl.suggestedFilename()).toMatch(/\.csv$/);
+  const lines = readFileSync(await dl.path(), "utf8").trimEnd().split("\n");
+  const header = lines[0]!.split(",");
+  expect(header.slice(0, 3)).toEqual(["t", "indicated.linear", "indicated.log"]);
+  expect(header).toContain("reactivity.fault");
+  expect(lines.length - 1).toBe(Math.floor(endStep / 10) + 1);
+  expect(Number(lines.at(-1)!.split(",")[0])).toBeCloseTo(Math.floor(endStep / 10) * 0.1, 9);
+  await expect(inst(page, "export-message")).toContainText(`CSV: ${lines.length - 1} rows`);
 });

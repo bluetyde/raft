@@ -8,7 +8,9 @@ import type { Issue } from "../library/validate";
 export const PROTOCOL_VERSION = 1;
 
 export const SESSION_FORMAT = "virtual-reactor-session";
-export const SESSION_VERSION = 1;
+/** Version 2 adds annotations and the branch (docs/m6-instructor-design.md, D6). Version 1 files still import. */
+export const SESSION_VERSION = 2;
+export const SESSION_VERSIONS: readonly number[] = [1, 2];
 
 /** Where the worker reads a library folder from. `files` maps manifest-relative paths to bytes. */
 export type LibrarySource =
@@ -18,10 +20,55 @@ export type LibrarySource =
 /** A session file: `engine.session()` plus the step it ends at (the engine's session has no end step). */
 export interface SessionFile {
   format: typeof SESSION_FORMAT;
-  version: typeof SESSION_VERSION;
+  version: 1 | 2;
   endStep: number;
   session: Record<string, any>;
+  /** Version 2: notes on the timeline. Replay ignores them. */
+  annotations?: Annotation[];
+  /** Version 2: where this timeline came from, in the runtime that wrote the file. */
+  branch?: BranchInfo;
 }
+
+/** A note on the timeline, at an engine step. */
+export interface Annotation {
+  id: number;
+  step: number;
+  t: number;
+  text: string;
+}
+
+/** A timeline marker that the runtime derives from engine events. */
+export interface Mark {
+  kind: "trip" | "rejected" | "fault";
+  t: number;
+  label: string;
+}
+
+/** A branch's place in the tree: `parent` is null for the first timeline of a load or an import. */
+export interface BranchInfo {
+  id: number;
+  parent: number | null;
+  forkStep: number;
+}
+
+/** A branch as the compare table shows it (amendment 4: fork step and command count next to the final values). */
+export interface BranchSummary extends BranchInfo {
+  endStep: number;
+  commandCount: number;
+  annotationCount: number;
+  final: {
+    t: number;
+    power: number;
+    fuelTemp: number;
+    coolantTemp: number;
+    xenon: number;
+    tripped: boolean;
+    latched: string[];
+  };
+}
+
+/** The most branches the runtime keeps. At the limit, the oldest goes first. */
+export const MAX_BRANCHES = 32;
 
 /**
  * The longest outer step at which pulses are allowed (docs/m6-instructor-design.md, amendment 1).
@@ -62,6 +109,9 @@ export type ToWorker =
   | { kind: "rewind"; step: number }
   | { kind: "session.export" }
   | { kind: "session.import"; file: SessionFile }
+  | { kind: "annotate"; text: string; step?: number }
+  | { kind: "annotation.delete"; id: number }
+  | { kind: "branch.switch"; id: number }
   | { kind: "frameAck" };
 
 /** The lowest and highest non-null reading of one instrument over some steps, with their sim times. */
@@ -114,5 +164,14 @@ export type FromWorker =
   | { kind: "history"; checkpointSteps: number[]; thinned: boolean }
   | { kind: "rewound"; step: number; t: number; previous: SessionFile }
   | { kind: "session"; file: SessionFile }
+  | {
+      kind: "timeline";
+      /** The current branch, with its live summary. */
+      current: BranchSummary;
+      /** The other branches, oldest first. */
+      branches: BranchSummary[];
+      marks: Mark[];
+      annotations: Annotation[];
+    }
   | { kind: "error"; request: ToWorker["kind"]; code: string; message: string }
   | { kind: "fault"; message: string };
