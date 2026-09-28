@@ -20,7 +20,7 @@ mica_backend = None
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-backend", type=str, choices=["deberta", "mica"], default="deberta")
+    parser.add_argument("--model-backend", type=str, choices=["deberta", "mica"], default="mica")
     parser.add_argument("--shadow", action="store_true", help="Run Mica in shadow mode without returning commands")
     return parser.parse_args()
 
