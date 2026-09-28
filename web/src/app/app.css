@@ -287,3 +287,126 @@ body,
   max-width: 420px;
   height: 70px;
 }
+
+/* M6 instructor panel and layout */
+.vr-instbox {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 10px 14px;
+  background: #0e2135;
+  border-left: 1px solid #22405e;
+}
+
+.vr-instructor section {
+  margin-bottom: 14px;
+}
+
+.vr-instructor h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+}
+
+.vr-instructor .vr-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.vr-inst-outer {
+  font-weight: bold;
+}
+
+.vr-inst-timeline {
+  position: relative;
+  height: 22px;
+  background: #081524;
+  border: 1px solid #22405e;
+  cursor: pointer;
+}
+
+.vr-inst-mark {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  margin-left: -1px;
+  pointer-events: none;
+  background: #9fb3c8;
+}
+
+.vr-inst-mark.trip {
+  background: #e5584f;
+}
+
+.vr-inst-mark.rejected {
+  background: #ffb74d;
+}
+
+.vr-inst-mark.fault {
+  background: #b39ddb;
+}
+
+.vr-inst-confirm {
+  margin-top: 6px;
+  padding: 6px;
+  border: 1px dashed #ffb74d;
+}
+
+.vr-inst-note {
+  margin: 4px 0;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.vr-inst-active {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.vr-inst-table {
+  border-collapse: collapse;
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vr-inst-table th,
+.vr-inst-table td {
+  padding: 1px 10px 1px 0;
+  text-align: left;
+}
+
+.vr-inst-barrow {
+  display: grid;
+  grid-template-columns: 90px 1fr 80px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vr-inst-fill {
+  height: 100%;
+  background: #7fd3a8;
+}
+
+.vr-inst-fill.neg {
+  background: #e5584f;
+}
+
+@media (max-width: 800px) {
+  #app[data-layout="instructor"] .vr-main {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .vr-instbox {
+    border-left: 0;
+    border-top: 1px solid #22405e;
+  }
+}
