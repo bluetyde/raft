@@ -23,6 +23,27 @@ export interface SessionFile {
   session: Record<string, any>;
 }
 
+/**
+ * The longest outer step at which pulses are allowed (docs/m6-instructor-design.md, amendment 1).
+ * A session with a longer step is "coarse": it rejects pulse mode and rod firing with REJ_COARSE_STEP.
+ */
+export const PULSE_MAX_OUTER_DT = 0.01;
+
+export function isCoarse(outerDt: number): boolean {
+  return outerDt > PULSE_MAX_OUTER_DT * (1 + 1e-9);
+}
+
+/** Texts for the rejection reasons that the runtime (not the engine) gives. */
+export const RUNTIME_REJECTIONS: Record<string, string> = {
+  REJ_COARSE_STEP: `pulse mode and rod firing need an outer step of ${PULSE_MAX_OUTER_DT * 1000} ms or less, and this session's step is longer`,
+};
+
+/** The faults active in the engine after a step (instrument faults by id, and the total inserted reactivity). */
+export interface ActiveFaults {
+  instruments: Record<string, string>;
+  extraRho: number;
+}
+
 /** Why the clock runs slower than requested, or is stopped. */
 export type ClockLimit = "cpu" | "halted" | "solver" | null;
 
@@ -76,6 +97,8 @@ export type FromWorker =
       shape?: Float32Array;
       /** Each instrument's extremes over every engine step since the previous snapshot (so a chart keeps a peak between snapshots). */
       extremes?: Record<string, Extreme>;
+      /** The faults active at this snapshot (for the instructor view; the operator panel does not read them). */
+      faults?: ActiveFaults;
     }
   | { kind: "events"; events: Record<string, any>[] }
   | {

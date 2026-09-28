@@ -193,3 +193,36 @@ Put requests for the other session under "Requests". Mark a request "done" when 
 - The hourly PR check-ins are stopped.
 - **For the local session:** the M5 items for you are still open: ARCHITECTURE §3 (alarms are derived in the view) and the `rod.setTarget` finding in the M4 entry.
 - Branch: `claude/kind-bohr-p73819` (this log entry only).
+
+### 2026-09-27: M6 instructor view design (proposal, waiting for the user)
+
+- What: `docs/m6-instructor-design.md`. No code yet. Decisions D1–D6 are open for the user.
+- Findings the other session may want to know (plan 06 assumes things the engines do not have):
+  - no rod faults (stuck, will not scram, drop) and no instrument drift;
+  - `fault.reactivity` adds to a running total, with no fault id and no clear (ARCHITECTURE §2 lists `fault.inject` and `fault.clear` with ids);
+  - the snapshot does not list active instrument faults (the runtime can read the engine's public `faults` field, so this is not a request).
+  The recommended options need no engine change for the first slice. Possible later requests, only if the user picks those options:
+  `fault.rod` and instrument drift in both engines (D3a), and an ARCHITECTURE change from "one owner" to "one shared worker" (D2a).
+- Branch: `claude/m6-instructor-design`, based on `main` (with `1442af9` merged in).
+- User decision (2026-09-27): approved with D1–D6 = option a, and four amendments:
+  coarse sessions reject pulse mode and `rod.fire` with a clear reason, and the time bar shows the step;
+  reactivity clear comes from the engine (added to the D3a request);
+  with two windows, the worker enforces each window's role;
+  compare shows each branch's fork step and command count.
+- **For the local session:** the user said you will do D3a after your M2 runs: rod stuck, no-scram, drop and clear; instrument drift; reactivity clear.
+  Also the ARCHITECTURE change from "one owner" to "one shared worker".
+  Note for the reactivity clear: today `fault.reactivity` accepts any extra field and adds `deltaRho ?? 0`, so a `{kind: "clear"}` is accepted as a no-op by the current engine.
+  Please make the new command detectable (for example, a new engine version in the pins), so the view offers clear only when the engine has it.
+
+### 2026-09-27: M6 slice S1 (one window) implemented
+
+- What: `web/src/views/instructor/` (`time.ts`, `timeline.ts`, `faults.ts`, `truth.ts`, `panel.ts`) and the `instructor` layout in `web/src/app/main.ts`.
+  Runtime: active faults in each snapshot message, and coarse sessions reject pulse mode and `rod.fire` with `REJ_COARSE_STEP` (amendment 1).
+  The operator panel shows the text for that reason, and its rate menu now follows the clock (the instructor can set the rate).
+- Finding for the local session (not a request yet, 2026-09-27): **a reactivity step trips `period-short` at once.**
+  The trip reads `truth.period`, which has no lag. Right after a step, the prompt jump gives a very short period.
+  On the synthetic core, steps of 5, 10, 20 and 40 pcm all trip after one 10 ms step. `triga-jsi-242` has the same trip.
+  A real period channel has a lag. You may want the trip to read a lagged period instrument instead.
+- Tests: 7 new runtime tests, 10 new Vitest tests (`instructor.test.ts`), and 5 new Playwright tests (`instructor.spec.ts`).
+  Three deliberate breaks were each caught (no coarse check, no faults in the snapshot message, markers kept after a rewind).
+- Branch: `claude/m6-instructor-design`. Checks: see the PR.
