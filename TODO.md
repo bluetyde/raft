@@ -12,7 +12,7 @@ Order matters: M2 replaces the `assumed` inputs that M1's caveats rest on, and t
 
 **Track 1: M2, the OpenMC library (Claude; judgment, transport, nuclear data)**
 1. [ ] **Open data only.** The ICSBEP handbook is licensed to named users and stays out of this work and the repo (user, 2026-09-27). Sources: the database core maps (element positions for cores 242/246); open JSI papers for fuel geometry and materials (svajger2024 Fig. 16 and Table 1, vavtar2021); public NRC TRIGA documents for the standard GA element; ENDF/B-VIII.0. Cite numbers; don't copy whole tables. Downloaded database files stay out of git.
-2. [ ] Create the `openmc-vr` env in WSL Ubuntu from `pipeline/environment.yml` (the agent sandbox already has one; Ubuntu only has `openmc-mcnp`, `openmc-cad`).
+2. [x] 2026-09-27: `openmc-vr` env in WSL Ubuntu (OpenMC 0.15.3, ENDF/B-VIII.0 path set)
 3. [ ] TD-06 gate before any sweep: run manifests hash the model content, so a changed model invalidates a run and an interrupted run can't pass as complete. Design Claude, then **[agy]** implementation (oracle: tampered-model and interrupted-run fixtures must fail).
 4. [ ] OpenMC model of the JSI core: cores 242 and 246 from the database core maps (element positions and serials in `242.pdf`/`246.pdf`), fresh fuel first. Main caveat: burnup (decades-old elements) biases absolute k-eff; report the offset, and look for published per-element burnup in open JSI papers.
 5. [ ] First outputs, each with an existing check:
@@ -23,12 +23,12 @@ Order matters: M2 replaces the `assumed` inputs that M1's caveats rest on, and t
    Then rebuild the per-core libraries with OpenMC values replacing `assumed` rod shapes, and re-run run 3's Part B as a regression.
 
 **Track 2: the browser (parallel)**
-6. [ ] C6: Web Worker runtime, clock and command bus (ARCHITECTURE runtime loop). Claude designs the scheduling semantics; parts can then be delegated.
+6. [x] 2026-09-27 (cloud session, merged `6a4be94`): C6: Web Worker runtime, clock and command bus (ARCHITECTURE runtime loop).
 7. [ ] M3 renderer decision (TD-07: primitives now, CSG reuse later), then a three.js scaffold (the dispatcher adds the dependency and lockfile). Then **[agy]** the primitive viewer from the library's `geometry` (A10).
-8. [ ] **[agy]** Browser end-to-end check on the synthetic fixture: malformed library, a trip, pause/resume, replay (once C6 exists).
+8. [x] 2026-09-27 (cloud session, PR #4; CI job runs `npx playwright test -c src/app/e2e/playwright.config.ts`, not premerge.py): Browser end-to-end check on the synthetic fixture: malformed library, a trip, pause/resume, replay.
 
 **Housekeeping**
-9. [ ] **[agy]** Pre-merge check (TD-03, A9): one script that runs the Python fast tests plus `npm test`/`typecheck`/`build`.
+9. [x] 2026-09-27: **[agy]** Pre-merge check (TD-03, A9): `python scripts/premerge.py` (agy, verified by Claude). CI that runs it: the cloud session (browser track), in progress.
 10. [ ] **[codex]** The TS port (`web/src/`), which the M1 review didn't cover. (The engine line and M1 were reviewed 2026-09-27; 8 findings fixed.)
 11. [ ] Find the JSI Research Reactor Simulator's source and license (independent comparison, reference only).
 
@@ -69,7 +69,7 @@ All ten architecture findings and TD-01..09 are **accepted and documented** (202
       Checkpoint restore must match uninterrupted execution including noise and trips; built with the first stateful runtime, not deferred to M6 (TD-05)
 - [x] 2026-09-27: Independent checks (TD-04): perturbed-coefficient tests (`test_wrong_coefficient_breaks_order`, `..._catches_wrong_gamma`), vector self-test (`test_comparison_catches_real_differences`, ported to TS), and targeted breaks during each verification (logged). Golden vectors reproduced by the TS port (A6-1).
 - [ ] **[agy]** Basic resource bounds in the first worker and recorder (after C6); an accelerated synthetic session stays within a measured memory budget (TD-08)
-- [ ] **[agy]** Browser end-to-end check on the same fixture (Next #8): malformed library, a trip, pause/resume, replay. Only then expand the transport grid
+- [x] 2026-09-27 (Next #8, PR #4): Browser end-to-end check on the same fixture: malformed library, a trip, pause/resume, replay. Only then expand the transport grid
 - [ ] Performance budgets on a named reference laptop (Claude sets the budgets; **[agy]** writes the benchmark harness): library memory, load time, command latency, replay latency, solver throughput
 
 ## Milestone 1: Physics prototype (Python, no UI) · [plan](docs/plans/01-physics-core.md)
