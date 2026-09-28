@@ -98,14 +98,15 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 
 ## Milestone 2: OpenMC library · [plan](docs/plans/02-openmc-pipeline.md)
 
-- [ ] **Gate before any large sweep (TD-06):** changing model content invalidates a run; changing only extraction rebuilds derived data; an interrupted run can't be read as complete
+- [x] 2026-09-27 (`pipeline/runs/cache.py`, `pipeline/tests/test_run_cache.py`, targeted breaks): **Gate before any large sweep (TD-06):** changing model content invalidates a run; changing only extraction rebuilds derived data; an interrupted run can't be read as complete
 
-- [ ] Build the JSI TRIGA OpenMC model from open data; check k-eff at the measured critical rod positions (Next #1, #4)
+- [x] 2026-09-27 (`docs/validation/m2-core.md`, `m2-burnup-results.md`): Build the JSI TRIGA OpenMC model from open data; check k-eff at the measured critical rod positions (Next #1, #4). Uniform burnup calibrated on core 246 (23.7 MWd/kg effective), tested on core 242 (−309 pcm) and the measured burnup coefficient; transient-rod curve of core 242 within 1σ of its table
 - [ ] Integral and differential rod-worth curves for each control rod
-- [ ] β_eff and Λ
+- [x] 2026-09-27 (IFP, `m2-core.md`): β_eff and Λ (737 ± 11 pcm, 40.6 µs fresh; 724 ± 25 pcm, 45.5 µs at the calibrated burnup)
 - [ ] Fuel and coolant temperature coefficients
 - [ ] 3D power mesh tallies over the state grid; estimate compute cost first
-- [ ] **[agy]** Export script: OpenMC outputs → browser data files (once the library fields are fixed; oracle: `pipeline.library.validate` plus the TS validator)
+- [x] 2026-09-27 (agy, verified; `pipeline/library/export_openmc.py`): Export script: OpenMC outputs → browser data files. Found and fixed a TS validator crash on non-empty `jointChecked`
+- [ ] Run the sweep (`python -m pipeline.openmc.sweep --core 242 --core 246`, 83 cases, running 2026-09-27), export both cores, validate in Python and TS, report the holdout errors, re-run run 3 Part B as a regression
 - [ ] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
 
 ## Milestone 3: Static 3D viewer · [plan](docs/plans/04-3d-explorer.md)
@@ -136,8 +137,9 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 
 ## Milestone 6: Instructor view · [plan](docs/plans/06-instructor.md)
 
-- [ ] History buffer, rewind, time speed-up (design Claude: builds on checkpoint/replay; then **[agy]**)
-- [ ] **[agy]** Fault injection UI: stuck rod, pump trip, failed instrument (the engine commands exist)
+- [x] 2026-09-28 (cloud session, slices S1–S3, `docs/m6-instructor-design.md`): History buffer, rewind, time speed-up, branches, notes, session v2, CSV export, two windows on a SharedWorker with roles
+- [x] 2026-09-28 (cloud session, S1): Fault injection UI for the faults the engine has (instrument stuck/dead, reactivity, pump trip)
+- [ ] Engine faults D3a (local session, both engines + golden vectors, a new engine version so the UI can detect them): rod stuck / no-scram / drop / clear, instrument drift, exact reactivity clear
 - [ ] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
 
 ## Milestone 7: Validation (stretch) · [plan](docs/plans/07-validation.md)
