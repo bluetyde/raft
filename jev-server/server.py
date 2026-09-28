@@ -55,14 +55,21 @@ def evaluate_hypotheses(premise: str, hypotheses: list[str]) -> str:
         logits = outputs.logits.squeeze()
         
         if logits.dim() == 0:
-            return hypotheses[0]
-            
-        if len(logits.shape) > 1:
+            scores = logits.unsqueeze(0)
+        elif len(logits.shape) > 1:
             scores = logits[:, -1]
         else:
             scores = logits
             
         best_idx = torch.argmax(scores).item()
+        
+        # Log the decision process so the user can visualize it
+        logger.info("\n--- AI Copilot Decision ---")
+        logger.info(f"Premise: {premise}")
+        for i, (hyp, score) in enumerate(zip(hypotheses, scores.tolist())):
+            marker = ">> " if i == best_idx else "   "
+            logger.info(f"{marker}[{score:6.2f}] {hyp}")
+            
         return hypotheses[best_idx]
 
 @app.websocket("/ws/{role}")
