@@ -60,22 +60,29 @@ export class JevCopilot {
       const power = s.indicated?.["power"] ?? 0;
       const period = s.indicated?.["period"] ?? 0;
       const fuelTemp = s.indicated?.["temp.fuel"] ?? 0;
-      
-      premise = `ROLE: Nuclear Reactor Operator. GOAL: Maintain safe power levels, avoid SCRAMs, and stabilize the reactor. CURRENT STATE: Power is ${power.toExponential(3)} W, Period is ${period.toFixed(2)} seconds, Fuel Temperature is ${fuelTemp.toFixed(1)} K.`;
-      
-      // If period is dangerously short, we might want to drop rods or scram.
+
+      // Describe the startup state explicitly so the model doesn't call a dead reactor "stable"
+      const isShutdown = power < 1e-6;
+      const powerDesc = isShutdown
+        ? "The reactor is shutdown (power is essentially zero)."
+        : `Power is ${power.toExponential(3)} W.`;
+      const periodDesc = isShutdown ? "" : ` Period is ${period.toFixed(2)} seconds.`;
+      const tempDesc = `Fuel Temperature is ${fuelTemp.toFixed(1)} K.`;
+
+      premise = `ROLE: Nuclear Reactor Operator. GOAL: Bring the reactor to operating power, maintain safe power levels, and avoid SCRAMs. CURRENT STATE: ${powerDesc}${periodDesc} ${tempDesc}`;
+
       hypotheses = [
-        "The reactor is stable. I will STOP the control rods and wait.",
-        "Power is too low. I will pull the control rod UP to increase reactivity.",
-        "Power is rising too fast. I will push the control rod DOWN to reduce reactivity.",
-        "The reactor is out of control. I will trigger a manual SCRAM immediately."
+        "The reactor is shutdown or power is near zero. I must pull the regulating rod UP to start it.",
+        "Power is rising safely. I will STOP the control rods and monitor.",
+        "Power is rising too fast or the period is dangerously short. I will push the regulating rod DOWN.",
+        "The reactor is out of control. I will trigger a manual SCRAM immediately.",
       ];
     } else {
       // Instructor
       const power = s.indicated?.["power"] ?? 0;
       const scenarioText = scenarioState ? JSON.stringify(scenarioState) : "No active scenario.";
       premise = `ROLE: Simulation Instructor. GOAL: Provide a challenging but solvable scenario for the operator. CURRENT STATE: ${scenarioText}. Power is ${power.toExponential(3)} W.`;
-      
+
       hypotheses = [
         "The operator is busy. I will wait and observe.",
         "I will trigger an instrument drift fault to confuse the operator.",
@@ -106,19 +113,20 @@ export class JevCopilot {
 
   private executeChoice(choice: string): void {
     if (this.role === "operator") {
-      if (choice.includes("pull the control rod UP")) {
-        this.client.command({ type: "rod.move", rod: "CR1", direction: "out" });
-      } else if (choice.includes("push the control rod DOWN")) {
-        this.client.command({ type: "rod.move", rod: "CR1", direction: "in" });
+      // Rod IDs in the engine: "regulating", "transient", "safety", "shim"
+      if (choice.includes("pull the regulating rod UP")) {
+        this.client.command({ type: "rod.move", rod: "regulating", direction: "out" });
+      } else if (choice.includes("push the regulating rod DOWN")) {
+        this.client.command({ type: "rod.move", rod: "regulating", direction: "in" });
       } else if (choice.includes("STOP")) {
-        this.client.command({ type: "rod.move", rod: "CR1", direction: "stop" });
+        this.client.command({ type: "rod.move", rod: "regulating", direction: "stop" });
       } else if (choice.includes("manual SCRAM")) {
         this.client.command({ type: "trip.manual" });
       }
     } else {
       // Instructor choices
       if (choice.includes("jam a control rod")) {
-        this.client.command({ type: "fault.rod", rod: "CR1", kind: "stuck" });
+        this.client.command({ type: "fault.rod", rod: "transient", kind: "stuck" });
       }
     }
   }
