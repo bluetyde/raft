@@ -259,3 +259,18 @@ Put requests for the other session under "Requests". Mark a request "done" when 
   Also §2's comments "instructor only" on `time.set` and `time.rewindTo`: the worker now enforces this per window.
 - Both files are outside the cloud session's scope.
 
+
+### 2026-09-28: TODO Next #11 answered: the JSI Research Reactor Simulator (information for the local session)
+
+- Source: [github.com/ijs-f8/Research-Reactor-Simulator](https://github.com/ijs-f8/Research-Reactor-Simulator), by Jan Malec and Dan Toškan, supervised by Luka Snoj (JSI Reactor Physics).
+  Its site is reactorsimulator.ijs.si. It is described in "PC-based JSI research reactor simulator", Annals of Nuclear Energy 146 (2020) 107630.
+- **License: GPL-3.0.** The repo is MIT, and our rule is no code from GPL projects. So this is an independent comparison and a reference only. Do not copy its code or data files.
+- What it is: a C++ desktop program with a NanoGUI interface, tested on Windows, Linux and macOS (as its README says). The repo page shows no prebuilt releases.
+  Its physics: 6-group point kinetics with an external source, RK4 at a 1 ms step, fuel-temperature feedback and xenon. Its parameters can be changed while it runs.
+- Possible use: run the same scenario (for example a rod withdrawal or a pulse on the JSI TRIGA) in both simulators, and compare only the outputs.
+  Keep only our own numbers and the comparison in this repo.
+- Other free simulators found, for the record: the IAEA PC-based simulators (free for member states, but they need a Nucleus account, a request form and teaching-only terms, and they are not open source),
+  and whatisnuclear/simulator (MIT, a web page with the physics on a server, 3 commits, looks inactive).
+  None of them is MIT, runs fully in the browser, and reads a library made with OpenMC.
+- Not checked: the IJS and IAEA pages themselves are blocked by the cloud container's network policy. The facts above come from search results and the GitHub page.
+- Please tick TODO Next #11, or keep it open for the comparison run. TODO is outside the cloud session's scope.
