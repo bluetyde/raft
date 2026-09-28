@@ -186,6 +186,25 @@ The other session will do D3a (rod stuck, no-scram, drop and clear; instrument d
   A real period channel has a lag, so it would not trip on a small step. This is a question for the library and the engine, not for the view. The panel has a note about it.
 - **`fault.reactivity` accepts unknown fields.** A `{kind: "clear"}` sent to today's engine is accepted and adds 0. So the view must know that the engine supports clear before it sends one (amendment 2).
 
+## 11. Slice S2: what is built
+
+- **Branches** (`web/src/runtime/branches.ts`, D1a):
+  - A rewind that discards steps keeps the old timeline as a branch. A branch holds its session file (version 2), its marks and a summary of its final values.
+  - `branch.switch` makes another branch current. The replay starts from the latest checkpoint that both timelines share: the same pins, initial state and seed, and the same commands before the checkpoint's next seq. Without one, it starts from step 0.
+  - The runtime keeps at most 32 branches (`MAX_BRANCHES`). At the limit, the oldest goes first.
+  - An import keeps the replaced timeline as a branch too. The imported timeline starts a new tree (parent null), because its branch ids came from another runtime.
+- **Change from §4:** only a branch switch uses the shared checkpoint. An import replays from step 0, because that replay also gives the imported timeline's marks.
+- **Marks come from the worker.** The runtime derives marks from engine events (trips, rejected commands, accepted fault commands) and sends them in a `timeline` message.
+  So the timeline no longer depends on which window sent a command, which S3 needs.
+  After a rewind to time t, trips at t stay, and command marks at t go: those commands were logged at that step, so they are still queued and mark again when they apply.
+- **Annotations:** `annotate` and `annotation.delete`. A note belongs to a step. A rewind moves the notes after the rewind step to the old branch.
+- **Session file version 2:** version 1 plus `annotations` and `branch`. Version 1 files still import. Malformed annotations are refused.
+- **Compare (amendment 4):** a table of all branches with parent, fork step, command count and note count next to the end time, power, fuel temperature, xenon and trip state.
+  The current row takes its values from the latest snapshot. The other rows have a "switch" button.
+- **CSV** (`web/src/runtime/trace.ts`, `trace-worker.ts`, D6a): a separate short-lived worker replays the session from step 0 and writes one row at step 0 and then every 0.1 s of sim time (at least every step).
+  The columns are t, each instrument's reading, the true power, period, temperatures, iodine and xenon, the reactivity by source, the trip state and the mode.
+- **Clock fix:** while paused, the clock message now goes out again after a step, rewind, switch or import. Before, it named an old step, because only a change of rate, pause or limit sent it.
+
 ## Decisions (approved by the user, 2026-09-27)
 
 | # | Decision | Recommended |

@@ -1,19 +1,17 @@
 /**
- * The instructor timeline (docs/m6-instructor-design.md §3): markers for trips, rejected commands and
- * faults, and the mapping between a point on the bar and an engine step.
+ * The instructor timeline (docs/m6-instructor-design.md §3): markers for trips, rejected commands, faults,
+ * notes and the branch point, and the mapping between a point on the bar and an engine step.
+ * The marks and notes come from the worker (`timeline` message), so every window shows the same timeline.
  */
 
-export type MarkerKind = "trip" | "rejected" | "fault";
+import type { Annotation, Mark } from "../../runtime/protocol";
+
+export type MarkerKind = Mark["kind"] | "note" | "fork";
 
 export interface Marker {
   kind: MarkerKind;
   t: number;
   label: string;
-}
-
-/** The commands the instructor view marks as faults. */
-export function isFaultCommand(type: unknown): boolean {
-  return type === "fault.instrument" || type === "fault.reactivity" || type === "pump.set";
 }
 
 export class Timeline {
@@ -25,24 +23,18 @@ export class Timeline {
     return this.list;
   }
 
-  /** Add markers for the trips and rejected commands in a batch of engine events. */
-  onEvents(events: Record<string, any>[]): void {
-    for (const e of events) {
-      if (e["type"] === "trip") this.add({ kind: "trip", t: e["t"], label: `trip ${e["id"]}` });
-      else if (e["type"] === "command" && e["status"] === "rejected") {
-        this.add({ kind: "rejected", t: e["t"], label: `${e["clientId"]}: ${e["reason"]}` });
-      }
-    }
+  /** Replace the markers: the worker's marks, the notes, and the point where this branch forked (if it did). */
+  set(marks: readonly Mark[], notes: readonly Annotation[], forkT: number | null): void {
+    this.list = [
+      ...marks.map((m) => ({ ...m })),
+      ...notes.map((a) => ({ kind: "note" as const, t: a.t, label: a.text })),
+      ...(forkT !== null ? [{ kind: "fork" as const, t: forkT, label: "branch point" }] : []),
+    ].sort((a, b) => a.t - b.t);
+    for (const m of this.list) this.setEnd(m.t);
   }
 
-  /** Add a marker for a fault command that the instructor sent and the engine accepted. */
-  onFault(t: number, label: string): void {
-    this.add({ kind: "fault", t, label });
-  }
-
-  /** After a rewind to `t`: markers after it belong to the old timeline. */
+  /** After a rewind or a branch switch to `t`: the timeline now ends there. */
   rewoundTo(t: number): void {
-    this.list = this.list.filter((m) => m.t <= t + 1e-9);
     this.endT = t;
   }
 
@@ -65,10 +57,5 @@ export class Timeline {
   stepAt(fraction: number, outerDt: number): number {
     const endStep = Math.round(this.endT / outerDt);
     return Math.min(endStep, Math.max(0, Math.round(Math.min(1, Math.max(0, fraction)) * endStep)));
-  }
-
-  private add(m: Marker): void {
-    this.list.push(m);
-    this.setEnd(m.t);
   }
 }

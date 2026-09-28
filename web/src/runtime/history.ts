@@ -4,7 +4,7 @@
 
 import { Engine, ENGINE_VERSION, CheckpointError } from "../sim/engine";
 import type { Library } from "../sim/library";
-import { SESSION_FORMAT, SESSION_VERSION, type SessionFile } from "./protocol";
+import { SESSION_FORMAT, SESSION_VERSION, SESSION_VERSIONS, type Annotation, type BranchInfo, type SessionFile } from "./protocol";
 
 interface Stored {
   cp: Record<string, any>; // engine.checkpoint() without commandLog
@@ -58,6 +58,17 @@ export class CheckpointStore {
       if (s.cp.stepIndex <= step) return rebuild(s, log);
     }
     return null;
+  }
+
+  /** The step and next command seq of each stored checkpoint, oldest first. */
+  entries(): { step: number; nextSeq: number }[] {
+    return this.items.map((s) => ({ step: s.cp.stepIndex as number, nextSeq: s.cp.nextSeq as number }));
+  }
+
+  /** The checkpoint at exactly `step`, with its command log rebuilt from `log`, or null. */
+  at(step: number, log: Record<string, any>[]): Record<string, any> | null {
+    const s = this.items.find((x) => x.cp.stepIndex === step);
+    return s ? rebuild(s, log) : null;
   }
 
   /** Remove checkpoints after `step` (their timeline was discarded by a rewind). */
@@ -120,15 +131,25 @@ export function replayCommands(
   }
 }
 
-export function sessionFile(engine: Engine): SessionFile {
-  return { format: SESSION_FORMAT, version: SESSION_VERSION, endStep: engine.stepIndex, session: engine.session() };
+export function sessionFile(engine: Engine, extra: { annotations?: Annotation[]; branch?: BranchInfo } = {}): SessionFile {
+  return {
+    format: SESSION_FORMAT,
+    version: SESSION_VERSION,
+    endStep: engine.stepIndex,
+    session: engine.session(),
+    annotations: structuredClone(extra.annotations ?? []),
+    ...(extra.branch ? { branch: { ...extra.branch } } : {}),
+  };
 }
 
 /** Check a session file's form and pins against this engine build and library. Throws CheckpointError. */
 export function checkSessionFile(file: unknown, lib: Library): SessionFile {
   const f = file as SessionFile;
-  if (typeof f !== "object" || f === null || f.format !== SESSION_FORMAT || f.version !== SESSION_VERSION) {
-    throw new CheckpointError(`not a ${SESSION_FORMAT} file, version ${SESSION_VERSION}`);
+  if (typeof f !== "object" || f === null || f.format !== SESSION_FORMAT || !SESSION_VERSIONS.includes(f.version)) {
+    throw new CheckpointError(`not a ${SESSION_FORMAT} file, version ${SESSION_VERSIONS.join(" or ")}`);
+  }
+  if (f.annotations !== undefined && !validAnnotations(f.annotations)) {
+    throw new CheckpointError("annotations must be a list of {id, step, t, text}");
   }
   if (!Number.isInteger(f.endStep) || f.endStep < 0) {
     throw new CheckpointError("endStep must be a non-negative integer");
@@ -144,4 +165,20 @@ export function checkSessionFile(file: unknown, lib: Library): SessionFile {
     throw new CheckpointError("library digest doesn't match the session");
   }
   return f;
+}
+
+function validAnnotations(a: unknown): a is Annotation[] {
+  return (
+    Array.isArray(a) &&
+    a.every(
+      (x) =>
+        typeof x === "object" &&
+        x !== null &&
+        Number.isInteger(x.id) &&
+        Number.isInteger(x.step) &&
+        x.step >= 0 &&
+        typeof x.t === "number" &&
+        typeof x.text === "string",
+    )
+  );
 }
