@@ -9,6 +9,7 @@ import argparse
 import bisect
 import copy
 import datetime
+import hashlib
 import json
 import math
 import shutil
@@ -122,66 +123,145 @@ def interp(xs: list[float], ys: list[float], x: float) -> float:
     return ys[i] + t * (ys[i + 1] - ys[i])
 
 
+ROUNDING_TOL = 1e-6        # the most float32 rounding can shift a slice sum; anything larger is a real error, not rounding
+
+
 def _pack_f32_slice_normalized(values: list[float], target_sum: float = 0.0) -> list[float]:
-    """Cast float64 values to float32 adjusting largest entry so sum(f32) equals target_sum within 1e-5."""
+    """Cast float64 values to float32 so that sum(f32) equals target_sum within 1e-5 (library-format section 10). Only rounding
+    is repaired: if the float64 values themselves miss the target by more than ROUNDING_TOL, that is an input error and raises.
+    (Codex M2 review, finding 4: repairing any deficit manufactured a power spike in one bin.)"""
     vals = list(values)
+    miss = target_sum - math.fsum(vals)
+    if abs(miss) > ROUNDING_TOL:
+        raise ValueError(f"slice sums to {target_sum - miss!r}, expected {target_sum} (off by {miss:.3e}, beyond rounding)")
     for _ in range(5):
         f32 = list(struct.unpack(f"<{len(vals)}f", struct.pack(f"<{len(vals)}f", *vals)))
-        err = target_sum - sum(f32)
-        if abs(err) <= 1e-5:
+        err = target_sum - math.fsum(f32)
+        if abs(err) <= 1e-7:
             return f32
         idx = max(range(len(vals)), key=lambda i: abs(vals[i]))
         vals[idx] += err
     return f32
 
 
-def export(summary: dict[str, Any], out_dir: Path | str, created: str | None = None) -> dict[str, Any]:
-    """Turn an M2 sweep summary into a complete reactor library and return an output report dict."""
-    if not summary.get("complete", False):
-        raise ValueError("summary complete is not true")
+def _finite(x: Any, what: str) -> float:
+    v = float(x)
+    if not math.isfinite(v):
+        raise ValueError(f"{what} is not finite: {x!r}")
+    return v
 
-    cases = summary.get("cases", [])
-    if not cases:
-        raise ValueError("summary cases list is empty")
 
-    present_families = {c.get("family") for c in cases}
-    for fam in REQUIRED_FAMILIES:
-        if fam not in present_families:
-            raise ValueError(f"missing family: {fam}")
-
-    ref_case = next((c for c in cases if c.get("family") == "reference"), None)
-    if ref_case is None:
-        raise ValueError("missing family: reference")
-
-    if not ref_case.get("kinetics", False) or ref_case.get("betaGroups") is None or ref_case.get("lambdaS") is None:
-        raise ValueError("reference case missing kinetics")
-
-    elements = ref_case.get("elements")
-    if not elements:
-        raise ValueError("reference case missing elements")
-    for c in cases:
-        if c.get("elements") != elements:
-            raise ValueError("elements differing between cases")
-
-    for rod_letter in ("T", "K", "V", "R"):
-        rod_cases = [c for c in cases if c.get("family") == "rod-worth" and c.get("rod") == rod_letter]
-        # Must have at least 1 rod-worth case plus reference to have >= 2 points
-        if len(rod_cases) < 1:
-            raise ValueError(f"rod {rod_letter} has fewer than 2 worth points")
-
-    for field in ("core", "burnup"):
+def check_summary(summary: dict[str, Any]) -> None:
+    """Refuse a summary that isn't exactly the planned sweep with consistent, finite results (Codex M2 review, findings 3, 5)."""
+    from pipeline.openmc import sweep
+    for field in ("core", "burnup", "cases"):
         if field not in summary:
             raise ValueError(f"summary has no {field!r}")
+    if summary.get("complete") is not True:
+        raise ValueError("summary complete is not true")
+    core = str(summary["core"])
+    if core not in sweep.REFERENCE_RODS:
+        raise ValueError(f"unknown core {core!r}")
+    cases = summary["cases"]
+    names = [c.get("name") for c in cases]
+    if len(names) != len(set(names)):
+        raise ValueError("duplicate cases in the summary")
+    planned = {c["name"]: c for c in sweep.plan(core)}
+    missing, extra = sorted(set(planned) - set(names)), sorted(set(names) - set(planned))
+    if missing or extra:
+        raise ValueError(f"summary does not match the sweep plan: missing {missing[:5]}, unexpected {extra[:5]}")
+    if not isinstance(summary.get("openmc"), dict) or "openmc" not in summary["openmc"]:
+        raise ValueError("summary has no OpenMC version")
+    for c in cases:
+        for k in ("key", "dataDigest"):
+            if not isinstance(c.get(k), str) or not c[k]:
+                raise ValueError(f"case {c['name']!r} has no {k}")
+    for c in cases:
+        p = planned[c["name"]]
+        for k in ("family", "rods", "tfuel", "tcool", "kinetics"):
+            if c.get(k) != p[k]:
+                raise ValueError(f"case {c['name']!r}: {k} is {c.get(k)!r}, the plan says {p[k]!r}")
+    ref = next(c for c in cases if c["family"] == "reference")
+    elements, edges = ref.get("elements"), ref.get("axialEdgesCm")
+    if not elements or not edges or len(edges) < 2:
+        raise ValueError("reference case missing elements or axial edges")
+    E, A = len(elements), len(edges) - 1
+    for c in cases:
+        name = c["name"]
+        if c.get("elements") != elements:
+            raise ValueError(f"case {name!r}: elements differ from the reference")
+        if c.get("axialEdgesCm") != edges:
+            raise ValueError(f"case {name!r}: axial edges differ from the reference")
+        if c.get("basis") != "fission" or c.get("normalization") != "fraction-of-total-power":
+            raise ValueError(f"case {name!r}: shape basis/normalization {c.get('basis')!r}/{c.get('normalization')!r}")
+        k, ks = _finite(c.get("k"), f"{name} k"), _finite(c.get("kStd"), f"{name} kStd")
+        if k <= 0 or ks < 0:
+            raise ValueError(f"case {name!r}: k {k}, kStd {ks}")
+        base = c.get("base")
+        if not isinstance(base, list) or len(base) != E or any(not isinstance(r, list) or len(r) != A for r in base):
+            raise ValueError(f"case {name!r}: base is not [{E}][{A}]")
+        unc = c.get("baseUnc")
+        if not isinstance(unc, list) or len(unc) != E or any(not isinstance(r, list) or len(r) != A for r in unc):
+            raise ValueError(f"case {name!r}: baseUnc is not [{E}][{A}]")
+        for row in base:
+            for v in row:
+                if not math.isfinite(v) or v < 0:
+                    raise ValueError(f"case {name!r}: base value {v!r}")
+        for row in unc:
+            for v in row:
+                if math.isnan(v) or v < 0:
+                    raise ValueError(f"case {name!r}: baseUnc value {v!r}")
+    for k in ("betaGroups", "betaGroupsStd"):
+        v = ref.get(k)
+        if not isinstance(v, list) or len(v) != 6:
+            raise ValueError(f"reference case {k} missing or not 6 groups")
+        for x in v:
+            _finite(x, f"reference {k}")
+    _finite(ref.get("lambdaS"), "reference lambdaS")
+    _finite(ref.get("lambdaStdS"), "reference lambdaStdS")
+
+
+def export(summary: dict[str, Any], out_dir: Path | str, created: str | None = None) -> dict[str, Any]:
+    """Turn an M2 sweep summary into a complete reactor library and return an output report dict.
+
+    The library is built in a staging folder next to `out_dir`, validated (pipeline.library.validate), and only then swapped
+    in; any failure before the swap leaves an existing library at `out_dir` untouched (Codex M2 review, finding 3)."""
+    from pipeline.library.validate import validate_library
+    check_summary(summary)
+    out_dir = Path(out_dir)
+    out_dir.parent.mkdir(parents=True, exist_ok=True)
+    staging = out_dir.parent / f".{out_dir.name}.staging"
+    backup = out_dir.parent / f".{out_dir.name}.old"
+    for d in (staging, backup):
+        if d.exists():
+            shutil.rmtree(d)
+    try:
+        report = _write_library(summary, staging, created)
+        issues = validate_library(staging)
+        if issues:
+            raise ValueError("exported library fails validation: " + "; ".join(f"{i.code} {i.path}" for i in issues[:10]))
+    except BaseException:
+        shutil.rmtree(staging, ignore_errors=True)
+        raise
+    if out_dir.exists():
+        out_dir.rename(backup)
+    staging.rename(out_dir)
+    if backup.exists():
+        shutil.rmtree(backup)
+    return report
+
+
+def _write_library(summary: dict[str, Any], out_dir: Path, created: str | None) -> dict[str, Any]:
+    cases = summary["cases"]
+    ref_case = next(c for c in cases if c["family"] == "reference")
+    elements = ref_case["elements"]
     core = str(summary["core"])
     burnup = summary["burnup"]
     created_date = created or datetime.date.today().isoformat()
 
-    out_dir = Path(out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir.mkdir(parents=True)
     arrays_dir = out_dir / "arrays"
-    if arrays_dir.exists():
-        shutil.rmtree(arrays_dir)
-    arrays_dir.mkdir(parents=True, exist_ok=True)
+    arrays_dir.mkdir()
 
     # Reference physics
     k_ref = float(ref_case["k"])
@@ -373,9 +453,9 @@ def export(summary: dict[str, Any], out_dir: Path | str, created: str | None = N
                 sl_f64 = [0.0] * (E * A)
                 sl_f32 = [0.0] * (E * A)
             else:
-                sl_f64 = [a - b for a, b in zip(case_map[x], ref_base_f64)]
+                sl_f64 = [a - b for a, b in zip(case_map[x], ref_base_f64, strict=True)]
                 sl_f32 = _pack_f32_slice_normalized(sl_f64, target_sum=0.0)
-            slices_f64.append(sl_f64)
+            slices_f64.append(sl_f32)           # holdout predictions use the values actually exported
             packed_slices.extend(sl_f32)
 
         rod_delta_arrays[rod_id] = slices_f64
@@ -398,9 +478,9 @@ def export(summary: dict[str, Any], out_dir: Path | str, created: str | None = N
             sl_f64 = [0.0] * (E * A)
             sl_f32 = [0.0] * (E * A)
         else:
-            sl_f64 = [a - b for a, b in zip(temp_case_map[T], ref_base_f64)]
+            sl_f64 = [a - b for a, b in zip(temp_case_map[T], ref_base_f64, strict=True)]
             sl_f32 = _pack_f32_slice_normalized(sl_f64, target_sum=0.0)
-        temp_slices_f64.append(sl_f64)
+        temp_slices_f64.append(sl_f32)          # holdout predictions use the values actually exported
         temp_packed_slices.extend(sl_f32)
 
     blob_temp = build_triga.pack_f32(temp_packed_slices)
@@ -445,17 +525,19 @@ def export(summary: dict[str, Any], out_dir: Path | str, created: str | None = N
         ) + interp(fuel_temp_table["T"], fuel_temp_table["rho"], h_tfuel)
         rho_err = abs(rho_pred - rho_case)
 
-        # Shape prediction
-        shape_pred = list(ref_base_f64)
+        # Shape prediction, from the exported (float32) arrays; strict zips, so a short or mismatched array is an error
+        shape_pred = list(base_f32)
         for letter in rod_letter_order:
             rid = ROD_ID_MAP[letter]
             sl = interp_delta_slice(worth_tables[rid]["x"], rod_delta_arrays[rid], h_rods_x[rid])
-            shape_pred = [sp + d for sp, d in zip(shape_pred, sl)]
+            shape_pred = [sp + d for sp, d in zip(shape_pred, sl, strict=True)]
         sl_temp = interp_delta_slice(fuel_temp_table["T"], temp_slices_f64, h_tfuel)
-        shape_pred = [sp + d for sp, d in zip(shape_pred, sl_temp)]
+        shape_pred = [sp + d for sp, d in zip(shape_pred, sl_temp, strict=True)]
 
         case_base_flat = [float(v) for row in c["base"] for v in row]
-        max_shape_err = max(abs(sp - cb) for sp, cb in zip(shape_pred, case_base_flat)) * (E * A)
+        diffs = [abs(sp - cb) for sp, cb in zip(shape_pred, case_base_flat, strict=True)]
+        max_shape_err = _finite(max(diffs), f"holdout {c['name']} shape error") * (E * A)
+        rho_err = _finite(rho_err, f"holdout {c['name']} rho error")
 
         joint_checked.append({
             "rods": h_rods_x,
@@ -557,12 +639,19 @@ def export(summary: dict[str, Any], out_dir: Path | str, created: str | None = N
                  "Nuclear Engineering and Technology 56 (2024) 3405-3424"),
     })
 
+    # Provenance from the summary itself, not constants (Codex M2 review, finding 7): the code version the cases ran with, the
+    # nuclear-data identity, and a digest of every case key (a key hashes a case's full inputs, data files and versions).
+    openmc_version = summary["openmc"]["openmc"]
+    data_digests = sorted({c["dataDigest"] for c in cases})
+    xs_path = summary.get("nuclearData", {}).get("crossSections", "")
+    model_id = hashlib.sha256("\n".join(sorted(c["key"] for c in cases)).encode()).hexdigest()
     notes = (
-        f"OpenMC 0.15.3 / ENDF/B-VIII.0 full-core transport at a uniform burnup ({burnup} MWd/kg). "
-        "Transport results: reference state rho, rod worth curves, fuel and coolant temperature reactivity feedback, "
-        "prompt kinetics (beta_eff, generation time Lambda), and 3D fission power shapes. "
-        "Base library inputs: thermal properties, poisons, plant instrumentation/trips/interlocks, "
-        "delayed group lambdas, external source, rod scram profiles, and xenon reactivity table."
+        f"Full-core OpenMC {openmc_version} transport at a uniform burnup ({burnup} MWd/kg), {len(cases)} cases "
+        f"({summary.get('stats')}). Transport results: reference state rho, rod worth curves, fuel and coolant temperature "
+        "reactivity feedback, kinetics (beta_eff and Lambda by IFP), and fission power shapes (fraction of all fuel fission; the "
+        "lowest axial bin holds fuel-follower fuel below the core, zero for regular elements, whose volume there is nominal; "
+        "its relative uncertainty is the region total's). Base library inputs: thermal properties, poisons, plant "
+        "instrumentation/trips/interlocks, delayed group lambdas, external source, rod scram profiles, and xenon table."
     )
 
     ref_rods_dict = {ROD_ID_MAP[r]: step_to_x(r, ref_case["rods"][r]) for r in ("T", "K", "V", "R")}
@@ -575,6 +664,9 @@ def export(summary: dict[str, Any], out_dir: Path | str, created: str | None = N
         "capabilities": base_manifest["capabilities"],
         "provenance": {
             "generator": "pipeline.library.export_openmc",
+            "transportCode": f"OpenMC {openmc_version}",
+            "nuclearData": f"{xs_path} (data digests {', '.join(d[:12] for d in data_digests)})",
+            "model": f"sha256 of the {len(cases)} sweep case keys: {model_id}",
             "created": created_date,
             "notes": notes,
             "sources": sources,
@@ -629,9 +721,10 @@ def export(summary: dict[str, Any], out_dir: Path | str, created: str | None = N
         "arrays": arrays_dict,
         "geometry": {"units": "cm", "up": "z", "primitives": geometry_primitives},
         "domain": {
-            "rods": {rid: [0.0, 1.0] for rid in ROD_ID_MAP.values()},
-            "Tfuel": [294.0, max(ft_points, key=lambda p: p["T"])["T"]],
-            "Tcoolant": [294.0, max(ct_points, key=lambda p: p["T"])["T"]],
+            # where the tables have data (library-format section 13), not the nominal [0, 1] (Codex M2 review, finding 6)
+            "rods": {rid: [min(worth_tables[rid]["x"]), max(worth_tables[rid]["x"])] for rid in ROD_ID_MAP.values()},
+            "Tfuel": [min(p["T"] for p in ft_points), max(p["T"] for p in ft_points)],
+            "Tcoolant": [min(p["T"] for p in ct_points), max(p["T"] for p in ct_points)],
             "xenon": copy.deepcopy(base_manifest["domain"]["xenon"]),
             "jointChecked": joint_checked,
         },
@@ -639,11 +732,13 @@ def export(summary: dict[str, Any], out_dir: Path | str, created: str | None = N
 
     manifest_path = out_dir / "manifest.json"
     with open(manifest_path, "w", encoding="utf-8", newline="\n") as f:
-        json.dump(manifest, f, indent=2)
+        json.dump(manifest, f, indent=2, allow_nan=False)      # NaN or Infinity is an error, not a manifest the validator rejects later
         f.write("\n")
 
     report = {
         "core": core,
+        "model": model_id,
+        "caseKeys": {c["name"]: c["key"] for c in cases},
         "rods": report_rods,
         "fuelTemp": {"points": ft_points},
         "coolantTemp": {"points": ct_points},

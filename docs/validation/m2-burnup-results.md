@@ -19,6 +19,9 @@ burned-fuel nuclide order came from a Python set, so each process drew a differe
 
 **B246 = 23.7 ± 0.3 MWd/kg (effective, statistical only).**
 
+(Corrected 2026-09-28, Codex M2 review: propagated through the interpolation, the statistical uncertainty is 0.22 MWd/kg,
+not the 0.26 the run printed; the post-hoc check below shows the true uncertainty is larger anyway.)
+
 ## Tests
 
 | # | Result | Criterion | Verdict |

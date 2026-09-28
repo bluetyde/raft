@@ -48,6 +48,16 @@ def rho_std(r: dict) -> float:
     return r["kStd"] / r["k"] ** 2 * 1e5
 
 
+def crossing_std(b0: float, b1: float, r0: float, r1: float, s0: float, s1: float) -> float:
+    """Standard deviation of the zero crossing B = b0 + r0 (b1 - b0) / (r0 - r1) of the line through (b0, r0) and (b1, r1),
+    with independent errors s0, s1 on r0, r1: first-order propagation through the actual interpolation (Codex M2 review,
+    finding 14; the first version used equal weights and the T2 slope, 0.256 instead of 0.219 MWd/kg for the committed run)."""
+    d = (r0 - r1) ** 2
+    dB_dr0 = -r1 * (b1 - b0) / d
+    dB_dr1 = r0 * (b1 - b0) / d
+    return math.hypot(dB_dr0 * s0, dB_dr1 * s1)
+
+
 def linfit(xs, ys, ss):
     """Weighted least squares y = a + b x; returns (a, b, cov)."""
     w = [1 / s ** 2 for s in ss]
@@ -82,7 +92,7 @@ def main(argv=None) -> int:
     slope_std = math.sqrt(cov[1][1])
     z2 = (slope - COEF_MEAS) / math.hypot(slope_std, COEF_MEAS_STD)
     # uncertainty of B246 from the two bracketing points' statistics
-    b246_std = math.hypot(rho_std(grid[i]), rho_std(grid[i + 1])) / 2 / abs(slope)
+    b246_std = crossing_std(b0, b1, r0, r1, rho_std(grid[i]), rho_std(grid[i + 1]))
 
     t1 = run_point("242", ROD_242, b246, log, ["--kinetics"])
     t4 = run_point("242", ROD_242_T_IN, b246, log)

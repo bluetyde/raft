@@ -303,5 +303,79 @@ class TestExportOpenMC(unittest.TestCase):
                 export(s, t, created="2026-09-27")
 
 
+def _digest_tree(root: Path) -> dict[str, str]:
+    return {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(root.rglob("*")) if p.is_file()}
+
+
+class CodexM2ReviewRegressions(unittest.TestCase):
+    """One regression per exporter finding of the M2 Codex review (2026-09-28); each fails on the pre-review exporter."""
+
+    def test_3_failed_export_leaves_the_old_library_untouched(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as t:
+            out = Path(t) / "lib"
+            export(synthetic_summary("242"), out, created="2026-09-28")
+            before = _digest_tree(out)
+            bad = [mock.Mock(code="E_TEST", path="$", message="injected")]
+            with mock.patch("pipeline.library.validate.validate_library", return_value=bad), self.assertRaises(ValueError):
+                export(synthetic_summary("242", noise=1e-3), out, created="2026-09-28")
+            self.assertEqual(_digest_tree(out), before)
+            self.assertEqual(sorted(p.name for p in Path(t).iterdir()), ["lib"])       # no staging or backup left behind
+
+    def test_3_nan_result_is_refused(self):
+        s = synthetic_summary("242")
+        next(c for c in s["cases"] if c["family"] == "fuel-temp")["k"] = float("nan")
+        with tempfile.TemporaryDirectory() as t, self.assertRaises(ValueError):
+            export(s, Path(t) / "lib", created="2026-09-28")
+
+    def test_4_a_real_normalization_error_is_not_repaired(self):
+        s = synthetic_summary("242")
+        for c in s["cases"]:
+            c["base"] = [[v * 0.9 for v in row] for row in c["base"]]
+        with tempfile.TemporaryDirectory() as t, self.assertRaises(ValueError):
+            export(s, Path(t) / "lib", created="2026-09-28")
+
+    def test_5_missing_or_duplicate_planned_case_is_refused(self):
+        s = synthetic_summary("242")
+        s["cases"] = [c for c in s["cases"] if not (c["family"] == "rod-worth" and c["rod"] == "T" and c["rods"]["T"] == 900.0)]
+        with tempfile.TemporaryDirectory() as t, self.assertRaises(ValueError):
+            export(s, Path(t) / "lib", created="2026-09-28")
+        s = synthetic_summary("242")
+        s["cases"].append(copy.deepcopy(s["cases"][-1]))
+        with tempfile.TemporaryDirectory() as t, self.assertRaises(ValueError):
+            export(s, Path(t) / "lib", created="2026-09-28")
+
+    def test_5_mismatched_axial_grid_or_short_holdout_is_refused(self):
+        s = synthetic_summary("242")
+        rc = next(c for c in s["cases"] if c["family"] == "rod-worth")
+        rc["axialEdgesCm"] = [2 * z for z in rc["axialEdgesCm"]]
+        with tempfile.TemporaryDirectory() as t, self.assertRaises(ValueError):
+            export(s, Path(t) / "lib", created="2026-09-28")
+        s = synthetic_summary("242")
+        next(c for c in s["cases"] if c["family"] == "holdout")["base"] = [[0.5]]
+        with tempfile.TemporaryDirectory() as t, self.assertRaises(ValueError):
+            export(s, Path(t) / "lib", created="2026-09-28")
+
+    def test_6_domain_is_the_table_coverage(self):
+        with tempfile.TemporaryDirectory() as t:
+            export(synthetic_summary("246"), Path(t) / "lib", created="2026-09-28")
+            m = json.loads((Path(t) / "lib" / "manifest.json").read_text(encoding="utf-8"))
+        for rod in m["reactivity"]["rods"]:
+            self.assertEqual(m["domain"]["rods"][rod["id"]], [min(rod["worth"]["x"]), max(rod["worth"]["x"])])
+        self.assertEqual(m["domain"]["Tfuel"], [min(m["reactivity"]["fuelTemp"]["T"]), max(m["reactivity"]["fuelTemp"]["T"])])
+
+    def test_7_provenance_comes_from_the_summary(self):
+        s = synthetic_summary("242")
+        s["openmc"]["openmc"] = "9.9.9"
+        with tempfile.TemporaryDirectory() as t:
+            r1 = export(s, Path(t) / "a", created="2026-09-28")
+            p = json.loads((Path(t) / "a" / "manifest.json").read_text(encoding="utf-8"))["provenance"]
+            self.assertEqual(p["transportCode"], "OpenMC 9.9.9")
+            self.assertIn(r1["model"], p["model"])
+            s["cases"][0]["key"] = "another-key"
+            r2 = export(s, Path(t) / "b", created="2026-09-28")
+        self.assertNotEqual(r1["model"], r2["model"])
+
+
 if __name__ == "__main__":
     unittest.main()

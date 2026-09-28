@@ -8,8 +8,11 @@
   ],
   "provenance": {
     "generator": "pipeline.library.export_openmc",
+    "transportCode": "OpenMC 0.15.3",
+    "nuclearData": "/root/nuclear_data/endfb-viii.0-hdf5/cross_sections.xml (data digests 2fa6354d2216)",
+    "model": "sha256 of the 42 sweep case keys: bc8e6a3f83988dc975200baa48f136e4c023191857167f751be148e324ce905c",
     "created": "2026-09-28",
-    "notes": "OpenMC 0.15.3 / ENDF/B-VIII.0 full-core transport at a uniform burnup (23.675258421961058 MWd/kg). Transport results: reference state rho, rod worth curves, fuel and coolant temperature reactivity feedback, prompt kinetics (beta_eff, generation time Lambda), and 3D fission power shapes. Base library inputs: thermal properties, poisons, plant instrumentation/trips/interlocks, delayed group lambdas, external source, rod scram profiles, and xenon reactivity table.",
+    "notes": "Full-core OpenMC 0.15.3 transport at a uniform burnup (23.675258421961058 MWd/kg), 42 cases ({'particles': 20000, 'batches': 150, 'inactive': 50}). Transport results: reference state rho, rod worth curves, fuel and coolant temperature reactivity feedback, kinetics (beta_eff and Lambda by IFP), and fission power shapes (fraction of all fuel fission; the lowest axial bin holds fuel-follower fuel below the core, zero for regular elements, whose volume there is nominal; its relative uncertainty is the region total's). Base library inputs: thermal properties, poisons, plant instrumentation/trips/interlocks, delayed group lambdas, external source, rod scram profiles, and xenon table.",
     "sources": [
       {
         "id": "keepin1965",
@@ -719,6 +722,7 @@
         "F30"
       ],
       "axialEdgesCm": [
+        -57.150000000000006,
         -19.05,
         -16.51,
         -13.97,
@@ -816,12 +820,12 @@
       "byteOrder": "little",
       "shape": [
         67,
-        15
+        16
       ],
       "order": "C",
       "offset": 0,
-      "byteLength": 4020,
-      "sha256": "6a0ea4744e2379f4e040e20a3cfc08a7c425d94da03841f7678972112900404c"
+      "byteLength": 4288,
+      "sha256": "b6bd5d9aadf4d867bf8b1a052a1d889c23bc1b72fbed7b801c0885231573af49"
     },
     "baseUnc": {
       "file": "arrays/base_unc.f32",
@@ -829,12 +833,12 @@
       "byteOrder": "little",
       "shape": [
         67,
-        15
+        16
       ],
       "order": "C",
       "offset": 0,
-      "byteLength": 4020,
-      "sha256": "790cb211d917e5c275d956be4297ac6f91d12fd9037bc497d8a57a15db808c4a"
+      "byteLength": 4288,
+      "sha256": "ec5f6d9a878efa16f1189e4a695d710fceb90fee61619495f9694bd5dab39166"
     },
     "volumes": {
       "file": "arrays/volumes.f32",
@@ -842,12 +846,12 @@
       "byteOrder": "little",
       "shape": [
         67,
-        15
+        16
       ],
       "order": "C",
       "offset": 0,
-      "byteLength": 4020,
-      "sha256": "b660d462044f04c1d4e561998821e7271513402a386af36a26d4915518f28c1a"
+      "byteLength": 4288,
+      "sha256": "7d08450a1a7306356c7c418abc0e16336f9f53b1e216ef7a4d881f1ea458b81e"
     },
     "tempDelta": {
       "file": "arrays/temp_delta.f32",
@@ -856,12 +860,12 @@
       "shape": [
         5,
         67,
-        15
+        16
       ],
       "order": "C",
       "offset": 0,
-      "byteLength": 20100,
-      "sha256": "c9c12bcfe184ec024120ea2a38d007fb3af2725b28c8b3e6001e29bed460ecfc"
+      "byteLength": 21440,
+      "sha256": "5f513b863ab86d6678f5ad5b4de58d1775f65e1fa60216f8b6858c1807e2cfac"
     },
     "rod_transient": {
       "file": "arrays/rod_transient.f32",
@@ -870,12 +874,12 @@
       "shape": [
         7,
         67,
-        15
+        16
       ],
       "order": "C",
       "offset": 0,
-      "byteLength": 28140,
-      "sha256": "9af44b9d94feecf1a47ae0b1490d32a781f48ed5d27f08bc75b6e8fe1d56434f"
+      "byteLength": 30016,
+      "sha256": "6f33f69084db5e317a2d4755dcd5df1e868930ec10cbae300cb68f0ad40522b3"
     },
     "rod_safety": {
       "file": "arrays/rod_safety.f32",
@@ -884,12 +888,12 @@
       "shape": [
         8,
         67,
-        15
+        16
       ],
       "order": "C",
       "offset": 0,
-      "byteLength": 32160,
-      "sha256": "89fd4f679ee716b63252f5d480f17919fe14c66b3ecf7aaf1f44c355dae9861e"
+      "byteLength": 34304,
+      "sha256": "3b79fbdc6aea1dcadfde4b02495f55974c3a7b2f103d5db46b1799ab26b24a20"
     },
     "rod_shim": {
       "file": "arrays/rod_shim.f32",
@@ -898,12 +902,12 @@
       "shape": [
         9,
         67,
-        15
+        16
       ],
       "order": "C",
       "offset": 0,
-      "byteLength": 36180,
-      "sha256": "3eede395ebf44c67c1630267de5b913b491013b11f3955f654a5e278e7625413"
+      "byteLength": 38592,
+      "sha256": "2504385a3abd40105611c82378a640647efceddd52caed58efec0d655884e17e"
     },
     "rod_regulating": {
       "file": "arrays/rod_regulating.f32",
@@ -912,12 +916,12 @@
       "shape": [
         9,
         67,
-        15
+        16
       ],
       "order": "C",
       "offset": 0,
-      "byteLength": 36180,
-      "sha256": "1e4e1bb6304148c3183af5bcc749aeb08475931bb42e2b083d319c3da3ecfc5d"
+      "byteLength": 38592,
+      "sha256": "cca212cf05e4a68eefeb8537f8fc9dc033ae9781e6b9eba36f48f0218c63a158"
     }
   },
   "geometry": {
@@ -2677,7 +2681,7 @@
         },
         "Tfuel": 343.7,
         "rhoErr": 0.0018372158553650675,
-        "maxShapeErr": 0.290598296824258
+        "maxShapeErr": 0.30846018318386115
       },
       {
         "rods": {
@@ -2688,7 +2692,7 @@
         },
         "Tfuel": 373.7,
         "rhoErr": 0.009140434261586769,
-        "maxShapeErr": 0.4613822945120648
+        "maxShapeErr": 0.4840648677858875
       },
       {
         "rods": {
@@ -2699,7 +2703,7 @@
         },
         "Tfuel": 404.8,
         "rhoErr": 0.005904968580762407,
-        "maxShapeErr": 0.5577317933456845
+        "maxShapeErr": 0.5916420662536549
       },
       {
         "rods": {
@@ -2710,7 +2714,7 @@
         },
         "Tfuel": 499.0,
         "rhoErr": 0.0021693616181051173,
-        "maxShapeErr": 0.43730278789711213
+        "maxShapeErr": 0.5873416291806495
       },
       {
         "rods": {
@@ -2721,7 +2725,7 @@
         },
         "Tfuel": 386.7,
         "rhoErr": 0.0010990133812891698,
-        "maxShapeErr": 0.5232616039707892
+        "maxShapeErr": 0.5538306775380408
       },
       {
         "rods": {
@@ -2732,7 +2736,7 @@
         },
         "Tfuel": 550.1,
         "rhoErr": 0.0016105247993834781,
-        "maxShapeErr": 0.48300523469267603
+        "maxShapeErr": 0.5136708853270731
       }
     ]
   }

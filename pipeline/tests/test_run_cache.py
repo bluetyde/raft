@@ -183,6 +183,48 @@ class OpenMCIntegrationTests(unittest.TestCase):
             (d1 / "statepoint.6.h5").unlink()                            # an interrupted run has no final statepoint
             self.assertFalse(cache.is_complete(d1, cache.openmc_verify(6)))
 
+    # M2 Codex review (2026-09-28), findings 8 and 11
+    def test_corrupt_statepoint_is_rerun_not_raised(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            _, d = cache.run_openmc_case(self.model(18.7), root)
+            (d / "statepoint.6.h5").write_bytes(b"not an hdf5 file")     # truncated or corrupt, status still "completed"
+            self.assertFalse(cache.openmc_verify(6)(d))
+            _, d2 = cache.run_openmc_case(self.model(18.7), root)        # re-runs instead of raising OSError
+            self.assertEqual(d, d2)
+            self.assertTrue(cache.is_complete(d, cache.openmc_verify(6)))
+
+    def test_every_file_source_is_in_the_key(self):
+        import openmc
+        with tempfile.TemporaryDirectory() as t:
+            f1, f2 = Path(t) / "a.h5", Path(t) / "b.h5"
+            f1.write_bytes(b"one"); f2.write_bytes(b"two")
+            model = self.model(18.7)
+            model.settings.source = [openmc.FileSource(str(f1)), openmc.FileSource(str(f2))]
+            before = cache.openmc_inputs(model, Path(t) / "x1")
+            f1.write_bytes(b"ONE")                                       # change the first source only
+            after = cache.openmc_inputs(model, Path(t) / "x2")
+            self.assertNotEqual(before, after)
+
+
+class DerivedInvalidationTests(unittest.TestCase):
+    """M2 Codex review (2026-09-28), finding 10: a re-run replaces raw outputs, so older extractions must not be served."""
+
+    def test_rerun_drops_derived(self):
+        with tempfile.TemporaryDirectory() as t:
+            root, calls = Path(t), []
+
+            def ext(d):
+                calls.append(1)
+                return {"out": (d / "out.txt").read_text(encoding="utf-8")}
+
+            key, d = cache.run_case(INPUTS, "d", VERSIONS, FakeRun(), verify, root)
+            cache.derived(key, "x", "1", ext, verify, root)
+            (d / "out.txt").unlink()                                     # raw output lost; the next call re-runs the case
+            cache.run_case(INPUTS, "d", VERSIONS, FakeRun(), verify, root)
+            cache.derived(key, "x", "1", ext, verify, root)
+            self.assertEqual(len(calls), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

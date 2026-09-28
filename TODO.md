@@ -108,7 +108,8 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 - [x] 2026-09-27 (agy, verified; `pipeline/library/export_openmc.py`): Export script: OpenMC outputs → browser data files. Found and fixed a TS validator crash on non-empty `jointChecked`
 - [x] 2026-09-28: Sweep run (83/83), `libraries/triga-jsi-242-openmc` and `-246-openmc` exported and valid in Python and TS, holdout errors reported, run 3 Part B regression passes (`m2-libraries.md`)
 - [ ] Optional: a rod-pairs family if multi-rod-deep states matter (two core-246 holdouts off by +590/+914 pcm); a refit of B246 with more particles (`m2-burnup-results.md` post-hoc check)
-- [ ] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
+- [x] 2026-09-28 (`docs/validation/m2-libraries.md`, branch `claude/m2-codex-fixes`): **[codex]** Codex review of the milestone (silent-failure-hunter, specification-gap-auditor): 17 findings, 16 fixed with regressions; libraries re-exported
+- [ ] Decide: fuel-follower shape bins that move with the rod (Codex M2 finding 2; power density reads low in partly filled follower bins)
 
 ## Milestone 3: Static 3D viewer · [plan](docs/plans/04-3d-explorer.md)
 

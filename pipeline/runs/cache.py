@@ -118,6 +118,7 @@ def run_case(inputs: Mapping[str, bytes], data: str, versions: Mapping[str, str]
         if verify(d):
             return key, d
         st["errors"].append(f"{_now()} completed but failed verification on reuse; re-running")
+    _drop_derived(root, key)          # a re-run replaces the raw outputs, so anything extracted from the old ones is stale
     for name, blob in inputs.items():
         _write_atomic(d / "inputs" / name, blob)
     last: BaseException | None = None
@@ -142,6 +143,11 @@ def run_case(inputs: Mapping[str, bytes], data: str, versions: Mapping[str, str]
         _write_status(d, st)
         last = None
     raise RunFailed(f"case {key[:12]} failed {max_attempts} attempt(s); see {d / 'status.json'}") from last
+
+
+def _drop_derived(root: Path, key: str) -> None:
+    for p in (root / "derived").glob(f"{key}.*.json"):
+        p.unlink()
 
 
 def derived(key: str, extractor: str, version: str, extract: Callable[[Path], dict], verify: Callable[[Path], bool],
@@ -172,9 +178,9 @@ def openmc_inputs(model, workdir: Path) -> dict[str, bytes]:
     model.export_to_xml(workdir)
     out = {f.name: f.read_bytes() for f in sorted(workdir.glob("*.xml"))}
     srcs = model.settings.source if isinstance(model.settings.source, list) else [model.settings.source]
-    for s in srcs:
+    for i, s in enumerate(srcs):                # one entry per source, by position (settings.xml keeps the order)
         if isinstance(s, openmc.FileSource):
-            out["source-file.sha256"] = sha256_file(Path(s.path)).encode()
+            out[f"source-file-{i}.sha256"] = sha256_file(Path(s.path)).encode()
     return out
 
 
@@ -200,14 +206,19 @@ def openmc_versions() -> dict[str, str]:
 
 
 def openmc_verify(batches: int) -> Callable[[Path], bool]:
-    """A verifier: the final statepoint exists and reports every batch."""
+    """A verifier: the final statepoint exists, can be read, and reports every batch. An unreadable file (truncated or corrupt
+    HDF5: OSError; a missing dataset: KeyError) fails verification, so the case is re-run instead of aborting the caller."""
     def verify(case_dir: Path) -> bool:
         import openmc
         sp = case_dir / f"statepoint.{batches}.h5"
         if not sp.exists():
             return False
-        with openmc.StatePoint(sp) as p:
-            return p.current_batch == batches
+        try:
+            with openmc.StatePoint(sp) as p:
+                return p.current_batch == batches
+        except (OSError, KeyError) as e:
+            print(f"statepoint unreadable, treating the case as incomplete: {sp}: {type(e).__name__}: {e}")
+            return False
     return verify
 
 

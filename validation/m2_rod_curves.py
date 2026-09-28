@@ -48,17 +48,34 @@ def rho_std(k: float, s: float) -> float:
     return s / k ** 2 * 1e5
 
 
+def add_point(pts: dict, p: dict, b246: float) -> None:
+    """Add one core_model --json record, refusing one from a different model state (Codex M2 review, finding 13): the burnup
+    must be B246 with no other override, no prompt run, and every rod but T at that core's reference position. A second record
+    for the same core and T must agree."""
+    from pipeline.openmc.sweep import REFERENCE_RODS
+    core = p["core"]
+    ref = REFERENCE_RODS[core]
+    if p.get("overrides") != {"burnup": b246} or p.get("prompt"):
+        raise ValueError(f"core {core} T={p['rods']['T']}: model state {p.get('overrides')}, prompt={p.get('prompt')}")
+    if any(p["rods"][r] != ref[r] for r in ("K", "V", "R")):
+        raise ValueError(f"core {core} T={p['rods']['T']}: other rods {p['rods']} are not the reference {ref}")
+    value = (rho(p["k"]), rho_std(p["k"], p["kStd"]))
+    old = pts[core].get(p["rods"]["T"])
+    if old is not None and old != value:
+        raise ValueError(f"core {core} T={p['rods']['T']}: two different results {old} and {value}")
+    pts[core][p["rods"]["T"]] = value
+
+
 def model_points() -> dict[str, dict[float, tuple[float, float]]]:
     """{core: {T steps: (rho pcm, std)}} at B246."""
     pts: dict[str, dict[float, tuple[float, float]]] = {"242": {}, "246": {}}
     rep = json.loads(BURNUP_REPORT.read_text(encoding="utf-8"))
     for p in rep["points"]:
-        if p["core"] == "242":
-            pts["242"][p["rods"]["T"]] = (rho(p["k"]), rho_std(p["k"], p["kStd"]))
+        if p["core"] == "242" and p["overrides"].get("burnup") == rep["B246"]:     # T1/T4 runs; the fit grid is core 246
+            add_point(pts, p, rep["B246"])
     if POINTS.exists():
         for line in POINTS.read_text(encoding="utf-8").splitlines():
-            p = json.loads(line)
-            pts[p["core"]][p["rods"]["T"]] = (rho(p["k"]), rho_std(p["k"], p["kStd"]))
+            add_point(pts, json.loads(line), rep["B246"])
     return pts
 
 

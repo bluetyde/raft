@@ -151,30 +151,39 @@ def run(cores: list[str], stats: dict, root: Path, only_sample: bool = False) ->
     return 1 if failed else 0
 
 
+SUMMARY_EXTRACTOR = ("sweep-summary", "2")        # 2: shapes include the below-core bin (shapes.extract)
+
+
 def summary(cores: list[str], stats: dict, root: Path, out_dir: Path, only_sample: bool = False) -> int:
+    import os
+    import tempfile
     out_dir.mkdir(parents=True, exist_ok=True)
-    missing = 0
+    missing_total = 0
     for core in cores:
-        rows = []
+        rows, missing, digests = [], 0, set()
         for c in (sample(plan(core)) if only_sample else plan(core)):
             model, labels = build_case(c, stats)
-            import tempfile
             with tempfile.TemporaryDirectory() as tmp:
                 inputs = cache.openmc_inputs(model, Path(tmp))
-            key = cache.case_key(inputs, cache.data_digest(cache.openmc_data_files(model), root), cache.openmc_versions())
+            digest = cache.data_digest(cache.openmc_data_files(model), root)
+            key = cache.case_key(inputs, digest, cache.openmc_versions())
             verify = cache.openmc_verify(stats["batches"])
             if not cache.is_complete(root / "raw" / key, verify):
                 print(f"not complete: {c['name']}", file=sys.stderr)
                 missing += 1
                 continue
-            d = cache.derived(key, "sweep-summary", "1", extract_fn(labels, stats["batches"]), verify, root)
-            rows.append(dict(c, key=key, **d))
-        rep = {"core": core, "burnup": B246, "stats": stats, "openmc": cache.openmc_versions(), "cases": rows,
-               "complete": missing == 0}
+            d = cache.derived(key, *SUMMARY_EXTRACTOR, extract_fn(labels, stats["batches"]), verify, root)
+            rows.append(dict(c, key=key, dataDigest=digest, **d))
+            digests.add(digest)
+        missing_total += missing
+        rep = {"core": core, "burnup": B246, "stats": stats, "openmc": cache.openmc_versions(),
+               "nuclearData": {"crossSections": os.environ.get("OPENMC_CROSS_SECTIONS", ""),
+                               "note": "each case's dataDigest hashes the data files it used (pipeline/runs/cache.py)"},
+               "extractor": list(SUMMARY_EXTRACTOR), "cases": rows, "complete": missing == 0}
         p = out_dir / f"sweep_{core}.json"
-        p.write_bytes((json.dumps(rep) + "\n").encode("utf-8"))
-        print(f"core {core}: {len(rows)} cases -> {p}")
-    return 1 if missing else 0
+        p.write_bytes((json.dumps(rep, allow_nan=True) + "\n").encode("utf-8"))
+        print(f"core {core}: {len(rows)} cases, {missing} missing -> {p}")
+    return 1 if missing_total else 0
 
 
 def main(argv=None) -> int:

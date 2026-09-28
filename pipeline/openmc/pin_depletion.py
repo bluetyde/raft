@@ -33,6 +33,15 @@ DIRECT_NUCLIDES = ["U234", "U235", "U236", "U238", "Np237", "Pu238", "Pu239", "P
 MIN_DENSITY = 1e-12                                # atoms/b-cm kept in the table
 
 
+def kept_densities(dens: dict[str, float], burnup: float) -> dict[str, float]:
+    """The densities kept in the table: above MIN_DENSITY. A non-finite density, or a negative one beyond the solver's round-off
+    (|n| > MIN_DENSITY; CRAM leaves ~1e-17 negatives on trace nuclides), is an error, never a silently dropped nuclide."""
+    bad = [f"{n}={v!r}" for n, v in dens.items() if not math.isfinite(v) or v < -MIN_DENSITY]
+    if bad:
+        raise ValueError(f"invalid densities at {burnup} MWd/kg: {', '.join(sorted(bad)[:10])}")
+    return {n: v for n, v in dens.items() if v > MIN_DENSITY}
+
+
 def xenon_free(dens: dict[str, float]) -> dict[str, float]:
     """The Monday state: no I-135 or Xe-135, Pm-149 decayed to Sm-149."""
     d = dict(dens)
@@ -88,7 +97,7 @@ def tabulate(results: Path, meta: dict) -> dict:
     series = {n: res.get_atoms(fuel_id, n, nuc_units="atom/b-cm")[1] for n in res[0].index_nuc}
     rows = []
     for i, bu in enumerate(burnups):
-        dens = {n: float(v[i]) for n, v in series.items() if v[i] > MIN_DENSITY}
+        dens = kept_densities({n: float(v[i]) for n, v in series.items()}, bu)
         rows.append({"burnupMWdPerKg": bu, "kInfOperating": [float(keff[i][0]), float(keff[i][1])],
                      "atomDensityPerBarnCm": xenon_free(dens)})
     return {"description": __doc__.splitlines()[0], "specificPowerWPerG": SPECIFIC_POWER_W_PER_G, "openmc": openmc.__version__,

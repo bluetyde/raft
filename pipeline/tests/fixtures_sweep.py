@@ -40,8 +40,8 @@ def synthetic_summary(core: str, noise: float = 0.0, seed: int = 1) -> dict[str,
     elements = sorted(fuel_keys | followers, key=lambda s: (s[0], int(s[1:])))
 
     E = len(elements)
-    A = shapes.AXIAL_BINS
-    edges = shapes.axial_edges(A)
+    edges = shapes.library_edges()          # the below-core bin, then the tallied bins (as shapes.extract writes them)
+    A = len(edges) - 1
 
     geo = json.loads((OPENMC_DATA / "jsi_core_geometry.json").read_text(encoding="utf-8"))
     ring_radii = geo["grid"]["ringRadiiCm"]
@@ -66,16 +66,24 @@ def synthetic_summary(core: str, noise: float = 0.0, seed: int = 1) -> dict[str,
     elem_coords = [core_model.position_xy(e, ring_radii) for e in elements]
     mid_z = [(edges[a] + edges[a + 1]) / 2.0 for a in range(A)]
 
-    for ex, ey in elem_coords:
+    for e, (ex, ey) in zip(elements, elem_coords):
         r_dist = math.hypot(ex, ey)
         f_rad = max(0.2, math.cos(math.pi * r_dist / 50.0))
-        for z in mid_z:
+        for a, z in enumerate(mid_z):
             f_ax = max(0.2, math.cos(math.pi * z / 50.0))
-            raw_base.append(f_rad * f_ax)
+            # the below-core bin (a = 0) holds only fuel-follower fuel; regular elements have none there
+            raw_base.append(0.0 if (a == 0 and e not in followers) else f_rad * f_ax * (0.1 if a == 0 else 1.0))
 
     sum_b = sum(raw_base)
     base_flat = [v / sum_b for v in raw_base]
-    min_b = min(base_flat)
+    mask = [v > 0 for v in base_flat]
+    min_b = min(v for v in base_flat if v > 0)
+
+    def zero_mean_on_mask(pat: list[float]) -> list[float]:
+        """Perturbations only where there is fuel, zero-mean over those bins, so every perturbed shape stays >= 0 and sums to 1."""
+        on = [p for p, m in zip(pat, mask) if m]
+        mean_p = sum(on) / len(on)
+        return [(p - mean_p) if m else 0.0 for p, m in zip(pat, mask)]
 
     # Precompute zero-mean patterns for perturbation
     # Rod patterns P_r
@@ -88,9 +96,7 @@ def synthetic_summary(core: str, noise: float = 0.0, seed: int = 1) -> dict[str,
             g_d = math.exp(-d2 / 100.0)
             for z in mid_z:
                 pat.append(g_d * (z / core_model.HALF_FUEL))
-        # Zero-mean
-        mean_p = sum(pat) / len(pat)
-        pat = [p - mean_p for p in pat]
+        pat = zero_mean_on_mask(pat)
         max_p = max(abs(p) for p in pat) or 1.0
         scale = 0.05 * min_b / max_p
         P_r[r] = [p * scale for p in pat]
@@ -101,8 +107,7 @@ def synthetic_summary(core: str, noise: float = 0.0, seed: int = 1) -> dict[str,
         r_d = math.hypot(ex, ey)
         for z in mid_z:
             pat_t.append((z / core_model.HALF_FUEL) * (r_d / 20.0))
-    mean_t = sum(pat_t) / len(pat_t)
-    pat_t = [p - mean_t for p in pat_t]
+    pat_t = zero_mean_on_mask(pat_t)
     max_t = max(abs(p) for p in pat_t) or 1.0
     scale_t = (0.05 * min_b / max_t) / 600.0
     P_T = [p * scale_t for p in pat_t]
@@ -161,7 +166,9 @@ def synthetic_summary(core: str, noise: float = 0.0, seed: int = 1) -> dict[str,
         c_out["k"] = k
         c_out["kStd"] = k_std
         c_out["key"] = f"key_{c['name']}"
+        c_out["dataDigest"] = "synthetic-data-digest"
         c_out["basis"] = "fission"
+        c_out["normalization"] = "fraction-of-total-power"
         c_out["elements"] = elements
         c_out["axialEdgesCm"] = edges
 
@@ -173,7 +180,7 @@ def synthetic_summary(core: str, noise: float = 0.0, seed: int = 1) -> dict[str,
         base_unc_2d = [[0.015 for _ in range(A)] for _ in range(E)]
         c_out["baseUnc"] = base_unc_2d
 
-        c_out["outsideFraction"] = 0.012
+        c_out["belowCoreFraction"] = sum(shape_flat[e * A] for e in range(E))
         c_out["maxRelUnc"] = 0.04
         c_out["medianRelUnc"] = 0.015
 
@@ -190,6 +197,7 @@ def synthetic_summary(core: str, noise: float = 0.0, seed: int = 1) -> dict[str,
         "burnup": sweep.B246,
         "stats": dict(sweep.STANDARD),
         "openmc": {"openmc": "0.15.3", "numpy": "2.4.0"},
+        "nuclearData": {"crossSections": "/synthetic/cross_sections.xml"},
         "complete": True,
         "cases": cases_out,
     }

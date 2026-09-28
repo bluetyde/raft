@@ -39,8 +39,8 @@ library's separable prediction (ρ = ρ_ref + Σ rod tables + fuel table; shape 
 
 | core | ρ error (pcm) | max shape error (× mean bin) |
 |---|---|---|
-| 242 | 450, 82, 79, 61, 153, 69 | 0.31–0.59 |
-| 246 | 184, **914**, **590**, 217, 110, 161 | 0.29–0.56 |
+| 242 | 450, 82, 79, 61, 153, 69 | 0.33–0.63 |
+| 246 | 184, **914**, **590**, 217, 110, 161 | 0.31–0.59 |
 
 Statistics alone put roughly 150–240 pcm (1σ) on each ρ error (the prediction adds five interpolated tables, each a difference of two
 transport runs, to the holdout's own ±70 pcm). So core 242's errors are consistent with noise, and **two core-246 states exceed it
@@ -72,3 +72,31 @@ difference 0.4). The fit is slightly looser than M1's (rms 0.05 vs 0.04) and bot
 comparison was never sensitive to what M2 changed most (rod worths enter only through the $ axis, which is inferred from the traces),
 so this is a regression check, not new evidence for the libraries. Core 246 uses 10 more pulses because its longer Λ (49 vs 40 µs)
 moves more inferred insertions above the $1.30 cut.
+
+## Codex milestone review (2026-09-28) and fixes
+
+Two Codex auditors (silent failures; specification gaps) on the M2 code: 19 findings, 17 distinct, none dropped on checking. Fixed on
+`claude/m2-codex-fixes`, one regression each (all fail on the pre-review code except the domain test, which the stricter plan check
+already makes unreachable; it pins the rule):
+
+- **Shapes now sum to all fuel fission.** Fuel-follower fuel below the core (0.46% of the power at core 242's reference) was dropped
+  and the rest renormalised. The exported shape has a 16th axial bin, [−57.15, −19.05] cm, holding each region's total minus its
+  tallied fission: zero for regular elements (their volume there is nominal), the follower power for D1 and D10. Re-extracted from
+  the cached statepoints (extractor version 2): no transport re-run, every case key and k unchanged, the other bins identical to
+  4e-19. The holdout shape errors above include the new bin.
+- **Exporter:** builds in a staging folder, validates, then swaps (a failure leaves the old library byte-identical); refuses a
+  summary that isn't exactly the planned sweep (missing, duplicate or changed cases, other axial grids, wrong dimensions,
+  non-finite values); repairs only float32 rounding (≤ 1e-6), never a real normalisation error; predicts holdouts from the
+  exported float32 arrays with strict lengths; writes JSON with `allow_nan=False`; declares the domain from the table coverage;
+  records provenance from the summary (`transportCode`, `nuclearData` with data digests, `model` = a digest of the case keys).
+- **Run cache:** an unreadable statepoint fails verification and re-runs instead of aborting the sweep; a re-run drops derived
+  results; every FileSource gets its own digest. **Sweep:** missing cases are counted per core.
+- **Depletion:** NaN, infinite or clearly negative densities raise instead of being dropped. **Rod curves:** records from another
+  model state or conflicting duplicates are refused. **Burnup fit:** B246's uncertainty is propagated through the interpolation
+  (0.219 MWd/kg for the committed run, not 0.256; `m2-burnup-results.md`).
+
+Physics tables (reference, kinetics, rod worths, temperature tables), geometry and plant data are unchanged by the fixes.
+
+**Open (a format decision, not fixed):** fuel-follower bins that the follower fuel only partly fills are given a full-height volume,
+so power *density* there reads low (about 40% at core 242's reference in the bin holding the follower tip). Bin *power* is
+correct. Fixing it needs follower bins that move with the rod, which the format can't express yet.

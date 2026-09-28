@@ -1,5 +1,49 @@
 {
   "core": "242",
+  "model": "a8d95a83c9aa77fdb52844c049787073901019c81b74795cbee9a3e07db7a21f",
+  "caseKeys": {
+    "242 reference T=0,K=499,V=200,R=500": "41eee317f9690ac2dc67a5a36d5b5e2faf19d4694de0bb3a674bbc5746130527",
+    "242 rod-worth T=150,K=499,V=200,R=500": "a4f7654b7646e98dea07e371f8d4334a6533c9b29dd0528eda0495af5baf3c10",
+    "242 rod-worth T=300,K=499,V=200,R=500": "1dbf5d71bb141b841bd98c8e8c9af280d53702c42018dc3e48fc352d68f37b9b",
+    "242 rod-worth T=450,K=499,V=200,R=500": "ab06007388a09a234342cd1a3511e3496cd7b6d07dd13fe0aea8c772e8df4918",
+    "242 rod-worth T=600,K=499,V=200,R=500": "9a6137e8240a6900c2d6918a0729bd199ce4eeb0cd5e67852c2a7a32e3ac351b",
+    "242 rod-worth T=750,K=499,V=200,R=500": "eaffba5fac11ec01d38afb58ed1aa7848417f9d5e460bcbafb5cba97eb906115",
+    "242 rod-worth T=900,K=499,V=200,R=500": "5e1493acef116a2bef0f97715d427b8d582248499610b8a2c5eb20741d90d851",
+    "242 rod-worth T=0,K=200,V=200,R=500": "cc87b92627dfce7e5adec678584798a54b6bd867b1d4c203836ebe3838b74387",
+    "242 rod-worth T=0,K=300,V=200,R=500": "1956e4487c84bb4578284ae7bc3155e3b3e165c0f03bd194812c32587c2a84c2",
+    "242 rod-worth T=0,K=400,V=200,R=500": "e2ff09ace1f82066805bbd317ff6ad8f6eb5ec7f07aa2d67f90733027802c26a",
+    "242 rod-worth T=0,K=500,V=200,R=500": "ec01009ad2bf2c3ea20dc6ac71d1d8b435a0036055af815966249367f901366c",
+    "242 rod-worth T=0,K=600,V=200,R=500": "a9e7adf1d40fc10d94f13526d9b9c1f56a776f2bf1662643d10df4a2a5caa281",
+    "242 rod-worth T=0,K=700,V=200,R=500": "483aa6a0dae26b889884c16a7c082767e43934ffd5c8ff07ca98aae0edbdcc1e",
+    "242 rod-worth T=0,K=800,V=200,R=500": "f8e5f3f4ddb7a4b97ea23d70653354a51ef4c533bf2016aa2aa94a4e92dd97e8",
+    "242 rod-worth T=0,K=900,V=200,R=500": "8ef50db3fd7858551a11502f9afe47d7749894cb0b3b596bf94709a27b273bab",
+    "242 rod-worth T=0,K=499,V=300,R=500": "7ee7f55cc3d8fc5caf84327765776ab280423a9cf0d724ec7c37d21f3233f14a",
+    "242 rod-worth T=0,K=499,V=400,R=500": "e5d309dea2cae3d141cf7686e9800e45eadf7f160926a607857ad68fe1c7a95a",
+    "242 rod-worth T=0,K=499,V=500,R=500": "5f600b9d9d64adb4f4b994c8dff63d32b27d1edab29efca686c436bab9bfa7f4",
+    "242 rod-worth T=0,K=499,V=600,R=500": "4a4bd4a66340c94c22d880ec43a1de8ccabbd2d9290ffb72b84b587e7cdf3236",
+    "242 rod-worth T=0,K=499,V=700,R=500": "f06cf933569bfa43d8f2e76bac590b299ee37a0b8c21d63cb5139eb6170bd5c5",
+    "242 rod-worth T=0,K=499,V=800,R=500": "22377a2c537aa527061e6d0288a3adfcc8fc7562c324964c21b2b34db3b39a49",
+    "242 rod-worth T=0,K=499,V=900,R=500": "89eacd94e98097181c0175d12ca33da532f6a81a1ddbdfb6768c4591a1112d70",
+    "242 rod-worth T=0,K=499,V=200,R=200": "4ddd1d20fcad82af1d44a48b55456722178e835181c9e9c2655cee95466835fd",
+    "242 rod-worth T=0,K=499,V=200,R=300": "b2c0efe08233d96deb55b75a33f140baf133dd5aa410545e47569e6c3b60194e",
+    "242 rod-worth T=0,K=499,V=200,R=400": "8e16be0c1947bca62500181a459b7bdcddfd74611dfd46f20945a59e2006e416",
+    "242 rod-worth T=0,K=499,V=200,R=600": "795bc1451a4cfecd0ceb4222c4ae250f5f5f5351bf588161347bfe6f1bfde8c6",
+    "242 rod-worth T=0,K=499,V=200,R=700": "fc07c72435c5946a4ef121006ded87c29f40920f2f9b7775f84e218eeacb6e36",
+    "242 rod-worth T=0,K=499,V=200,R=800": "271ef0d89d04e49a5f847697f69776be86d1e5bbd54a2160df564a49a91bf668",
+    "242 rod-worth T=0,K=499,V=200,R=900": "573409e809e5135729ffa234da1a198faaf3fcc5f9f8ec17caa826c50eebf7bf",
+    "242 fuel-temp T=0,K=499,V=200,R=500 tfuel=400": "33e16c73b61309439eb4c59b06560fce76fecc4de10085c3ae3e1ddafd2c127b",
+    "242 fuel-temp T=0,K=499,V=200,R=500 tfuel=500": "da4ec6733c6c72b51b749d0d85e0152e3e6e302a6ab0f14fcc761ddcd3a55504",
+    "242 fuel-temp T=0,K=499,V=200,R=500 tfuel=600": "d6c8b5cdfd357e05781035bb51cb09898a42c031bee9f17716fc79cba4b6f0c8",
+    "242 fuel-temp T=0,K=499,V=200,R=500 tfuel=800": "d9bb785223e22939ee37694ae2a61f38968506261b0f157627d0451e94f6e015",
+    "242 coolant-temp T=0,K=499,V=200,R=500 tcool=313.15": "6621d91c7e95042ba1b985b68d121be1a9e97ecd304d1a664bd02b56d447db0e",
+    "242 coolant-temp T=0,K=499,V=200,R=500 tcool=333.15": "d7d7b0c69747a699dc01eaabb98a755cbcd4004e83e7c60d20c9c5b93cfadd32",
+    "242 holdout T=600,K=365,V=295,R=555 tfuel=504.8": "2dc1043164de57babde94b343f02fdd1a78cb3c9aec2052ed012631fc2aa7543",
+    "242 holdout T=345,K=760,V=520,R=255 tfuel=553.5": "a74abb1345b7736e30ba0888600616c04bc9065d1dd0783d6f0182a20e0b8383",
+    "242 holdout T=560,K=675,V=215,R=585 tfuel=346.2": "9f2ec9ea514ea101e58167054f35be29c108dacb2ea9f50fdf0f87630b02428b",
+    "242 holdout T=710,K=690,V=210,R=265 tfuel=493.2": "fae258377cbdf9c38349b9bfc6e59b20809f83b7983cb2378febcfc9e8babe47",
+    "242 holdout T=375,K=235,V=850,R=740 tfuel=478.8": "8dbbbeb64ad7c17b9f1a14b8b60d69ac388c9b2b963600e445d61360aa2b55e3",
+    "242 holdout T=75,K=445,V=530,R=665 tfuel=569.8": "cdafe1487e27c6f8c7e39d064284395a731633432ae22cef93b2f40e1517a0b6"
+  },
   "rods": {
     "transient": {
       "raw": [
@@ -374,7 +418,7 @@
       "rho_case": -0.03766866690595777,
       "rho_pred": -0.042166465112699524,
       "rhoErr": 0.004497798206741753,
-      "maxShapeErr": 0.5211271720516163
+      "maxShapeErr": 0.5534465830390481
     },
     {
       "rods": {
@@ -387,7 +431,7 @@
       "rho_case": -0.05176400685811033,
       "rho_pred": -0.052588361922414575,
       "rhoErr": 0.0008243550643042483,
-      "maxShapeErr": 0.5945766735294004
+      "maxShapeErr": 0.6285038342918187
     },
     {
       "rods": {
@@ -400,7 +444,7 @@
       "rho_case": -0.03770161829073594,
       "rho_pred": -0.03849517781791648,
       "rhoErr": 0.0007935595271805415,
-      "maxShapeErr": 0.3095955468645234
+      "maxShapeErr": 0.3275954987268222
     },
     {
       "rods": {
@@ -413,7 +457,7 @@
       "rho_case": -0.04595001237976501,
       "rho_pred": -0.04655624705059441,
       "rhoErr": 0.0006062346708294031,
-      "maxShapeErr": 0.3728849876271861
+      "maxShapeErr": 0.4527673971222076
     },
     {
       "rods": {
@@ -426,7 +470,7 @@
       "rho_case": -0.06920479556933498,
       "rho_pred": -0.06767004431704882,
       "rhoErr": 0.001534751252286165,
-      "maxShapeErr": 0.45693453076299534
+      "maxShapeErr": 0.48501812669819344
     },
     {
       "rods": {
@@ -439,7 +483,7 @@
       "rho_case": -0.05322894746256909,
       "rho_pred": -0.05391474542779816,
       "rhoErr": 0.0006857979652290652,
-      "maxShapeErr": 0.4468109032053695
+      "maxShapeErr": 0.4734452824133222
     }
   ]
 }
