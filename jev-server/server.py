@@ -6,6 +6,8 @@ import sys
 import os
 from contextlib import asynccontextmanager
 
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 logging.basicConfig(level=logging.INFO)
