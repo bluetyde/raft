@@ -1,6 +1,6 @@
 # M6: Instructor view (design)
 
-Status: **approved by the user on 2026-09-27: D1–D6 as recommended (all option a), with four amendments** (§9). Slice S1 is built on the same branch (§10).
+Status: **approved by the user on 2026-09-27: D1–D6 as recommended (all option a), with four amendments** (§9). Slices S1 (§10), S2 (§11) and S3 (§12) are built.
 The decisions are marked **D1–D6**, each with options and a recommendation. The table at the end lists them.
 
 The plan is [plan 06](plans/06-instructor.md). This design builds on the C6 runtime ([c6-runtime-design.md](c6-runtime-design.md)) and the M5 operator panel ([m5-operator-design.md](m5-operator-design.md)).
@@ -204,6 +204,25 @@ The other session will do D3a (rod stuck, no-scram, drop and clear; instrument d
 - **CSV** (`web/src/runtime/trace.ts`, `trace-worker.ts`, D6a): a separate short-lived worker replays the session from step 0 and writes one row at step 0 and then every 0.1 s of sim time (at least every step).
   The columns are t, each instrument's reading, the true power, period, temperatures, iodine and xenon, the reactivity by source, the trip state and the mode.
 - **Clock fix:** while paused, the clock message now goes out again after a step, rewind, switch or import. Before, it named an old step, because only a change of rate, pause or limit sent it.
+
+## 12. Slice S3: what is built
+
+- **One runtime, several windows** (`web/src/runtime/runtime.ts`):
+  - each window is a port with its own snapshot pacing (frame acks), power-shape state and instrument extremes. A window that does not ack does not hold up the others, and its next snapshot still carries the extremes of every step it missed;
+  - replies (`queued`, `ack`, `error`, `session`, `loadFailed`, `attached`) go only to the window that asked. So the same `clientSeq` in two windows does not mix. State messages (snapshots, clock, events, history, timeline, `loaded`, `rewound`) go to every window;
+  - a dedicated worker keeps its one window ("main", role `full`), so the one-window API and the C6 tests do not change.
+- **SharedWorker** (`web/src/runtime/shared-worker.ts`): windows with the same `?session=<id>` share one worker (its name is the session id). It lives while any window is open, so closing one window does not stop the session. A window sends `detach` on `pagehide`.
+- **Roles (amendment 3):** a window sends `attach` with its role first (`full`, `instructor` or `operator`). The worker refuses an operator window's `load`, `time`, `step`, `rewind`, `session.import`, `branch.switch`, `annotate` and `annotation.delete` (`E_ROLE`), and its `fault.*` commands (`REJ_ROLE`).
+  - `pump.set` stays allowed: it is a plant control, although the instructor panel also uses it as the pump-trip fault;
+  - roles are not authenticated: a window says its own role. Plan 06 says v1 has nothing to protect, so this is on purpose.
+- **App** (`web/src/app/main.ts`, `connection.ts`): the page keeps one connection for its life, and every window builds its panels from `loaded` (or the answer to `attach`).
+  - A window without a session id makes a new one and puts it in the URL. So a reload finds the same session, and a new tab gets its own.
+  - "open operator window" opens `?session=<id>&role=operator`. The operator window offers only the split and realism layouts, has no time controls, and cannot choose a library.
+  - A new window on a running session picks it up (it does not load the default library).
+  - Without SharedWorker, the window uses a dedicated worker with the role `full`, and it says so.
+- **Two fixes found while building S3:**
+  - after a library change, the new power shape could reach the old 3D model and throw in a snapshot listener. The client then never sent its frame ack, and the worker stopped sending snapshots to that window. Now the client runs every listener, and it sends the frame ack even when a listener throws;
+  - `load` resets the rate to 1×. Before S3, each library change made a new worker, so this was always so.
 
 ## Decisions (approved by the user, 2026-09-27)
 

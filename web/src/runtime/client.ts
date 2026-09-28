@@ -8,6 +8,7 @@ import {
   type FromWorker,
   type LibrarySource,
   type LoadedInfo,
+  type Role,
   type SessionFile,
   type ToWorker,
 } from "./protocol";
@@ -111,6 +112,18 @@ export class RuntimeClient {
     return done.then((m) => this.orThrow(m, "rewound"));
   }
 
+  /** Say which role this window has. Resolves with the role and what is loaded now (null if nothing). */
+  attach(role: Role): Promise<Msg<"attached">> {
+    const done = this.next(["attached", "error"], "attach");
+    this.send({ kind: "attach", role });
+    return done.then((m) => this.orThrow(m, "attached"));
+  }
+
+  /** This window closes: the worker stops sending to it. */
+  detach(): void {
+    if (!this.disconnected) this.send({ kind: "detach" });
+  }
+
   /** Add a note at `step` (default: the current step). The next `timeline` message lists it. */
   annotate(text: string, step?: number): void {
     this.send(step === undefined ? { kind: "annotate", text } : { kind: "annotate", text, step });
@@ -160,11 +173,24 @@ export class RuntimeClient {
     }
     const i = this.waiters.findIndex((w) => this.matches(w, msg));
     if (i >= 0) this.waiters.splice(i, 1)[0]!.resolve(msg);
-    this.emit(msg);
-    if (msg.kind === "snapshot") this.worker.postMessage({ kind: "frameAck" }, []);
+    try {
+      this.emit(msg);
+    } finally {
+      // even if a view threw, ask for the next snapshot: one view's bug must not stop the stream for every view
+      if (msg.kind === "snapshot") this.worker.postMessage({ kind: "frameAck" }, []);
+    }
   }
 
+  /** Run every listener, even when one throws; then throw the first error (so it is still reported). */
   private emit(msg: FromWorker): void {
-    for (const fn of this.listeners.get(msg.kind) ?? []) fn(msg);
+    let first: unknown = null;
+    for (const fn of this.listeners.get(msg.kind) ?? []) {
+      try {
+        fn(msg);
+      } catch (err) {
+        first ??= err;
+      }
+    }
+    if (first !== null) throw first;
   }
 }
