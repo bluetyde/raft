@@ -8,6 +8,8 @@ export class JevCopilot {
   private enabled: boolean = false;
   /** Track the last choice so we only act when the decision changes. */
   private lastChoice: string | null = null;
+  /** Latest rod positions (0–1) from the most recent snapshot. */
+  private rodPositions: Record<string, number> = {};
 
   constructor(client: RuntimeClient, role: "operator" | "instructor") {
     this.client = client;
@@ -60,23 +62,47 @@ export class JevCopilot {
     let hypotheses: string[] = [];
 
     if (this.role === "operator") {
-      const power = s.indicated?.["power"] ?? 0;
-      const period = s.indicated?.["period"] ?? 0;
+      const power    = s.indicated?.["power"]     ?? 0;
+      const period   = s.indicated?.["period"]    ?? 0;
       const fuelTemp = s.indicated?.["temp.fuel"] ?? 0;
 
-      // Describe the startup state explicitly so the model doesn't call a dead reactor "stable"
-      const isShutdown = power < 1e-6;
-      const powerDesc = isShutdown
-        ? "The reactor is shutdown (power is essentially zero)."
-        : `Power is ${power.toExponential(3)} W.`;
-      const periodDesc = isShutdown ? "" : ` Period is ${period.toFixed(2)} seconds.`;
-      const tempDesc = `Fuel Temperature is ${fuelTemp.toFixed(1)} K.`;
+      // Rod positions (0–1 fraction, 1 = fully withdrawn)
+      const rodRegulating = s.rods?.["regulating"] ?? s.indicated?.["rod.regulating"] ?? null;
+      const rodShim       = s.rods?.["shim"]       ?? s.indicated?.["rod.shim"]       ?? null;
+      const rodSafety     = s.rods?.["safety"]     ?? s.indicated?.["rod.safety"]     ?? null;
 
-      premise = `ROLE: Nuclear Reactor Operator. GOAL: Bring the reactor to operating power, maintain safe power levels, and avoid SCRAMs. CURRENT STATE: ${powerDesc}${periodDesc} ${tempDesc}`;
+      // Cache for executeChoice to read when deciding which rod to move
+      if (rodRegulating !== null) this.rodPositions["regulating"] = rodRegulating;
+      if (rodShim       !== null) this.rodPositions["shim"]       = rodShim;
+      if (rodSafety     !== null) this.rodPositions["safety"]     = rodSafety;
+
+      const rodDesc = [
+        rodShim       !== null ? `Shim: ${(rodShim       * 100).toFixed(0)}%` : null,
+        rodSafety     !== null ? `Safety: ${(rodSafety   * 100).toFixed(0)}%` : null,
+        rodRegulating !== null ? `Regulating: ${(rodRegulating * 100).toFixed(0)}%` : null,
+      ].filter(Boolean).join(", ");
+
+      // Determine reactor phase
+      const isShutdown = power < 1e-6;
+      const isStartup  = !isShutdown && period > 30;  // period > 30s = slow, controlled rise
+      const isStable   = !isShutdown && Math.abs(period) > 100;
+      const isDanger   = !isShutdown && period < 10;
+
+      let phaseDesc: string;
+      if (isShutdown)     phaseDesc = "The reactor is SHUTDOWN (power is essentially zero).";
+      else if (isDanger)  phaseDesc = `Power is ${power.toExponential(3)} W. Period is dangerously short at ${period.toFixed(1)} s — reactor is accelerating rapidly.`;
+      else if (isStartup) phaseDesc = `Power is ${power.toExponential(3)} W. Period is ${period.toFixed(1)} s — reactor is rising in a controlled startup.`;
+      else if (isStable)  phaseDesc = `Power is ${power.toExponential(3)} W. Period is ${period.toFixed(1)} s — reactor is stable.`;
+      else                phaseDesc = `Power is ${power.toExponential(3)} W. Period is ${period.toFixed(1)} s.`;
+
+      const rodLine  = rodDesc ? ` Rod positions — ${rodDesc}.` : "";
+      const tempLine = ` Fuel Temperature is ${fuelTemp.toFixed(1)} °C.`;
+
+      premise = `ROLE: Nuclear Reactor Operator. GOAL: Bring the reactor to operating power, maintain safe power levels, avoid SCRAMs. CURRENT STATE: ${phaseDesc}${rodLine}${tempLine}`;
 
       hypotheses = [
-        "The reactor is shutdown or power is near zero. I must pull the regulating rod UP to start it.",
-        "Power is rising safely. I will STOP the control rods and monitor.",
+        "The reactor needs more reactivity. I will pull ONE control rod UP to raise power.",
+        "Power is rising safely. I will STOP the control rods and monitor until stable.",
         "Power is rising too fast or the period is dangerously short. I will push the regulating rod DOWN.",
         "The reactor is out of control. I will trigger a manual SCRAM immediately.",
       ];
@@ -121,18 +147,30 @@ export class JevCopilot {
 
   private executeChoice(choice: string): void {
     if (this.role === "operator") {
-      // Rod IDs in the engine: "regulating", "transient", "safety", "shim"
-      if (choice.includes("pull the regulating rod UP")) {
-        this.client.command({ type: "rod.move", rod: "regulating", direction: "out" });
+      if (choice.includes("pull ONE control rod UP")) {
+        // Startup priority: shim first (most reactivity worth), then safety, then regulating.
+        // Only move ONE rod at a time to avoid period-short SCRAM.
+        const pos = this.rodPositions;
+        const AT_LIMIT = 0.99; // treat ≥99% as fully withdrawn
+        if ((pos["shim"]       ?? 1) < AT_LIMIT) {
+          this.client.command({ type: "rod.move", rod: "shim",       direction: "out" });
+        } else if ((pos["safety"]   ?? 1) < AT_LIMIT) {
+          this.client.command({ type: "rod.move", rod: "safety",     direction: "out" });
+        } else if ((pos["regulating"] ?? 1) < AT_LIMIT) {
+          this.client.command({ type: "rod.move", rod: "regulating", direction: "out" });
+        }
+        // All rods already at limit — nothing to do, model will re-evaluate next tick
       } else if (choice.includes("push the regulating rod DOWN")) {
         this.client.command({ type: "rod.move", rod: "regulating", direction: "in" });
-      } else if (choice.includes("STOP")) {
+      } else if (choice.includes("STOP the control rods")) {
+        // Stop whichever rods are moving
+        this.client.command({ type: "rod.move", rod: "shim",       direction: "stop" });
+        this.client.command({ type: "rod.move", rod: "safety",     direction: "stop" });
         this.client.command({ type: "rod.move", rod: "regulating", direction: "stop" });
       } else if (choice.includes("manual SCRAM")) {
         this.client.command({ type: "trip.manual" });
       }
     } else {
-      // Instructor choices
       if (choice.includes("jam a control rod")) {
         this.client.command({ type: "fault.rod", rod: "transient", kind: "stuck" });
       }
