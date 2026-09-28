@@ -12,6 +12,7 @@ export default defineConfig({
     : {},
   server: {
     port,
+    host: "127.0.0.1",
     strictPort: true,
     // The repo's schema/ and vector folders live one level up and are imported directly.
     fs: { allow: [".."] },

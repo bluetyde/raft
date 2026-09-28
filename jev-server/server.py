@@ -10,7 +10,7 @@ import torch
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("jev-server")
 
-MODEL_ID = "openjev/openjev"
+MODEL_ID = "v6543210/openJev-1.5B"
 
 # Global state
 model = None
