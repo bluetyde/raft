@@ -131,7 +131,10 @@ export function replayCommands(
   }
 }
 
-export function sessionFile(engine: Engine, extra: { annotations?: Annotation[]; branch?: BranchInfo } = {}): SessionFile {
+export function sessionFile(
+  engine: Engine,
+  extra: { annotations?: Annotation[]; branch?: BranchInfo; scenario?: SessionFile["scenario"] } = {},
+): SessionFile {
   return {
     format: SESSION_FORMAT,
     version: SESSION_VERSION,
@@ -139,6 +142,7 @@ export function sessionFile(engine: Engine, extra: { annotations?: Annotation[];
     session: engine.session(),
     annotations: structuredClone(extra.annotations ?? []),
     ...(extra.branch ? { branch: { ...extra.branch } } : {}),
+    ...(extra.scenario ? { scenario: structuredClone(extra.scenario) } : {}),
   };
 }
 
@@ -150,6 +154,12 @@ export function checkSessionFile(file: unknown, lib: Library): SessionFile {
   }
   if (f.annotations !== undefined && !validAnnotations(f.annotations)) {
     throw new CheckpointError("annotations must be a list of {id, step, t, text}");
+  }
+  if (f.scenario !== undefined) {
+    const sc = f.scenario as Record<string, unknown>;
+    if (typeof sc !== "object" || sc === null || typeof sc["id"] !== "string" || typeof sc["digest"] !== "string" || typeof sc["thresholds"] !== "object") {
+      throw new CheckpointError("scenario must be {id, digest, thresholds}");
+    }
   }
   if (!Number.isInteger(f.endStep) || f.endStep < 0) {
     throw new CheckpointError("endStep must be a non-negative integer");

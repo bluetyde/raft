@@ -4,7 +4,8 @@
  */
 
 import type { Ack, RuntimeClient } from "../../runtime/client";
-import { RUNTIME_REJECTIONS, type ActiveFaults, type BranchSummary, type FromWorker, type SessionFile } from "../../runtime/protocol";
+import { RUNTIME_REJECTIONS, type ActiveFaults, type BranchSummary, type FromWorker, type ScenarioView, type SessionFile } from "../../runtime/protocol";
+import type { ScenarioFile } from "../../runtime/scenario";
 import { download, timeTag, traceInWorker } from "./export";
 import { formatPeriod, formatPower } from "../explorer/live";
 import { kelvinToCelsius } from "../operator/meters";
@@ -25,6 +26,12 @@ export interface InstructorOptions {
   files(): Promise<Record<string, ArrayBuffer>>;
   /** The library id, for file names. */
   libraryId: string;
+  /** The scenarios shipped for this library (docs/m5-scenarios-design.md). */
+  scenarios?: ScenarioFile[];
+  /** Start a scenario: a new session of its library. */
+  startScenario?(file: ScenarioFile): void;
+  /** The scenario file with this id (a version 3 session file names its scenario). */
+  findScenario?(id: string): ScenarioFile | undefined;
 }
 
 type SnapshotMsg = Extract<FromWorker, { kind: "snapshot" }>;
@@ -72,6 +79,9 @@ export class InstructorPanel {
   private readonly compare: HTMLElement;
   private readonly exportText: HTMLElement;
   private lastTimeline: TimelineMsg | null = null;
+  private readonly scenarioBox: HTMLElement;
+  /** The running scenario as the worker last sent it (for tests). */
+  scenario: ScenarioView | null = null;
   private lastSnapshot: Record<string, any> | null = null;
   /** The last faults and snapshot the panel drew (for tests). */
   lastFaults: ActiveFaults | undefined;
@@ -157,6 +167,19 @@ export class InstructorPanel {
     this.compare = el("table", { className: "vr-inst-table" });
     this.compare.dataset["inst"] = "branches";
 
+    // ---- scenario ----
+    const scenarioSelect = el("select");
+    scenarioSelect.dataset["inst"] = "scenario-choice";
+    for (const sc of opts.scenarios ?? []) scenarioSelect.append(new Option(sc.title, sc.id));
+    const startScenario = button("start scenario", "scenario-start", () => {
+      const sc = (opts.scenarios ?? []).find((x) => x.id === scenarioSelect.value);
+      if (sc) opts.startScenario?.(sc);
+    });
+    startScenario.disabled = (opts.scenarios ?? []).length === 0;
+    this.scenarioBox = el("div", { className: "vr-inst-scenario" });
+    this.scenarioBox.dataset["inst"] = "scenario";
+    this.scenarioBox.textContent = "no scenario";
+
     // ---- export ----
     const exportSession = button("session file", "export-session", () => void this.exportSession());
     const exportCsv = button("CSV (every 0.1 s)", "export-csv", () => void this.exportCsv());
@@ -171,6 +194,11 @@ export class InstructorPanel {
         el("h3", { textContent: "Time" }),
         el("div", { className: "vr-row" }, [this.play, this.rate, step, this.clockText]),
         el("div", { className: "vr-row" }, ["outer step: ", this.stepText, outer, restart]),
+      ]),
+      el("section", {}, [
+        el("h3", { textContent: "Scenario" }),
+        el("div", { className: "vr-row" }, [scenarioSelect, startScenario]),
+        this.scenarioBox,
       ]),
       el("section", {}, [el("h3", { textContent: "Timeline (click to rewind)" }), this.bar, this.confirmBox]),
       el("section", {}, [
@@ -277,6 +305,41 @@ export class InstructorPanel {
     this.drawCompare();
   }
 
+  /** The worker's scenario state: goals with their status, the scripted events and the score. */
+  onScenario(m: Extract<FromWorker, { kind: "scenario" }>): void {
+    const sc = m.scenario;
+    this.scenario = sc;
+    if (!sc) {
+      this.scenarioBox.replaceChildren("no scenario");
+      return;
+    }
+    const mark = { waiting: "·", open: "○", met: "✓", failed: "✗" } as const;
+    const goals = el(
+      "ol",
+      { className: "vr-inst-goals" },
+      sc.goals.map((g) => {
+        const li = el("li", { className: g.status }, [`${mark[g.status]} ${g.text}${g.t !== null ? ` (t = ${g.t.toFixed(1)} s)` : ""}`]);
+        li.dataset["goal"] = g.id;
+        li.dataset["status"] = g.status;
+        return li;
+      }),
+    );
+    const s = sc.score;
+    const score = el("div", { className: "vr-inst-score" });
+    score.dataset["inst"] = "scenario-score";
+    score.textContent = `goals met ${s.met} of ${s.total}${s.failed ? `, failed ${s.failed}` : ""}, unexpected trips ${s.trips}${sc.done ? " (done)" : ""}`;
+    this.scenarioBox.replaceChildren(
+      el("strong", { textContent: sc.title }),
+      el("div", { className: "vr-inst-note", textContent: sc.brief }),
+      goals,
+      score,
+      el("div", {
+        className: "vr-inst-note",
+        textContent: `allowed controls: ${sc.allow.join(", ") || "none"}. Scripted events: ${sc.events.map((e) => `t = ${e.t.toFixed(2)} s ${e.note}`).join("; ") || "none"}.`,
+      }),
+    );
+  }
+
   /** The worker's timeline: marks, notes, and the branches for the compare table. */
   onTimeline(m: TimelineMsg): void {
     this.lastTimeline = m;
@@ -371,7 +434,9 @@ export class InstructorPanel {
     if (!f) return;
     try {
       const file = JSON.parse(await f.text()) as SessionFile;
-      const m = await this.client.importSession(file);
+      const scenario = file.scenario ? this.opts.findScenario?.(file.scenario.id) : undefined;
+      if (file.scenario && !scenario) throw new Error(`this app does not ship the scenario ${file.scenario.id}`);
+      const m = await this.client.importSession(file, scenario);
       this.exportText.textContent = `imported ${f.name}: step ${m.step}, t = ${m.t.toFixed(2)} s`;
     } catch (err) {
       this.exportText.textContent = `import failed: ${String(err)}`;

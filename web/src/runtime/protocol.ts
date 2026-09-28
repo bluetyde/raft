@@ -8,9 +8,12 @@ import type { Issue } from "../library/validate";
 export const PROTOCOL_VERSION = 1;
 
 export const SESSION_FORMAT = "virtual-reactor-session";
-/** Version 2 adds annotations and the branch (docs/m6-instructor-design.md, D6). Version 1 files still import. */
-export const SESSION_VERSION = 2;
-export const SESSION_VERSIONS: readonly number[] = [1, 2];
+/**
+ * Version 2 adds annotations and the branch (docs/m6-instructor-design.md, D6).
+ * Version 3 adds the scenario (docs/m5-scenarios-design.md): its id, digest and resolved thresholds. Versions 1 and 2 still import.
+ */
+export const SESSION_VERSION = 3;
+export const SESSION_VERSIONS: readonly number[] = [1, 2, 3];
 
 /** Where the worker reads a library folder from. `files` maps manifest-relative paths to bytes. */
 export type LibrarySource =
@@ -20,13 +23,32 @@ export type LibrarySource =
 /** A session file: `engine.session()` plus the step it ends at (the engine's session has no end step). */
 export interface SessionFile {
   format: typeof SESSION_FORMAT;
-  version: 1 | 2;
+  version: 1 | 2 | 3;
   endStep: number;
   session: Record<string, any>;
   /** Version 2: notes on the timeline. Replay ignores them. */
   annotations?: Annotation[];
   /** Version 2: where this timeline came from, in the runtime that wrote the file. */
   branch?: BranchInfo;
+  /** Version 3: the scenario this session runs, and its `fromTrip` thresholds as resolved for the library (amendment 2). */
+  scenario?: { id: string; digest: string; thresholds: Record<string, number | [number, number]> };
+}
+
+/** A running scenario as the views show it. */
+export interface ScenarioView {
+  id: string;
+  title: string;
+  brief: string;
+  hints: string[];
+  allow: string[];
+  faultsVisible: boolean;
+  outerDt: number;
+  goals: { id: string; text: string; status: "waiting" | "open" | "met" | "failed"; t: number | null }[];
+  events: { step: number; t: number; note: string }[];
+  /** Goals met and failed of all goals, and the trips the scenario did not expect (a manual scram is not counted). */
+  score: { met: number; failed: number; total: number; trips: number };
+  /** Every goal is met or failed. */
+  done: boolean;
 }
 
 /** A note on the timeline, at an engine step. */
@@ -39,7 +61,7 @@ export interface Annotation {
 
 /** A timeline marker that the runtime derives from engine events. */
 export interface Mark {
-  kind: "trip" | "rejected" | "fault";
+  kind: "trip" | "rejected" | "fault" | "scripted";
   t: number;
   label: string;
 }
@@ -83,6 +105,8 @@ export function isCoarse(outerDt: number): boolean {
 /** Texts for the rejection reasons that the runtime (not the engine) gives. */
 export const RUNTIME_REJECTIONS: Record<string, string> = {
   REJ_COARSE_STEP: `pulse mode and rod firing need an outer step of ${PULSE_MAX_OUTER_DT * 1000} ms or less, and this session's step is longer`,
+  REJ_SCENARIO: "the scenario does not allow this control",
+  REJ_ROLE: "this window's role cannot send this command",
 };
 
 /** The faults active in the engine after a step (instrument faults by id, and the total inserted reactivity). */
@@ -121,13 +145,16 @@ export type ToWorker =
       init?: Record<string, any>;
       seed?: number;
       config?: Record<string, any>;
+      /** A scenario file (docs/m5-scenarios-design.md). It sets the start state, seed and outer step, so init, seed and config are then ignored. */
+      scenario?: unknown;
     }
   | { kind: "command"; clientSeq: number; clientId: string; cmd: unknown }
   | { kind: "time"; rate?: number; paused?: boolean }
   | { kind: "step"; n: number }
   | { kind: "rewind"; step: number }
   | { kind: "session.export" }
-  | { kind: "session.import"; file: SessionFile }
+  /** `scenario` is the scenario file that a version 3 session names (the runtime checks its digest). */
+  | { kind: "session.import"; file: SessionFile; scenario?: unknown }
   | { kind: "annotate"; text: string; step?: number }
   | { kind: "annotation.delete"; id: number }
   | { kind: "branch.switch"; id: number }
@@ -189,6 +216,7 @@ export type FromWorker =
   | { kind: "history"; checkpointSteps: number[]; thinned: boolean }
   | { kind: "rewound"; step: number; t: number; previous: SessionFile }
   | { kind: "session"; file: SessionFile }
+  | { kind: "scenario"; scenario: ScenarioView | null }
   | {
       kind: "timeline";
       /** The current branch, with its live summary. */
