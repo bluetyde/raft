@@ -1,0 +1,93 @@
+{
+  "format": "virtual-reactor-scenario",
+  "version": 1,
+  "id": "synthetic-scram-and-restart",
+  "library": "synthetic-core",
+  "title": "Scram and restart",
+  "brief": "Bring the reactor to a steady power and hold it. Then scram it and watch the period settle. Reset the trip and restart.",
+  "outerDt": 0.01,
+  "seed": 1,
+  "init": {
+    "rods": "shutdown"
+  },
+  "controls": {
+    "allow": [
+      "rod.move",
+      "scram",
+      "trip.reset"
+    ]
+  },
+  "goals": [
+    {
+      "id": "steady",
+      "text": "Hold the power between 1 % and 50 % of the power-high setpoint for 10 minutes",
+      "check": {
+        "signal": "indicated.linear",
+        "op": "between",
+        "fromTrip": "power-high",
+        "times": [
+          0.01,
+          0.5
+        ]
+      },
+      "for": 600,
+      "within": 1800
+    },
+    {
+      "id": "scram",
+      "text": "Scram the reactor",
+      "check": {
+        "signal": "truth.rod.safety",
+        "op": "le",
+        "value": 0
+      },
+      "after": "steady",
+      "within": 300,
+      "source": "rod position 0 is fully inserted (docs/ARCHITECTURE.md, conventions)"
+    },
+    {
+      "id": "negative-period",
+      "text": "Watch the period settle near -80 s",
+      "check": {
+        "signal": "truth.period",
+        "op": "between",
+        "value": [
+          -90,
+          -70
+        ]
+      },
+      "for": 10,
+      "after": "scram",
+      "within": 400,
+      "source": "Keepin, Physics of Nuclear Kinetics (1965): after a scram from steady power the period settles at about -80 s, set by the longest-lived delayed-neutron group (half-life about 55 s)"
+    },
+    {
+      "id": "restart",
+      "text": "Reset the trip and raise the power above 1 % of the power-high setpoint again",
+      "check": {
+        "signal": "indicated.linear",
+        "op": "gt",
+        "fromTrip": "power-high",
+        "times": 0.01
+      },
+      "after": "negative-period",
+      "within": 1200
+    }
+  ],
+  "hints": [
+    "The steady hold lets the delayed-neutron precursors reach equilibrium. Without it, the period after the scram does not settle near -80 s.",
+    "The negative period does not depend on how much rod worth went in.",
+    "A manual scram latches a trip. Reset it before you withdraw the rods."
+  ],
+  "events": [
+    {
+      "at": 60,
+      "cmd": {
+        "type": "fault.instrument",
+        "instrument": "pool-temp",
+        "kind": "stuck"
+      },
+      "note": "the pool thermometer sticks (it does not affect the goals)"
+    }
+  ]
+}

@@ -177,7 +177,8 @@ describe("annotations and session files version 2 (D6)", () => {
 
     await send(rt, { kind: "session.export" });
     const file = host.last("session")!.file;
-    expect(file.version).toBe(2);
+    expect(file.version).toBe(3); // version 3 since M5 scenarios; without a scenario it has no scenario field
+    expect(file.scenario).toBeUndefined();
     expect(file.annotations!.map((a) => a.text)).toEqual(["early note", "rod starts out"]);
     expect(file.branch).toEqual({ id: 1, parent: null, forkStep: 0 });
 
@@ -203,6 +204,17 @@ describe("annotations and session files version 2 (D6)", () => {
     expect(host.last("error")).toBeUndefined();
     expect(rt.engine!.stepIndex).toBe(20);
     expect(timeline(host).annotations).toEqual([]);
+  });
+
+  it("a version 2 file (notes and branch, no scenario) still imports", async () => {
+    const { host, rt } = await loadedRuntime();
+    await send(rt, { kind: "step", n: 20 });
+    await send(rt, { kind: "annotate", text: "v2 note" });
+    await send(rt, { kind: "session.export" });
+    const v2 = { ...host.last("session")!.file, version: 2 } as SessionFile;
+    await send(rt, { kind: "session.import", file: v2 });
+    expect(host.last("error")).toBeUndefined();
+    expect(timeline(host).annotations.map((a) => a.text)).toEqual(["v2 note"]);
   });
 
   it("a file with malformed annotations does not import", async () => {

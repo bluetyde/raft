@@ -20,6 +20,7 @@ import { modelFromLibrary } from "../views/explorer/model";
 import { InstructorPanel } from "../views/instructor/panel";
 import { OperatorPanel } from "../views/operator/panel";
 import { CATALOG, catalogFiles, catalogReader } from "./catalog";
+import { scenarioById, scenariosFor } from "./scenarios";
 import { connect, windowParams, windowUrl } from "./connection";
 import { Controls } from "./controls";
 
@@ -92,6 +93,7 @@ const latest: {
   shaped?: Extract<FromWorker, { kind: "snapshot" }>;
   clock?: Extract<FromWorker, { kind: "clock" }>;
   timeline?: Extract<FromWorker, { kind: "timeline" }>;
+  scenario?: Extract<FromWorker, { kind: "scenario" }>;
 } = {};
 
 function storedLayout(): Layout {
@@ -154,6 +156,10 @@ client.on("timeline", (m) => {
   latest.timeline = m;
   instructor?.onTimeline(m);
 });
+client.on("scenario", (m) => {
+  latest.scenario = m;
+  instructor?.onScenario(m);
+});
 client.on("rewound", (m) => {
   operator?.onRewound();
   instructor?.onRewound(m.t);
@@ -164,6 +170,7 @@ client.on("loaded", (m) => {
   delete latest.shaped;
   delete latest.clock;
   delete latest.timeline;
+  delete latest.scenario;
   elementsOf = null; // the old model cannot take the new library's power shape
   const { kind: _k, protocol: _p, ...info } = m;
   void adopt(info);
@@ -215,6 +222,9 @@ async function build(info: LoadedInfo): Promise<void> {
         restart: (outerDt) => void show(entry.name, { config: { ...info.pins["config"], outerDt } }),
         files: () => catalogFiles(entry),
         libraryId: lib.id,
+        scenarios: scenariosFor(lib.id),
+        startScenario: (sc) => void show(entry.name, { scenario: sc }),
+        findScenario: scenarioById,
       },
     );
     instructor.setSession(info.outerDt);
@@ -233,6 +243,7 @@ async function build(info: LoadedInfo): Promise<void> {
       controls.onClock(latest.clock);
     }
     if (latest.timeline) instructor.onTimeline(latest.timeline);
+    if (latest.scenario) instructor.onScenario(latest.scenario);
 
     const s = explorer.stats!;
     status.textContent = `${lib.id} (${lib.status}): ${s.primitives} primitives, ${s.drawCalls} draw calls, outer step ${info.outerDt} s`;
@@ -245,7 +256,10 @@ async function build(info: LoadedInfo): Promise<void> {
 }
 
 /** Load a library as a new session. `opts` sets the engine's initial state, seed and config (default: the library's reference state). */
-async function show(name: string, opts: { init?: Record<string, any>; seed?: number; config?: Record<string, any> } = {}): Promise<void> {
+async function show(
+  name: string,
+  opts: { init?: Record<string, any>; seed?: number; config?: Record<string, any>; scenario?: unknown } = {},
+): Promise<void> {
   const entry = CATALOG.find((e) => e.name === name);
   if (!entry) return;
   status.textContent = `loading ${name}…`;

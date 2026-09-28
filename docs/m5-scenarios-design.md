@@ -1,6 +1,7 @@
 # M5 scenarios (design)
 
-Status: **proposal, waiting for the user.** No code yet. The decisions are marked **D1–D7**, each with options and a recommendation. The table at the end lists them.
+Status: **approved by the user on 2026-09-28: D1–D5 and D7 as recommended (option a), D6 = (b), with five amendments** (§9). Slice SC1 is built on the same branch (§10).
+The decisions are marked **D1–D7**, each with options and a recommendation. The table at the end lists them.
 
 This is the last M5 item in TODO: "Scenarios: startup, steady power, pulse, scram, xenon transient". Plan 05 sketches the format.
 The format design is A7 in `docs/AGENT-TASKS.md`. A7 was on hold, and the user asked for this item on 2026-09-28.
@@ -177,7 +178,39 @@ Each slice is its own PR, with its own Vitest and Playwright tests.
 - **For the other session:** A7 from this doc (D1a): the JSON schema, the Python validator and invalid fixtures. If (b) is chosen for D2, scenario events go into both engines.
 - **Real numbers:** after M2, the scenario thresholds for `triga-jsi-242` should move from "assumed" library values to measured ones where a source exists.
 
-## Decisions (waiting for the user)
+## 9. User decision and amendments (2026-09-28)
+
+- D1–D5 and D7: option (a). **D6 = (b):** scram-and-restart and power ascension now. Approach to critical, pulse and xenon wait for the M2 OpenMC libraries.
+- **Amendment 1:** `init.rods` also accepts `"reference"` (the library's `reference.rods`) and `"shutdown"` (every rod at 0), as well as per-rod values. The validator refuses unknown rod ids (`E_SCN_ROD`).
+- **Amendment 2:** the resolved `fromTrip` thresholds are recorded in the version 3 session file.
+- **Amendment 3:** a scripted event gets its sequence number when its boundary is reached, before operator commands queued for that boundary. A test covers the case where the operator's command was queued first.
+- **Amendment 4:** until the period trip is lagged, scenarios avoid `fault.reactivity` step events, or they expect the `period-short` trip (M6 finding: any step trips it at once).
+  The validator refuses a `fault.reactivity` event unless `expectTrips` names every trip on `truth.period` (`E_SCN_REACTIVITY_STEP`).
+- **Amendment 5:** operator-facing goals use `indicated.*` where an instrument exists. The validator refuses a `truth.*` signal that an instrument measures (`E_SCN_TRUTH_GOAL`).
+  `truth.period`, `truth.rod.<id>`, `truth.xenon` and `truth.mode` stay allowed, because no instrument measures them.
+- The other session will do A7 (the schema, a Python validator and shared invalid fixtures) after SC1. It will also propose a lagged period instrument, which would also give `indicated.period`.
+
+## 10. Slice SC1: what is built
+
+- **Format changes from §3, found while building:**
+  - `fromTrip` takes the trip's setpoint. For a trip like `period-short` (`all` of `gt 0` and `lt 3`), the setpoint is the one bound that is not 0. `times` scales it. For `between`, `times` is a pair.
+  - `init.source` is needed when `init` has a level (`power.value`, `Tfuel`, `Tcoolant`, or given poisons). Rod positions are controls, not levels.
+  - `expectTrips` lists the trips a scenario expects (amendment 4). The score does not count them, and it never counts `manual`.
+- **Code:**
+  - `web/src/runtime/scenario.ts`: the format, the validator (the codes in §3 plus `E_SCN_ROD`, `E_SCN_REACTIVITY_STEP` and `E_SCN_TRUTH_GOAL`), the preparation (rod presets, `fromTrip`, event steps, the digest) and the goal tracker;
+  - `web/src/runtime/runtime.ts`: a `load` with a scenario, the scripted events (submitted when their boundary is reached, and before an operator command at that boundary), the allowed controls (`REJ_SCENARIO`; `clientId: "scenario"` is reserved), the goals after each step, and a `scenario` message.
+    The goal tracker's state is kept at each checkpoint, so a rewind, a branch switch and an import give the same goals as a run without them;
+  - session files version 3 with `scenario: {id, digest, thresholds}`. An import needs the same scenario (its digest must match);
+  - `web/src/app/scenarios/`: the two approved scenarios for `triga-jsi-242`, and copies for `synthetic-core` (the scram copy has one scripted event, a stuck pool thermometer at 60 s);
+  - the instructor panel: a scenario picker, the goals with their status and time, the score, and "scripted" marks on the timeline. The operator's scenario strip (D7) is SC2.
+- **Findings from runs on `triga-jsi-242` and `synthetic-core`:**
+  - After a scram from a *rising* power, the period stays far from −80 s: it creeps from −11 s to −49 s in 150 s, because the precursors are not in equilibrium.
+    After 20 minutes at steady power, the period enters −90 to −70 s about 225 s after the scram and stays there.
+    So the scram-and-restart scenario first asks for 10 minutes of steady power, and the negative-period goal has 400 s. The §3 example was wrong about this.
+  - A "positive period" goal is met a few seconds after the rods start out, while the core is still subcritical (subcritical multiplication). So power ascension uses power goals only.
+  - With every rod out, fuel-temperature feedback holds `triga-jsi-242` near 100 kW, below the 275 kW power-high trip.
+
+## Decisions (approved by the user, 2026-09-28)
 
 | # | Decision | Recommended |
 |---|---|---|
@@ -186,5 +219,5 @@ Each slice is its own PR, with its own Vitest and Playwright tests.
 | D3 | Where goals are checked | **(a)** in the worker, after each step |
 | D4 | Allowed controls | **(a)** the worker enforces them for operator commands (`REJ_SCENARIO`) |
 | D5 | Thresholds and sources | **(a)** each has a `source`, or `fromTrip` from the library |
-| D6 | First scenarios | **(a)** all five from TODO, for `triga-jsi-242`, each with a `synthetic-core` copy |
+| D6 | First scenarios | **(b), chosen:** scram-and-restart and power ascension now; the other three after the M2 OpenMC libraries |
 | D7 | The operator's view of a scenario | **(a)** a scenario strip with the goals checklist, hints and the 1/M plot |

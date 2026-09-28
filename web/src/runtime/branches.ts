@@ -31,7 +31,12 @@ export function marksFrom(events: Record<string, any>[], commandLog: Record<stri
   const out: Mark[] = [];
   for (const e of events) {
     if (e["type"] === "trip") out.push({ kind: "trip", t: e["t"], label: `trip ${e["id"]}` });
-    else if (e["type"] === "command") {
+    else if (e["type"] === "command" && e["clientId"] === "scenario") {
+      // a scripted scenario event (docs/m5-scenarios-design.md, D2a)
+      const cmd = bySeq.get(e["seq"]) ?? {};
+      const what = FAULT_COMMANDS.has(cmd["type"]) ? faultLabel(cmd) : String(cmd["type"]);
+      out.push({ kind: "scripted", t: e["t"], label: `scenario: ${what}${e["status"] === "rejected" ? ` (rejected: ${e["reason"]})` : ""}` });
+    } else if (e["type"] === "command") {
       if (e["status"] === "rejected") out.push({ kind: "rejected", t: e["t"], label: `${e["clientId"]}: ${e["reason"]}` });
       else {
         const cmd = bySeq.get(e["seq"]);
@@ -87,6 +92,8 @@ export function buildBranch(
   target: SessionFile,
   /** The runtime's checkpoint rule, run after each replayed step. */
   checkpoint: (st: CheckpointStore, e: Engine) => void,
+  /** Runs once before the replay, with the step it starts from (the runtime starts its goal tracker there). */
+  start?: (fromStep: number, e: Engine) => void,
 ): { engine: Engine; store: CheckpointStore; fromStep: number } {
   const ts = target.session;
   const cs = current.session();
@@ -104,6 +111,7 @@ export function buildBranch(
       const engine = Engine.restore(lib, cp);
       const own = store.copy();
       own.dropAfter(step);
+      start?.(step, engine);
       replayCommands(engine, ts.commands, target.endStep, takeEvery(own));
       return { engine, store: own, fromStep: step };
     }
@@ -111,6 +119,7 @@ export function buildBranch(
   const engine = new Engine(lib, ts.init, ts.seed, ts.pins.config);
   const own = new CheckpointStore(store.max);
   own.add(engine.checkpoint());
+  start?.(0, engine);
   replayCommands(engine, ts.commands, target.endStep, takeEvery(own));
   if (engine.stepIndex !== target.endStep && !engine.halted) {
     throw new CheckpointError(`replay stopped at step ${engine.stepIndex}, not ${target.endStep}`);

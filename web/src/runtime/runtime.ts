@@ -13,6 +13,7 @@ import { Engine, InitError } from "../sim/engine";
 import { LibraryError, loadLibrary, type Library } from "../sim/library";
 import { buildBranch, marksBefore, marksFrom, summarize, type Branch } from "./branches";
 import { CheckpointStore, checkSessionFile, replayCommands, sessionFile } from "./history";
+import { GoalTracker, prepareScenario, ScenarioError, type PreparedScenario } from "./scenario";
 import {
   isCoarse,
   MAX_BRANCHES,
@@ -21,6 +22,7 @@ import {
   ROLES,
   type LoadedInfo,
   type Role,
+  type ScenarioView,
   type Annotation,
   type BranchInfo,
   type Mark,
@@ -167,6 +169,12 @@ export class Runtime {
   private nextAnnotationId = 1;
   private timelineDirty = false;
 
+  // the scenario of this session (docs/m5-scenarios-design.md), its goal tracker, and the tracker's state at each checkpoint
+  private scenario: PreparedScenario | null = null;
+  private tracker: GoalTracker | null = null;
+  private trackerAt = new Map<number, GoalTracker>();
+  private scenarioDirty = false;
+
   private inbox: Promise<void> = Promise.resolve();
 
   constructor(
@@ -230,7 +238,7 @@ export class Runtime {
     }
     switch (msg.kind) {
       case "load":
-        return this.load(msg.source, msg.init, msg.seed, msg.config);
+        return this.load(msg.source, msg.init, msg.seed, msg.config, msg.scenario);
       case "command":
         return this.command(msg.clientSeq, msg.clientId, msg.cmd, port.role);
       case "time":
@@ -242,7 +250,7 @@ export class Runtime {
       case "session.export":
         return this.exportSession();
       case "session.import":
-        return this.importSession(msg.file);
+        return this.importSession(msg.file, msg.scenario);
       case "annotate":
         return this.annotate(msg.text, msg.step);
       case "annotation.delete":
@@ -275,6 +283,7 @@ export class Runtime {
       this.host.post(this.clockMessage(), undefined, port.id);
       this.host.post({ kind: "history", checkpointSteps: this.history.steps(), thinned: this.history.thinned }, undefined, port.id);
       this.host.post(this.timelineMessage(), undefined, port.id);
+      this.host.post(this.scenarioMessage(), undefined, port.id);
       this.maybeSnapshot();
     }
   }
@@ -297,6 +306,7 @@ export class Runtime {
     init: Record<string, any> | undefined,
     seed: number | undefined,
     config: Record<string, any> | undefined,
+    scenarioFile: unknown,
   ): Promise<void> {
     this.stopClock();
     // A failed load keeps the previous library and engine, paused; the clock message says so.
@@ -310,6 +320,19 @@ export class Runtime {
     } catch (err) {
       if (err instanceof LibraryError) return fail(err.issues);
       return fail([{ code: "E_READ", path: "", message: String(err) }]);
+    }
+    let prepared: PreparedScenario | null = null;
+    if (scenarioFile !== undefined) {
+      // the scenario sets the start state, seed and outer step
+      try {
+        prepared = await prepareScenario(scenarioFile, lib);
+      } catch (err) {
+        if (err instanceof ScenarioError) return fail(err.issues);
+        return fail([{ code: "E_SCN_FIELD", path: "", message: String(err) }]);
+      }
+      init = prepared.init;
+      seed = prepared.seed;
+      config = { outerDt: prepared.outerDt };
     }
     let eng: Engine;
     try {
@@ -325,6 +348,11 @@ export class Runtime {
     this.lib = lib;
     this.history.clear();
     this.rate = 1; // a new session starts at 1x, paused (as a new worker did before the shared worker)
+    this.scenario = prepared;
+    this.tracker = prepared ? new GoalTracker(prepared.goals) : null;
+    this.tracker?.evaluate(eng);
+    this.trackerAt = new Map();
+    this.scenarioDirty = true;
     this.install(eng);
     this.branches = [];
     this.current = { id: 1, parent: null, forkStep: 0 };
@@ -333,6 +361,7 @@ export class Runtime {
     this.annotations = [];
     this.nextAnnotationId = 1;
     this.timelineDirty = true;
+    this.submitDueEvents();
     // every window hears of a new session, so an attached window can rebuild its panels
     this.host.post({ kind: "loaded", protocol: PROTOCOL_VERSION, ...this.loadedInfo()! });
     this.afterChange();
@@ -348,6 +377,7 @@ export class Runtime {
     this.eventCursor = eng.events.length; // events from building this state (replay) are not news
     this.checkpointEvery = everySteps(this.options.checkpointEveryS, eng.config.outerDt);
     this.maybeCheckpoint(true);
+    if (this.tracker) this.trackerAt.set(eng.stepIndex, this.tracker.clone());
     this.forEachPort((p) => {
       p.extremes = {}; // extremes from a discarded timeline are not news
       p.forceShape = true;
@@ -365,10 +395,16 @@ export class Runtime {
     if (typeof clientId !== "string" || validateCommand(cmd).length > 0) return reject("REJ_SCHEMA");
     const type = String((cmd as Record<string, unknown>)["type"]);
     if (role === "operator" && type.startsWith("fault.")) return reject("REJ_ROLE");
+    if (clientId === "scenario") return reject("REJ_ROLE"); // reserved for the scenario's scripted events
+    // D4a: a scenario limits the operator's controls (the instructor is not limited)
+    const fromOperator = role === "operator" || clientId !== "instructor";
+    if (this.scenario && fromOperator && !this.scenario.file.controls.allow.includes(type)) return reject("REJ_SCENARIO");
     if (this.faulted) return reject("REJ_FAULTED");
     if (e.halted) return reject("REJ_HALTED");
     // Checked here, before the engine, so the rejected command is not in the log and replays stay the same.
     if (isCoarse(e.config.outerDt) && isPulseCommand(cmd as Record<string, any>)) return reject("REJ_COARSE_STEP");
+    // amendment 3: a scripted event due at this boundary gets its seq before any operator command at the boundary
+    this.submitDueEvents();
     const seq = e.submit(cmd as Record<string, any>, clientId);
     this.pendingAcks.set(seq, { clientSeq, port: this.replyTo });
     this.reply({ kind: "queued", clientSeq, seq, step: e.stepIndex, t: e.t });
@@ -476,13 +512,49 @@ export class Runtime {
       this.host.post({ kind: "fault", message: String(err) });
       return false;
     }
-    this.maybeCheckpoint(false);
+    const added = this.maybeCheckpoint(false);
     this.trackExtremes(e);
+    if (this.tracker) {
+      if (this.tracker.evaluate(e)) this.scenarioDirty = true;
+      if (added) this.trackerAt.set(e.stepIndex, this.tracker.clone());
+    }
     if (e.halted) {
       this.pauseFor("halted", e.halted);
       return false;
     }
+    this.submitDueEvents();
     return true;
+  }
+
+  /**
+   * Submit the scenario's scripted events that are due at the current boundary (D2a), as commands from "scenario".
+   * The log holds them, so the count of "scenario" entries is the cursor: after a rewind or a switch, the events
+   * after the new step are submitted again when their boundary is reached.
+   */
+  private submitDueEvents(): void {
+    const sc = this.scenario;
+    const e = this.eng;
+    if (!sc || !e || e.halted) return;
+    let n = e.commandLog.filter((c: any) => c.clientId === "scenario").length;
+    while (n < sc.events.length && sc.events[n]!.step <= e.stepIndex) {
+      e.submit(sc.events[n]!.cmd, "scenario");
+      n++;
+    }
+  }
+
+  /** The after-step callback for a replay: the checkpoint rule, then the goal tracker (and its state at each new checkpoint). */
+  private replayHook(tracker: GoalTracker | null, trackerAt: Map<number, GoalTracker>): (st: CheckpointStore, x: Engine) => void {
+    return (st, x) => {
+      const added = checkpointInto(st, x, this.checkpointEvery, false);
+      if (tracker) {
+        tracker.evaluate(x);
+        if (added) trackerAt.set(x.stepIndex, tracker.clone());
+      }
+    };
+  }
+
+  private trackerMapUpTo(step: number): Map<number, GoalTracker> {
+    return new Map([...this.trackerAt].filter(([k]) => k <= step));
   }
 
   /** Update each instrument's extremes since the last snapshot (amendment 1 of the M5 design). */
@@ -539,8 +611,10 @@ export class Runtime {
 
   // ---- history ----
 
-  private maybeCheckpoint(always: boolean): void {
-    if (checkpointInto(this.history, this.eng!, this.checkpointEvery, always)) this.historyDirty = true;
+  private maybeCheckpoint(always: boolean): boolean {
+    const added = checkpointInto(this.history, this.eng!, this.checkpointEvery, always);
+    if (added) this.historyDirty = true;
+    return added;
   }
 
   private rewind(step: number): void {
@@ -557,11 +631,20 @@ export class Runtime {
     const store = this.history.copy();
     store.dropAfter(step);
     let ne: Engine;
+    let tracker: GoalTracker | null = null;
+    let trackerAt = new Map<number, GoalTracker>();
     try {
       const cp = store.atOrBefore(step, log);
       if (!cp) return this.error("rewind", "E_NO_CHECKPOINT", `no checkpoint at or before step ${step}`);
+      if (this.scenario) {
+        const at = this.trackerAt.get(cp.stepIndex);
+        if (!at) return this.error("rewind", "E_REPLAY", `no goal state at checkpoint ${cp.stepIndex}`);
+        tracker = at.clone();
+        trackerAt = this.trackerMapUpTo(cp.stepIndex);
+      }
       ne = Engine.restore(lib, cp);
-      replayCommands(ne, log, step, (x) => checkpointInto(store, x, this.checkpointEvery, false));
+      const hook = this.replayHook(tracker, trackerAt);
+      replayCommands(ne, log, step, (x) => hook(store, x));
     } catch (err) {
       return this.error("rewind", "E_REPLAY", String(err));
     }
@@ -575,7 +658,13 @@ export class Runtime {
       this.timelineDirty = true;
     }
     this.history = store;
+    if (this.scenario) {
+      this.tracker = tracker;
+      this.trackerAt = trackerAt;
+      this.scenarioDirty = true;
+    }
     this.install(ne);
+    this.submitDueEvents();
     this.historyDirty = true;
     this.host.post({ kind: "rewound", step: ne.stepIndex, t: ne.t, previous });
     this.afterChange();
@@ -589,7 +678,12 @@ export class Runtime {
 
   /** The current timeline as a version 2 session file (with its annotations and branch). */
   private fileOf(e: Engine): SessionFile {
-    return sessionFile(e, { annotations: this.annotations, branch: this.current });
+    const sc = this.scenario;
+    return sessionFile(e, {
+      annotations: this.annotations,
+      branch: this.current,
+      ...(sc ? { scenario: { id: sc.file.id, digest: sc.digest, thresholds: sc.thresholds } } : {}),
+    });
   }
 
   /** Keep the current timeline (ending in `e`) as a branch. At the limit, the oldest branch goes. */
@@ -612,8 +706,20 @@ export class Runtime {
     if (i < 0) return this.error("branch.switch", "E_NO_BRANCH", `no branch ${id}`);
     const target = this.branches[i]!;
     let built: ReturnType<typeof buildBranch>;
+    let tracker: GoalTracker | null = null;
+    let trackerAt = new Map<number, GoalTracker>();
+    const sc = this.scenario;
     try {
-      built = buildBranch(lib, e, this.history, target.file, (st, x) => checkpointInto(st, x, this.checkpointEvery, false));
+      const hook = (st: CheckpointStore, x: Engine) => this.replayHook(tracker, trackerAt)(st, x);
+      built = buildBranch(lib, e, this.history, target.file, hook, (from, start) => {
+        if (!sc) return;
+        // the goals at the shared checkpoint are the same on both timelines; at step 0 they start fresh
+        const at = this.trackerAt.get(from);
+        tracker = at ? at.clone() : new GoalTracker(sc.goals);
+        if (!at) tracker.evaluate(start);
+        trackerAt = this.trackerMapUpTo(from);
+        trackerAt.set(from, tracker.clone());
+      });
     } catch (err) {
       return this.error("branch.switch", "E_REPLAY", String(err));
     }
@@ -627,7 +733,13 @@ export class Runtime {
     this.annotations = structuredClone(target.file.annotations ?? []);
     this.lastSwitchFrom = built.fromStep;
     this.history = built.store;
+    if (sc) {
+      this.tracker = tracker;
+      this.trackerAt = trackerAt;
+      this.scenarioDirty = true;
+    }
     this.install(built.engine);
+    this.submitDueEvents();
     this.historyDirty = true;
     this.timelineDirty = true;
     this.host.post({ kind: "rewound", step: built.engine.stepIndex, t: built.engine.t, previous });
@@ -661,23 +773,47 @@ export class Runtime {
     this.afterChange();
   }
 
-  private importSession(file: SessionFile): void {
+  private async importSession(file: SessionFile, scenarioFile: unknown): Promise<void> {
     const e = this.eng;
     const lib = this.lib;
     if (!e || !lib) return this.error("session.import", "E_NO_LIBRARY", "nothing is loaded");
     // Build the new state first; nothing changes unless the whole replay succeeds.
     const store = new CheckpointStore(this.options.maxCheckpoints);
     let ne: Engine;
+    let prepared: PreparedScenario | null = null;
+    let tracker: GoalTracker | null = null;
+    const trackerAt = new Map<number, GoalTracker>();
     try {
       const f = checkSessionFile(file, lib);
       const s = f.session;
+      if (f.scenario) {
+        // a version 3 session runs a scenario: the same scenario file must come with it
+        if (scenarioFile === undefined) throw new Error(`the session runs scenario ${f.scenario.id}; import it with that scenario`);
+        prepared = await prepareScenario(scenarioFile, lib);
+        if (prepared.file.id !== f.scenario.id || prepared.digest !== f.scenario.digest) {
+          throw new Error(`the scenario ${prepared.file.id} does not match the session's (${f.scenario.id}, digest ${f.scenario.digest.slice(0, 12)})`);
+        }
+        if (prepared.outerDt !== s.pins.config.outerDt) throw new Error("the session's outer step is not the scenario's");
+      }
       ne = new Engine(lib, s.init, s.seed, s.pins.config);
       if (isCoarse(ne.config.outerDt) && (ne.mode === "pulse" || s.commands.some((c: any) => isPulseCommand(c.cmd ?? {})))) {
         throw new Error("a coarse session (outer step longer than 10 ms) cannot hold pulse mode or rod firing");
       }
       const every = everySteps(this.options.checkpointEveryS, ne.config.outerDt);
       checkpointInto(store, ne, every, true);
-      replayCommands(ne, s.commands, f.endStep, (x) => checkpointInto(store, x, every, false));
+      if (prepared) {
+        tracker = new GoalTracker(prepared.goals);
+        tracker.evaluate(ne);
+        trackerAt.set(0, tracker.clone());
+      }
+      const t = tracker;
+      replayCommands(ne, s.commands, f.endStep, (x) => {
+        const added = checkpointInto(store, x, every, false);
+        if (t) {
+          t.evaluate(x);
+          if (added) trackerAt.set(x.stepIndex, t.clone());
+        }
+      });
     } catch (err) {
       return this.error("session.import", "E_SESSION", String(err));
     }
@@ -692,7 +828,12 @@ export class Runtime {
     this.nextAnnotationId = Math.max(this.nextAnnotationId, ...this.annotations.map((a) => a.id + 1));
     this.timelineDirty = true;
     this.history = store;
+    this.scenario = prepared;
+    this.tracker = tracker;
+    this.trackerAt = trackerAt;
+    this.scenarioDirty = true;
     this.install(ne);
+    this.submitDueEvents();
     this.historyDirty = true;
     this.host.post({ kind: "rewound", step: ne.stepIndex, t: ne.t, previous });
     this.afterChange();
@@ -713,6 +854,10 @@ export class Runtime {
       this.timelineDirty = false;
       this.host.post(this.timelineMessage());
     }
+    if (this.scenarioDirty) {
+      this.scenarioDirty = false;
+      this.host.post(this.scenarioMessage());
+    }
   }
 
   private flushEvents(): void {
@@ -723,6 +868,7 @@ export class Runtime {
     this.host.post({ kind: "events", events: batch });
     const marks = marksFrom(batch, e.commandLog);
     if (marks.length > 0) this.marks.push(...marks);
+    if (this.scenario && marks.some((m) => m.kind === "trip")) this.scenarioDirty = true; // the score counts trips
     // a new mark, or a command that changes the current branch's command count in the compare table
     if (marks.length > 0 || batch.some((ev) => ev.type === "command")) this.timelineDirty = true;
     for (const ev of batch) {
@@ -782,6 +928,39 @@ export class Runtime {
       if (before === undefined || Math.abs(r.position - before) > this.options.shapeRodTol) return true;
     }
     return false;
+  }
+
+  private scenarioMessage(): Extract<FromWorker, { kind: "scenario" }> {
+    const sc = this.scenario;
+    const tr = this.tracker;
+    if (!sc || !tr) return { kind: "scenario", scenario: null };
+    const goals = tr.view();
+    const expected = new Set(["manual", ...(sc.file.expectTrips ?? [])]);
+    const trips = this.marks.filter((m) => m.kind === "trip" && !expected.has(m.label.slice("trip ".length))).length;
+    const view: ScenarioView = {
+      id: sc.file.id,
+      title: sc.file.title,
+      brief: sc.file.brief ?? "",
+      hints: [...(sc.file.hints ?? [])],
+      allow: [...sc.file.controls.allow],
+      faultsVisible: sc.file.faultsVisible === true,
+      outerDt: sc.outerDt,
+      goals,
+      events: sc.events.map((ev) => ({ step: ev.step, t: ev.step * sc.outerDt, note: ev.note })),
+      score: {
+        met: goals.filter((g) => g.status === "met").length,
+        failed: goals.filter((g) => g.status === "failed").length,
+        total: goals.length,
+        trips,
+      },
+      done: tr.done(),
+    };
+    return { kind: "scenario", scenario: view };
+  }
+
+  /** The running scenario, for tests. */
+  get scenarioState(): { prepared: PreparedScenario; goals: ReturnType<GoalTracker["view"]> } | null {
+    return this.scenario && this.tracker ? { prepared: this.scenario, goals: this.tracker.view() } : null;
   }
 
   private timelineMessage(): Extract<FromWorker, { kind: "timeline" }> {
