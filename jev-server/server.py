@@ -55,6 +55,12 @@ async def lifespan(app: FastAPI):
         if mica_root not in sys.path:
             sys.path.append(mica_root)
         
+        # ggml-cuda.dll needs the CUDA 12 runtime DLLs; without them the CUDA backend silently fails to load
+        # and Mica runs on the CPU. They are looked up in <runtime>/cuda (see Mica-v0.1-4B/runtime/cuda).
+        cuda_dir = os.path.join(mica_root, "runtime", "cuda")
+        if os.path.isdir(cuda_dir):
+            os.environ["PATH"] = cuda_dir + os.pathsep + os.environ.get("PATH", "")
+            logger.info(f"CUDA runtime DLLs on PATH: {cuda_dir}")
         try:
             from mica.direct_backend import DirectJudge
             
