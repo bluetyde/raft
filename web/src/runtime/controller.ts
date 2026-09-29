@@ -1,7 +1,8 @@
 export class DeterministicPID {
-  private kp: number = 0.5;
-  private ki: number = 0.05;
-  private kd: number = 0.1;
+  // Error is in decades of power (log10 target - log10 current), so gains work from mW to kW.
+  private kp: number = 1;
+  private ki: number = 0.02;
+  private kd: number = 0.5;
 
   private integral: number = 0;
   private previousError: number = 0;
@@ -51,7 +52,7 @@ export class DeterministicPID {
       return this.getRelayOutput(this.lastOutput);
     }
 
-    const error = this.target - current;
+    const error = Math.log10(Math.max(this.target, 1e-12)) - Math.log10(Math.max(current, 1e-12));
 
     // Actuator-Aware Anti-Windup: Conditional integration
     // Only inhibit integral growth if we are saturated AND the error is pushing us
@@ -79,8 +80,8 @@ export class DeterministicPID {
    * Distinct entry and release deadband thresholds.
    */
   private getRelayOutput(output: number): "in" | "out" | "stop" {
-    const ENTRY_THRESHOLD = 0.5;
-    const RELEASE_THRESHOLD = 0.2;
+    const ENTRY_THRESHOLD = 0.05; // ~12% of target power
+    const RELEASE_THRESHOLD = 0.02;
 
     if (this.relayState === "stop") {
       if (output > ENTRY_THRESHOLD) this.relayState = "out";

@@ -1059,6 +1059,7 @@ export class Runtime {
         candidates: candidates.map(c => ({ id: c.id, text: c.text }))
       };
       
+      this.supervisor.expect(req);
       this.host.post({ kind: "decision_request", request: req });
     }
   }

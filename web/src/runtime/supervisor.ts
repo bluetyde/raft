@@ -1,4 +1,4 @@
-import type { DecisionResponse } from "./protocol";
+import type { DecisionRequest, DecisionResponse } from "./protocol";
 
 export type SupervisorMode = "DISABLED" | "TRACKING" | "TRIPPED" | "UNAVAILABLE";
 export type Intent = "HOLD_TARGET" | "REDUCE_TARGET" | "REQUEST_SCRAM" | "STOP_MOTION";
@@ -23,6 +23,8 @@ export class Supervisor {
   private maxSimAgeS: number = 1.0;
 
   public pendingRequest: boolean = false;
+  /** Identity of the one request in flight; a reply must match all of it. */
+  private pendingIdentity: { sessionId: string; temporalEpoch: number; connectionId: string; requestId: string; observationStep: number } | null = null;
   
   public temporalEpoch: number = 0;
 
@@ -80,9 +82,24 @@ export class Supervisor {
     return false;
   }
 
+  /** Record the identity of the request just sent. */
+  public expect(req: DecisionRequest): void {
+    const { sessionId, temporalEpoch, connectionId, requestId, observationStep } = req;
+    this.pendingIdentity = { sessionId, temporalEpoch, connectionId, requestId, observationStep };
+  }
+
   public resolveDecision(response: DecisionResponse): Candidate | null {
+    const id = this.pendingIdentity;
+    // A reply that is not for the request in flight is dropped and leaves that request pending.
+    if (!id || !this.pendingRequest) return null;
+    if (response.requestId !== id.requestId || response.sessionId !== id.sessionId || response.connectionId !== id.connectionId ||
+        response.temporalEpoch !== id.temporalEpoch || response.observationStep !== id.observationStep ||
+        response.temporalEpoch !== this.temporalEpoch) {
+      return null;
+    }
     this.pendingRequest = false;
-    
+    this.pendingIdentity = null;
+
     if (response.status === "error" || !response.candidateId) {
       return null;
     }
