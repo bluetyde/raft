@@ -29,7 +29,7 @@ class PIDController {
     this.target = null;
   }
 
-  public update(current: number, t: number): string | null {
+  public update(current: number, t: number, rodPosition: number): string | null {
     if (this.target === null) return null;
     if (this.lastT === null) {
       this.lastT = t;
@@ -45,8 +45,12 @@ class PIDController {
     const logCurrent = Math.log10(Math.max(current, 1e-6));
     const error = logTarget - logCurrent;
     
-    this.integral += error * dt;
-    this.integral = Math.max(-10, Math.min(10, this.integral)); // Anti-windup
+    const isSaturatedHigh = rodPosition >= 0.99;
+    const isSaturatedLow = rodPosition <= 0.01;
+    if (!(isSaturatedHigh && error > 0) && !(isSaturatedLow && error < 0)) {
+      this.integral += error * dt;
+      this.integral = Math.max(-10, Math.min(10, this.integral)); // Anti-windup
+    }
     
     const derivative = (error - this.prevError) / dt;
     this.prevError = error;
@@ -92,21 +96,26 @@ export class JevCopilot {
   }
 
   private connect(): void {
-    this.ws = new WebSocket(`ws://localhost:8000/ws/${this.role}`);
-    this.ws.onopen = () => {
+    const ws = new WebSocket(`ws://localhost:8000/ws/${this.role}`);
+    this.ws = ws;
+    ws.onopen = () => {
+      if (this.ws !== ws) return;
       console.log(`[JevCopilot] Connected as ${this.role}`);
       this.enabled = true;
       this.inferenceInFlight = false;
     };
-    this.ws.onmessage = (event) => {
+    ws.onmessage = (event) => {
+      if (this.ws !== ws) return;
       this.handleMessage(event.data);
     };
-    this.ws.onclose = () => {
+    ws.onclose = () => {
+      if (this.ws !== ws) return;
       console.log("[JevCopilot] Disconnected");
       this.ws = null;
       this.cleanup();
     };
-    this.ws.onerror = (err) => {
+    ws.onerror = (err) => {
+      if (this.ws !== ws) return;
       console.error("[JevCopilot] WebSocket error:", err);
       this.ws = null;
       this.cleanup();
@@ -137,7 +146,28 @@ export class JevCopilot {
   public onSnapshot(snapMsg: Extract<FromWorker, { kind: "snapshot" }>, scenarioState?: any): void {
     if (!this.enabled || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
     const s = snapMsg.snapshot;
-    this.currentT = s.t ?? 0;
+    
+    // Rewind protection
+    if (s.t !== undefined && s.t < this.currentT) {
+      console.log(`[JevCopilot] Rewind detected. Resetting state.`);
+      this.cleanup();
+      this.currentT = s.t;
+      // We should return here so we don't act on the first frame of a rewind with old state
+      return;
+    } else {
+      this.currentT = s.t ?? 0;
+    }
+    
+    // Timeout handling
+    if (this.inferenceInFlight && this.inferenceT !== null && this.currentT - this.inferenceT > 5.0) {
+      console.warn(`[JevCopilot] Inference timed out after ${(this.currentT - this.inferenceT).toFixed(2)}s`);
+      this.inferenceInFlight = false;
+      this.inferenceT = null;
+      if (this.role === "operator") {
+        this.client.command({ type: "rod.move", rod: "regulating", direction: "stop" }, undefined, this.role);
+        // Note: we let the PID keep running if it was already holding target
+      }
+    }
 
     let premise = "";
     let hypotheses: string[] = [];
@@ -160,7 +190,7 @@ export class JevCopilot {
       
       // Execute fast Reflex PID Loop (30Hz)
       if (this.pid.isEnabled()) {
-        let pidCmd = this.pid.update(power, t);
+        let pidCmd = this.pid.update(power, t, this.rodPositions["regulating"] ?? 1);
         if (pidCmd !== null) {
           if (pidCmd === "out" && (this.rodPositions["regulating"] ?? 1) >= 0.99) pidCmd = "stop";
           if (pidCmd === "in" && (this.rodPositions["regulating"] ?? 1) <= 0.01) pidCmd = "stop";
@@ -201,13 +231,13 @@ export class JevCopilot {
       else if (isStable)  phaseDesc = `Power is ${power.toExponential(3)} W. Period is ${period.toFixed(1)} s — reactor is stable or falling.`;
       else                phaseDesc = `Power is ${power.toExponential(3)} W. Period is ${period.toFixed(1)} s.`;
 
-      premise = `ROLE: Nuclear Reactor Operator. GOAL: Bring the reactor to operating power, maintain safe power levels, avoid SCRAMs. CURRENT STATE: ${phaseDesc} Rod positions — ${rodDesc}. Fuel Temperature is ${fuelTemp.toFixed(1)} °C.`;
+      premise = `ROLE: Nuclear Reactor Operator. GOAL: Safely control power levels and avoid SCRAMs. MODE: ${this.pid.isEnabled() ? 'Auto (PID)' : 'Manual'}. CURRENT STATE: ${phaseDesc} Rod positions — ${rodDesc}. Fuel Temperature is ${fuelTemp.toFixed(1)} °C.`;
 
       hypotheses = [
-        "The reactor needs more reactivity. I will pull ONE control rod UP to raise power.",
-        "Power is rising safely. I will STOP the control rods and monitor until stable.",
-        "Power is rising too fast or the period is dangerously short. I will push the regulating rod DOWN.",
-        "The reactor is out of control. I will trigger a manual SCRAM immediately.",
+        "I will HOLD TARGET to engage the automatic PID controller at current power.",
+        "I will STOP MOTION to arrest manual rod movement and observe.",
+        "I will REDUCE POWER to push the regulating rod DOWN.",
+        "The reactor is out of control. I will trigger a manual SCRAM immediately."
       ];
     } else {
       // Instructor
@@ -258,18 +288,17 @@ export class JevCopilot {
       const desiredMoving: Record<string, string | null> = { shim: null, safety: null, regulating: null };
       let updatePid = false;
 
-      if (choice.includes("pull ONE control rod UP")) {
-        this.pid.disable();
-        const AT_LIMIT = 0.99;
-        if ((this.rodPositions["shim"] ?? 1) < AT_LIMIT) desiredMoving["shim"] = "out";
-        else if ((this.rodPositions["safety"] ?? 1) < AT_LIMIT) desiredMoving["safety"] = "out";
-        else if ((this.rodPositions["regulating"] ?? 1) < AT_LIMIT) desiredMoving["regulating"] = "out";
-      } else if (choice.includes("push the regulating rod DOWN")) {
-        this.pid.disable();
-        desiredMoving["regulating"] = "in";
-      } else if (choice.includes("STOP the control rods")) {
+      if (choice.includes("HOLD TARGET")) {
         // Let the PID handle holding the current power with the regulating rod
         updatePid = true;
+      } else if (choice.includes("REDUCE POWER")) {
+        this.pid.disable();
+        desiredMoving["regulating"] = "in";
+      } else if (choice.includes("STOP MOTION")) {
+        this.pid.disable();
+        desiredMoving["shim"] = "stop";
+        desiredMoving["safety"] = "stop";
+        desiredMoving["regulating"] = "stop";
       } else if (choice.includes("manual SCRAM")) {
         this.pid.disable();
         this.client.command({ type: "scram" }, undefined, this.role);

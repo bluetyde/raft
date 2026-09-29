@@ -29,7 +29,7 @@ describe('JevCopilot PID Loop', () => {
 
     // 2. Trigger the choice that engages PID
     // Private method access workaround
-    (copilot as any).executeChoice("Power is rising safely. I will STOP the control rods and monitor until stable.");
+    (copilot as any).executeChoice("I will HOLD TARGET to engage the automatic PID controller at current power.");
 
     expect((copilot as any).pid.isEnabled()).toBe(true);
 
