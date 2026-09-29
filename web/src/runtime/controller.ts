@@ -22,6 +22,13 @@ export class DeterministicPID {
     this.relayState = "stop";
   }
 
+  /** Approve a new target. The integral restarts; the relay state stays so the rod does not jerk. */
+  public setTarget(target: number): void {
+    this.target = target;
+    this.integral = 0;
+    this.previousError = 0;
+  }
+
   public enable(initialTarget: number): void {
     this.enabled = true;
     this.target = initialTarget;

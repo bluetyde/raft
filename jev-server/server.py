@@ -154,8 +154,16 @@ def evaluate_hypotheses(premise: str, candidates: list[dict]) -> str:
     else:
         return evaluate_deberta(premise, candidates)
 
+@app.websocket("/jev")
+async def jev_endpoint(websocket: WebSocket):
+    """The route the browser copilot connects to; the role travels in each request."""
+    await serve(websocket, "jev")
+
 @app.websocket("/ws/{role}")
 async def websocket_endpoint(websocket: WebSocket, role: str):
+    await serve(websocket, role)
+
+async def serve(websocket: WebSocket, role: str):
     await websocket.accept()
     logger.info(f"Client connected as {role}")
     if args.shadow:
@@ -212,15 +220,11 @@ async def websocket_endpoint(websocket: WebSocket, role: str):
                     "connectionId": conn_id,
                     "requestId": req_id,
                     "observationStep": obs_step,
-                    "status": "ok",
+                    "status": "shadow" if args.shadow else "ok",
+                    "candidateId": best_candidate_id,
                     "inferenceDurationMs": latency_ms
                 }
-                
-                if args.shadow:
-                    # In shadow mode, we return status OK but no candidateId
-                    pass
-                else:
-                    response["candidateId"] = best_candidate_id
+                # A shadow reply completes the request; the runtime ignores its choice.
                     
                 await websocket.send_json(response)
             except Exception as e:

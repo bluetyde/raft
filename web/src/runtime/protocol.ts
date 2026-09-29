@@ -242,7 +242,7 @@ export interface DecisionRequest {
   requestId: string;
   observationStep: number;
   observationSimTimeS: number;
-  role: 'operator';
+  role: 'operator' | 'instructor';
   premise: string;
   candidates: Array<{ id: string; text: string }>;
 }
@@ -255,7 +255,7 @@ export interface DecisionResponse {
   connectionId: string;
   requestId: string;
   observationStep: number;
-  status: 'ok' | 'error';
+  status: 'ok' | 'error' | 'shadow';
   candidateId?: string;
   errorCode?: string;
   inferenceDurationMs?: number;

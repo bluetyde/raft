@@ -10,55 +10,94 @@ export interface Candidate {
   targetValue?: number;
 }
 
+/** A lowered target is this fraction of the approved one, and never below the floor (W). */
+export const REDUCE_FACTOR = 0.5;
+export const TARGET_FLOOR_W = 1e-6;
+
+interface Identity {
+  sessionId: string;
+  temporalEpoch: number;
+  connectionId: string;
+  requestId: string;
+  observationStep: number;
+}
+
 export class Supervisor {
   public mode: SupervisorMode = "DISABLED";
+  /** The window that turned supervision on; only it may answer, and requests go only to it. */
+  public ownerPort: string | null = null;
   private activeCandidates: Map<string, Candidate> = new Map();
 
   // Deadlines
   private lastObservationWallMs: number = 0;
   private lastObservationSimS: number = 0;
-  
+
   // Configured limits
-  private maxWallAgeMs: number = 2000; 
+  public readonly maxWallAgeMs: number = 2000;
   private maxSimAgeS: number = 1.0;
 
   public pendingRequest: boolean = false;
   /** Identity of the one request in flight; a reply must match all of it. */
-  private pendingIdentity: { sessionId: string; temporalEpoch: number; connectionId: string; requestId: string; observationStep: number } | null = null;
-  
+  private pendingIdentity: Identity | null = null;
+
   public temporalEpoch: number = 0;
 
-  public enableTracking(): void {
+  /** `now` is the host's wall clock, so tests and replay control the deadlines. */
+  constructor(private readonly now: () => number = () => performance.now()) {}
+
+  public enableTracking(port: string): void {
     if (this.mode !== "TRIPPED" && this.mode !== "UNAVAILABLE") {
       this.mode = "TRACKING";
+      this.ownerPort = port;
     }
   }
 
   public trip(): void {
     this.mode = "TRIPPED";
+    this.invalidate();
   }
 
   public disable(): void {
     this.mode = "DISABLED";
+    this.ownerPort = null;
+    this.invalidate();
+  }
+
+  /** Forget the request in flight and its candidates, so no late reply can act. */
+  public invalidate(): void {
+    this.pendingRequest = false;
+    this.pendingIdentity = null;
+    this.activeCandidates.clear();
   }
 
   public isTracking(): boolean {
     return this.mode === "TRACKING";
   }
 
-  public dispatchObservation(simTimeS: number): Candidate[] {
+  /** Build the candidates for one request. `target` is the controller's approved target (W), or null when it is not armed. */
+  public dispatchObservation(simTimeS: number, target: number | null): Candidate[] {
     this.lastObservationSimS = simTimeS;
-    this.lastObservationWallMs = performance.now();
+    this.lastObservationWallMs = this.now();
     this.pendingRequest = true;
 
     this.activeCandidates.clear();
-    
-    // Generate valid candidates. AI never invents a target.
-    const candidates: Candidate[] = [
-      { id: "hold", text: "I will HOLD TARGET to engage the automatic PID controller at current power.", intent: "HOLD_TARGET" },
-      { id: "reduce", text: "I will REDUCE POWER to push the regulating rod DOWN.", intent: "REDUCE_TARGET" }, // Typically we'd generate a specific target value
-      { id: "scram", text: "The reactor is out of control. I will trigger a manual SCRAM immediately.", intent: "REQUEST_SCRAM" }
-    ];
+
+    // The AI picks among candidates the runtime validated; it never invents a target.
+    const candidates: Candidate[] = [];
+    if (target !== null) {
+      candidates.push({ id: "hold", text: "I will HOLD TARGET and keep the automatic controller at the current power.", intent: "HOLD_TARGET" });
+      const lower = target * REDUCE_FACTOR;
+      if (lower >= TARGET_FLOOR_W) {
+        candidates.push({
+          id: "reduce",
+          text: `I will LOWER THE TARGET power to ${lower.toExponential(2)} W and let the controller bring power down safely.`,
+          intent: "REDUCE_TARGET",
+          targetValue: lower,
+        });
+      }
+    }
+    candidates.push({ id: "stop", text: "I will STOP all rod motion and monitor.", intent: "STOP_MOTION" });
+    candidates.push({ id: "scram", text: "The reactor is out of control. I will trigger a manual SCRAM immediately.", intent: "REQUEST_SCRAM" });
 
     for (const c of candidates) {
       this.activeCandidates.set(c.id, c);
@@ -67,48 +106,54 @@ export class Supervisor {
     return candidates;
   }
 
-  /**
-   * Checks deadlines. Returns true if supervision is lost.
-   */
-  public checkDeadlines(currentSimTimeS: number): boolean {
-    if (!this.isTracking() || !this.pendingRequest) return false;
-
-    const wallAge = performance.now() - this.lastObservationWallMs;
-    const simAge = currentSimTimeS - this.lastObservationSimS;
-
-    if (wallAge > this.maxWallAgeMs || simAge > this.maxSimAgeS) {
-      return true; // Supervision lost
-    }
-    return false;
-  }
-
   /** Record the identity of the request just sent. */
   public expect(req: DecisionRequest): void {
     const { sessionId, temporalEpoch, connectionId, requestId, observationStep } = req;
     this.pendingIdentity = { sessionId, temporalEpoch, connectionId, requestId, observationStep };
   }
 
+  /** True while `requestId` is the request in flight. */
+  public isPending(requestId: string): boolean {
+    return this.pendingRequest && this.pendingIdentity?.requestId === requestId;
+  }
+
+  /** True when the request in flight has waited longer than the wall limit. */
+  public wallExpired(): boolean {
+    return this.pendingRequest && this.now() - this.lastObservationWallMs > this.maxWallAgeMs;
+  }
+
+  /** Checks deadlines. Returns true if supervision is lost. */
+  public checkDeadlines(currentSimTimeS: number): boolean {
+    if (!this.isTracking() || !this.pendingRequest) return false;
+    return this.wallExpired() || currentSimTimeS - this.lastObservationSimS > this.maxSimAgeS;
+  }
+
+  /**
+   * Match a reply to the request in flight. A reply for anything else is dropped and leaves that request
+   * pending. A matching error or shadow reply completes the request but chooses nothing.
+   */
   public resolveDecision(response: DecisionResponse): Candidate | null {
     const id = this.pendingIdentity;
-    // A reply that is not for the request in flight is dropped and leaves that request pending.
-    if (!id || !this.pendingRequest) return null;
-    if (response.requestId !== id.requestId || response.sessionId !== id.sessionId || response.connectionId !== id.connectionId ||
-        response.temporalEpoch !== id.temporalEpoch || response.observationStep !== id.observationStep ||
-        response.temporalEpoch !== this.temporalEpoch) {
+    if (!id || !this.pendingRequest || this.mode !== "TRACKING") return null;
+    if (
+      response.requestId !== id.requestId ||
+      response.sessionId !== id.sessionId ||
+      response.connectionId !== id.connectionId ||
+      response.temporalEpoch !== id.temporalEpoch ||
+      response.observationStep !== id.observationStep ||
+      response.temporalEpoch !== this.temporalEpoch
+    ) {
       return null;
     }
     this.pendingRequest = false;
     this.pendingIdentity = null;
 
-    if (response.status === "error" || !response.candidateId) {
+    if (response.status !== "ok" || !response.candidateId) {
+      this.activeCandidates.clear();
       return null;
     }
-
-    const candidate = this.activeCandidates.get(response.candidateId);
-    if (!candidate) {
-      return null; // Unknown or invalid ID
-    }
-
+    const candidate = this.activeCandidates.get(response.candidateId) ?? null;
+    this.activeCandidates.clear();
     return candidate;
   }
 }

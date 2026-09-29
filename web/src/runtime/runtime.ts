@@ -89,7 +89,7 @@ function cachingReader(inner: LibraryReader): LibraryReader {
   };
 }
 
-import { Supervisor } from "./supervisor";
+import { Supervisor, TARGET_FLOOR_W } from "./supervisor";
 import { DeterministicPID } from "./controller";
 
 /** True for the commands that a coarse session refuses: pulse mode and rod firing (M6 amendment 1). */
@@ -138,7 +138,7 @@ export class Runtime {
   private lib: Library | null = null;
   private eng: Engine | null = null;
 
-  private supervisor: Supervisor = new Supervisor();
+  private supervisor: Supervisor;
   private controller: DeterministicPID = new DeterministicPID();
 
   private paused = true;
@@ -191,6 +191,7 @@ export class Runtime {
   ) {
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.history = new CheckpointStore(this.options.maxCheckpoints);
+    this.supervisor = new Supervisor(() => this.host.now());
     this.ports.set(MAIN_PORT, new Port(MAIN_PORT, "full"));
   }
 
@@ -264,17 +265,22 @@ export class Runtime {
       case "annotation.delete":
         return this.deleteAnnotation(msg.id);
       case "decision_response":
+        // only the window that turned supervision on may answer
+        if (from !== this.supervisor.ownerPort) return;
         return this.handleDecisionResponse(msg.response);
       case "branch.switch":
         return this.switchBranch(msg.id);
       case "scenario.end":
         return this.endScenario();
-      case "supervisor.enable":
-        this.supervisor.enableTracking();
+      case "supervisor.enable": {
+        this.supervisor.enableTracking(from);
+        // Turning supervision on is the operator's explicit approval to hold the power as it is now.
+        const power = this.eng?.snapshot(false).indicated?.["log"] ?? this.eng?.snapshot(false).truth?.power ?? 0;
+        if (this.supervisor.ownerPort === from && !this.controller.enabled && power > TARGET_FLOOR_W) this.controller.enable(power);
         return;
+      }
       case "supervisor.disable":
-        this.supervisor.disable();
-        this.controller.disable();
+        if (this.supervisor.ownerPort === null || from === this.supervisor.ownerPort) this.stopSupervision();
         return;
       default:
         this.error((msg as { kind: string }).kind as ToWorker["kind"], "E_UNKNOWN_MESSAGE", "unknown message kind");
@@ -286,16 +292,12 @@ export class Runtime {
     if (!candidate) return; // Invalid, ignored, or error
 
     if (candidate.intent === "HOLD_TARGET") {
-      this.controller.enable(this.eng!.snapshot(false).indicated?.["log"] ?? 0);
+      // Keep the approved target and its history. A reply never arms or moves the target.
     } else if (candidate.intent === "REDUCE_TARGET") {
-      // For now, if we don't have a specific targetValue, we just insert manually.
-      // Wait, REDUCE_TARGET intent must provide a lower target candidate.
-      if (candidate.targetValue !== undefined && this.controller.target !== null && candidate.targetValue < this.controller.target) {
-        this.controller.target = candidate.targetValue;
-      } else {
-        // Fallback if targetValue is undefined
-        this.controller.disable();
-        this.eng!.submit({ type: "rod.move", rod: "regulating", direction: "in" }, "supervisor");
+      // Track a lower validated target; there is no raw rod insertion.
+      if (this.controller.enabled && this.controller.target !== null && candidate.targetValue !== undefined &&
+          candidate.targetValue < this.controller.target && candidate.targetValue >= TARGET_FLOOR_W) {
+        this.controller.setTarget(candidate.targetValue);
       }
     } else if (candidate.intent === "REQUEST_SCRAM") {
       this.controller.disable();
@@ -558,12 +560,8 @@ export class Runtime {
     
     // Check Supervisor Deadlines
     if (this.supervisor.checkDeadlines(e.t)) {
-      this.supervisor.disable();
-      this.controller.disable();
+      this.stopSupervision();
       this.pauseFor("solver", "Loss of AI supervision (timeout)"); // Suspend simulation
-      
-      // Reconcile and halt any owned motion
-      e.submit({ type: "rod.move", rod: "regulating", direction: "stop" }, "supervisor");
       return false; // Clock stops
     }
 
@@ -663,6 +661,15 @@ export class Runtime {
         }
       }
     }
+  }
+
+  /** Supervision off: forget the request, disarm the controller and stop the rod it may be moving. */
+  private stopSupervision(): void {
+    this.supervisor.disable();
+    if (this.controller.enabled && this.eng) {
+      this.eng.submit({ type: "rod.move", rod: "regulating", direction: "stop" }, "supervisor");
+    }
+    this.controller.disable();
   }
 
   private pauseFor(limit: ClockLimit, reason: string): void {
@@ -1045,7 +1052,7 @@ export class Runtime {
 
       const premise = `ROLE: Nuclear Reactor Operator. GOAL: Safely control power levels and execute necessary protective actions. MODE: Auto (PID). CURRENT STATE: ${phaseDesc} Rod positions — ${rodDesc}. Fuel Temperature is ${fuelTemp.toFixed(1)} °C.`;
 
-      const candidates = this.supervisor.dispatchObservation(e.t);
+      const candidates = this.supervisor.dispatchObservation(e.t, this.controller.enabled ? this.controller.target : null);
       const req: import("./protocol").DecisionRequest = {
         protocolVersion: 1,
         sessionId: "runtime-session", // We can improve this with real IDs later
@@ -1060,7 +1067,15 @@ export class Runtime {
       };
       
       this.supervisor.expect(req);
-      this.host.post({ kind: "decision_request", request: req });
+      this.host.post({ kind: "decision_request", request: req }, undefined, this.supervisor.ownerPort ?? undefined);
+      // The wall deadline runs on its own timer, so it holds while the clock is paused too.
+      this.host.schedule(() => {
+        this.inbox = this.inbox.then(() => {
+          if (!this.supervisor.isPending(req.requestId) || !this.supervisor.wallExpired()) return;
+          this.stopSupervision();
+          this.pauseFor("solver", "Loss of AI supervision (timeout)");
+        });
+      }, this.supervisor.maxWallAgeMs + 1);
     }
   }
 
