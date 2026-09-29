@@ -41,8 +41,8 @@ export class Supervisor {
   private lastObservationSimS: number = 0;
 
   // Configured limits
-  public readonly maxWallAgeMs: number = 2000;
-  private maxSimAgeS: number = 1.0;
+  public readonly maxWallAgeMs: number;
+  private maxSimAgeS: number;
 
   public pendingRequest: boolean = false;
   /** Identity of the one request in flight; a reply must match all of it. */
@@ -51,7 +51,13 @@ export class Supervisor {
   public temporalEpoch: number = 0;
 
   /** `now` is the host's wall clock, so tests and replay control the deadlines. */
-  constructor(private readonly now: () => number = () => performance.now()) {}
+  constructor(
+    private readonly now: () => number = () => performance.now(),
+    limits: { maxWallAgeMs?: number; maxSimAgeS?: number } = {},
+  ) {
+    this.maxWallAgeMs = limits.maxWallAgeMs ?? 2000;
+    this.maxSimAgeS = limits.maxSimAgeS ?? 1.0;
+  }
 
   public enableTracking(port: string): void {
     if (this.mode !== "TRIPPED" && this.mode !== "UNAVAILABLE") {
@@ -82,8 +88,8 @@ export class Supervisor {
     return this.mode === "TRACKING";
   }
 
-  /** Build the candidates for one request. `target` is the controller's approved target (W), or null when it is not armed; `raiseTo` is the validated higher target, or null when a raise is not allowed. */
-  public dispatchObservation(simTimeS: number, target: number | null, raiseTo: number | null = null): Candidate[] {
+  /** Build the candidates for one request. `target` is the controller's approved target (W), or null when it is not armed; `raiseTo` is the validated higher target, or null when a raise is not allowed; `allowScram` is true only when the runtime sees danger. */
+  public dispatchObservation(simTimeS: number, target: number | null, raiseTo: number | null = null, allowScram: boolean = false): Candidate[] {
     this.lastObservationSimS = simTimeS;
     this.lastObservationWallMs = this.now();
     this.pendingRequest = true;
@@ -113,7 +119,10 @@ export class Supervisor {
       }
     }
     candidates.push({ id: "stop", text: "I will STOP all rod motion and monitor.", intent: "STOP_MOTION" });
-    candidates.push({ id: "scram", text: "The reactor is out of control. I will trigger a manual SCRAM immediately.", intent: "REQUEST_SCRAM" });
+    // A SCRAM is offered only in a real emergency (the runtime decides); the protection system trips on its own regardless.
+    if (allowScram) {
+      candidates.push({ id: "scram", text: "The reactor is out of control. I will trigger a manual SCRAM immediately.", intent: "REQUEST_SCRAM" });
+    }
 
     for (const c of candidates) {
       this.activeCandidates.set(c.id, c);

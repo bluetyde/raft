@@ -73,7 +73,14 @@ async def lifespan(app: FastAPI):
                 n_gpu_layers=99,
                 n_ctx=4096
             )
-            logger.info("Mica loaded successfully.")
+            # The first prefill is slow (kernel and cache setup, seconds); pay for it now, not on the first request.
+            import time
+            t0 = time.time()
+            mica_backend.judge([{
+                "kind": "choice", "state": "warm-up", "question": "Which?",
+                "candidates": [{"id": "0", "text": "a"}, {"id": "1", "text": "b"}],
+            }])
+            logger.info(f"Mica loaded successfully (warm-up {1000 * (time.time() - t0):.0f} ms).")
         except Exception as e:
             logger.error(f"Failed to load Mica: {e}")
 

@@ -8,6 +8,8 @@ const envelope = (r: any, over: Partial<DecisionResponse> = {}): DecisionRespons
   requestId: r.requestId, observationStep: r.observationStep, status: "ok", ...over,
 });
 const scrams = (rig: AgentRig) => rig.cmds("supervisor").some(([, c]) => c.type === "scram");
+/** Make the runtime treat the state as an emergency, so a SCRAM candidate is offered. */
+const offerScram = (rig: AgentRig) => ((rig.rt as any).scramOffered = () => true);
 const reduceText = (rig: AgentRig, i: number) => rig.requests[i]!.candidates.find((c) => c.id === "reduce")?.text;
 
 describe("supervisor loop (headless, stub agent)", () => {
@@ -15,7 +17,7 @@ describe("supervisor loop (headless, stub agent)", () => {
     const rig = await agentRig(() => null);
     await startSupervised(rig);
     await rig.run(500);
-    expect(rig.requests[0]!.candidates.map((c) => c.id)).toEqual(["hold", "raise", "reduce", "stop", "scram"]);
+    expect(rig.requests[0]!.candidates.map((c) => c.id)).toEqual(["hold", "raise", "reduce", "stop"]); // no SCRAM without an emergency
   });
 
   it("HOLD keeps the target and leaves the rod alone at steady power", async () => {
@@ -89,8 +91,17 @@ describe("supervisor loop (headless, stub agent)", () => {
     expect(rig.requests[0]!.candidates.some((x) => x.id === "raise")).toBe(false);
   });
 
+  it("a SCRAM is offered only when the runtime sees danger", async () => {
+    const rig = await agentRig(() => null);
+    await startSupervised(rig);
+    await rig.run(200);
+    expect(rig.requests[0]!.candidates.some((c) => c.id === "scram")).toBe(false);
+    expect(rig.requests[0]!.premise).toContain("There is no emergency.");
+  });
+
   it("SCRAM candidate scrams the reactor", async () => {
     const rig = await agentRig((_r, n) => (n === 0 ? "scram" : null));
+    offerScram(rig);
     await startSupervised(rig);
     await rig.run(500);
     expect(scrams(rig)).toBe(true);
@@ -98,6 +109,7 @@ describe("supervisor loop (headless, stub agent)", () => {
 
   it("a reply for another session/epoch is ignored", async () => {
     const rig = await agentRig((r) => envelope(r, { sessionId: "other", temporalEpoch: r.temporalEpoch + 5, candidateId: "scram" }));
+    offerScram(rig);
     await startSupervised(rig);
     await rig.run(500);
     expect(scrams(rig)).toBe(false);
@@ -105,6 +117,7 @@ describe("supervisor loop (headless, stub agent)", () => {
 
   it("a reply from a window that does not own supervision is ignored", async () => {
     const rig = await agentRig(() => null);
+    offerScram(rig);
     await startSupervised(rig);
     await rig.run(200);
     const r = rig.requests[0]!;
@@ -115,6 +128,7 @@ describe("supervisor loop (headless, stub agent)", () => {
 
   it("shadow and error replies complete the request without acting or timing out", async () => {
     const rig = await agentRig((r, n) => envelope(r, n % 2 ? { status: "error", errorCode: "INTERNAL_ERROR" } : { status: "shadow", candidateId: "scram" }));
+    offerScram(rig);
     await startSupervised(rig);
     await rig.run(6000); // well past the 2 s wall limit
     expect(scrams(rig)).toBe(false);

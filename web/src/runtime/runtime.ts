@@ -62,6 +62,10 @@ export interface RuntimeOptions {
   shapeTempTol: number;
   /** How often the clock message repeats while running. */
   clockReportMs: number;
+  /** How long a decision request may wait for its reply (ms of wall time) before supervision is dropped. */
+  supervisorMaxWallMs: number;
+  /** ... and how much simulation time may pass meanwhile (s). */
+  supervisorMaxSimS: number;
 }
 
 export const DEFAULT_OPTIONS: RuntimeOptions = {
@@ -73,6 +77,8 @@ export const DEFAULT_OPTIONS: RuntimeOptions = {
   shapeRodTol: 1e-3,
   shapeTempTol: 0.5,
   clockReportMs: 1000,
+  supervisorMaxWallMs: 2000,
+  supervisorMaxSimS: 1.0,
 };
 
 /** Reads each path once: loadLibrary validates first and then reads the files again. */
@@ -196,7 +202,7 @@ export class Runtime {
   ) {
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.history = new CheckpointStore(this.options.maxCheckpoints);
-    this.supervisor = new Supervisor(() => this.host.now());
+    this.supervisor = new Supervisor(() => this.host.now(), { maxWallAgeMs: this.options.supervisorMaxWallMs, maxSimAgeS: this.options.supervisorMaxSimS });
     this.ports.set(MAIN_PORT, new Port(MAIN_PORT, "full"));
   }
 
@@ -312,6 +318,12 @@ export class Runtime {
     if (typeof period === "number" && period > 0 && period < RAISE_MIN_PERIOD_S) return null;
     if ((truth?.rods?.["regulating"]?.position ?? 1) >= 0.99) return null;
     return next;
+  }
+
+  /** True when a manual SCRAM should be a choice: a short positive period, or power near the power-high setpoint. */
+  private scramOffered(period: number, power: number, tripValue: unknown): boolean {
+    if (typeof period === "number" && period > 0 && period < 10) return true;
+    return typeof tripValue === "number" && power >= tripValue * RAISE_CEILING_FRACTION;
   }
 
   private handleDecisionResponse(response: import("./protocol").DecisionResponse): void {
@@ -1120,27 +1132,28 @@ export class Runtime {
       const period = snapshot.truth?.period ?? 0;
       const fuelTemp = (snapshot.truth?.fuelTemp ?? 293.15) - 273.15;
       
-      const isShutdown = power < 1e-6;
-      const isDanger   = !isShutdown && period > 0 && period < 10;
-      const isStartup  = !isShutdown && period > 30;
-      const isStable   = !isShutdown && (period < 0 || period > 100);
+      const rods = Object.entries<any>(snapshot.truth?.rods ?? {});
+      const allIn = rods.length > 0 && rods.every(([, r]) => r.position < 0.01);
+      const tripValue = (e.lib.trips as any[]).find((x) => x.id === "power-high")?.predicate?.value;
+      const danger = this.scramOffered(period, power, tripValue);
+      const active: string[] = snapshot.trips?.active ?? [];
+      const latched: string[] = snapshot.trips?.latched ?? [];
 
       let phaseDesc: string;
-      if (isShutdown)     phaseDesc = "The reactor is SHUTDOWN (power is essentially zero).";
-      else if (isDanger)  phaseDesc = `Power is ${power.toExponential(3)} W. Period is dangerously short at ${period.toFixed(1)} s — reactor is accelerating rapidly.`;
-      else if (isStartup) phaseDesc = `Power is ${power.toExponential(3)} W. Period is ${period.toFixed(1)} s — reactor is rising in a controlled startup.`;
-      else if (isStable)  phaseDesc = `Power is ${power.toExponential(3)} W. Period is ${period.toFixed(1)} s — reactor is stable or falling.`;
-      else                phaseDesc = `Power is ${power.toExponential(3)} W. Period is ${period.toFixed(1)} s.`;
-      
-      const rodDesc = [
-        `Shim: ${((snapshot.truth.rods?.shim?.position ?? 1) * 100).toFixed(0)}%`,
-        `Safety: ${((snapshot.truth.rods?.safety?.position ?? 1) * 100).toFixed(0)}%`,
-        `Regulating: ${((snapshot.truth.rods?.regulating?.position ?? 1) * 100).toFixed(0)}%`,
-      ].join(", ");
+      if (allIn && period > 100) phaseDesc = `The reactor is at source-level power, ${power.toExponential(3)} W, steady (period is effectively infinite), with all control rods fully inserted.`;
+      else if (danger)          phaseDesc = `Power is ${power.toExponential(3)} W. The period is dangerously short or power is near the trip setpoint (period ${period.toFixed(1)} s).`;
+      else if (period > 0 && period <= 100) phaseDesc = `Power is ${power.toExponential(3)} W and rising with a period of ${period.toFixed(1)} s.`;
+      else if (period < 0)     phaseDesc = `Power is ${power.toExponential(3)} W and falling (period ${period.toFixed(1)} s).`;
+      else                      phaseDesc = `Power is ${power.toExponential(3)} W and steady.`;
 
-      const premise = `ROLE: Nuclear Reactor Operator. GOAL: Safely control power levels and execute necessary protective actions. MODE: Auto (PID). CURRENT STATE: ${phaseDesc} Rod positions — ${rodDesc}. Fuel Temperature is ${fuelTemp.toFixed(1)} °C.`;
+      const rodDesc = rods.map(([id, r]) => `${id} ${(r.position * 100).toFixed(0)}% withdrawn${r.moving ? ` (moving ${r.moving})` : ""}`).join(", ");
+      const tripDesc = active.length + latched.length === 0 ? "No trips are active." : `Trips: ${[...new Set([...active, ...latched])].join(", ")}.`;
+      const target = this.controller.enabled ? this.controller.target : null;
+      const modeDesc = target !== null ? `The automatic controller is holding ${target.toExponential(2)} W.` : "The automatic controller is off.";
 
-      const candidates = this.supervisor.dispatchObservation(e.t, this.controller.enabled ? this.controller.target : null, this.raiseTarget());
+      const premise = `ROLE: Nuclear Reactor Operator. GOAL: hold power at the approved level and stay safe; a SCRAM is only for a real emergency. CURRENT STATE: ${phaseDesc} ${modeDesc} Control rods � ${rodDesc}. Fuel temperature is ${fuelTemp.toFixed(1)} �C. ${tripDesc}${danger ? "" : " There is no emergency."}`;
+
+      const candidates = this.supervisor.dispatchObservation(e.t, this.controller.enabled ? this.controller.target : null, this.raiseTarget(), danger);
       const req: import("./protocol").DecisionRequest = {
         protocolVersion: 1,
         sessionId: "runtime-session", // We can improve this with real IDs later
