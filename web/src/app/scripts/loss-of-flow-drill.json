@@ -1,0 +1,11 @@
+{
+  "format": "virtual-reactor-instructor-script",
+  "version": 1,
+  "name": "Loss of flow drill",
+  "events": [
+    { "atMinutes": 2, "action": "instrument.stuck", "instrument": "pool-temp", "note": "pool thermometer sticks" },
+    { "atMinutes": 5, "action": "pump.trip", "pump": "primary", "note": "primary pump trips (loss of flow)" },
+    { "atMinutes": 5.5, "action": "instrument.clear", "instrument": "pool-temp", "note": "thermometer recovers" },
+    { "atMinutes": 8, "action": "scram", "note": "instructor scram" }
+  ]
+}

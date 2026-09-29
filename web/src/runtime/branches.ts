@@ -31,11 +31,11 @@ export function marksFrom(events: Record<string, any>[], commandLog: Record<stri
   const out: Mark[] = [];
   for (const e of events) {
     if (e["type"] === "trip") out.push({ kind: "trip", t: e["t"], label: `trip ${e["id"]}` });
-    else if (e["type"] === "command" && e["clientId"] === "scenario") {
+    else if (e["type"] === "command" && (e["clientId"] === "scenario" || e["clientId"] === "script")) {
       // a scripted scenario event (docs/m5-scenarios-design.md, D2a)
       const cmd = bySeq.get(e["seq"]) ?? {};
       const what = FAULT_COMMANDS.has(cmd["type"]) ? faultLabel(cmd) : String(cmd["type"]);
-      out.push({ kind: "scripted", t: e["t"], label: `scenario: ${what}${e["status"] === "rejected" ? ` (rejected: ${e["reason"]})` : ""}` });
+      out.push({ kind: "scripted", t: e["t"], label: `${e["clientId"]}: ${what}${e["status"] === "rejected" ? ` (rejected: ${e["reason"]})` : ""}` });
     } else if (e["type"] === "command") {
       if (e["status"] === "rejected") out.push({ kind: "rejected", t: e["t"], label: `${e["clientId"]}: ${e["reason"]}` });
       else {

@@ -15,7 +15,7 @@ describe("supervisor loop (headless, stub agent)", () => {
     const rig = await agentRig(() => null);
     await startSupervised(rig);
     await rig.run(500);
-    expect(rig.requests[0]!.candidates.map((c) => c.id)).toEqual(["hold", "reduce", "stop", "scram"]);
+    expect(rig.requests[0]!.candidates.map((c) => c.id)).toEqual(["hold", "raise", "reduce", "stop", "scram"]);
   });
 
   it("HOLD keeps the target and leaves the rod alone at steady power", async () => {
@@ -63,6 +63,30 @@ describe("supervisor loop (headless, stub agent)", () => {
     await rig.run(500);
     expect(rig.cmds("supervisor").some(([, c]) => c.rod === "safety" && c.direction === "stop")).toBe(true);
     expect(rig.snap().truth.rods.safety.moving).toBeNull();
+  });
+
+  it("RAISE moves the target up by the validated step, and a cooldown blocks the next one", async () => {
+    const rig = await agentRig((_r, n) => (n === 0 ? "raise" : null));
+    await startSupervised(rig);
+    await rig.run(1000);
+    const raiseText = (i: number) => rig.requests[i]!.candidates.find((c) => c.id === "raise")?.text;
+    const power = (t: string) => Number(/([\d.]+e[-+]\d+) W/.exec(t)![1]);
+    const before = power(raiseText(0)!);
+    // after the raise the controller targets `before`; the cooldown then removes the raise candidate
+    expect(rig.requests[1]!.candidates.some((c) => c.id === "raise")).toBe(false);
+    expect(Math.abs(power(reduceText(rig, 1)!) / (before * 0.5) - 1)).toBeLessThan(0.02); // texts show 3 digits
+  });
+
+  it("a raise is not offered above half the power-high trip setpoint", async () => {
+    const rig = await agentRig(() => null);
+    const c: any = (rig.rt as any).controller;
+    await send(rig.rt, { kind: "time", rate: 1, paused: false });
+    await rig.run(100);
+    const trip = (rig.rt.engine!.lib.trips as any[]).find((x) => x.id === "power-high").predicate.value;
+    c.enable(trip * 0.4); // doubling would pass half the trip setpoint
+    await send(rig.rt, { kind: "supervisor.enable" });
+    await rig.run(300);
+    expect(rig.requests[0]!.candidates.some((x) => x.id === "raise")).toBe(false);
   });
 
   it("SCRAM candidate scrams the reactor", async () => {

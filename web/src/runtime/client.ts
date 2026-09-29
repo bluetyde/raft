@@ -106,6 +106,13 @@ export class RuntimeClient {
     return done.then((m) => this.orThrow(m, "session").file);
   }
 
+  /** Load an instructor script (a parsed script file), or null to clear it. Rejects with the validator's message. */
+  loadScript(script: unknown | null): Promise<Msg<"script">> {
+    const done = this.next(["script", "error"], "script.load");
+    this.send({ kind: "script.load", script });
+    return done.then((m) => this.orThrow(m, "script"));
+  }
+
   /** Import a session file. A version 3 file that runs a scenario needs that scenario file too. */
   importSession(file: SessionFile, scenario?: unknown): Promise<Msg<"rewound">> {
     const done = this.next(["rewound", "error"], "session.import");

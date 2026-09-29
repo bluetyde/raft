@@ -13,6 +13,7 @@ import { Engine, InitError } from "../sim/engine";
 import { LibraryError, loadLibrary, type Library } from "../sim/library";
 import { buildBranch, marksBefore, marksFrom, summarize, type Branch } from "./branches";
 import { CheckpointStore, checkSessionFile, replayCommands, sessionFile } from "./history";
+import { prepareScript, ScriptError, type PreparedScript } from "./script";
 import { GoalTracker, prepareScenario, ScenarioError, type PreparedScenario } from "./scenario";
 import {
   isCoarse,
@@ -89,7 +90,7 @@ function cachingReader(inner: LibraryReader): LibraryReader {
   };
 }
 
-import { Supervisor, TARGET_FLOOR_W } from "./supervisor";
+import { RAISE_COOLDOWN_S, RAISE_CEILING_FRACTION, RAISE_FACTOR, RAISE_MIN_PERIOD_S, Supervisor, TARGET_FLOOR_W } from "./supervisor";
 import { DeterministicPID } from "./controller";
 
 /** True for the commands that a coarse session refuses: pulse mode and rod firing (M6 amendment 1). */
@@ -139,6 +140,10 @@ export class Runtime {
   private eng: Engine | null = null;
 
   private supervisor: Supervisor;
+  /** Sim time of the last approved raise, for the cooldown. */
+  private lastRaiseT = -Infinity;
+  /** The instructor script for this session, or null. Its events are submitted as commands from "script". */
+  private script: PreparedScript | null = null;
   private controller: DeterministicPID = new DeterministicPID();
 
   private paused = true;
@@ -272,6 +277,8 @@ export class Runtime {
         return this.switchBranch(msg.id);
       case "scenario.end":
         return this.endScenario();
+      case "script.load":
+        return this.loadScript(msg.script);
       case "supervisor.enable": {
         this.supervisor.enableTracking(from);
         // Turning supervision on is the operator's explicit approval to hold the power as it is now.
@@ -287,12 +294,40 @@ export class Runtime {
     }
   }
 
+  /**
+   * The next higher target the runtime would approve, or null. A raise needs an armed controller, a known
+   * power-high trip to stay well under, a settled period, room on the regulating rod and time since the last raise.
+   */
+  private raiseTarget(): number | null {
+    const e = this.eng;
+    const target = this.controller.target;
+    if (!e || !this.controller.enabled || target === null) return null;
+    const tripValue = (e.lib.trips as any[]).find((x) => x.id === "power-high")?.predicate?.value;
+    if (typeof tripValue !== "number") return null; // no trip to stay under: fail closed
+    const next = target * RAISE_FACTOR;
+    if (next > tripValue * RAISE_CEILING_FRACTION) return null;
+    if (e.t - this.lastRaiseT < RAISE_COOLDOWN_S) return null;
+    const truth = e.snapshot(false).truth;
+    const period = truth?.period;
+    if (typeof period === "number" && period > 0 && period < RAISE_MIN_PERIOD_S) return null;
+    if ((truth?.rods?.["regulating"]?.position ?? 1) >= 0.99) return null;
+    return next;
+  }
+
   private handleDecisionResponse(response: import("./protocol").DecisionResponse): void {
     const candidate = this.supervisor.resolveDecision(response);
     if (!candidate) return; // Invalid, ignored, or error
 
     if (candidate.intent === "HOLD_TARGET") {
       // Keep the approved target and its history. A reply never arms or moves the target.
+    } else if (candidate.intent === "RAISE_TARGET") {
+      // Checked again now: the reply may be a moment old. The AI never picks a number; it only says yes to this one.
+      const allowed = this.raiseTarget();
+      if (allowed !== null && candidate.targetValue !== undefined && candidate.targetValue <= allowed * (1 + 1e-9) &&
+          this.controller.target !== null && candidate.targetValue > this.controller.target) {
+        this.controller.setTarget(candidate.targetValue);
+        this.lastRaiseT = this.eng!.t;
+      }
     } else if (candidate.intent === "REDUCE_TARGET") {
       // Track a lower validated target; there is no raw rod insertion.
       if (this.controller.enabled && this.controller.target !== null && candidate.targetValue !== undefined &&
@@ -399,6 +434,7 @@ export class Runtime {
     this.history.clear();
     this.rate = 1; // a new session starts at 1x, paused (as a new worker did before the shared worker)
     this.scenario = prepared;
+    this.script = null;
     this.scenarioEndStep = null;
     this.tracker = prepared ? new GoalTracker(prepared.goals) : null;
     this.tracker?.evaluate(eng);
@@ -415,6 +451,7 @@ export class Runtime {
     this.submitDueEvents();
     // every window hears of a new session, so an attached window can rebuild its panels
     this.host.post({ kind: "loaded", protocol: PROTOCOL_VERSION, ...this.loadedInfo()! });
+    this.host.post(this.scriptMessage());
     this.afterChange();
   }
 
@@ -422,6 +459,7 @@ export class Runtime {
   private install(eng: Engine): void {
     this.eng = eng;
 
+    this.lastRaiseT = -Infinity;
     this.supervisor.temporalEpoch++;
     this.supervisor.disable();
     this.controller.disable();
@@ -450,7 +488,7 @@ export class Runtime {
     if (typeof clientId !== "string" || validateCommand(cmd).length > 0) return reject("REJ_SCHEMA");
     const type = String((cmd as Record<string, unknown>)["type"]);
     if (role === "operator" && type.startsWith("fault.")) return reject("REJ_ROLE");
-    if (clientId === "scenario") return reject("REJ_ROLE"); // reserved for the scenario's scripted events
+    if (clientId === "scenario" || clientId === "script") return reject("REJ_ROLE"); // reserved for scripted events
     // D4a: a scenario limits the operator's controls (the instructor is not limited)
     const fromOperator = role === "operator" || clientId !== "instructor";
     if (this.scenario && fromOperator && !this.scenario.file.controls.allow.includes(type)) return reject("REJ_SCENARIO");
@@ -616,6 +654,7 @@ export class Runtime {
    * after the new step are submitted again when their boundary is reached.
    */
   private submitDueEvents(): void {
+    this.submitDueScript();
     const sc = this.scenario;
     const e = this.eng;
     if (!sc || !e || e.halted) return;
@@ -624,6 +663,50 @@ export class Runtime {
       e.submit(sc.events[n]!.cmd, "scenario");
       n++;
     }
+  }
+
+  /** The same for the instructor script, as commands from "script". */
+  private submitDueScript(): void {
+    const sc = this.script;
+    const e = this.eng;
+    if (!sc || !e || e.halted) return;
+    let n = e.commandLog.filter((c: any) => c.clientId === "script").length;
+    while (n < sc.events.length && sc.events[n]!.step <= e.stepIndex) {
+      e.submit(sc.events[n]!.cmd, "script");
+      n++;
+    }
+  }
+
+  private scriptMessage(): Extract<FromWorker, { kind: "script" }> {
+    const sc = this.script;
+    return { kind: "script", script: sc ? { name: sc.name, events: sc.events.map((x) => ({ step: x.step, t: x.t, note: x.note })) } : null };
+  }
+
+  private loadScript(raw: unknown | null): void {
+    const e = this.eng;
+    if (!e || !this.lib) return this.error("script.load", "E_NO_LIBRARY", "nothing is loaded");
+    if (raw === null) {
+      this.script = null;
+      this.reply(this.scriptMessage());
+      return;
+    }
+    // commands from an earlier script are in the log; a second script would break the cursor that counts them
+    if (e.commandLog.some((c: any) => c.clientId === "script")) {
+      return this.error("script.load", "E_SCRIPT_ACTIVE", "a script has already run in this timeline; rewind before it, or load the library again");
+    }
+    let prepared: PreparedScript;
+    try {
+      prepared = prepareScript(raw, this.lib, e.config.outerDt);
+    } catch (err) {
+      if (err instanceof ScriptError) return this.error("script.load", err.issues[0]!.code, err.message);
+      throw err;
+    }
+    const past = prepared.events.find((x) => x.step < e.stepIndex);
+    if (past) return this.error("script.load", "E_SCRIPT_PAST", `an event is due at ${past.t} s, before the current time ${e.t} s`);
+    this.script = prepared;
+    this.submitDueScript();
+    this.host.post(this.scriptMessage());
+    this.afterChange();
   }
 
   /** The after-step callback for a replay: the checkpoint rule, then the goal tracker (and its state at each new checkpoint). */
@@ -930,6 +1013,7 @@ export class Runtime {
     this.timelineDirty = true;
     this.history = store;
     this.scenario = prepared;
+    this.script = null;
     this.scenarioEndStep = endStep;
     this.tracker = tracker;
     this.trackerAt = trackerAt;
@@ -1056,7 +1140,7 @@ export class Runtime {
 
       const premise = `ROLE: Nuclear Reactor Operator. GOAL: Safely control power levels and execute necessary protective actions. MODE: Auto (PID). CURRENT STATE: ${phaseDesc} Rod positions — ${rodDesc}. Fuel Temperature is ${fuelTemp.toFixed(1)} °C.`;
 
-      const candidates = this.supervisor.dispatchObservation(e.t, this.controller.enabled ? this.controller.target : null);
+      const candidates = this.supervisor.dispatchObservation(e.t, this.controller.enabled ? this.controller.target : null, this.raiseTarget());
       const req: import("./protocol").DecisionRequest = {
         protocolVersion: 1,
         sessionId: "runtime-session", // We can improve this with real IDs later

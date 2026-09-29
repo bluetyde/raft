@@ -7,7 +7,7 @@ const INSTRUCTOR_PERIOD_MS = 5000;
 
 const INSTRUCTOR_CANDIDATES = [
   { id: "wait", text: "The operator is busy. I will wait and observe." },
-  { id: "drift", text: "I will trigger an instrument drift fault to confuse the operator." },
+  { id: "stick", text: "I will make an instrument read stuck to confuse the operator." },
   { id: "end", text: "The scenario is complete. I will end the simulation." },
 ];
 
@@ -134,8 +134,9 @@ export class JevCopilot {
     if (!p || res.requestId !== p.requestId || res.observationStep !== p.step) return; // not for the request in flight
     this.pending = null;
     if (res.status !== "ok" || !res.candidateId) return; // error and shadow replies choose nothing
-    if (res.candidateId === "drift") {
-      this.client.command({ type: "fault.instrument", instrument: "linear", kind: "drift" }, undefined, "instructor");
+    if (res.candidateId === "stick") {
+      // schema/command.schema.json has no drift kind, so an AI-triggered fault is a stuck reading
+      this.client.command({ type: "fault.instrument", instrument: "linear", kind: "stuck" }, undefined, "instructor");
     } else if (res.candidateId === "end") {
       this.client.endScenario();
     }

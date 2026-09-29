@@ -1,7 +1,7 @@
 import type { DecisionRequest, DecisionResponse } from "./protocol";
 
 export type SupervisorMode = "DISABLED" | "TRACKING" | "TRIPPED" | "UNAVAILABLE";
-export type Intent = "HOLD_TARGET" | "REDUCE_TARGET" | "REQUEST_SCRAM" | "STOP_MOTION";
+export type Intent = "HOLD_TARGET" | "RAISE_TARGET" | "REDUCE_TARGET" | "REQUEST_SCRAM" | "STOP_MOTION";
 
 export interface Candidate {
   id: string;
@@ -13,6 +13,14 @@ export interface Candidate {
 /** A lowered target is this fraction of the approved one, and never below the floor (W). */
 export const REDUCE_FACTOR = 0.5;
 export const TARGET_FLOOR_W = 1e-6;
+/** A raised target is this multiple of the approved one. */
+export const RAISE_FACTOR = 2;
+/** A raised target never exceeds this fraction of the power-high trip setpoint. */
+export const RAISE_CEILING_FRACTION = 0.5;
+/** Raises are at least this far apart (s of sim time). */
+export const RAISE_COOLDOWN_S = 20;
+/** No raise while the period is positive and shorter than this (s). */
+export const RAISE_MIN_PERIOD_S = 60;
 
 interface Identity {
   sessionId: string;
@@ -74,8 +82,8 @@ export class Supervisor {
     return this.mode === "TRACKING";
   }
 
-  /** Build the candidates for one request. `target` is the controller's approved target (W), or null when it is not armed. */
-  public dispatchObservation(simTimeS: number, target: number | null): Candidate[] {
+  /** Build the candidates for one request. `target` is the controller's approved target (W), or null when it is not armed; `raiseTo` is the validated higher target, or null when a raise is not allowed. */
+  public dispatchObservation(simTimeS: number, target: number | null, raiseTo: number | null = null): Candidate[] {
     this.lastObservationSimS = simTimeS;
     this.lastObservationWallMs = this.now();
     this.pendingRequest = true;
@@ -86,6 +94,14 @@ export class Supervisor {
     const candidates: Candidate[] = [];
     if (target !== null) {
       candidates.push({ id: "hold", text: "I will HOLD TARGET and keep the automatic controller at the current power.", intent: "HOLD_TARGET" });
+      if (raiseTo !== null) {
+        candidates.push({
+          id: "raise",
+          text: `I will RAISE THE TARGET power to ${raiseTo.toExponential(2)} W and let the controller bring power up carefully.`,
+          intent: "RAISE_TARGET",
+          targetValue: raiseTo,
+        });
+      }
       const lower = target * REDUCE_FACTOR;
       if (lower >= TARGET_FLOOR_W) {
         candidates.push({

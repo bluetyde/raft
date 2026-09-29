@@ -83,6 +83,7 @@ export class InstructorPanel {
   private readonly exportText: HTMLElement;
   private lastTimeline: TimelineMsg | null = null;
   private readonly scenarioBox: HTMLElement;
+  private readonly scriptText: HTMLElement;
   /** The running scenario as the worker last sent it (for tests). */
   scenario: ScenarioView | null = null;
   private lastSnapshot: Record<string, any> | null = null;
@@ -193,6 +194,16 @@ export class InstructorPanel {
     this.exportText = el("div", { className: "vr-inst-message" });
     this.exportText.dataset["inst"] = "export-message";
 
+    // ---- script ----
+    const scriptInput = el("input", { type: "file", accept: ".json,application/json" });
+    scriptInput.dataset["inst"] = "script-file";
+    scriptInput.onchange = () => void this.loadScriptFile(scriptInput);
+    const clearScript = button("clear script", "script-clear", () => void this.client.loadScript(null).catch((err) => (this.scriptText.textContent = String(err.message ?? err))));
+    this.scriptText = el("div", { className: "vr-inst-message" });
+    this.scriptText.dataset["inst"] = "script-status";
+    this.scriptText.textContent = "no script loaded";
+    client.on("script", (m) => this.showScript(m.script));
+
     this.copilot = new JevCopilot(client, "instructor");
     const copilotBtn = createCopilotButton(this.copilot);
 
@@ -214,6 +225,15 @@ export class InstructorPanel {
         el("h3", { textContent: "Scenario" }),
         el("div", { className: "vr-row" }, [scenarioSelect, startScenario, endScenario]),
         this.scenarioBox,
+      ]),
+      el("section", {}, [
+        el("h3", { textContent: "Script (timed faults)" }),
+        el("div", { className: "vr-row" }, ["load:", scriptInput, clearScript]),
+        el("div", {
+          className: "vr-inst-note",
+          textContent: "A script file lists events like { \"atMinutes\": 5, \"action\": \"pump.trip\", \"pump\": \"...\" }. Times are simulation time. LOCA, pipe burst and steamline break are not in the engine yet and are refused.",
+        }),
+        this.scriptText,
       ]),
       el("section", {}, [el("h3", { textContent: "Timeline (click to rewind)" }), this.bar, this.confirmBox]),
       el("section", {}, [
@@ -444,6 +464,23 @@ export class InstructorPanel {
     }
     download(`${this.opts.libraryId}-${timeTag(file.endStep * this.outerDt)}.csv`, reply.csv, "text/csv");
     this.exportText.textContent = `CSV: ${reply.rows} rows`;
+  }
+
+  private async loadScriptFile(input: HTMLInputElement): Promise<void> {
+    const f = input.files?.[0];
+    if (!f) return;
+    try {
+      await this.client.loadScript(JSON.parse(await f.text()));
+    } catch (err) {
+      this.scriptText.textContent = `script rejected: ${(err as Error).message}`;
+    }
+    input.value = "";
+  }
+
+  private showScript(script: { name: string; events: { t: number; note: string }[] } | null): void {
+    this.scriptText.textContent = script
+      ? `script "${script.name}": ${script.events.map((e) => `${(e.t / 60).toFixed(1)} min ${e.note}`).join("; ")}`
+      : "no script loaded";
   }
 
   private async importFile(input: HTMLInputElement): Promise<void> {

@@ -107,6 +107,12 @@ export function isCoarse(outerDt: number): boolean {
   return outerDt > PULSE_MAX_OUTER_DT * (1 + 1e-9);
 }
 
+/** The loaded instructor script as a window shows it. */
+export interface ScriptView {
+  name: string;
+  events: { step: number; t: number; note: string }[];
+}
+
 /** Texts for the rejection reasons that the runtime (not the engine) gives. */
 export const RUNTIME_REJECTIONS: Record<string, string> = {
   REJ_COARSE_STEP: `pulse mode and rod firing need an outer step of ${PULSE_MAX_OUTER_DT * 1000} ms or less, and this session's step is longer`,
@@ -138,6 +144,7 @@ export const OPERATOR_FORBIDDEN: readonly ToWorker["kind"][] = [
   "annotate",
   "annotation.delete",
   "scenario.end",
+  "script.load",
 ];
 
 /** Why the clock runs slower than requested, or is stopped. */
@@ -166,6 +173,8 @@ export type ToWorker =
   | { kind: "branch.switch"; id: number }
   /** The instructor ends the running scenario: the goals not met yet fail at this step, and the score is final. */
   | { kind: "scenario.end" }
+  /** Load an instructor script (docs: script.ts), or null to clear it. */
+  | { kind: "script.load"; script: unknown | null }
   /** A window says which role it has. A shared worker needs it before any other message. */
   | { kind: "attach"; role: Role }
   /** A window closes (sent on pagehide), so the worker stops sending to it. */
@@ -228,6 +237,7 @@ export type FromWorker =
   | { kind: "rewound"; step: number; t: number; previous: SessionFile }
   | { kind: "session"; file: SessionFile }
   | { kind: "scenario"; scenario: ScenarioView | null }
+  | { kind: "script"; script: ScriptView | null }
   | { kind: "timeline"; current: BranchSummary; branches: BranchSummary[]; marks: Mark[]; annotations: Annotation[] }
   | { kind: "error"; request: ToWorker["kind"]; code: string; message: string }
   | { kind: "fault"; message: string }
