@@ -14,6 +14,7 @@ import { LibraryError, loadLibrary, type Library } from "../sim/library";
 import { buildBranch, marksBefore, marksFrom, summarize, type Branch } from "./branches";
 import { CheckpointStore, checkSessionFile, replayCommands, sessionFile } from "./history";
 import { prepareScript, ScriptError, type PreparedScript } from "./script";
+import { BAND_HIGH, BAND_LOW, RodSequencer, type RodStep, type SequenceContext } from "./sequencer";
 import { GoalTracker, prepareScenario, ScenarioError, type PreparedScenario } from "./scenario";
 import {
   isCoarse,
@@ -156,6 +157,10 @@ export class Runtime {
   private goalPower: number | null = null;
   /** The engine step at which the panel last set `goalPower`, to order it against script goal events. */
   private goalStep = -1;
+  private sequencer = new RodSequencer();
+  /** The last thing the AI's choice or the runtime's guard did, in words (for the panels). */
+  private lastAction: string | null = null;
+  private lastSupervisionJson = "";
   /** Sim time of the last approved raise, for the cooldown. */
   private lastRaiseT = -Infinity;
   /** The instructor script for this session, or null. Its events are submitted as commands from "script". */
@@ -299,12 +304,19 @@ export class Runtime {
         this.supervisor.enableTracking(from);
         // Turning supervision on is the operator's explicit approval to hold the power as it is now.
         const power = this.eng?.snapshot(false).indicated?.["log"] ?? this.eng?.snapshot(false).truth?.power ?? 0;
-        if (this.supervisor.ownerPort === from && !this.controller.enabled && power > TARGET_FLOOR_W) this.controller.enable(power);
+        this.sequencer.reset();
+        if (this.supervisor.ownerPort === from && !this.controller.enabled) {
+          if (power > TARGET_FLOOR_W) this.controller.enable(power);
+          else this.sequencer.sequencing = true; // shut down: the AI may step rods up toward a goal
+        }
+        this.lastAction = null;
+        this.postSupervision();
         return;
       }
       case "supervisor.goal":
         this.goalPower = msg.powerW !== null && Number.isFinite(msg.powerW) && msg.powerW >= TARGET_FLOOR_W ? msg.powerW : null;
         this.goalStep = this.eng?.stepIndex ?? 0;
+        this.postSupervision();
         return;
       case "supervisor.disable":
         if (this.supervisor.ownerPort === null || from === this.supervisor.ownerPort) this.stopSupervision();
@@ -353,27 +365,121 @@ export class Runtime {
           this.controller.target !== null && candidate.targetValue > this.controller.target) {
         this.controller.setTarget(candidate.targetValue);
         this.lastRaiseT = this.eng!.t;
+        this.lastAction = `raised the target to ${candidate.targetValue.toExponential(2)} W`;
       }
     } else if (candidate.intent === "REDUCE_TARGET") {
       // Track a lower validated target; there is no raw rod insertion.
       if (this.controller.enabled && this.controller.target !== null && candidate.targetValue !== undefined &&
           candidate.targetValue < this.controller.target && candidate.targetValue >= TARGET_FLOOR_W) {
         this.controller.setTarget(candidate.targetValue);
+        this.lastAction = `lowered the target to ${candidate.targetValue.toExponential(2)} W`;
       }
+    } else if (candidate.intent === "WITHDRAW_ROD" || candidate.intent === "INSERT_ROD") {
+      const step: RodStep | null =
+        candidate.rod !== undefined && candidate.targetValue !== undefined
+          ? { rod: candidate.rod, direction: candidate.intent === "WITHDRAW_ROD" ? "out" : "in", to: candidate.targetValue }
+          : null;
+      // Checked again now: the reply may be a moment old, and the step must still be the one the runtime offers.
+      if (step && this.sequencer.stillOffered(step, this.seqCtx(this.eng!.snapshot(false)))) this.beginStep(step);
+    } else if (candidate.intent === "ENGAGE_HOLD") {
+      const snap = this.eng!.snapshot(false);
+      const power = snap.indicated?.["log"] ?? snap.truth?.power ?? 0;
+      if (this.sequencer.offers(this.seqCtx(snap)).engage && power > TARGET_FLOOR_W) {
+        this.controller.enable(power);
+        this.sequencer.sequencing = false;
+        this.lastAction = `handed over to the controller at ${power.toExponential(2)} W`;
+      }
+    } else if (candidate.intent === "WAIT") {
+      this.lastAction = "waiting for power to settle";
     } else if (candidate.intent === "REQUEST_SCRAM") {
+      this.sequencer.reset();
       this.controller.disable();
+      this.lastAction = "manual SCRAM";
       this.eng!.submit({ type: "scram" }, "supervisor");
     } else if (candidate.intent === "STOP_MOTION") {
       // Stop the other rods and hold the power as it is now. The controller stays armed: turning it off here
       // would leave a rising reactor with nothing acting on it.
       const holdAt = this.eng!.snapshot(false).indicated?.["log"];
       if (this.controller.enabled && typeof holdAt === "number" && holdAt >= TARGET_FLOOR_W) this.controller.setTarget(holdAt);
+      this.lastAction = "stopped rod motion and held the power";
       // every rod the library has that is moving; the engine refuses to stop a rod that is scramming
       const rods = this.eng!.snapshot(false).truth?.rods ?? {};
       for (const [rid, r] of Object.entries<any>(rods)) {
         if (r.moving) this.eng!.submit({ type: "rod.move", rod: rid, direction: "stop" }, "supervisor");
       }
     }
+    this.postSupervision();
+  }
+
+  /** Start one rod step. The power controller is off while the AI steps rods, so the two never fight. */
+  private beginStep(step: RodStep): void {
+    const e = this.eng!;
+    if (this.controller.enabled) {
+      if (e.snapshot(false).truth?.rods?.["regulating"]?.moving) {
+        e.submit({ type: "rod.move", rod: "regulating", direction: "stop" }, "supervisor");
+      }
+      this.controller.disable();
+    }
+    this.sequencer.start(step);
+    e.submit({ type: "rod.move", rod: step.rod, direction: step.direction }, "supervisor");
+    this.lastAction = `${step.direction === "out" ? "withdrawing" : "inserting"} the ${step.rod} rod to ${Math.round(step.to * 100)}% out`;
+  }
+
+  /** The state the sequencer needs, from a snapshot. */
+  private seqCtx(snap: Record<string, any>): SequenceContext {
+    const rods: Record<string, { position: number }> = {};
+    for (const [id, r] of Object.entries<any>(snap.truth?.rods ?? {})) rods[id] = { position: r.position };
+    return {
+      power: snap.indicated?.["log"] ?? snap.truth?.power ?? 0,
+      goal: this.effectiveGoal()?.powerW ?? null,
+      period: snap.truth?.period ?? 0,
+      t: snap.t ?? this.eng?.t ?? 0,
+      rods,
+      tripped: (snap.trips?.active?.length ?? 0) + (snap.trips?.latched?.length ?? 0) > 0,
+    };
+  }
+
+  /** Tell every window what the AI operator is doing, when it changed. */
+  private postSupervision(): void {
+    const e = this.eng;
+    const goal = this.effectiveGoal();
+    const sc = this.script;
+    let fired = 0;
+    let next: { t: number; note: string } | null = null;
+    if (sc && e) {
+      const cmdsFired = e.commandLog.filter((c: any) => c.clientId === "script").length;
+      const pending = [
+        ...sc.events.slice(cmdsFired).map((x) => ({ t: x.t, note: x.note })),
+        ...sc.goals.filter((g) => g.step > e.stepIndex).map((g) => ({ t: g.t, note: g.note })),
+      ].sort((a, b) => a.t - b.t);
+      fired = sc.events.length + sc.goals.length - pending.length;
+      next = pending[0] ?? null;
+    }
+    const plan = this.sequencer.plan;
+    const state: import("./protocol").SupervisionView = {
+      mode: !this.supervisor.isTracking()
+        ? "off"
+        : this.controller.enabled
+          ? "holding"
+          : plan
+            ? "stepping"
+            : this.sequencer.sequencing
+              ? "sequencing"
+              : "idle",
+      target: this.controller.enabled ? this.controller.target : null,
+      goal: goal?.powerW ?? null,
+      goalSource: goal?.source ?? "none",
+      goalAtT: goal?.t ?? null,
+      step: plan ? `${plan.direction === "out" ? "withdrawing" : "inserting"} ${plan.rod} to ${Math.round(plan.to * 100)}% out` : null,
+      lastAction: this.lastAction,
+      scriptFired: fired,
+      scriptTotal: sc ? sc.events.length + sc.goals.length : 0,
+      scriptNext: next,
+    };
+    const json = JSON.stringify(state);
+    if (json === this.lastSupervisionJson) return;
+    this.lastSupervisionJson = json;
+    this.host.post({ kind: "supervision", state });
   }
 
   private error(request: import("./protocol").ToWorker["kind"], code: string, message: string): void {
@@ -491,6 +597,8 @@ export class Runtime {
     this.lastRaiseT = -Infinity;
     this.goalPower = null;
     this.goalStep = -1;
+    this.sequencer.reset();
+    this.lastAction = null;
     this.supervisor.temporalEpoch++;
     this.supervisor.disable();
     this.controller.disable();
@@ -636,6 +744,17 @@ export class Runtime {
       return false; // Clock stops
     }
 
+    // A rod step ends at its travel, at the goal, or when the period gets short.
+    if (this.sequencer.plan) {
+      const plan = this.sequencer.plan;
+      const why = this.sequencer.check(this.seqCtx(e.snapshot(false)));
+      if (why) {
+        e.submit({ type: "rod.move", rod: plan.rod, direction: "stop" }, "supervisor");
+        this.sequencer.finish(e.t);
+        this.lastAction = `${plan.rod} step ended (${why === "done" ? "reached its travel" : why === "goal" ? "power reached the goal" : why === "period" ? "period got short" : "trip"})`;
+      }
+    }
+
     // Execute Deterministic Controller at outer-step boundaries (which stepOnce() represents)
     if (this.controller.enabled) {
       const state = e.snapshot(false);
@@ -709,17 +828,21 @@ export class Runtime {
   }
 
   /** The goal power now: the instructor panel's, or the latest script goal event, whichever is newer. */
-  private effectiveGoal(): number | null {
+  private effectiveGoal(): { powerW: number; source: "panel" | "script"; t: number | null } | null {
     const e = this.eng;
-    let goal = this.goalPower;
+    let goal: number | null = this.goalPower;
+    let source: "panel" | "script" = "panel";
     let at = this.goalStep;
+    let t: number | null = this.goalStep >= 0 && e ? this.goalStep * e.config.outerDt : null;
     for (const g of this.script?.goals ?? []) {
       if (e && g.step <= e.stepIndex && g.step >= at) {
         goal = g.powerW;
+        source = "script";
         at = g.step;
+        t = g.t;
       }
     }
-    return goal;
+    return goal === null ? null : { powerW: goal, source, t };
   }
 
   private scriptMessage(): Extract<FromWorker, { kind: "script" }> {
@@ -801,7 +924,13 @@ export class Runtime {
     if (this.controller.enabled && this.eng) {
       this.eng.submit({ type: "rod.move", rod: "regulating", direction: "stop" }, "supervisor");
     }
+    if (this.sequencer.plan && this.eng) {
+      this.eng.submit({ type: "rod.move", rod: this.sequencer.plan.rod, direction: "stop" }, "supervisor");
+    }
+    this.sequencer.reset();
     this.controller.disable();
+    this.lastAction = null;
+    this.postSupervision();
   }
 
   private pauseFor(limit: ClockLimit, reason: string): void {
@@ -1105,6 +1234,7 @@ export class Runtime {
         // Protective trips disable tracking
         this.supervisor.trip();
         this.controller.disable();
+        this.sequencer.reset();
       }
     }
     // a new mark, or a command that changes the current branch's command count in the compare table
@@ -1157,6 +1287,8 @@ export class Runtime {
       else this.host.post({ kind: "snapshot", snapshot, extremes, faults }, undefined, p.id);
     }
     
+    this.postSupervision();
+
     // Also dispatch inference requests if supervisor is enabled and not waiting
     if (this.supervisor.isTracking() && !this.supervisor.pendingRequest && this.supervisor.canDispatch()) {
       // Avoid sending too frequently, just piggyback on snapshot pace
@@ -1182,22 +1314,43 @@ export class Runtime {
       const rodDesc = rods.map(([id, r]) => `${id} ${(r.position * 100).toFixed(0)}% withdrawn${r.moving ? ` (moving ${r.moving})` : ""}`).join(", ");
       const tripDesc = active.length + latched.length === 0 ? "No trips are active." : `Trips: ${[...new Set([...active, ...latched])].join(", ")}.`;
       const target = this.controller.enabled ? this.controller.target : null;
-      const modeDesc = target !== null ? `The automatic controller is holding ${target.toExponential(2)} W.` : "The automatic controller is off.";
+      const modeDesc = target !== null ? `The automatic controller is holding ${target.toExponential(2)} W.` : this.sequencer.sequencing ? "The automatic controller is off; rods are being stepped by hand toward the goal." : "The automatic controller is off.";
 
-      const goal = this.effectiveGoal();
+      const goal = this.effectiveGoal()?.powerW ?? null;
       let goalDesc: string;
       if (goal === null) goalDesc = "GOAL: hold the current power and stay safe.";
       else {
         const ratio = power / goal;
-        const where = ratio < 0.8 ? "below the goal, so power needs to be raised" : ratio > 1.25 ? "above the goal, so power needs to be lowered" : "at the goal, so hold it";
+        const where = ratio < BAND_LOW ? "below the goal, so power needs to be raised" : ratio > BAND_HIGH ? "above the goal, so power needs to be lowered" : "at the goal, so hold it";
         goalDesc = `GOAL: bring power to ${goal.toExponential(2)} W and hold it there. Power is ${where}.`;
       }
       const premise = `ROLE: Nuclear Reactor Operator. ${goalDesc} Stay safe; a SCRAM is only for a real emergency. CURRENT STATE: ${phaseDesc} ${modeDesc} Control rods — ${rodDesc}. Fuel temperature is ${fuelTemp.toFixed(1)} °C. ${tripDesc}${danger ? "" : " There is no emergency."}`;
 
-      // With the controller off and no emergency there is nothing for the AI to choose (and a lone candidate is no choice).
-      if (!this.controller.enabled && !danger) return;
+      // A runtime guard, not an AI choice: far above the goal and still rising with no step running, the controller takes over.
+      const ctx = this.seqCtx(snapshot);
+      if (this.sequencer.needsGuard(ctx) && ctx.goal !== null) {
+        this.controller.enable(ctx.goal);
+        this.sequencer.sequencing = false;
+        this.lastAction = "guard: power was well above the goal and rising, so the controller took over at the goal";
+      }
+      // With the controller off, no step to take and no emergency there is nothing for the AI to choose.
+      if (!this.controller.enabled && !this.sequencer.sequencing && !danger) return;
+      // While a rod step runs the AI waits, unless there is an emergency.
+      if (this.sequencer.plan && !danger) return;
 
-      const candidates = this.supervisor.dispatchObservation(e.t, this.controller.enabled ? this.controller.target : null, this.raiseTarget(), danger);
+      const offers = this.supervisor.isTracking() ? this.sequencer.offers(ctx) : { withdraw: null, insert: null, engage: false };
+      const candidates = this.supervisor.dispatchObservation(e.t, {
+        target: this.controller.enabled ? this.controller.target : null,
+        raiseTo: this.raiseTarget(),
+        allowScram: danger,
+        sequencing: this.sequencer.sequencing,
+        offers,
+      });
+      // one candidate is no choice; skip the request (the pacing still applies)
+      if (candidates.length < 2) {
+        this.supervisor.invalidate();
+        return;
+      }
       const req: import("./protocol").DecisionRequest = {
         protocolVersion: 1,
         sessionId: "runtime-session", // We can improve this with real IDs later

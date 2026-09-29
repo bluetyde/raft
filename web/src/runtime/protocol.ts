@@ -107,6 +107,24 @@ export function isCoarse(outerDt: number): boolean {
   return outerDt > PULSE_MAX_OUTER_DT * (1 + 1e-9);
 }
 
+/** What the AI operator is doing, for the panels. `goal` is the instructor's; the operator panel does not show it. */
+export interface SupervisionView {
+  /** off: no AI; holding: the power controller is armed; stepping: a rod step is running; sequencing: the AI steps rods, controller off; idle: supervised, nothing armed. */
+  mode: "off" | "holding" | "stepping" | "sequencing" | "idle";
+  target: number | null;
+  goal: number | null;
+  goalSource: "none" | "panel" | "script";
+  /** Simulation time the goal was set (s), when known. */
+  goalAtT: number | null;
+  /** The rod step in progress, in words. */
+  step: string | null;
+  /** The last thing the AI's choice (or the runtime's guard) did, in words. */
+  lastAction: string | null;
+  scriptFired: number;
+  scriptTotal: number;
+  scriptNext: { t: number; note: string } | null;
+}
+
 /** The loaded instructor script as a window shows it. */
 export interface ScriptView {
   name: string;
@@ -241,6 +259,7 @@ export type FromWorker =
   | { kind: "session"; file: SessionFile }
   | { kind: "scenario"; scenario: ScenarioView | null }
   | { kind: "script"; script: ScriptView | null }
+  | { kind: "supervision"; state: SupervisionView }
   | { kind: "timeline"; current: BranchSummary; branches: BranchSummary[]; marks: Mark[]; annotations: Annotation[] }
   | { kind: "error"; request: ToWorker["kind"]; code: string; message: string }
   | { kind: "fault"; message: string }

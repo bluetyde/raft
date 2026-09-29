@@ -54,7 +54,7 @@ describe.skipIf(!LIVE)("live jev-server on TRIGA", () => {
     expect(rt.engine, "TRIGA library did not load").not.toBeNull();
 
     const pending = new Map<string, { sentAt: number; req: DecisionRequest }>();
-    const rows: { t: number; wallMs: number; choice: string; status: string; ms: number; power: number; regPos: number; target: string }[] = [];
+    const rows: { t: number; wallMs: number; choice: string; status: string; ms: number; power: number; regPos: number; target: string; rods: string }[] = [];
     let outcome = { timeouts: 0, errors: 0 };
     ws.onmessage = (ev) => {
       const res = JSON.parse(String(ev.data)) as DecisionResponse;
@@ -73,6 +73,7 @@ describe.skipIf(!LIVE)("live jev-server on TRIGA", () => {
         power: snap.indicated?.["log"] ?? snap.truth.power,
         regPos: snap.truth.rods?.["regulating"]?.position ?? NaN,
         target: (rt as any).controller.target?.toExponential(2) ?? "off",
+        rods: Object.entries<any>(snap.truth.rods).map(([k, r]) => `${k[0]}${r.position.toFixed(2)}`).join(" "),
       });
       rt.receive({ kind: "decision_response", response: res });
     };
@@ -121,6 +122,10 @@ describe.skipIf(!LIVE)("live jev-server on TRIGA", () => {
 
     // The instructor's goal: JEV_GOAL_X times the start power (JEV_GOAL2_X halfway through instead of the reactivity step).
     const p0 = rt.engine!.snapshot(false).indicated?.["log"] ?? rt.engine!.snapshot(false).truth.power;
+    if (process.env["JEV_GOAL_W"]) {
+      rt.receive({ kind: "supervisor.goal", powerW: Number(process.env["JEV_GOAL_W"]) });
+      console.log(`-- goal set to ${process.env["JEV_GOAL_W"]} W (absolute)`);
+    }
     if (process.env["JEV_GOAL_X"]) {
       rt.receive({ kind: "supervisor.goal", powerW: p0 * Number(process.env["JEV_GOAL_X"]) });
       console.log(`-- goal set to ${(p0 * Number(process.env["JEV_GOAL_X"])).toExponential(2)} W (start power ${p0.toExponential(2)} W)`);

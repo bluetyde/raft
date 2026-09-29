@@ -6,7 +6,7 @@
  * ("hold", "reduce", "scram", ...), null for no reply, or a full response object for malformed replies.
  */
 
-import type { DecisionRequest, DecisionResponse } from "./protocol";
+import type { DecisionRequest, DecisionResponse, SupervisionView } from "./protocol";
 import type { Runtime } from "./runtime";
 import { loadedRuntime, send, type FakeHost } from "./test-helpers";
 
@@ -16,6 +16,8 @@ export interface AgentRig {
   host: FakeHost;
   rt: Runtime;
   requests: DecisionRequest[];
+  /** The latest supervision state the runtime reported (what the panels show). */
+  supervision(): SupervisionView | null;
   /** Run `ms` of wall time, answering requests as they arrive. */
   run(ms: number): Promise<void>;
   /** Commands the runtime's engine received from `clientId`, as [step, cmd]. */
@@ -26,16 +28,19 @@ export interface AgentRig {
 export async function agentRig(policy: Policy, load: Parameters<typeof loadedRuntime>[1] = {}): Promise<AgentRig> {
   const { host, rt } = await loadedRuntime({}, load);
   const requests: DecisionRequest[] = [];
+  let lastSupervision: SupervisionView | null = null;
   let answered = 0;
   const rig: AgentRig = {
     host,
     rt,
     requests,
+    supervision: () => host.last("supervision")?.state ?? lastSupervision,
     async run(ms) {
       for (let waited = 0; waited < ms; waited += 50) {
         host.advance(50);
         await rt.idle();
         for (const m of host.drain()) {
+          if (m.kind === "supervision") lastSupervision = m.state;
           if (m.kind !== "decision_request") continue;
           requests.push(m.request);
           const r = policy(m.request, answered++);

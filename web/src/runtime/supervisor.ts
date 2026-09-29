@@ -1,13 +1,25 @@
 import type { DecisionRequest, DecisionResponse } from "./protocol";
+import type { SequenceOffers } from "./sequencer";
 
 export type SupervisorMode = "DISABLED" | "TRACKING" | "TRIPPED" | "UNAVAILABLE";
-export type Intent = "HOLD_TARGET" | "RAISE_TARGET" | "REDUCE_TARGET" | "REQUEST_SCRAM" | "STOP_MOTION";
+export type Intent = "HOLD_TARGET" | "RAISE_TARGET" | "REDUCE_TARGET" | "WITHDRAW_ROD" | "INSERT_ROD" | "ENGAGE_HOLD" | "WAIT" | "REQUEST_SCRAM" | "STOP_MOTION";
 
 export interface Candidate {
   id: string;
   text: string;
   intent: Intent;
+  /** A validated target power (W), or for a rod step the position where it ends. */
   targetValue?: number;
+  /** The rod a step moves. */
+  rod?: string;
+}
+
+export interface DispatchOptions {
+  target: number | null;
+  raiseTo: number | null;
+  allowScram: boolean;
+  sequencing: boolean;
+  offers: SequenceOffers;
 }
 
 /** A lowered target is this fraction of the approved one, and never below the floor (W). */
@@ -99,8 +111,12 @@ export class Supervisor {
     return this.mode === "TRACKING";
   }
 
-  /** Build the candidates for one request. `target` is the controller's approved target (W), or null when it is not armed; `raiseTo` is the validated higher target, or null when a raise is not allowed; `allowScram` is true only when the runtime sees danger. */
-  public dispatchObservation(simTimeS: number, target: number | null, raiseTo: number | null = null, allowScram: boolean = false): Candidate[] {
+  /**
+   * Build the candidates for one request. The runtime has already checked each one; the AI picks, it never invents.
+   * `target` is the controller's approved target (W), or null when it is off; `raiseTo` is a validated higher target;
+   * `sequencing` is true while the AI steps rods with the controller off; `offers` are the allowed rod steps.
+   */
+  public dispatchObservation(simTimeS: number, o: DispatchOptions): Candidate[] {
     this.lastObservationSimS = simTimeS;
     this.lastObservationWallMs = this.now();
     this.nextAllowedWall = this.lastObservationWallMs + this.minIntervalMs;
@@ -108,7 +124,8 @@ export class Supervisor {
 
     this.activeCandidates.clear();
 
-    // The AI picks among candidates the runtime validated; it never invents a target.
+    const { target, raiseTo, allowScram, sequencing, offers } = o;
+    const pct = (x: number) => `${Math.round(x * 100)}%`;
     const candidates: Candidate[] = [];
     if (target !== null) {
       candidates.push({ id: "hold", text: "I will HOLD TARGET and keep the automatic controller at the current power.", intent: "HOLD_TARGET" });
@@ -130,7 +147,31 @@ export class Supervisor {
         });
       }
     }
-    candidates.push({ id: "stop", text: "I will STOP all rod motion and monitor.", intent: "STOP_MOTION" });
+    if (sequencing) {
+      candidates.push({ id: "wait", text: "I will WAIT and watch the power settle before the next rod step.", intent: "WAIT" });
+    }
+    if (offers.withdraw) {
+      candidates.push({
+        id: "withdraw",
+        text: `I will WITHDRAW the ${offers.withdraw.rod} rod one small step (to ${pct(offers.withdraw.to)} out) to bring power up toward the goal.`,
+        intent: "WITHDRAW_ROD",
+        rod: offers.withdraw.rod,
+        targetValue: offers.withdraw.to,
+      });
+    }
+    if (offers.insert) {
+      candidates.push({
+        id: "insert",
+        text: `I will INSERT the ${offers.insert.rod} rod one small step (to ${pct(offers.insert.to)} out) to bring power down toward the goal.`,
+        intent: "INSERT_ROD",
+        rod: offers.insert.rod,
+        targetValue: offers.insert.to,
+      });
+    }
+    if (offers.engage) {
+      candidates.push({ id: "engage", text: "I will let the automatic controller take over and HOLD the power here, working toward the goal with the regulating rod.", intent: "ENGAGE_HOLD" });
+    }
+    if (target !== null) candidates.push({ id: "stop", text: "I will STOP all rod motion and monitor.", intent: "STOP_MOTION" });
     // A SCRAM is offered only in a real emergency (the runtime decides); the protection system trips on its own regardless.
     if (allowScram) {
       candidates.push({ id: "scram", text: "The reactor is out of control. I will trigger a manual SCRAM immediately.", intent: "REQUEST_SCRAM" });

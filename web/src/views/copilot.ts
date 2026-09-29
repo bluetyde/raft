@@ -143,6 +143,23 @@ export class JevCopilot {
   }
 }
 
+/** The AI operator's mode in words (shared by the operator and instructor panels). */
+export function describeSupervision(s: import("../runtime/protocol").SupervisionView): string {
+  const w = (x: number) => x.toExponential(2);
+  switch (s.mode) {
+    case "off":
+      return "AI copilot: off";
+    case "holding":
+      return `AI copilot: holding ${s.target !== null ? w(s.target) + " W" : "power"} with the automatic controller`;
+    case "stepping":
+      return `AI copilot: stepping a rod (${s.step ?? "moving"}), controller off`;
+    case "sequencing":
+      return "AI copilot: working the rods by hand toward the goal, controller off";
+    default:
+      return "AI copilot: on, nothing armed";
+  }
+}
+
 export function createCopilotButton(copilot: JevCopilot): HTMLButtonElement {
   const btn = document.createElement("button");
   const label = (on: boolean) => (btn.textContent = on ? "Disconnect AI Copilot" : "Connect AI Copilot");

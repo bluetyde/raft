@@ -56,7 +56,7 @@ function describe(ack: Ack): string {
   return `rejected: ${ack.reason}${text ? ` (${text})` : ""}`;
 }
 
-import { JevCopilot, createCopilotButton } from "../copilot";
+import { JevCopilot, createCopilotButton, describeSupervision } from "../copilot";
 
 export class InstructorPanel {
   readonly root: HTMLElement;
@@ -85,6 +85,8 @@ export class InstructorPanel {
   private readonly scenarioBox: HTMLElement;
   private readonly scriptText: HTMLElement;
   private readonly goalText: HTMLElement;
+  private scriptProgress = "";
+  private scriptListing = "no script loaded";
   /** The running scenario as the worker last sent it (for tests). */
   scenario: ScenarioView | null = null;
   private lastSnapshot: Record<string, any> | null = null;
@@ -211,6 +213,19 @@ export class InstructorPanel {
     });
     this.goalText = el("div", { className: "vr-inst-message" });
     this.goalText.dataset["inst"] = "goal-status";
+    // what is actually in effect (the panel's goal or a script's, whichever is newer), not just what was typed here
+    client.on("supervision", (m) => {
+      const s = m.state;
+      const goal =
+        s.goal === null
+          ? "no goal: the AI holds the current power"
+          : `goal in effect: ${s.goal.toExponential(2)} W (${s.goalSource}${s.goalAtT !== null ? `, set at ${(s.goalAtT / 60).toFixed(1)} min` : ""})`;
+      this.goalText.textContent = `${goal}. ${describeSupervision(s)}${s.lastAction ? `. Last: ${s.lastAction}` : ""}`;
+      if (s.scriptTotal > 0) {
+        this.scriptProgress = `${s.scriptFired} of ${s.scriptTotal} script events fired${s.scriptNext ? `; next: ${(s.scriptNext.t / 60).toFixed(1)} min ${s.scriptNext.note}` : ""}`;
+      } else this.scriptProgress = "";
+      this.refreshScriptText();
+    });
 
     // ---- script ----
     const scriptInput = el("input", { type: "file", accept: ".json,application/json" });
@@ -219,7 +234,7 @@ export class InstructorPanel {
     const clearScript = button("clear script", "script-clear", () => void this.client.loadScript(null).catch((err) => (this.scriptText.textContent = String(err.message ?? err))));
     this.scriptText = el("div", { className: "vr-inst-message" });
     this.scriptText.dataset["inst"] = "script-status";
-    this.scriptText.textContent = "no script loaded";
+    this.scriptText.textContent = this.scriptListing;
     client.on("script", (m) => this.showScript(m.script));
 
     this.copilot = new JevCopilot(client, "instructor");
@@ -505,9 +520,15 @@ export class InstructorPanel {
   }
 
   private showScript(script: { name: string; events: { t: number; note: string }[] } | null): void {
-    this.scriptText.textContent = script
+    this.scriptListing = script
       ? `script "${script.name}": ${script.events.map((e) => `${(e.t / 60).toFixed(1)} min ${e.note}`).join("; ")}`
       : "no script loaded";
+    if (!script) this.scriptProgress = "";
+    this.refreshScriptText();
+  }
+
+  private refreshScriptText(): void {
+    this.scriptText.textContent = this.scriptProgress ? `${this.scriptListing}. ${this.scriptProgress}` : this.scriptListing;
   }
 
   private async importFile(input: HTMLInputElement): Promise<void> {

@@ -41,7 +41,7 @@ function display(m: Meter, v: number): string {
 const RATES = [0.1, 1, 10, 100];
 const SCRAM_COVER_MS = 5000;
 
-import { JevCopilot, createCopilotButton } from "../copilot";
+import { JevCopilot, createCopilotButton, describeSupervision } from "../copilot";
 
 export class OperatorPanel {
   readonly root: HTMLElement;
@@ -200,6 +200,12 @@ export class OperatorPanel {
     this.copilot = new JevCopilot(client, "operator");
     const copilotBtn = createCopilotButton(this.copilot);
 
+    const aiStatus = el("div", { className: "vr-note" });
+    aiStatus.dataset["op"] = "ai-status";
+    client.on("supervision", (m) => {
+      aiStatus.textContent = describeSupervision(m.state) + (m.state.lastAction ? ` - last: ${m.state.lastAction}` : "");
+    });
+
     const hdr = el("div", { className: "vr-row" }, [
       el("h2", { textContent: "Operator Panel" }),
       copilotBtn
@@ -209,6 +215,7 @@ export class OperatorPanel {
 
     this.root = el("div", { className: "vr-operator" }, [
       hdr,
+      aiStatus,
       this.scenarioBox,
       el("section", {}, [el("h3", { textContent: "Instruments" }), ...meterRows, periodRow]),
       el("section", {}, [el("h3", { textContent: "Annunciator" }), this.tileBox, ack]),
