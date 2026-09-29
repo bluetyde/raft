@@ -304,9 +304,11 @@ export class Runtime {
       this.eng!.submit({ type: "scram" }, "supervisor");
     } else if (candidate.intent === "STOP_MOTION") {
       this.controller.disable();
-      this.eng!.submit({ type: "rod.move", rod: "regulating", direction: "stop" }, "supervisor");
-      this.eng!.submit({ type: "rod.move", rod: "shim", direction: "stop" }, "supervisor");
-      this.eng!.submit({ type: "rod.move", rod: "safety", direction: "stop" }, "supervisor");
+      // every rod the library has that is moving; the engine refuses to stop a rod that is scramming
+      const rods = this.eng!.snapshot(false).truth?.rods ?? {};
+      for (const [rid, r] of Object.entries<any>(rods)) {
+        if (r.moving) this.eng!.submit({ type: "rod.move", rod: rid, direction: "stop" }, "supervisor");
+      }
     }
   }
 
@@ -577,9 +579,11 @@ export class Runtime {
       
       const cmd = this.controller.calculate(power, e.config.outerDt, sat);
       
-      // Only submit if different from current motion, or we can submit "stop"
+      // Submit only on a change. At a rod limit the engine ends the motion itself, so "in" at the bottom
+      // (or "out" at the top) is not re-sent every step.
       const currentMoving = state.truth?.rods?.["regulating"]?.moving ?? "stop";
-      if (currentMoving !== cmd) {
+      const atLimit = (cmd === "out" && rodPos >= 0.99) || (cmd === "in" && rodPos <= 0.01);
+      if (currentMoving !== cmd && !(atLimit && currentMoving === "stop")) {
         e.submit({ type: "rod.move", rod: "regulating", direction: cmd }, "supervisor");
       }
     }

@@ -1,12 +1,26 @@
+/**
+ * Power-hold controller for one rod. The error is in decades of power (log10 target - log10 measured),
+ * so the gains work from mW to kW. The measurement is low-pass filtered because the indicated power is
+ * noisy, the derivative acts on the filtered measurement (no kick when the target changes), and the
+ * relay has a hysteresis band and a minimum dwell, so a noisy reading cannot make the rod chatter.
+ */
 export class DeterministicPID {
-  // Error is in decades of power (log10 target - log10 current), so gains work from mW to kW.
   private kp: number = 1;
   private ki: number = 0.02;
-  private kd: number = 0.5;
+  private kd: number = 2;
+  /** Measurement filter time constant (s of simulation time). */
+  private readonly tau: number = 1;
+  /** A relay may start or reverse motion only this long after its last change (s). */
+  private readonly minDwell: number = 0.5;
 
   private integral: number = 0;
-  private previousError: number = 0;
-  
+  private filtered: number | null = null;
+  private previousFiltered: number = 0;
+  /** The slope of the filtered measurement (decades/s), itself smoothed, so the derivative term is not noise. */
+  private slope: number = 0;
+  private clock: number = 0;
+  private lastChange: number = -Infinity;
+
   /** True if the controller is actively controlling power. */
   public enabled: boolean = false;
   /** The currently approved target value (e.g., target power). */
@@ -17,22 +31,26 @@ export class DeterministicPID {
   /** Resets the history so there is no derivative kick and no accumulated error. */
   public reset(): void {
     this.integral = 0;
-    this.previousError = 0;
+    this.filtered = null;
+    this.previousFiltered = 0;
+    this.slope = 0;
     this.lastOutput = 0;
     this.relayState = "stop";
+    this.lastChange = -Infinity;
   }
 
-  /** Approve a new target. The integral restarts; the relay state stays so the rod does not jerk. */
+  /** Approve a new target. The integral restarts; the filter and relay state stay so the rod does not jerk. */
   public setTarget(target: number): void {
     this.target = target;
     this.integral = 0;
-    this.previousError = 0;
   }
 
   public enable(initialTarget: number): void {
     this.enabled = true;
     this.target = initialTarget;
     this.reset();
+    // Start the filter at the approved reading, so one noisy first sample cannot look like a step.
+    this.filtered = this.previousFiltered = Math.log10(Math.max(initialTarget, 1e-12));
   }
 
   public disable(): void {
@@ -58,24 +76,34 @@ export class DeterministicPID {
     if (dt <= 0) {
       return this.getRelayOutput(this.lastOutput);
     }
+    this.clock += dt;
 
-    const error = Math.log10(Math.max(this.target, 1e-12)) - Math.log10(Math.max(current, 1e-12));
+    const measured = Math.log10(Math.max(current, 1e-12));
+    if (this.filtered === null) {
+      this.filtered = measured;
+      this.previousFiltered = measured;
+    } else {
+      this.previousFiltered = this.filtered;
+      this.filtered += (dt / (this.tau + dt)) * (measured - this.filtered);
+    }
+    const error = Math.log10(Math.max(this.target, 1e-12)) - this.filtered;
 
     // Actuator-Aware Anti-Windup: Conditional integration
     // Only inhibit integral growth if we are saturated AND the error is pushing us
     // further into the saturated limit.
-    const pushingIntoLimit = 
+    const pushingIntoLimit =
       (isSaturated && this.lastOutput > 0 && error > 0) ||
       (isSaturated && this.lastOutput < 0 && error < 0);
 
     if (!pushingIntoLimit) {
       this.integral += error * dt;
+      this.integral = Math.max(-5, Math.min(5, this.integral));
     }
 
-    const derivative = (error - this.previousError) / dt;
-    this.previousError = error;
+    // Rising power (positive slope) pulls the output toward "in".
+    this.slope += (dt / (this.tau + dt)) * ((this.filtered - this.previousFiltered) / dt - this.slope);
 
-    this.lastOutput = (this.kp * error) + (this.ki * this.integral) + (this.kd * derivative);
+    this.lastOutput = this.kp * error + this.ki * this.integral - this.kd * this.slope;
     return this.getRelayOutput(this.lastOutput);
   }
 
@@ -84,21 +112,28 @@ export class DeterministicPID {
   /**
    * Stateful Hysteresis Relay
    * Returns a discrete direction based on continuous output.
-   * Distinct entry and release deadband thresholds.
+   * Distinct entry and release deadband thresholds, and a minimum dwell before starting or reversing.
    */
   private getRelayOutput(output: number): "in" | "out" | "stop" {
     const ENTRY_THRESHOLD = 0.05; // ~12% of target power
     const RELEASE_THRESHOLD = 0.02;
 
+    let next = this.relayState;
     if (this.relayState === "stop") {
-      if (output > ENTRY_THRESHOLD) this.relayState = "out";
-      else if (output < -ENTRY_THRESHOLD) this.relayState = "in";
+      if (output > ENTRY_THRESHOLD) next = "out";
+      else if (output < -ENTRY_THRESHOLD) next = "in";
     } else if (this.relayState === "out") {
-      if (output < RELEASE_THRESHOLD) this.relayState = "stop";
+      if (output < RELEASE_THRESHOLD) next = "stop";
     } else if (this.relayState === "in") {
-      if (output > -RELEASE_THRESHOLD) this.relayState = "stop";
+      if (output > -RELEASE_THRESHOLD) next = "stop";
     }
 
+    // Stopping is always allowed at once; starting or reversing waits out the dwell.
+    if (next !== this.relayState && next !== "stop" && this.clock - this.lastChange < this.minDwell) return this.relayState;
+    if (next !== this.relayState) {
+      this.relayState = next;
+      this.lastChange = this.clock;
+    }
     return this.relayState;
   }
 }

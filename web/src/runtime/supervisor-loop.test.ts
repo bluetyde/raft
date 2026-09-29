@@ -18,18 +18,30 @@ describe("supervisor loop (headless, stub agent)", () => {
     expect(rig.requests[0]!.candidates.map((c) => c.id)).toEqual(["hold", "reduce", "stop", "scram"]);
   });
 
-  it("HOLD keeps the target and drives the regulating rod against a disturbance", async () => {
+  it("HOLD keeps the target and leaves the rod alone at steady power", async () => {
     const rig = await agentRig((_r, n) => (n === 0 ? "hold" : null));
     await send(rig.rt, { kind: "time", rate: 1, paused: false });
     await rig.run(300); // let the start-up transient settle before approving the target
     await send(rig.rt, { kind: "supervisor.enable" });
-    await send(rig.rt, { kind: "command", clientSeq: 1, clientId: "operator", cmd: { type: "rod.move", rod: "shim", direction: "out" } });
-    await rig.run(3000);
-    const sup = rig.cmds("supervisor").filter(([, c]) => c.rod === "regulating");
-    expect(sup.length).toBeGreaterThan(0);
-    expect(sup[0]![1].direction).toBe("in");
+    await rig.run(1000);
+    expect(rig.cmds("supervisor").filter(([, c]) => c.rod === "regulating")).toEqual([]);
     // a hold reply never re-arms: the lowered-target text stays the same
     expect(reduceText(rig, 1)).toBe(reduceText(rig, 0));
+  });
+
+  it("a lowered target makes the controller insert the regulating rod", async () => {
+    const rig = await agentRig((_r, n) => (n === 0 ? "reduce" : null));
+    await send(rig.rt, { kind: "time", rate: 1, paused: false });
+    await rig.run(100);
+    // lift the regulating rod off its stop, so there is room to insert it
+    await send(rig.rt, { kind: "command", clientSeq: 1, clientId: "operator", cmd: { type: "rod.move", rod: "regulating", direction: "out" } });
+    await rig.run(500);
+    await send(rig.rt, { kind: "command", clientSeq: 2, clientId: "operator", cmd: { type: "rod.move", rod: "regulating", direction: "stop" } });
+    await send(rig.rt, { kind: "supervisor.enable" });
+    await rig.run(1000);
+    const reg = rig.cmds("supervisor").filter(([, c]) => c.rod === "regulating");
+    expect(reg.map(([, c]) => c.direction)).toContain("in");
+    expect(reg.map(([, c]) => c.direction)).not.toContain("out");
   });
 
   it("REDUCE tracks a lower validated target and leaves the controller armed", async () => {
@@ -40,6 +52,17 @@ describe("supervisor loop (headless, stub agent)", () => {
     const second = Number(/([\d.]+e[-+]\d+) W/.exec(reduceText(rig, 1)!)![1]);
     expect(second).toBeCloseTo(first * 0.5, 9);
     expect(rig.requests[1]!.candidates.some((c) => c.id === "hold")).toBe(true);
+  });
+
+  it("STOP_MOTION stops every moving rod the library has, not a fixed list", async () => {
+    const rig = await agentRig((_r, n) => (n === 0 ? "stop" : null));
+    await send(rig.rt, { kind: "time", rate: 1, paused: false });
+    await rig.run(100);
+    await send(rig.rt, { kind: "command", clientSeq: 1, clientId: "operator", cmd: { type: "rod.move", rod: "safety", direction: "out" } });
+    await send(rig.rt, { kind: "supervisor.enable" });
+    await rig.run(500);
+    expect(rig.cmds("supervisor").some(([, c]) => c.rod === "safety" && c.direction === "stop")).toBe(true);
+    expect(rig.snap().truth.rods.safety.moving).toBeNull();
   });
 
   it("SCRAM candidate scrams the reactor", async () => {
@@ -78,7 +101,7 @@ describe("supervisor loop (headless, stub agent)", () => {
     const rig = await agentRig((_r, n) => (n === 0 ? "hold" : null));
     await startSupervised(rig);
     await rig.run(300);
-    await send(rig.rt, { kind: "command", clientSeq: 1, clientId: "operator", cmd: { type: "rod.move", rod: "shim", direction: "out" } });
+    await send(rig.rt, { kind: "command", clientSeq: 1, clientId: "operator", cmd: { type: "rod.move", rod: "safety", direction: "out" } });
     await rig.run(1500);
     await send(rig.rt, { kind: "supervisor.disable" });
     await rig.run(200);
