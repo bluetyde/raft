@@ -138,6 +138,18 @@ export class RuntimeClient {
   endScenario(): void {
     this.send({ kind: "scenario.end" });
   }
+  
+  supervisorEnable(): void {
+    this.send({ kind: "supervisor.enable" });
+  }
+  
+  supervisorDisable(): void {
+    this.send({ kind: "supervisor.disable" });
+  }
+  
+  decisionResponse(response: import("./protocol").DecisionResponse): void {
+    this.send({ kind: "decision_response", response });
+  }
 
   /** Make another branch the current timeline. Resolves like a rewind; the clock is paused. */
   switchBranch(id: number): Promise<Msg<"rewound">> {

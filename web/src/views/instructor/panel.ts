@@ -269,7 +269,6 @@ export class InstructorPanel {
   }
 
   onSnapshot(m: SnapshotMsg): void {
-    this.copilot.onSnapshot(m, this.scenario);
     const s = m.snapshot;
     this.lastSnapshot = s;
     this.lastFaults = m.faults;

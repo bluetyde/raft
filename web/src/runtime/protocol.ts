@@ -170,7 +170,10 @@ export type ToWorker =
   | { kind: "attach"; role: Role }
   /** A window closes (sent on pagehide), so the worker stops sending to it. */
   | { kind: "detach" }
-  | { kind: "frameAck" };
+  | { kind: "frameAck" }
+  | { kind: "decision_response"; response: DecisionResponse }
+  | { kind: "supervisor.enable" }
+  | { kind: "supervisor.disable" };
 
 /** The lowest and highest non-null reading of one instrument over some steps, with their sim times. */
 export interface Extreme {
@@ -225,14 +228,36 @@ export type FromWorker =
   | { kind: "rewound"; step: number; t: number; previous: SessionFile }
   | { kind: "session"; file: SessionFile }
   | { kind: "scenario"; scenario: ScenarioView | null }
-  | {
-      kind: "timeline";
-      /** The current branch, with its live summary. */
-      current: BranchSummary;
-      /** The other branches, oldest first. */
-      branches: BranchSummary[];
-      marks: Mark[];
-      annotations: Annotation[];
-    }
+  | { kind: "timeline"; current: BranchSummary; branches: BranchSummary[]; marks: Mark[]; annotations: Annotation[] }
   | { kind: "error"; request: ToWorker["kind"]; code: string; message: string }
-  | { kind: "fault"; message: string };
+  | { kind: "fault"; message: string }
+  | { kind: "decision_request"; request: DecisionRequest };
+
+/** Versioned inference request to the Python agent server */
+export interface DecisionRequest {
+  protocolVersion: 1;
+  sessionId: string;       // runtime-owned loaded session
+  temporalEpoch: number;   // runtime-owned timeline generation
+  connectionId: string;    // transport generation registered with runtime
+  requestId: string;
+  observationStep: number;
+  observationSimTimeS: number;
+  role: 'operator';
+  premise: string;
+  candidates: Array<{ id: string; text: string }>;
+}
+
+/** Versioned inference response from the Python agent server */
+export interface DecisionResponse {
+  protocolVersion: 1;
+  sessionId: string;
+  temporalEpoch: number;
+  connectionId: string;
+  requestId: string;
+  observationStep: number;
+  status: 'ok' | 'error';
+  candidateId?: string;
+  errorCode?: string;
+  inferenceDurationMs?: number;
+}
+

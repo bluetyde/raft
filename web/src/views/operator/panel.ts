@@ -290,7 +290,6 @@ export class OperatorPanel {
   }
 
   onSnapshot(msg: SnapshotMsg): void {
-    this.copilot.onSnapshot(msg);
     const view = operatorView(msg.snapshot);
     this.lastView = view;
     const t = view.console.t;

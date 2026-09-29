@@ -82,11 +82,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-def evaluate_deberta(premise: str, hypotheses: list[str]) -> str:
+def evaluate_deberta(premise: str, candidates: list[dict]) -> str:
     import torch
     if not model or not tokenizer:
         raise RuntimeError("DeBERTa Model is not loaded.")
         
+    hypotheses = [c["text"] for c in candidates]
     pairs = [[premise, hyp] for hyp in hypotheses]
     with torch.no_grad():
         inputs = tokenizer(pairs, padding=True, truncation=True, return_tensors="pt").to(device)
@@ -106,56 +107,52 @@ def evaluate_deberta(premise: str, hypotheses: list[str]) -> str:
         
         logger.info("\n--- AI Copilot Decision (DeBERTa) ---")
         logger.info(f"Premise: {premise}")
-        for i, (hyp, score) in enumerate(zip(hypotheses, scores.tolist())):
+        for i, (cand, score) in enumerate(zip(candidates, scores.tolist())):
             marker = ">> " if i == best_idx else "   "
-            logger.info(f"{marker}[{score:6.2f}] {hyp}")
+            logger.info(f"{marker}[{score:6.2f}] {cand['text']}")
             
-        return hypotheses[best_idx]
+        return candidates[best_idx]["id"]
 
-def evaluate_mica(premise: str, hypotheses: list[str]) -> str:
-    import time
+def evaluate_mica(premise: str, candidates: list[dict]) -> str:
     from mica.typesafe_server import answer
     from mica.native import prompt_for
     
     if not mica_backend:
         raise RuntimeError("Mica Backend is not loaded.")
     
-    start_time = time.time()
     # Construct a row object for Mica's prompt builder
+    # Note: Mica candidate ids must match the original index, so we pass index as id
     row = {
         'kind': 'choice',
         'state': premise,
         'question': 'What should the operator do next?',
-        'candidates': [{'id': str(i), 'text': hyp} for i, hyp in enumerate(hypotheses)]
+        'candidates': [{'id': str(i), 'text': c["text"]} for i, c in enumerate(candidates)]
     }
     
     prompt = prompt_for(row, tokenizer)
     
-    # Run prefill and get probabilities
-    # direct_backend.judge takes a list of rows
     probs = mica_backend.judge([row])
     p = probs[0]
     ans = answer(row, p)
-    latency_ms = (time.time() - start_time) * 1000
     
     best_idx = int(ans['answer'])
     
-    logger.info(f"\n--- AI Copilot Decision (Mica - {latency_ms:.1f}ms) ---")
+    logger.info(f"\n--- AI Copilot Decision (Mica) ---")
     logger.info(f"Premise: {premise}")
-    for i, hyp in enumerate(hypotheses):
+    for i, cand in enumerate(candidates):
         prob = p[i]
         marker = ">> " if i == best_idx else "   "
-        logger.info(f"{marker}[{prob:5.3f}] {hyp}")
+        logger.info(f"{marker}[{prob:5.3f}] {cand['text']}")
         
-    return hypotheses[best_idx]
+    return candidates[best_idx]["id"]
 
-def evaluate_hypotheses(premise: str, hypotheses: list[str]) -> str:
-    if not hypotheses:
+def evaluate_hypotheses(premise: str, candidates: list[dict]) -> str:
+    if not candidates:
         return ""
     if args.model_backend == "mica":
-        return evaluate_mica(premise, hypotheses)
+        return evaluate_mica(premise, candidates)
     else:
-        return evaluate_deberta(premise, hypotheses)
+        return evaluate_deberta(premise, candidates)
 
 @app.websocket("/ws/{role}")
 async def websocket_endpoint(websocket: WebSocket, role: str):
@@ -167,32 +164,77 @@ async def websocket_endpoint(websocket: WebSocket, role: str):
     try:
         while True:
             data_str = await websocket.receive_text()
+            import time
+            start_time = time.time()
             try:
                 msg = json.loads(data_str)
             except json.JSONDecodeError:
                 logger.warning("Received invalid JSON")
                 continue
                 
-            premise = msg.get("premise", "")
-            hypotheses = msg.get("hypotheses", [])
+            # Parse versioned protocol
+            protocol_version = msg.get("protocolVersion")
+            if protocol_version != 1:
+                logger.warning(f"Unsupported protocol version: {protocol_version}")
+                await websocket.send_json({"status": "error", "errorCode": "INVALID_PROTOCOL"})
+                continue
+                
+            req_id = msg.get("requestId")
+            session_id = msg.get("sessionId")
+            epoch = msg.get("temporalEpoch")
+            conn_id = msg.get("connectionId")
+            obs_step = msg.get("observationStep")
             
-            if not premise or not hypotheses:
-                await websocket.send_json({"error": "Missing premise or hypotheses"})
+            premise = msg.get("premise", "")
+            candidates = msg.get("candidates", [])
+            
+            if not premise or not candidates:
+                await websocket.send_json({
+                    "protocolVersion": 1,
+                    "sessionId": session_id,
+                    "temporalEpoch": epoch,
+                    "connectionId": conn_id,
+                    "requestId": req_id,
+                    "observationStep": obs_step,
+                    "status": "error",
+                    "errorCode": "INVALID_PAYLOAD"
+                })
                 continue
                 
             try:
-                best_choice = await asyncio.to_thread(evaluate_hypotheses, premise, hypotheses)
+                best_candidate_id = await asyncio.to_thread(evaluate_hypotheses, premise, candidates)
+                latency_ms = (time.time() - start_time) * 1000
                 
-                # In shadow mode, we don't send the choice back to trigger action
+                response = {
+                    "protocolVersion": 1,
+                    "sessionId": session_id,
+                    "temporalEpoch": epoch,
+                    "connectionId": conn_id,
+                    "requestId": req_id,
+                    "observationStep": obs_step,
+                    "status": "ok",
+                    "inferenceDurationMs": latency_ms
+                }
+                
                 if args.shadow:
-                    # Still send an empty choice so the UI knows we finished the inference cycle
-                    # (to clear inferenceInFlight)
-                    await websocket.send_json({"choice": ""})
+                    # In shadow mode, we return status OK but no candidateId
+                    pass
                 else:
-                    await websocket.send_json({"choice": best_choice})
+                    response["candidateId"] = best_candidate_id
+                    
+                await websocket.send_json(response)
             except Exception as e:
                 logger.error(f"Inference error: {e}")
-                await websocket.send_json({"error": str(e)})
+                await websocket.send_json({
+                    "protocolVersion": 1,
+                    "sessionId": session_id,
+                    "temporalEpoch": epoch,
+                    "connectionId": conn_id,
+                    "requestId": req_id,
+                    "observationStep": obs_step,
+                    "status": "error",
+                    "errorCode": "INTERNAL_ERROR"
+                })
             
     except WebSocketDisconnect:
         logger.info(f"Client {role} disconnected")

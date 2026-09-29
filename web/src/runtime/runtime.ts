@@ -89,6 +89,9 @@ function cachingReader(inner: LibraryReader): LibraryReader {
   };
 }
 
+import { Supervisor } from "./supervisor";
+import { DeterministicPID } from "./controller";
+
 /** True for the commands that a coarse session refuses: pulse mode and rod firing (M6 amendment 1). */
 function isPulseCommand(cmd: Record<string, any>): boolean {
   return cmd["type"] === "rod.fire" || (cmd["type"] === "mode.set" && cmd["mode"] === "pulse");
@@ -134,6 +137,9 @@ export class Runtime {
   readonly options: RuntimeOptions;
   private lib: Library | null = null;
   private eng: Engine | null = null;
+
+  private supervisor: Supervisor = new Supervisor();
+  private controller: DeterministicPID = new DeterministicPID();
 
   private paused = true;
   private rate = 1;
@@ -257,16 +263,52 @@ export class Runtime {
         return this.annotate(msg.text, msg.step);
       case "annotation.delete":
         return this.deleteAnnotation(msg.id);
+      case "decision_response":
+        return this.handleDecisionResponse(msg.response);
       case "branch.switch":
         return this.switchBranch(msg.id);
       case "scenario.end":
         return this.endScenario();
+      case "supervisor.enable":
+        this.supervisor.enableTracking();
+        return;
+      case "supervisor.disable":
+        this.supervisor.disable();
+        this.controller.disable();
+        return;
       default:
         this.error((msg as { kind: string }).kind as ToWorker["kind"], "E_UNKNOWN_MESSAGE", "unknown message kind");
     }
   }
 
-  private error(request: ToWorker["kind"], code: string, message: string): void {
+  private handleDecisionResponse(response: import("./protocol").DecisionResponse): void {
+    const candidate = this.supervisor.resolveDecision(response);
+    if (!candidate) return; // Invalid, ignored, or error
+
+    if (candidate.intent === "HOLD_TARGET") {
+      this.controller.enable(this.eng!.snapshot(false).indicated?.["log"] ?? 0);
+    } else if (candidate.intent === "REDUCE_TARGET") {
+      // For now, if we don't have a specific targetValue, we just insert manually.
+      // Wait, REDUCE_TARGET intent must provide a lower target candidate.
+      if (candidate.targetValue !== undefined && this.controller.target !== null && candidate.targetValue < this.controller.target) {
+        this.controller.target = candidate.targetValue;
+      } else {
+        // Fallback if targetValue is undefined
+        this.controller.disable();
+        this.eng!.submit({ type: "rod.move", rod: "regulating", direction: "in" }, "supervisor");
+      }
+    } else if (candidate.intent === "REQUEST_SCRAM") {
+      this.controller.disable();
+      this.eng!.submit({ type: "scram" }, "supervisor");
+    } else if (candidate.intent === "STOP_MOTION") {
+      this.controller.disable();
+      this.eng!.submit({ type: "rod.move", rod: "regulating", direction: "stop" }, "supervisor");
+      this.eng!.submit({ type: "rod.move", rod: "shim", direction: "stop" }, "supervisor");
+      this.eng!.submit({ type: "rod.move", rod: "safety", direction: "stop" }, "supervisor");
+    }
+  }
+
+  private error(request: import("./protocol").ToWorker["kind"], code: string, message: string): void {
     this.reply({ kind: "error", request, code, message });
   }
 
@@ -375,6 +417,10 @@ export class Runtime {
   /** Make `eng` the current engine, after a load, rewind or import. The clock stays paused. */
   private install(eng: Engine): void {
     this.eng = eng;
+
+    this.supervisor.temporalEpoch++;
+    this.supervisor.disable();
+    this.controller.disable();
 
     this.faulted = false;
     this.limited = null;
@@ -509,6 +555,37 @@ export class Runtime {
   /** One engine step with fault, halt and checkpoint handling. False when the clock had to stop. */
   private stepOnce(): boolean {
     const e = this.eng!;
+    
+    // Check Supervisor Deadlines
+    if (this.supervisor.checkDeadlines(e.t)) {
+      this.supervisor.disable();
+      this.controller.disable();
+      this.pauseFor("solver", "Loss of AI supervision (timeout)"); // Suspend simulation
+      
+      // Reconcile and halt any owned motion
+      e.submit({ type: "rod.move", rod: "regulating", direction: "stop" }, "supervisor");
+      return false; // Clock stops
+    }
+
+    // Execute Deterministic Controller at outer-step boundaries (which stepOnce() represents)
+    if (this.controller.enabled) {
+      const state = e.snapshot(false);
+      const power = state.indicated?.["log"] ?? state.truth?.power ?? 0;
+      const isSaturated = false; // We can check this if we need to, but the PID calculates on next line.
+      // Wait, we need to know isSaturated. Let's get rod position.
+      const rodPos = state.truth?.rods?.["regulating"]?.position ?? 1;
+      const directionReq = this.controller.lastOutput > 0 ? "out" : "in";
+      const sat = (directionReq === "out" && rodPos >= 0.99) || (directionReq === "in" && rodPos <= 0.01);
+      
+      const cmd = this.controller.calculate(power, e.config.outerDt, sat);
+      
+      // Only submit if different from current motion, or we can submit "stop"
+      const currentMoving = state.truth?.rods?.["regulating"]?.moving ?? "stop";
+      if (currentMoving !== cmd) {
+        e.submit({ type: "rod.move", rod: "regulating", direction: cmd }, "supervisor");
+      }
+    }
+
     try {
       e.step();
     } catch (err) {
@@ -881,8 +958,15 @@ export class Runtime {
     this.eventCursor = e.events.length;
     this.host.post({ kind: "events", events: batch });
     const marks = marksFrom(batch, e.commandLog);
-    if (marks.length > 0) this.marks.push(...marks);
-    if (this.scenario && marks.some((m) => m.kind === "trip")) this.scenarioDirty = true; // the score counts trips
+    if (marks.length > 0) {
+      this.marks.push(...marks);
+      if (marks.some((m) => m.kind === "trip")) {
+        if (this.scenario) this.scenarioDirty = true; // the score counts trips
+        // Protective trips disable tracking
+        this.supervisor.trip();
+        this.controller.disable();
+      }
+    }
     // a new mark, or a command that changes the current branch's command count in the compare table
     if (marks.length > 0 || batch.some((ev) => ev.type === "command")) this.timelineDirty = true;
     for (const ev of batch) {
@@ -931,6 +1015,51 @@ export class Runtime {
       p.extremes = {};
       if (own) this.host.post({ kind: "snapshot", snapshot, shape: own, extremes, faults }, [own.buffer], p.id);
       else this.host.post({ kind: "snapshot", snapshot, extremes, faults }, undefined, p.id);
+    }
+    
+    // Also dispatch inference requests if supervisor is enabled and not waiting
+    if (this.supervisor.isTracking() && !this.supervisor.pendingRequest) {
+      // Avoid sending too frequently, just piggyback on snapshot pace
+      snapshot ??= e.snapshot(false);
+      const power = snapshot.indicated?.["log"] ?? snapshot.truth?.power ?? 0;
+      const period = snapshot.truth?.period ?? 0;
+      const fuelTemp = (snapshot.truth?.fuelTemp ?? 293.15) - 273.15;
+      
+      const isShutdown = power < 1e-6;
+      const isDanger   = !isShutdown && period > 0 && period < 10;
+      const isStartup  = !isShutdown && period > 30;
+      const isStable   = !isShutdown && (period < 0 || period > 100);
+
+      let phaseDesc: string;
+      if (isShutdown)     phaseDesc = "The reactor is SHUTDOWN (power is essentially zero).";
+      else if (isDanger)  phaseDesc = `Power is ${power.toExponential(3)} W. Period is dangerously short at ${period.toFixed(1)} s — reactor is accelerating rapidly.`;
+      else if (isStartup) phaseDesc = `Power is ${power.toExponential(3)} W. Period is ${period.toFixed(1)} s — reactor is rising in a controlled startup.`;
+      else if (isStable)  phaseDesc = `Power is ${power.toExponential(3)} W. Period is ${period.toFixed(1)} s — reactor is stable or falling.`;
+      else                phaseDesc = `Power is ${power.toExponential(3)} W. Period is ${period.toFixed(1)} s.`;
+      
+      const rodDesc = [
+        `Shim: ${((snapshot.truth.rods?.shim?.position ?? 1) * 100).toFixed(0)}%`,
+        `Safety: ${((snapshot.truth.rods?.safety?.position ?? 1) * 100).toFixed(0)}%`,
+        `Regulating: ${((snapshot.truth.rods?.regulating?.position ?? 1) * 100).toFixed(0)}%`,
+      ].join(", ");
+
+      const premise = `ROLE: Nuclear Reactor Operator. GOAL: Safely control power levels and execute necessary protective actions. MODE: Auto (PID). CURRENT STATE: ${phaseDesc} Rod positions — ${rodDesc}. Fuel Temperature is ${fuelTemp.toFixed(1)} °C.`;
+
+      const candidates = this.supervisor.dispatchObservation(e.t);
+      const req: import("./protocol").DecisionRequest = {
+        protocolVersion: 1,
+        sessionId: "runtime-session", // We can improve this with real IDs later
+        temporalEpoch: this.supervisor.temporalEpoch,
+        connectionId: "conn-1",
+        requestId: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(),
+        observationStep: e.stepIndex,
+        observationSimTimeS: e.t,
+        role: "operator",
+        premise,
+        candidates: candidates.map(c => ({ id: c.id, text: c.text }))
+      };
+      
+      this.host.post({ kind: "decision_request", request: req });
     }
   }
 
