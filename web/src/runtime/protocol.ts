@@ -145,6 +145,7 @@ export const OPERATOR_FORBIDDEN: readonly ToWorker["kind"][] = [
   "annotation.delete",
   "scenario.end",
   "script.load",
+  "supervisor.goal",
 ];
 
 /** Why the clock runs slower than requested, or is stopped. */
@@ -182,7 +183,9 @@ export type ToWorker =
   | { kind: "frameAck" }
   | { kind: "decision_response"; response: DecisionResponse }
   | { kind: "supervisor.enable" }
-  | { kind: "supervisor.disable" };
+  | { kind: "supervisor.disable" }
+  /** The power (W) the instructor wants the AI operator to work toward, or null for "hold the current power". Instructor and full windows only. */
+  | { kind: "supervisor.goal"; powerW: number | null };
 
 /** The lowest and highest non-null reading of one instrument over some steps, with their sim times. */
 export interface Extreme {

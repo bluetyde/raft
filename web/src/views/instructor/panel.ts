@@ -84,6 +84,7 @@ export class InstructorPanel {
   private lastTimeline: TimelineMsg | null = null;
   private readonly scenarioBox: HTMLElement;
   private readonly scriptText: HTMLElement;
+  private readonly goalText: HTMLElement;
   /** The running scenario as the worker last sent it (for tests). */
   scenario: ScenarioView | null = null;
   private lastSnapshot: Record<string, any> | null = null;
@@ -194,6 +195,23 @@ export class InstructorPanel {
     this.exportText = el("div", { className: "vr-inst-message" });
     this.exportText.dataset["inst"] = "export-message";
 
+    // ---- AI operator goal ----
+    const goalInput = el("input", { type: "number", placeholder: "goal power, W" });
+    goalInput.dataset["inst"] = "goal-input";
+    goalInput.style.width = "10em";
+    const setGoal = button("set goal", "goal-set", () => {
+      const w = Number(goalInput.value);
+      this.client.supervisorGoal(goalInput.value !== "" && Number.isFinite(w) && w > 0 ? w : null);
+      this.goalText.textContent = goalInput.value !== "" && w > 0 ? `goal set to ${w} W` : "goal cleared: the AI holds the current power";
+    });
+    const clearGoal = button("hold current power", "goal-clear", () => {
+      goalInput.value = "";
+      this.client.supervisorGoal(null);
+      this.goalText.textContent = "goal cleared: the AI holds the current power";
+    });
+    this.goalText = el("div", { className: "vr-inst-message" });
+    this.goalText.dataset["inst"] = "goal-status";
+
     // ---- script ----
     const scriptInput = el("input", { type: "file", accept: ".json,application/json" });
     scriptInput.dataset["inst"] = "script-file";
@@ -225,6 +243,15 @@ export class InstructorPanel {
         el("h3", { textContent: "Scenario" }),
         el("div", { className: "vr-row" }, [scenarioSelect, startScenario, endScenario]),
         this.scenarioBox,
+      ]),
+      el("section", {}, [
+        el("h3", { textContent: "AI operator goal" }),
+        el("div", { className: "vr-row" }, [goalInput, setGoal, clearGoal]),
+        el("div", {
+          className: "vr-inst-note",
+          textContent: "The power the AI operator works toward. Below it the AI may raise the target, above it lower it; blank holds the current power. A script can also change it (goal.set, goal.clear).",
+        }),
+        this.goalText,
       ]),
       el("section", {}, [
         el("h3", { textContent: "Script (timed faults)" }),

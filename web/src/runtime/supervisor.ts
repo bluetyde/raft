@@ -43,6 +43,10 @@ export class Supervisor {
   // Configured limits
   public readonly maxWallAgeMs: number;
   private maxSimAgeS: number;
+  /** Least wall time between two requests, and the extra wait after an error reply (ms). */
+  private readonly minIntervalMs: number;
+  private readonly errorBackoffMs: number;
+  private nextAllowedWall = 0;
 
   public pendingRequest: boolean = false;
   /** Identity of the one request in flight; a reply must match all of it. */
@@ -53,10 +57,12 @@ export class Supervisor {
   /** `now` is the host's wall clock, so tests and replay control the deadlines. */
   constructor(
     private readonly now: () => number = () => performance.now(),
-    limits: { maxWallAgeMs?: number; maxSimAgeS?: number } = {},
+    limits: { maxWallAgeMs?: number; maxSimAgeS?: number; minIntervalMs?: number; errorBackoffMs?: number } = {},
   ) {
     this.maxWallAgeMs = limits.maxWallAgeMs ?? 2000;
     this.maxSimAgeS = limits.maxSimAgeS ?? 1.0;
+    this.minIntervalMs = limits.minIntervalMs ?? 500;
+    this.errorBackoffMs = limits.errorBackoffMs ?? 2000;
   }
 
   public enableTracking(port: string): void {
@@ -84,6 +90,11 @@ export class Supervisor {
     this.activeCandidates.clear();
   }
 
+  /** True when enough wall time has passed since the last request (and its error backoff). */
+  public canDispatch(): boolean {
+    return this.now() >= this.nextAllowedWall;
+  }
+
   public isTracking(): boolean {
     return this.mode === "TRACKING";
   }
@@ -92,6 +103,7 @@ export class Supervisor {
   public dispatchObservation(simTimeS: number, target: number | null, raiseTo: number | null = null, allowScram: boolean = false): Candidate[] {
     this.lastObservationSimS = simTimeS;
     this.lastObservationWallMs = this.now();
+    this.nextAllowedWall = this.lastObservationWallMs + this.minIntervalMs;
     this.pendingRequest = true;
 
     this.activeCandidates.clear();
@@ -174,6 +186,7 @@ export class Supervisor {
     this.pendingIdentity = null;
 
     if (response.status !== "ok" || !response.candidateId) {
+      if (response.status === "error") this.nextAllowedWall = this.now() + this.errorBackoffMs; // do not hammer a failing server
       this.activeCandidates.clear();
       return null;
     }

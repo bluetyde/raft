@@ -150,6 +150,11 @@ export class RuntimeClient {
     this.send({ kind: "supervisor.enable" });
   }
   
+  /** Tell the AI which power to work toward (W), or null to hold the current power. */
+  supervisorGoal(powerW: number | null): void {
+    this.send({ kind: "supervisor.goal", powerW });
+  }
+
   supervisorDisable(): void {
     this.send({ kind: "supervisor.disable" });
   }

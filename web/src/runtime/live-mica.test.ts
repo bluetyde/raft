@@ -119,6 +119,12 @@ describe.skipIf(!LIVE)("live jev-server on TRIGA", () => {
       )} trips=${JSON.stringify(sr.trips)}`,
     );
 
+    // The instructor's goal: JEV_GOAL_X times the start power (JEV_GOAL2_X halfway through instead of the reactivity step).
+    const p0 = rt.engine!.snapshot(false).indicated?.["log"] ?? rt.engine!.snapshot(false).truth.power;
+    if (process.env["JEV_GOAL_X"]) {
+      rt.receive({ kind: "supervisor.goal", powerW: p0 * Number(process.env["JEV_GOAL_X"]) });
+      console.log(`-- goal set to ${(p0 * Number(process.env["JEV_GOAL_X"])).toExponential(2)} W (start power ${p0.toExponential(2)} W)`);
+    }
     rt.receive({ kind: "supervisor.enable" });
     rt.receive({ kind: "time", rate: RATE, paused: false });
     const start = performance.now();
@@ -127,6 +133,11 @@ describe.skipIf(!LIVE)("live jev-server on TRIGA", () => {
     while ((performance.now() - start) / 1000 < SECONDS) {
       await sleep(250);
       for (const m of host.out.splice(0)) if (m.kind === "snapshot") rt.receive({ kind: "frameAck" });
+      if (!disturbed && (performance.now() - start) / 1000 > mid && process.env["JEV_GOAL2_X"]) {
+        disturbed = true;
+        rt.receive({ kind: "supervisor.goal", powerW: p0 * Number(process.env["JEV_GOAL2_X"]) });
+        console.log(`-- goal changed to ${(p0 * Number(process.env["JEV_GOAL2_X"])).toExponential(2)} W at sim t=${rt.engine!.t.toFixed(1)} s`);
+      }
       if (!disturbed && (performance.now() - start) / 1000 > mid) {
         disturbed = true;
         // a small reactivity insertion from the instructor: the controller has to answer it
@@ -138,7 +149,11 @@ describe.skipIf(!LIVE)("live jev-server on TRIGA", () => {
     const end = rt.engine!.snapshot(false);
     const clock = host.out.filter((m) => m.kind === "clock").at(-1) as any;
     const sup = rt.engine!.commandLog.filter((c: any) => c.clientId === "supervisor");
-    console.table(rows.slice(0, 40));
+    const counts: Record<string, number> = {};
+    for (const r of rows) counts[r.choice.split(" ")[0]!] = (counts[r.choice.split(" ")[0]!] ?? 0) + 1;
+    console.log("choices:", JSON.stringify(counts));
+    const stride = Math.max(1, Math.floor(rows.length / 30));
+    console.table(rows.filter((_, i) => i % stride === 0 || (i > 0 && rows[i]!.choice !== rows[i - 1]!.choice)));
     const lat = rows.map((r) => r.ms).filter((x) => x >= 0).sort((a, b) => a - b);
     const wall = rows.map((r) => r.wallMs).sort((a, b) => a - b);
     const q = (a: number[], p: number) => a[Math.min(a.length - 1, Math.floor(a.length * p))] ?? NaN;

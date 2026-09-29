@@ -122,7 +122,36 @@ describe("shipped example script", () => {
     const { repoRoot } = await import("../sim/testing");
     const { host, rt } = await loadedRuntime({}, { source: { kind: "files", files: (await import("./test-helpers")).readFolder(join(repoRoot, "libraries", "triga-jsi-242")) } });
     void host;
-    const s = JSON.parse(readFileSync(join(repoRoot, "web", "src", "app", "scripts", "loss-of-flow-drill.json"), "utf8"));
-    expect(validateScript(s, rt.engine!.lib)).toEqual([]);
+    for (const name of ["loss-of-flow-drill", "raise-then-lower"]) {
+      const s = JSON.parse(readFileSync(join(repoRoot, "web", "src", "app", "scripts", `${name}.json`), "utf8"));
+      expect(validateScript(s, rt.engine!.lib), name).toEqual([]);
+    }
+  });
+});
+
+describe("instructor script: AI operator goal", () => {
+  it("goal events steer the premise at their time, without any engine command", async () => {
+    const rig = await agentRig(() => "hold");
+    await send(rig.rt, {
+      kind: "script.load",
+      script: file([
+        { atSeconds: 0.5, action: "goal.set", powerW: 5 },
+        { atSeconds: 1.5, action: "goal.clear" },
+      ]),
+    });
+    await send(rig.rt, { kind: "supervisor.enable" });
+    await send(rig.rt, { kind: "time", rate: 1, paused: false });
+    await rig.run(3000);
+    const has = (fn: (p: string) => boolean) => rig.requests.some((r) => fn(r.premise));
+    expect(rig.requests[0]!.premise).toContain("GOAL: hold the current power");
+    expect(has((p) => p.includes("bring power to 5.00e+0 W"))).toBe(true);
+    expect(rig.requests.at(-1)!.premise).toContain("GOAL: hold the current power");
+    expect(rig.cmds("script")).toEqual([]);
+  });
+
+  it("rejects a goal without a positive power", async () => {
+    const { lib } = await rtWithIds();
+    expect(validateScript(file([{ atSeconds: 0, action: "goal.set" }]), lib).map((i) => i.code)).toEqual(["E_SCRIPT_PARAM"]);
+    expect(validateScript(file([{ atSeconds: 0, action: "goal.set", powerW: -1 }]), lib).map((i) => i.code)).toEqual(["E_SCRIPT_PARAM"]);
   });
 });

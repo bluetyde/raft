@@ -65,6 +65,31 @@ describe("supervisor loop (headless, stub agent)", () => {
     await rig.run(500);
     expect(rig.cmds("supervisor").some(([, c]) => c.rod === "safety" && c.direction === "stop")).toBe(true);
     expect(rig.snap().truth.rods.safety.moving).toBeNull();
+    // the controller stays armed after a stop, so a rising reactor still has something acting on it
+    await rig.run(1500);
+    expect(rig.requests.at(-1)!.candidates.some((c) => c.id === "hold")).toBe(true);
+  });
+
+  it("paces requests: at most one per 500 ms, and a 2 s backoff after an error reply", async () => {
+    const rig = await agentRig(() => "hold");
+    await startSupervised(rig);
+    await rig.run(3000);
+    expect(rig.requests.length).toBeLessThanOrEqual(7);
+    expect(rig.requests.length).toBeGreaterThanOrEqual(4);
+    const err = await agentRig((r) => envelope(r, { status: "error", errorCode: "INTERNAL_ERROR" }));
+    await startSupervised(err);
+    await err.run(3000);
+    expect(err.requests.length).toBeLessThanOrEqual(2); // one at once, the next only after the 2 s backoff
+  });
+
+  it("sends no request while the controller is off and there is no emergency", async () => {
+    const rig = await agentRig(() => "hold");
+    await startSupervised(rig);
+    await rig.run(700);
+    (rig.rt as any).controller.disable();
+    const before = rig.requests.length;
+    await rig.run(3000);
+    expect(rig.requests.length).toBe(before);
   });
 
   it("RAISE moves the target up by the validated step, and a cooldown blocks the next one", async () => {
@@ -89,6 +114,23 @@ describe("supervisor loop (headless, stub agent)", () => {
     await send(rig.rt, { kind: "supervisor.enable" });
     await rig.run(300);
     expect(rig.requests[0]!.candidates.some((x) => x.id === "raise")).toBe(false);
+  });
+
+  it("the premise states the operator's goal power and where power stands against it", async () => {
+    const rig = await agentRig(() => "hold");
+    await startSupervised(rig);
+    await rig.run(200);
+    expect(rig.requests[0]!.premise).toContain("GOAL: hold the current power");
+    const p = rig.snap().indicated.log as number;
+    for (const [goal, word] of [[p * 5, "below the goal"], [p / 5, "above the goal"], [p, "at the goal"]] as const) {
+      await send(rig.rt, { kind: "supervisor.goal", powerW: goal });
+      const before = rig.requests.length;
+      await rig.rt.idle();
+      await rig.run(700);
+      const last = rig.requests.at(-1)!;
+      expect(rig.requests.length).toBeGreaterThan(before - 1);
+      expect(last.premise).toContain(word);
+    }
   });
 
   it("a SCRAM is offered only when the runtime sees danger", async () => {
@@ -132,7 +174,7 @@ describe("supervisor loop (headless, stub agent)", () => {
     await startSupervised(rig);
     await rig.run(6000); // well past the 2 s wall limit
     expect(scrams(rig)).toBe(false);
-    expect(rig.requests.length).toBeGreaterThan(3); // requests keep flowing: nothing tripped a timeout
+    expect(rig.requests.length).toBeGreaterThanOrEqual(3); // requests keep flowing (paced): nothing tripped a timeout
   });
 
   it("disabling supervision stops the rod the controller was moving", async () => {

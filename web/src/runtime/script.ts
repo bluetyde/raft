@@ -51,9 +51,18 @@ export interface PreparedScriptEvent {
   note: string;
 }
 
+/** A change of the AI operator's goal power (W; null = hold the current power). Not an engine command. */
+export interface PreparedScriptGoal {
+  step: number;
+  t: number;
+  powerW: number | null;
+  note: string;
+}
+
 export interface PreparedScript {
   name: string;
   events: PreparedScriptEvent[];
+  goals: PreparedScriptGoal[];
 }
 
 const issue = (code: string, path: string, message: string): Issue => ({ code, path, message }) as Issue;
@@ -74,6 +83,9 @@ const instrumentFault = (kind: string): Builder => (ev, lib, path, out) => {
   const instrument = needString(ev, "instrument", path, out, (id) => lib.instruments.some((i: any) => i.id === id), "instrument");
   return instrument ? { type: "fault.instrument", instrument, kind } : null;
 };
+
+/** Actions that steer the AI operator's goal instead of the plant. */
+export const GOAL_ACTIONS = ["goal.set", "goal.clear"];
 
 const BUILDERS: Record<string, Builder> = {
   "instrument.stuck": instrumentFault("stuck"),
@@ -143,8 +155,13 @@ export function validateScript(obj: unknown, lib: Library): Issue[] {
       out.push(issue("E_SCRIPT_ACTION", `${path}/action`, "action must be a string"));
     } else if (Object.hasOwn(UNSUPPORTED_ACTIONS, ev.action)) {
       out.push(issue("E_SCRIPT_UNSUPPORTED", `${path}/action`, UNSUPPORTED_ACTIONS[ev.action]!));
+    } else if (GOAL_ACTIONS.includes(ev.action)) {
+      const w = ev["powerW"];
+      if (ev.action === "goal.set" && (typeof w !== "number" || !Number.isFinite(w) || w <= 0)) {
+        out.push(issue("E_SCRIPT_PARAM", `${path}/powerW`, "powerW must be a positive number of watts"));
+      }
     } else if (!Object.hasOwn(BUILDERS, ev.action)) {
-      out.push(issue("E_SCRIPT_ACTION", `${path}/action`, `unknown action "${ev.action}"; use one of ${SCRIPT_ACTIONS.join(", ")}`));
+      out.push(issue("E_SCRIPT_ACTION", `${path}/action`, `unknown action "${ev.action}"; use one of ${[...SCRIPT_ACTIONS, ...GOAL_ACTIONS].join(", ")}`));
     } else {
       const cmd = BUILDERS[ev.action]!(ev, lib, path, out);
       // the engine takes some commands the command contract does not list; a script sticks to the contract
@@ -168,7 +185,15 @@ export function prepareScript(obj: unknown, lib: Library, outerDt: number): Prep
   const issues = validateScript(obj, lib);
   if (issues.length > 0) throw new ScriptError(issues);
   const f = obj as ScriptFile;
-  const events: PreparedScriptEvent[] = f.events.map((ev, i) => {
+  const goals: PreparedScriptGoal[] = [];
+  const commands = f.events.filter((ev) => {
+    if (!GOAL_ACTIONS.includes(ev.action)) return true;
+    const t = eventTime(ev, "", [])!;
+    const step = dueStep(t, outerDt);
+    goals.push({ step, t: step * outerDt, powerW: ev.action === "goal.set" ? (ev["powerW"] as number) : null, note: ev.note ?? ev.action });
+    return false;
+  });
+  const events: PreparedScriptEvent[] = commands.map((ev, i) => {
     const t = eventTime(ev, `/events/${i}`, [])!;
     const cmd = BUILDERS[ev.action]!(ev, lib, `/events/${i}`, [])!;
     const step = dueStep(t, outerDt);
@@ -176,5 +201,6 @@ export function prepareScript(obj: unknown, lib: Library, outerDt: number): Prep
   });
   // stable: events at the same time keep the file's order
   events.sort((a, b) => a.step - b.step);
-  return { name: f.name ?? "script", events };
+  goals.sort((a, b) => a.step - b.step);
+  return { name: f.name ?? "script", events, goals };
 }

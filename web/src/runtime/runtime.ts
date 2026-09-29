@@ -66,6 +66,10 @@ export interface RuntimeOptions {
   supervisorMaxWallMs: number;
   /** ... and how much simulation time may pass meanwhile (s). */
   supervisorMaxSimS: number;
+  /** Least wall time between two decision requests (ms). */
+  supervisorMinIntervalMs: number;
+  /** Extra wait after an error reply (ms). */
+  supervisorErrorBackoffMs: number;
 }
 
 export const DEFAULT_OPTIONS: RuntimeOptions = {
@@ -79,6 +83,8 @@ export const DEFAULT_OPTIONS: RuntimeOptions = {
   clockReportMs: 1000,
   supervisorMaxWallMs: 2000,
   supervisorMaxSimS: 1.0,
+  supervisorMinIntervalMs: 500,
+  supervisorErrorBackoffMs: 2000,
 };
 
 /** Reads each path once: loadLibrary validates first and then reads the files again. */
@@ -146,6 +152,10 @@ export class Runtime {
   private eng: Engine | null = null;
 
   private supervisor: Supervisor;
+  /** The power (W) the AI is asked to work toward; null means hold the current power. Set by the instructor (panel or script), never by the AI or the operator. */
+  private goalPower: number | null = null;
+  /** The engine step at which the panel last set `goalPower`, to order it against script goal events. */
+  private goalStep = -1;
   /** Sim time of the last approved raise, for the cooldown. */
   private lastRaiseT = -Infinity;
   /** The instructor script for this session, or null. Its events are submitted as commands from "script". */
@@ -202,7 +212,7 @@ export class Runtime {
   ) {
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.history = new CheckpointStore(this.options.maxCheckpoints);
-    this.supervisor = new Supervisor(() => this.host.now(), { maxWallAgeMs: this.options.supervisorMaxWallMs, maxSimAgeS: this.options.supervisorMaxSimS });
+    this.supervisor = new Supervisor(() => this.host.now(), { maxWallAgeMs: this.options.supervisorMaxWallMs, maxSimAgeS: this.options.supervisorMaxSimS, minIntervalMs: this.options.supervisorMinIntervalMs, errorBackoffMs: this.options.supervisorErrorBackoffMs });
     this.ports.set(MAIN_PORT, new Port(MAIN_PORT, "full"));
   }
 
@@ -292,6 +302,10 @@ export class Runtime {
         if (this.supervisor.ownerPort === from && !this.controller.enabled && power > TARGET_FLOOR_W) this.controller.enable(power);
         return;
       }
+      case "supervisor.goal":
+        this.goalPower = msg.powerW !== null && Number.isFinite(msg.powerW) && msg.powerW >= TARGET_FLOOR_W ? msg.powerW : null;
+        this.goalStep = this.eng?.stepIndex ?? 0;
+        return;
       case "supervisor.disable":
         if (this.supervisor.ownerPort === null || from === this.supervisor.ownerPort) this.stopSupervision();
         return;
@@ -350,7 +364,10 @@ export class Runtime {
       this.controller.disable();
       this.eng!.submit({ type: "scram" }, "supervisor");
     } else if (candidate.intent === "STOP_MOTION") {
-      this.controller.disable();
+      // Stop the other rods and hold the power as it is now. The controller stays armed: turning it off here
+      // would leave a rising reactor with nothing acting on it.
+      const holdAt = this.eng!.snapshot(false).indicated?.["log"];
+      if (this.controller.enabled && typeof holdAt === "number" && holdAt >= TARGET_FLOOR_W) this.controller.setTarget(holdAt);
       // every rod the library has that is moving; the engine refuses to stop a rod that is scramming
       const rods = this.eng!.snapshot(false).truth?.rods ?? {};
       for (const [rid, r] of Object.entries<any>(rods)) {
@@ -472,6 +489,8 @@ export class Runtime {
     this.eng = eng;
 
     this.lastRaiseT = -Infinity;
+    this.goalPower = null;
+    this.goalStep = -1;
     this.supervisor.temporalEpoch++;
     this.supervisor.disable();
     this.controller.disable();
@@ -689,9 +708,23 @@ export class Runtime {
     }
   }
 
+  /** The goal power now: the instructor panel's, or the latest script goal event, whichever is newer. */
+  private effectiveGoal(): number | null {
+    const e = this.eng;
+    let goal = this.goalPower;
+    let at = this.goalStep;
+    for (const g of this.script?.goals ?? []) {
+      if (e && g.step <= e.stepIndex && g.step >= at) {
+        goal = g.powerW;
+        at = g.step;
+      }
+    }
+    return goal;
+  }
+
   private scriptMessage(): Extract<FromWorker, { kind: "script" }> {
     const sc = this.script;
-    return { kind: "script", script: sc ? { name: sc.name, events: sc.events.map((x) => ({ step: x.step, t: x.t, note: x.note })) } : null };
+    return { kind: "script", script: sc ? { name: sc.name, events: [...sc.events, ...sc.goals].sort((a, b) => a.step - b.step).map((x) => ({ step: x.step, t: x.t, note: x.note })) } : null };
   }
 
   private loadScript(raw: unknown | null): void {
@@ -1125,7 +1158,7 @@ export class Runtime {
     }
     
     // Also dispatch inference requests if supervisor is enabled and not waiting
-    if (this.supervisor.isTracking() && !this.supervisor.pendingRequest) {
+    if (this.supervisor.isTracking() && !this.supervisor.pendingRequest && this.supervisor.canDispatch()) {
       // Avoid sending too frequently, just piggyback on snapshot pace
       snapshot ??= e.snapshot(false);
       const power = snapshot.indicated?.["log"] ?? snapshot.truth?.power ?? 0;
@@ -1151,7 +1184,18 @@ export class Runtime {
       const target = this.controller.enabled ? this.controller.target : null;
       const modeDesc = target !== null ? `The automatic controller is holding ${target.toExponential(2)} W.` : "The automatic controller is off.";
 
-      const premise = `ROLE: Nuclear Reactor Operator. GOAL: hold power at the approved level and stay safe; a SCRAM is only for a real emergency. CURRENT STATE: ${phaseDesc} ${modeDesc} Control rods — ${rodDesc}. Fuel temperature is ${fuelTemp.toFixed(1)} °C. ${tripDesc}${danger ? "" : " There is no emergency."}`;
+      const goal = this.effectiveGoal();
+      let goalDesc: string;
+      if (goal === null) goalDesc = "GOAL: hold the current power and stay safe.";
+      else {
+        const ratio = power / goal;
+        const where = ratio < 0.8 ? "below the goal, so power needs to be raised" : ratio > 1.25 ? "above the goal, so power needs to be lowered" : "at the goal, so hold it";
+        goalDesc = `GOAL: bring power to ${goal.toExponential(2)} W and hold it there. Power is ${where}.`;
+      }
+      const premise = `ROLE: Nuclear Reactor Operator. ${goalDesc} Stay safe; a SCRAM is only for a real emergency. CURRENT STATE: ${phaseDesc} ${modeDesc} Control rods â€” ${rodDesc}. Fuel temperature is ${fuelTemp.toFixed(1)} Â°C. ${tripDesc}${danger ? "" : " There is no emergency."}`;
+
+      // With the controller off and no emergency there is nothing for the AI to choose (and a lone candidate is no choice).
+      if (!this.controller.enabled && !danger) return;
 
       const candidates = this.supervisor.dispatchObservation(e.t, this.controller.enabled ? this.controller.target : null, this.raiseTarget(), danger);
       const req: import("./protocol").DecisionRequest = {

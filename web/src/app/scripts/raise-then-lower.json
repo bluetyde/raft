@@ -1,0 +1,11 @@
+{
+  "format": "virtual-reactor-instructor-script",
+  "version": 1,
+  "name": "Raise then lower the goal",
+  "events": [
+    { "atMinutes": 0, "action": "goal.clear", "note": "AI holds the current power" },
+    { "atMinutes": 1, "action": "goal.set", "powerW": 0.1, "note": "goal: raise power to 0.1 W" },
+    { "atMinutes": 6, "action": "goal.set", "powerW": 0.02, "note": "goal: lower power to 0.02 W" },
+    { "atMinutes": 10, "action": "goal.clear", "note": "back to holding" }
+  ]
+}
