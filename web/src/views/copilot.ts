@@ -44,7 +44,7 @@ class PIDController {
     const logTarget = Math.log10(Math.max(this.target, 1e-6));
     const logCurrent = Math.log10(Math.max(current, 1e-6));
     const error = logTarget - logCurrent;
-
+    
     this.integral += error * dt;
     this.integral = Math.max(-10, Math.min(10, this.integral)); // Anti-windup
     
@@ -75,6 +75,8 @@ export class JevCopilot {
   
   private pid = new PIDController();
   private lastPower: number = 0;
+  private currentT: number = 0;
+  private inferenceT: number | null = null;
 
   constructor(client: RuntimeClient, role: "operator" | "instructor") {
     this.client = client;
@@ -101,14 +103,13 @@ export class JevCopilot {
     };
     this.ws.onclose = () => {
       console.log("[JevCopilot] Disconnected");
-      this.enabled = false;
       this.ws = null;
-      this.inferenceInFlight = false;
+      this.cleanup();
     };
     this.ws.onerror = (err) => {
       console.error("[JevCopilot] WebSocket error:", err);
-      this.enabled = false;
       this.ws = null;
+      this.cleanup();
     };
   }
 
@@ -117,6 +118,11 @@ export class JevCopilot {
       this.ws.close();
       this.ws = null;
     }
+    this.cleanup();
+  }
+
+  private cleanup(): void {
+    this.pid.disable();
     this.enabled = false;
     this.inferenceInFlight = false;
 
@@ -130,19 +136,18 @@ export class JevCopilot {
 
   public onSnapshot(snapMsg: Extract<FromWorker, { kind: "snapshot" }>, scenarioState?: any): void {
     if (!this.enabled || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-    if (this.inferenceInFlight) return; // Wait for previous inference to finish
-
     const s = snapMsg.snapshot;
+    this.currentT = s.t ?? 0;
+
     let premise = "";
     let hypotheses: string[] = [];
 
     if (this.role === "operator") {
-      // Use truth fields directly since operatorView strips them for the view
       const truth = s.truth ?? {};
       const power    = s.indicated?.["log"]       ?? truth.power ?? 0;
       const period   = truth.period ?? 0;
-      const fuelTemp = (truth["temp.fuel"] ?? 293.15) - 273.15; // K to C
-      const t        = truth.t ?? 0;
+      const fuelTemp = (truth.fuelTemp ?? 293.15) - 273.15; // K to C
+      const t        = s.t ?? 0;
 
       this.lastPower = power;
 
@@ -155,16 +160,28 @@ export class JevCopilot {
       
       // Execute fast Reflex PID Loop (30Hz)
       if (this.pid.isEnabled()) {
-        const pidCmd = this.pid.update(power, t);
+        let pidCmd = this.pid.update(power, t);
         if (pidCmd !== null) {
-          const currentMoving = this.rodMoving["regulating"];
+          if (pidCmd === "out" && (this.rodPositions["regulating"] ?? 1) >= 0.99) pidCmd = "stop";
+          if (pidCmd === "in" && (this.rodPositions["regulating"] ?? 1) <= 0.01) pidCmd = "stop";
+          
+          const currentMoving = this.rodMoving["regulating"] ?? "stop";
           if (currentMoving !== pidCmd) {
             this.client.command({ type: "rod.move", rod: "regulating", direction: pidCmd }, undefined, this.role);
-            this.rodMoving["regulating"] = pidCmd; // optimistic
+            this.rodMoving["regulating"] = pidCmd === "stop" ? null : pidCmd; // optimistic
           }
         }
       }
+    }
 
+    if (this.inferenceInFlight) return; // Wait for previous inference to finish
+
+    if (this.role === "operator") {
+      const truth = s.truth ?? {};
+      const power    = s.indicated?.["log"]       ?? truth.power ?? 0;
+      const period   = truth.period ?? 0;
+      const fuelTemp = (truth.fuelTemp ?? 293.15) - 273.15; // K to C
+      
       const rodDesc = [
         `Shim: ${((this.rodPositions["shim"] ?? 1)       * 100).toFixed(0)}%`,
         `Safety: ${((this.rodPositions["safety"] ?? 1)   * 100).toFixed(0)}%`,
@@ -207,6 +224,7 @@ export class JevCopilot {
     }
 
     this.inferenceInFlight = true;
+    this.inferenceT = this.currentT;
     this.ws.send(JSON.stringify({ premise, hypotheses }));
   }
 
@@ -222,6 +240,11 @@ export class JevCopilot {
       }
       const choice = msg.choice;
       if (!choice) return;
+
+      if (this.inferenceT !== null && this.currentT - this.inferenceT > 5.0) {
+        console.warn(`[JevCopilot] Rejecting stale AI response (age: ${(this.currentT - this.inferenceT).toFixed(2)}s)`);
+        return;
+      }
 
       console.log(`[JevCopilot] AI chose: ${choice}`);
       this.executeChoice(choice);
@@ -253,21 +276,24 @@ export class JevCopilot {
         return;
       }
 
-      // Reconcile desired state with current engine state
-      for (const id of ["shim", "safety", "regulating"]) {
-        // If PID is taking over regulating, skip manual reconcile for it
-        if (updatePid && id === "regulating") continue;
-
-        const current = this.rodMoving[id];
-        const desired = desiredMoving[id];
-        if (current !== desired) {
-          this.client.command({ type: "rod.move", rod: id, direction: desired ?? "stop" }, undefined, this.role);
+      if (updatePid && this.lastPower > 0) {
+        if (!this.pid.isEnabled()) {
+          desiredMoving["regulating"] = "stop"; // Finding 5
+          this.pid.setTarget(this.lastPower);   // Finding 2
         }
       }
 
-      // Set target power for PID
-      if (updatePid && this.lastPower > 0) {
-        this.pid.setTarget(this.lastPower);
+      // Reconcile desired state with current engine state
+      for (const id of ["shim", "safety", "regulating"]) {
+        // If PID is taking over regulating, skip manual reconcile for it UNLESS we explicitly requested a stop
+        if (updatePid && id === "regulating" && desiredMoving["regulating"] !== "stop") continue;
+
+        const current = this.rodMoving[id] ?? "stop";
+        const desired = desiredMoving[id] ?? "stop";
+        if (current !== desired) {
+          this.client.command({ type: "rod.move", rod: id, direction: desired }, undefined, this.role);
+          this.rodMoving[id] = desired === "stop" ? null : desired;
+        }
       }
     } else {
       if (choice.includes("jam a control rod")) {
@@ -291,3 +317,5 @@ export function createCopilotButton(copilot: JevCopilot): HTMLButtonElement {
   };
   return btn;
 }
+
+
