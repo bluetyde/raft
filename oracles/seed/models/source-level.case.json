@@ -1,0 +1,13 @@
+{
+  "format": "raft-headless-case",
+  "version": 1,
+  "library": "lib",
+  "seed": 1,
+  "init": {},
+  "config": {
+    "outerDt": 0.01
+  },
+  "steps": 100,
+  "sampleEvery": 10,
+  "script": []
+}

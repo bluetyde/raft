@@ -1,0 +1,29 @@
+{
+  "format": "raft-headless-case",
+  "version": 1,
+  "library": "lib",
+  "seed": 1,
+  "init": {
+    "mode": "pulse",
+    "rods": {
+      "regulating": 0.6584003609387292,
+      "safety": 1,
+      "transient": 0
+    }
+  },
+  "config": {
+    "outerDt": 0.001
+  },
+  "steps": 300,
+  "sampleEvery": 5,
+  "script": [
+    {
+      "cmd": {
+        "rod": "transient",
+        "type": "rod.fire"
+      },
+      "step": 0,
+      "clientId": "local"
+    }
+  ]
+}

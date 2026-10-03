@@ -1,0 +1,55 @@
+{
+  "format": "raft-headless-case",
+  "version": 1,
+  "library": "lib",
+  "seed": 1,
+  "init": {},
+  "config": {
+    "outerDt": 0.01
+  },
+  "steps": 20,
+  "sampleEvery": 5,
+  "script": [
+    {
+      "cmd": {
+        "rod": "transient",
+        "type": "rod.fire"
+      },
+      "step": 0,
+      "clientId": "local"
+    },
+    {
+      "cmd": {
+        "rod": "safety",
+        "type": "rod.fire"
+      },
+      "step": 0,
+      "clientId": "local"
+    },
+    {
+      "cmd": {
+        "direction": "out",
+        "rod": "ghost",
+        "type": "rod.move"
+      },
+      "step": 0,
+      "clientId": "local"
+    },
+    {
+      "cmd": {
+        "type": "warp"
+      },
+      "step": 0,
+      "clientId": "local"
+    },
+    {
+      "cmd": {
+        "instrument": "linear",
+        "kind": "dead",
+        "type": "fault.instrument"
+      },
+      "step": 1,
+      "clientId": "local"
+    }
+  ]
+}
