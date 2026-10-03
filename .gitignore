@@ -24,3 +24,4 @@ validation/data/jsi-pulses/traces/
 run-viewer.cmd
 run-virtual-reactor.cmd
 virtual-reactor.bat
+web/dist-headless/
