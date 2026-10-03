@@ -51,6 +51,26 @@ export function libraryPathProblem(p: string): string | null {
   return null;
 }
 
+/** Every number anywhere in a value must be finite (JSON like 1e400 parses to Infinity and would be written back as null). */
+function nonFinitePath(v: unknown, path = ""): string | null {
+  if (typeof v === "number") return Number.isFinite(v) ? null : path || "/";
+  if (Array.isArray(v)) {
+    for (let i = 0; i < v.length; i++) {
+      const hit = nonFinitePath(v[i], `${path}/${i}`);
+      if (hit) return hit;
+    }
+  } else if (v !== null && typeof v === "object") {
+    for (const [k, x] of Object.entries(v)) {
+      const hit = nonFinitePath(x, `${path}/${k}`);
+      if (hit) return hit;
+    }
+  }
+  return null;
+}
+
+/** Integration settings that must be positive and finite; with outerDt 0 a run would "complete" without advancing time. */
+const POSITIVE_CONFIG: Record<string, number> = { outerDt: 10, rtol: 1, hInit: 10, hMin: 10, eventTol: 10 };
+
 export function parseCase(raw: unknown): { ok: true; value: HeadlessCase } | { ok: false; errors: CaseIssue[] } {
   const errors: CaseIssue[] = [];
   const bad = (field: string, message: string) => errors.push({ code: "E_CASE_INVALID", field, message });
@@ -74,6 +94,14 @@ export function parseCase(raw: unknown): { ok: true; value: HeadlessCase } | { o
   if (!isObject(init)) bad("/init", "must be an object");
   const config = raw.config === undefined ? {} : raw.config;
   if (!isObject(config)) bad("/config", "must be an object");
+  else {
+    for (const [k, max] of Object.entries(POSITIVE_CONFIG)) {
+      const v = config[k];
+      if (v !== undefined && !(typeof v === "number" && Number.isFinite(v) && v > 0 && v <= max)) bad(`/config/${k}`, `must be a number greater than 0 and at most ${max}`);
+    }
+  }
+  const hit = nonFinitePath({ init, config, script: raw.script });
+  if (hit) bad(hit, "numbers must be finite");
   if (!isInt(raw.steps, 1, MAX_STEPS)) bad("/steps", `must be an integer from 1 to ${MAX_STEPS}`);
   if (!isInt(raw.sampleEvery, 1, MAX_STEPS)) bad("/sampleEvery", `must be an integer from 1 to ${MAX_STEPS}`);
   else if (isInt(raw.steps, 1, MAX_STEPS) && raw.sampleEvery > raw.steps) bad("/sampleEvery", "must not exceed steps");

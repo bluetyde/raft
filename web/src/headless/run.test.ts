@@ -336,3 +336,111 @@ describe("command line", () => {
 function r2(x: { code: number }): number {
   return x.code;
 }
+
+describe("review fixes (Codex, 2026-10-03)", () => {
+  it.each([
+    ["outerDt zero", '"outerDt": 0'],
+    ["outerDt negative", '"outerDt": -0.01'],
+    ["rtol beyond range", '"rtol": 5'],
+    ["a number that overflows to infinity", '"rtol": 1e400'],
+  ])("a config with %s is refused before any run, not completed without advancing time", async (_n, entry) => {
+    const { dir, casePath } = caseFolder();
+    const original = readFileSync(casePath, "utf8");
+    // the vector already sets outerDt, so replace that value; other settings are added in front
+    const text = entry.startsWith('"outerDt"') ? original.replace('"outerDt": 0.01', entry) : original.replace('"config": {', `"config": { ${entry},`);
+    expect(text).not.toBe(original);
+    writeFileSync(casePath, text);
+    const r = await runCase({ casePath, outRoot: join(dir, "runs") });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors[0]?.code).toBe("E_CASE_INVALID");
+    expect(existsSync(join(dir, "runs"))).toBe(false);
+  });
+
+  it("an infinite number anywhere in init or a command is refused", async () => {
+    const { casePath } = caseFolder("scram");
+    const text = readFileSync(casePath, "utf8").replace('"type": "scram"', '"type": "fault.reactivity", "deltaRho": 1e999');
+    expect(text).toContain("1e999");
+    writeFileSync(casePath, text);
+    const v = await validateCase(casePath);
+    expect(v.ok).toBe(false);
+    if (!v.ok) expect(v.errors[0]).toMatchObject({ code: "E_CASE_INVALID", message: "numbers must be finite" });
+  });
+
+  it("two runs started at once with the same id: exactly one wins, the other is refused, the folder is not mixed", async () => {
+    const { dir, casePath } = caseFolder();
+    const out = join(dir, "runs");
+    const [a, b] = await Promise.all([runCase({ casePath, outRoot: out, runId: "same" }), runCase({ casePath, outRoot: out, runId: "same" })]);
+    const oks = [a, b].filter((r) => r.ok);
+    expect(oks).toHaveLength(1);
+    const lost = [a, b].find((r) => !r.ok);
+    expect(lost && !lost.ok && lost.errors[0]?.code).toBe("E_EXISTS");
+    expect(readdirSync(out)).toEqual(["same"]);
+    expect(await replayRun(join(out, "same"))).toEqual({ ok: true, identical: true, differences: [] });
+  });
+
+  it("a non-finite value in the final statistics fails the run and is written as a string, never as null", async () => {
+    const { dir, casePath } = caseFolder();
+    const r = await runCase({ casePath, outRoot: join(dir, "runs"), runId: "inf", afterStep: (e) => { if (e.stepIndex === 399) e.peakPower = Number.POSITIVE_INFINITY; } });
+    if (!r.ok) throw new Error("refused");
+    expect(r.status).toBe("failed");
+    expect(r.reason).toContain("non-finite");
+    const text = readFileSync(join(r.runDir, "results.json"), "utf8");
+    expect(text).toContain('"non-finite:Infinity"');
+    expect(JSON.parse(text).completion.status).toBe("failed");
+  });
+
+  it("a non-finite initial state fails the run before any step", async () => {
+    const { dir, casePath } = caseFolder();
+    const r = await runCase({ casePath, outRoot: join(dir, "runs"), runId: "bad0", afterInit: (e) => { e.y[10] = Number.NaN; } });
+    if (!r.ok) throw new Error("refused");
+    expect(r).toMatchObject({ status: "failed", steps: 0 });
+    expect(r.reason).toContain("initial state");
+  });
+
+  async function finished() {
+    const { dir, casePath } = caseFolder("scram");
+    const r = await runCase({ casePath, outRoot: join(dir, "runs"), runId: "r1" });
+    if (!r.ok) throw new Error("refused");
+    return { run: r.runDir, mPath: join(r.runDir, "manifest.json") };
+  }
+  const editManifest = (mPath: string, edit: (m: Record<string, any>) => void) => {
+    const m = JSON.parse(readFileSync(mPath, "utf8"));
+    edit(m);
+    writeFileSync(mPath, JSON.stringify(m, null, 2));
+  };
+
+  it("replay does not trust the manifest's own file list or counts", async () => {
+    const tampers: [string, (m: Record<string, any>) => void][] = [
+      ["empty file list", (m) => (m.files = [])],
+      ["a file left out", (m) => (m.files = m.files.slice(0, 2))],
+      ["an extra file", (m) => m.files.push({ path: "other.json", role: "x", sha256: "0".repeat(64), bytes: 1 })],
+      ["inflated requested steps", (m) => (m.steps = 2_000_000)],
+      ["understated steps run", (m) => (m.stepsRun = 3)],
+      ["a different case hash", (m) => (m.caseSha256 = "0".repeat(64))],
+      ["a different library digest", (m) => (m.libraryDigest = "0".repeat(64))],
+    ];
+    for (const [what, edit] of tampers) {
+      const { run, mPath } = await finished();
+      editManifest(mPath, edit);
+      const rep = await replayRun(run);
+      expect(rep.ok && !rep.identical, what).toBe(true);
+      rmSync(join(run, ".."), { recursive: true, force: true });
+    }
+  });
+
+  it("replay refuses a run whose results say failed even if the manifest says completed", async () => {
+    const { run, mPath } = await finished();
+    const resPath = join(run, "results.json");
+    const res = JSON.parse(readFileSync(resPath, "utf8"));
+    res.completion.status = "failed";
+    const text = JSON.stringify(res, null, 2) + "\n";
+    writeFileSync(resPath, text);
+    editManifest(mPath, (m) => {
+      const f = m.files.find((x: { path: string }) => x.path === "results.json");
+      f.sha256 = sha(text);
+      f.bytes = Buffer.byteLength(text);
+    });
+    const rep = await replayRun(run);
+    expect(rep.ok && !rep.identical).toBe(true);
+  });
+});

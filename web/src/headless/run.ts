@@ -11,7 +11,7 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { nodeReader } from "../library/node-reader";
 import { CAPABILITY, ENGINE_VERSION, Engine, InitError, CheckpointError } from "../sim/engine";
 import { LibraryError, loadLibrary, type Library } from "../sim/library";
@@ -31,6 +31,8 @@ export interface RunOptions {
   outRoot: string;
   runId?: string;
   now?: () => Date;
+  /** Test hook: called once after the engine is built, before the first sample. */
+  afterInit?: (engine: Engine) => void;
   /** Test hook: called after every step with the engine. */
   afterStep?: (engine: Engine) => void;
 }
@@ -42,6 +44,11 @@ export interface RunSummary {
   status: "completed" | "failed";
   reason?: string;
   steps: number;
+}
+
+/** JSON.stringify writes NaN and Infinity as null, silently losing the value; write them as strings instead (and the run is failed). */
+function stringify(v: unknown): string {
+  return JSON.stringify(v, (_k, x) => (typeof x === "number" && !Number.isFinite(x) ? `non-finite:${String(x)}` : x), 2) + "\n";
 }
 
 const sha = (data: string | Uint8Array) => createHash("sha256").update(data).digest("hex");
@@ -142,7 +149,14 @@ export async function runCase(opts: RunOptions): Promise<RunSummary | Refusal> {
 
   const runDir = join(resolve(opts.outRoot), runId);
   if (existsSync(runDir)) return refuse("E_EXISTS", "/runId", "a run with this id already exists");
-  mkdirSync(runDir, { recursive: true });
+  // Reserve the run id exclusively: the non-recursive mkdir fails for a second process that picked the same id.
+  mkdirSync(resolve(opts.outRoot), { recursive: true });
+  try {
+    mkdirSync(runDir);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "EEXIST") return refuse("E_EXISTS", "/runId", "a run with this id already exists");
+    throw e;
+  }
   const createdAt = now().toISOString();
   const caseSha256 = sha(l.caseBytes);
   const base = {
@@ -166,11 +180,17 @@ export async function runCase(opts: RunOptions): Promise<RunSummary | Refusal> {
     list.push({ cmd: item.cmd, clientId: item.clientId });
     byStep.set(item.step, list);
   }
+  opts.afterInit?.(engine);
   const samples: Record<string, unknown>[] = [sampleFromEngine(engine)];
   let status: "completed" | "failed" = "completed";
   let reason: string | undefined;
+  const badStart = findNonFinite(samples[0]);
+  if (badStart) {
+    status = "failed";
+    reason = `non-finite value in the initial state (${badStart})`;
+  }
   try {
-    for (let k = 0; k < l.c.steps; k++) {
+    for (let k = 0; status === "completed" && k < l.c.steps; k++) {
       for (const item of byStep.get(k) ?? []) engine.submit(item.cmd, item.clientId);
       engine.step();
       opts.afterStep?.(engine);
@@ -209,8 +229,15 @@ export async function runCase(opts: RunOptions): Promise<RunSummary | Refusal> {
     events: structuredClone(engine.events),
     final: { peakPower: engine.peakPower, peakTime: engine.peakTime, halted: engine.halted },
   };
-  const resultsText = JSON.stringify(results, null, 2) + "\n";
-  const sessionText = JSON.stringify(engine.session(), null, 2) + "\n";
+  const session = engine.session();
+  const badOut = findNonFinite(results) ?? findNonFinite(session);
+  if (badOut && status === "completed") {
+    status = "failed";
+    reason = `non-finite value in the results or session (${badOut})`;
+    results.completion = { status, stepsRun: engine.stepIndex, steps: l.c.steps, reason };
+  }
+  const resultsText = stringify(results);
+  const sessionText = stringify(session);
   writeAtomic(join(runDir, "results.json"), resultsText);
   writeAtomic(join(runDir, "session.json"), sessionText);
   const file = (path: string, role: string, text: string | Buffer) => ({ path, role, sha256: sha(text), bytes: Buffer.byteLength(text) });
@@ -242,11 +269,32 @@ export async function replayRun(runDir: string): Promise<ReplayReport> {
   const session = read("session.json") as Record<string, any>;
   if ("errors" in session) return session as unknown as Refusal;
   const differences: string[] = [];
-  for (const f of manifest.files as { path: string; sha256: string }[]) {
-    if (isAbsolute(f.path) || f.path.includes("..")) return refuse("E_PATH_TRAVERSAL", "/manifest/files", "file path leaves the run folder");
+  const expected = ["case.json", "results.json", "session.json"];
+  const listed = Array.isArray(manifest.files) ? (manifest.files as { path: string; sha256: string }[]) : [];
+  const paths = listed.map((f) => f.path).sort();
+  if (JSON.stringify(paths) !== JSON.stringify(expected)) differences.push("manifest file list is not exactly " + expected.join(", "));
+  for (const f of listed) {
+    if (typeof f.path !== "string" || !expected.includes(f.path)) continue;
     const actual = sha(readFileSync(join(runDir, f.path)));
-    if (actual !== f.sha256) differences.push(`${f.path} does not match its manifest hash`);
+    if (actual !== f.sha256) differences.push(f.path + " does not match its manifest hash");
   }
+  if (differences.length > 0) return { ok: true, identical: false, differences };
+  const caseParsed = parseCase(JSON.parse(readFileSync(join(runDir, "case.json"), "utf8")));
+  if (!caseParsed.ok) return { ok: true, identical: false, differences: ["case.json is not a valid case: " + caseParsed.errors[0]?.message] };
+  const caseSha = sha(readFileSync(join(runDir, "case.json")));
+  const same = (label: string, a: unknown, b: unknown) => {
+    if (a !== b) differences.push(label + " disagrees between the manifest, results and case (" + String(a) + " vs " + String(b) + ")");
+  };
+  same("case hash", manifest.caseSha256, caseSha);
+  same("case hash (results)", results.caseSha256, caseSha);
+  same("requested steps", manifest.steps, caseParsed.value.steps);
+  same("requested steps (results)", results.completion?.steps, caseParsed.value.steps);
+  same("steps run", manifest.stepsRun, results.completion?.stepsRun);
+  same("steps run vs requested", results.completion?.stepsRun, caseParsed.value.steps);
+  same("completion status", results.completion?.status, "completed");
+  same("library digest", manifest.libraryDigest, results.libraryDigest);
+  same("last sample step", results.samples?.[results.samples.length - 1]?.step, results.completion?.stepsRun);
+  if (differences.length > 0) return { ok: true, identical: false, differences };
   if (differences.length > 0) return { ok: true, identical: false, differences };
   if (typeof manifest.libraryPath !== "string") return refuse("E_CASE_INVALID", "/manifest/libraryPath", "manifest has no library path");
   let lib: Library;

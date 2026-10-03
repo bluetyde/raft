@@ -32,7 +32,7 @@ The shape of an engine golden vector plus a library path, so a vector is also a 
 | `sampleEvery` | record a sample every N steps (first and last always) |
 | `script` | up to 10,000 `{step, cmd, clientId?}`; `step` before `steps`; `clientId` defaults to `"headless"`; `cmd` is an engine command (`schema/command.schema.json`) |
 
-Unknown fields are refused. A command the engine rejects (unknown command, tripped, interlock) is not an error: it appears in `events` with its reason.
+Unknown fields are refused. Integration settings (`outerDt`, `rtol`, `hInit`, `hMin`, `eventTol`) must be positive and finite (`outerDt` at most 10), and no number anywhere in the case may be infinite. A command the engine rejects (unknown command, tripped, interlock) is not an error: it appears in `events` with its reason.
 
 ## Run folder
 
@@ -45,7 +45,9 @@ Unknown fields are refused. A command the engine rejects (unknown command, tripp
 
 Statuses: `running` (a manifest that still says this belongs to an interrupted run), `completed`, `failed` (engine error, engine halt such as a rejecting table, or a non-finite sample; the partial samples are kept and the reason is recorded). A trip is an event, not an end: the run continues and the trip stays visible in `samples[].latched` and `events`.
 
-`replay` re-runs a completed run from `session.json`, checks every file against the manifest hashes, and compares the final sample and peak exactly with `results.json`.
+A run id is reserved with an exclusive folder creation, so two processes using the same id cannot mix their files (the second gets `E_EXISTS`). Non-finite values are never written as `null`: the run is `failed` and the value is written as the string `non-finite:<value>`.
+
+`replay` re-runs a completed run from `session.json`, checks every file against the manifest hashes, requires exactly the three expected files, cross-checks the case hash, requested and completed steps, library digest and status between the case, manifest and results, and compares the final sample and peak exactly with the replayed engine.
 
 ## Limits
 
