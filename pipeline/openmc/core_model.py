@@ -46,6 +46,28 @@ def absorber_bottom(rod: str, steps: float) -> float:
     return -HALF_FUEL + (900.0 - steps) * STEP_CM
 
 
+# Fresh fuel element of the 1994 benchmark (Mele, Ravnik, Trkov, Nucl. Technol. 105, Table II; batch averages): U-ZrH mass 2360 g, uranium 278.27 g
+# of which 235U 55.39 g, hydrogen-to-zirconium atom ratio 1.65. The default composition (Svajger 2024 Table 1) has the same 235U and 238U
+# densities but H/Zr 1.60, so 1.2 % less zirconium and 4.6 % less hydrogen per cm3.
+MELE1994_FUEL = {"massG": 2360.0, "uraniumG": 278.27, "u235G": 55.39, "hToZr": 1.65}
+
+
+def fuel_1994(fuel_data: dict) -> dict[str, float]:
+    """Atom densities (per barn cm) of the 1994 benchmark fuel in the pipeline's fuel meat volume (the zirconium rod excluded, 38.1 cm)."""
+    NA, M_U235, M_U238, M_ZR, M_H = 0.6022140857, 235.0439, 238.0508, 91.224, 1.00794      # NA in 1e24 / mol
+    rad = fuel_data["radiiCm"]
+    vol = math.pi * (rad["fuel"] ** 2 - rad["zrRod"] ** 2) * 2 * HALF_FUEL
+    t = MELE1994_FUEL
+    zrh_g = t["massG"] - t["uraniumG"]
+    mol_zr = zrh_g / (M_ZR + t["hToZr"] * M_H)
+    base = fuel_data["fuel"]["atomDensityPerBarnCm"]
+    zr_total = sum(v for k, v in base.items() if k.startswith("Zr"))
+    out = {"U235": t["u235G"] / M_U235 * NA / vol, "U238": (t["uraniumG"] - t["u235G"]) / M_U238 * NA / vol, "H1": t["hToZr"] * mol_zr * NA / vol}
+    zr = mol_zr * NA / vol
+    out.update({k: v / zr_total * zr for k, v in base.items() if k.startswith("Zr")})
+    return out
+
+
 def burned_fuel(burnup: float) -> dict[str, float]:
     """Fuel atom densities at `burnup` MWd/kg, linear between the steps of jsi_fuel_depleted.json (pin_depletion.py), restricted to
     nuclides with transport data in the cross-section library."""
@@ -88,7 +110,7 @@ def materials(fuel_data: dict, ov: dict | None = None):
     ov = ov or {}
     m = {}
     fuel = openmc.Material(name="U-ZrH1.6")
-    comp = burned_fuel(ov["burnup"]) if "burnup" in ov else fuel_data["fuel"]["atomDensityPerBarnCm"]
+    comp = burned_fuel(ov["burnup"]) if "burnup" in ov else fuel_1994(fuel_data) if ov.get("fuel1994") else fuel_data["fuel"]["atomDensityPerBarnCm"]
     for nuc, n in comp.items():
         fuel.add_nuclide(nuc, n)
     fuel.set_density("sum")
@@ -294,6 +316,7 @@ def main(argv=None) -> int:
     ap.add_argument("--tcool", type=float, default=None, help="water temperature, K (default 294; all water, density follows)")
     ap.add_argument("--burnup", type=float, default=None,
                     help="calibration: give every fuel region this burnup, MWd/kg (default fresh); see docs/validation/m2-burnup.md")
+    ap.add_argument("--fuel1994", action="store_true", help="fresh fuel of the 1994 benchmark (Table II: H/Zr 1.65), for cores 133 and 134")
     ap.add_argument("--json", type=Path, default=None, help="append the result as one JSON line to this file")
     a = ap.parse_args(argv)
     if a.quick:
@@ -303,7 +326,7 @@ def main(argv=None) -> int:
         a.inactive = 10
         a.batches = a.inactive + active
     rods = {kv.split("=")[0]: float(kv.split("=")[1]) for kv in a.rods.split(",")}
-    overrides = {k: v for k, v in (("b4c", a.b4c), ("graphite", a.graphite), ("burnup", a.burnup), ("tfuel", a.tfuel), ("tcool", a.tcool)) if v is not None}
+    overrides = {k: v for k, v in (("b4c", a.b4c), ("graphite", a.graphite), ("burnup", a.burnup), ("tfuel", a.tfuel), ("tcool", a.tcool), ("fuel1994", a.fuel1994 or None)) if v is not None}
     if a.kinetics and a.inactive < IFP_GENERATIONS:
         ap.error(f"--kinetics needs at least {IFP_GENERATIONS} inactive batches")
     model = build(a.core, rods, a.particles, a.batches, a.inactive, a.source_from,

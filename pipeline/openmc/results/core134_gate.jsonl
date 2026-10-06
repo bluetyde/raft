@@ -1,0 +1,3 @@
+{"core": "134", "rods": {"T": 0.0, "K": 200.0, "V": 200.0, "R": 200.0}, "overrides": {}, "prompt": false, "particles": 20000, "batches": 150, "inactive": 50, "k": 1.0255623124542967, "kStd": 0.0006752604282665568}
+{"core": "134", "rods": {"T": 0.0, "K": 200.0, "V": 200.0, "R": 727.3}, "overrides": {}, "prompt": false, "particles": 20000, "batches": 150, "inactive": 50, "k": 1.0032454130188158, "kStd": 0.0006601059084384499}
+{"core": "133", "rods": {"T": 0.0, "K": 200.0, "V": 200.0, "R": 200.0}, "overrides": {}, "prompt": false, "particles": 20000, "batches": 150, "inactive": 50, "k": 1.006790315602612, "kStd": 0.0006917932902860874}
