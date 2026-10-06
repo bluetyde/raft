@@ -6,45 +6,29 @@ Design lives in [PLAN.md](PLAN.md). Details per area in [docs/plans/](docs/plans
 Flags: **[agy]** = a delegation candidate for Antigravity: large, mechanical, contract fixed, strong oracle ([antigravity-task step 0](docs/AGENT-TASKS.md); run step 0 again before dispatching).
 Unflagged items are Claude's: judgment, data, small or precision-critical work. **[codex]** = a Codex review checkpoint; every milestone ends with one.
 
-## Next (planned 2026-09-27, after the M1 GO)
+## Next (updated 2026-10-06)
 
-Order matters: M2 replaces the `assumed` inputs that M1's caveats rest on, and the browser track can run in parallel. Owner per antigravity-task step 0 ([board](docs/AGENT-TASKS.md)).
+Where things stand: M1 to M6 are done, M7's validation protocols have all been run (eight, none refitted; the libraries stay `experimental`), the AI operator (Mica) runs live, and one supported lesson ships with visible validity warnings. Open, in the order I would take them:
 
-**Track 1: M2, the OpenMC library (Claude; judgment, transport, nuclear data)**
-1. [ ] **Open data only.** The ICSBEP handbook is licensed to named users and stays out of this work and the repo (user, 2026-09-27). Sources: the database core maps (element positions for cores 242/246); open JSI papers for fuel geometry and materials (svajger2024 Fig. 16 and Table 1, vavtar2021); public NRC TRIGA documents for the standard GA element; ENDF/B-VIII.0. Cite numbers; don't copy whole tables. Downloaded database files stay out of git.
-2. [x] 2026-09-27: `openmc-vr` env in WSL Ubuntu (OpenMC 0.15.3, ENDF/B-VIII.0 path set)
-3. [ ] TD-06 gate before any sweep: run manifests hash the model content, so a changed model invalidates a run and an interrupted run can't pass as complete. Design Claude, then **[agy]** implementation (oracle: tampered-model and interrupted-run fixtures must fail).
-4. [ ] OpenMC model of the JSI core: cores 242 and 246 from the database core maps (element positions and serials in `242.pdf`/`246.pdf`), fresh fuel first. Main caveat: burnup (decades-old elements) biases absolute k-eff; report the offset, and look for published per-element burnup in open JSI papers.
-5. [ ] First outputs, each with an existing check:
-   - transient-rod integral worth vs the measured rod tables (`s242.pdf`, and `s246.pdf` which was measured on core 244);
-   - Λ and β_eff: Λ settles run 3's joint γ/Λ caveat (40 µs assumed);
-   - fuel α(T) vs svajger2024 Table 2;
-   - k-eff ≈ 1 at the measured critical rod positions in the rod-table headers (core 242: K = 499, R = 500, T and V up, 400 W).
-   Then rebuild the per-core libraries with OpenMC values replacing `assumed` rod shapes, and re-run run 3's Part B as a regression.
+1. [ ] **[codex]** Codex review of the M7 and core 134 work (2026-10-06, range `5575cd9..8d7e57a`; findings and fixes are listed under Milestone 7 when it closes)
+2. [ ] Physics thread (optional): why OpenMC's fresh-fuel temperature feedback is 37-40 % weak against the 1994 core 134 measurement (ZrH thermal scattering temperatures and Doppler interpolation; ENDF/B-VIII.0's ZrH law against the 2002 core 176 coefficients): a dated protocol first (`docs/validation/core134-status.md`)
+3. [ ] Milestone 8: a second reactor of a different type (the choice is open)
+4. [ ] Milestone 9: open release (licence check of every reused file, README and library-authoring guide, example libraries, Codex review of the whole repo)
+5. [ ] Smaller: **[codex]** review of Milestone 6's merged diff; performance budgets (Contracts); fuel-follower shape bins (deferred 2026-10-06); the JSI Research Reactor Simulator's source and licence as an independent comparison; an optional rod-pairs family (Milestone 2)
 
-**Track 2: the browser (parallel)**
-6. [x] 2026-09-27 (cloud session, merged `6a4be94`): C6: Web Worker runtime, clock and command bus (ARCHITECTURE runtime loop).
-7. [ ] M3 renderer decision (TD-07: primitives now, CSG reuse later), then a three.js scaffold (the dispatcher adds the dependency and lockfile). Then **[agy]** the primitive viewer from the library's `geometry` (A10).
-8. [x] 2026-09-27 (cloud session, PR #4; CI job runs `npx playwright test -c src/app/e2e/playwright.config.ts`, not premerge.py): Browser end-to-end check on the synthetic fixture: malformed library, a trip, pause/resume, replay.
+Standing rule (KIRK split, 2026-09-27): keep `physics_ref/` and `web/src/sim/` separable. No imports from views, `pipeline/` or `validation/` except through one small library-loader module. KIRK ([bluetyde/kirk](https://github.com/bluetyde/kirk), private) is an independent project; engine work continues here, and porting a fix across is a deliberate choice, not an obligation.
 
-**Housekeeping**
-9. [x] 2026-09-27: **[agy]** Pre-merge check (TD-03, A9): `python scripts/premerge.py` (agy, verified by Claude). CI that runs it: the cloud session (browser track), in progress.
-10. [ ] **[codex]** The TS port (`web/src/`), which the M1 review didn't cover. (The engine line and M1 were reviewed 2026-09-27; 8 findings fixed.)
-11. [ ] Find the JSI Research Reactor Simulator's source and license (independent comparison, reference only).
+**The plan of 2026-09-27, with its status**
 
-**Standalone kinetics engine: KIRK, Kernel for Independent Reactor Kinetics** ([bluetyde/kirk](https://github.com/bluetyde/kirk), private, seeded 2026-09-27 from `1534780`; its `NOTES.md` has its own next steps)
-12. [ ] Rule from now on: keep `physics_ref/` and `web/src/sim/` separable. No imports from views, `pipeline/` or `validation/` except through one small library-loader module.
-13. [x] 2026-09-27: Source of truth decided (user): **engine work continues here** (`physics_ref/`, `web/src/sim/`). KIRK is an independent project that evolves on its own; neither repo depends on the other. Porting a fix across is a deliberate choice, not an obligation.
-    Why it's worth it: an MIT, dependency-free, browser-capable point-kinetics engine with deterministic replay and pulse validation fills a gap
-    (PyRK has no license; openpointkinetics is GPL and dormant). Why not yet: the API will change with C6 and M2.
-
-## Now
-
-- [x] 2026-09-26: Downloaded and parsed JSI pulse database (757 pulses from [trigapulse.ijs.si](http://trigapulse.ijs.si/), 1991–2023) into `validation/data/jsi-pulses/` (CSV and JSON summary) with citations, fetch script, loader API (`validation/pulse_loader.py`), unit tests, and TRIGA benchmark parameters (`validation/data/triga-jsi/parameters.json`)
-- [x] 2026-09-27: ICSBEP `IEU-COMP-THERM-003` access dropped: licensed to named users, kept out of this work (user). Open-data route instead (Next #1)
-- [ ] Create the `openmc-vr` conda env in WSL (clone of `openmc-mcnp` + pytest + jsonschema), then try OpenMC 0.16 there; leave the shared env alone ([TOOLING §2](docs/TOOLING.md)). *(2026-09-27: exists in the agent sandbox (Python 3.11.16, OpenMC 0.15.3); not yet in WSL Ubuntu; see Next #2)*
-- [ ] Find the JSI Research Reactor Simulator's source repo, confirm its license, and decide how to use it as an independent comparison
-- [x] 2026-09-26: Private GitHub repo [bluetyde/virtual-reactor](https://github.com/bluetyde/virtual-reactor), MIT license detected, first commit `55da9c2`
+- [x] Open data only for M2 (user, 2026-09-27: the ICSBEP handbook is licensed to named users and stays out of the repo). Sources: the database core maps, open JSI papers, public NRC TRIGA documents, ENDF/B-VIII.0 (cite numbers; downloaded database files stay out of git)
+- [x] 2026-09-27: `openmc-vr` conda env in WSL Ubuntu (OpenMC 0.15.3, ENDF/B-VIII.0); run commands in `docs/validation/core134-library-gate.md` and the message log
+- [x] 2026-09-27 (`pipeline/runs/cache.py`): TD-06 gate before any sweep
+- [x] 2026-09-27/28 (`docs/validation/m2-core.md`, `m2-libraries.md`): OpenMC models of cores 242 and 246 with the first outputs (rod worths, beta_eff and Lambda, fuel alpha(T), k-eff at the measured critical rods) and the rebuilt libraries (Milestone 2)
+- [x] 2026-09-27 (cloud session): Web Worker runtime (C6); end-to-end browser check on the synthetic fixture (PR #4); renderer decision and the viewer (Milestone 3)
+- [x] 2026-09-27: pre-merge check `python scripts/premerge.py` (TD-03)
+- [x] 2026-09-27: **[codex]** reviews of the engine line, M1 and (with M4) the TS port: 8 findings, all fixed
+- [x] 2026-09-26: Downloaded and parsed the JSI pulse database (757 pulses from [trigapulse.ijs.si](http://trigapulse.ijs.si/), 1991-2023) into `validation/data/jsi-pulses/` with citations, fetch script, loader API (`validation/pulse_loader.py`), unit tests and the TRIGA benchmark parameters (`validation/data/triga-jsi/parameters.json`)
+- [x] 2026-09-26: Private GitHub repo [bluetyde/virtual-reactor](https://github.com/bluetyde/virtual-reactor), MIT licence, first commit `55da9c2`
 
 ## Contracts (before M1 code) · from the [architecture review](docs/ARCHITECTURE-REVIEW.md) and [tech-debt register](docs/TECH-DEBT-REVIEW.md)
 
@@ -54,18 +38,18 @@ All ten architecture findings and TD-01..09 are **accepted and documented** (202
 
 - [x] 2026-09-27 (verified in Python and TS: `physics_ref/tests/test_engine.py`, `pipeline/tests/test_library.py`, `web/src/sim/`): Initialization rules: S = 0 for critical equilibrium, reject ρ ≥ 0 source equilibria, explicit initial precursors, poisons and temperatures ([01](docs/plans/01-physics-core.md))
 - [x] 2026-09-27 (verified in Python and TS: `physics_ref/tests/test_engine.py`, `pipeline/tests/test_library.py`, `web/src/sim/`): Reference-state contract: stored reference state and reactivity, tables as deltas, labelled calibration ([03](docs/plans/03-library-format.md))
-- [ ] Power, shape and density definitions; tally basis; bin volumes; deposition assumption ([03](docs/plans/03-library-format.md))
+- [x] 2026-10-06 (`docs/library-format.md` sections 7-8, `m2-libraries.md`): Power, shape and density definitions; tally basis (fission, fraction of total power); bin volumes; deposition assumption ([03](docs/plans/03-library-format.md))
 - [x] 2026-09-27 (verified in Python and TS: `physics_ref/tests/test_engine.py`, `pipeline/tests/test_library.py`, `web/src/sim/`): Model capabilities (`point-kinetics/lumped-thermal-v1`) and validity statuses with reason codes
-- [ ] Command scheduling and acknowledgements, event ordering, trip channel declarations, typed predicate format ([ARCHITECTURE](docs/ARCHITECTURE.md), [05](docs/plans/05-operator-ui.md))
+- [x] 2026-10-06 (runtime and engine, `web/src/runtime/`, golden vectors `rejections` and `period-trip`): Command scheduling and acknowledgements (seq and status), event ordering, trip channel declarations, typed predicate format ([ARCHITECTURE](docs/ARCHITECTURE.md), [05](docs/plans/05-operator-ui.md))
 - [x] 2026-09-27 (verified in Python and TS: `physics_ref/tests/test_engine.py`, `pipeline/tests/test_library.py`, `web/src/sim/`): Checkpoint contents, session pins and solver restart boundaries ([06](docs/plans/06-instructor.md))
 - [x] 2026-09-27 (verified in Python and TS: `physics_ref/tests/test_engine.py`, `pipeline/tests/test_library.py`, `web/src/sim/`): Binary array descriptors, base vs delta shapes, per-table interpolation and range behavior ([03](docs/plans/03-library-format.md))
 - [x] 2026-09-25: Normative [`docs/library-format.md`](docs/library-format.md) v0.1.0 + `schema/library.schema.json` with 28 stable error codes (TD-02: implemented + verified in Python; TypeScript side pending)
 - [x] 2026-09-25: Synthetic fixture `schema/vectors/synthetic-core` (generated, deterministic) + 30 invalid fixtures covering every error code; stdlib validator `pipeline/library/validate.py`; 10 tests pass on Windows Python 3.14 and WSL Python 3.11
 - [x] 2026-09-26: Initial-state definition in the engine: power `source-equilibrium` / `critical-equilibrium` / `given`, precursors equilibrium or supplied, poisons zero/equilibrium/given; impossible equilibria rejected
 - [x] 2026-09-25: Scaffold part 1: `LICENSE` (MIT), `THIRD_PARTY_NOTICES.md`, `.gitattributes` (LF), `.gitignore`, `pyproject.toml` (fast checks need no packages), `pipeline/environment.yml` (`openmc-vr`, pinned)
-- [ ] Scaffold part 2: create the `openmc-vr` env from the file; `web/` with a committed `package-lock.json`; CI (or the local pre-merge check) runs the fast tests + web build (TD-03). *(2026-09-27: `web/` + lockfile done (A5-0); env and pre-merge check open: Next #2, #9)*
+- [x] 2026-10-06: Scaffold part 2: the `openmc-vr` env exists (WSL Ubuntu), `web/` has its lockfile, and the pre-merge check (`python scripts/premerge.py`) runs the fast tests and the web build (TD-03)
 - [x] 2026-09-26: Headless slice in Python (`physics_ref/`): load → initialize (explicit rules, `E_INIT_*`) → commands with seq/status → advance → snapshot → checkpoint → replay, all bit-identical (TD-05 implemented + verified in Python)
-- [ ] Then a minimal panel and primitive viewer (needs the TypeScript port).
+- [x] Then a minimal panel and primitive viewer (done in Milestones 3 and 5).
       Checkpoint restore must match uninterrupted execution including noise and trips; built with the first stateful runtime, not deferred to M6 (TD-05)
 - [x] 2026-09-27: Independent checks (TD-04): perturbed-coefficient tests (`test_wrong_coefficient_breaks_order`, `..._catches_wrong_gamma`), vector self-test (`test_comparison_catches_real_differences`, ported to TS), and targeted breaks during each verification (logged). Golden vectors reproduced by the TS port (A6-1).
 - [x] 2026-09-28: **[agy]** Basic resource bounds in the first worker and recorder (TD-08): backpressure coalescing unacknowledged frames without dropping events; shape Float32Array ownership transferred via Transferable; checkpoint store bounded to maxCheckpoints with older-half thinning; 32 branch limit; exportable session file replays bit-identically after thinning; accelerated synthetic session memory budget (< 3.5 MB heap growth over 4,000 fine steps in ~300 ms, 0-step command latency, verified by web/src/runtime/bounds.test.ts)
@@ -166,8 +150,8 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 - [x] 2026-10-06 (`docs/validation/m7-hot-element-protocol.md`): Third M7 protocol, written before any run, with an expected failure disclosed (shape arrays give a thermocouple peaking of 1.9-2.0, a hand calculation predicts 310-360 K against 201 K measured): thermocouple peaking from the pulse database (blind), from the shape arrays, and a conduction model for the hot-element temperature; metrics G, H1, H2, R with fixed bands and a decision for each outcome; nothing fitted is changed
 - [x] Write `validation/m7_hot_element.py` with a synthetic-library test, (the fuel conductivity is confirmed: 17.6 W/m·K, Simnad 1981) run it once, write `docs/validation/m7-hot-element-results.md` *(2026-10-06: done, see the entries above)*
 - [x] Find the steady-state benchmark paper (Mele, Ravnik, Trkov, Nucl. Technol. 105, 1994) or other measured data with uncertainties for core 242 or 246 (this protocol's data cannot earn `validated-for-domain` alone) *(2026-10-06: done, see the entries above)*
-- [ ] Compare against measured data from a real TRIGA
-- [ ] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
+- [x] 2026-10-06: Compare against measured data from a real TRIGA: the steady power ascension (cores 242 and 246, the IAEA/JSI protocol) and the 1994 benchmark (core 134), eight protocols. No library is `validated-for-domain`; all stay `experimental` (`docs/validation/supported-envelope.md`, `core134-status.md`)
+- [ ] **[codex]** Codex review of the milestone's merged diff before closing it (2026-10-06: running on `5575cd9..8d7e57a`, consistency-auditor and silent-failure-hunter; see Next #1)
 
 ## Milestone 8: Second reactor
 
@@ -199,7 +183,7 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
   - [ ] `v6543210/openJev-1.5B` (currently integrated, lightweight)
   - [ ] `openjev/openjev` (the flagship 27B model, requires major hardware)
   - [ ] `jaredpalmer/kev-0.8b` (ultra-lightweight 1.6GB)
-  - [ ] `sky7350/Mica-v0.1-4B` (highly accurate 4B model, native TypeSafe /v1/systemone format, robust against prompt injection)
+  - [x] `sky7350/Mica-v0.1-4B` (highly accurate 4B model, native TypeSafe /v1/systemone format, robust against prompt injection): integrated and run live on the TRIGA library 2026-10-06 (GPU, about 60 ms per decision, 0 errors)
   - [ ] Standard cross-encoders (e.g. `BAAI/bge-reranker-v2-m3` or `cross-encoder/ms-marco-MiniLM-L-6-v2`)
 - **JEV Reflex Agent (Reinforcement Learning)**: Train a local RL agent (PPO/SAC) on headless engine snapshots to control the reactor safely without SCRAMs. (M6 or beyond, once the engine API is finalized).
 
