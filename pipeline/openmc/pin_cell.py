@@ -33,7 +33,7 @@ def cell_side(d: dict) -> float:
     return math.sqrt(water_area + math.pi * r["clad"] ** 2)
 
 
-def build_model(d: dict, fuel_temp: float, particles: int, batches: int, inactive: int):
+def build_model(d: dict, fuel_temp: float, particles: int, batches: int, inactive: int, method: str = "interpolation", tolerance: float | None = None):
     import openmc
 
     fuel = openmc.Material(name="U-ZrH1.6", temperature=fuel_temp)
@@ -70,7 +70,9 @@ def build_model(d: dict, fuel_temp: float, particles: int, batches: int, inactiv
     model = openmc.model.Model(geometry=openmc.Geometry(cells), materials=openmc.Materials([fuel, zr, clad, water]))
     st = model.settings
     st.run_mode, st.particles, st.batches, st.inactive = "eigenvalue", particles, batches, inactive
-    st.temperature = {"method": "interpolation", "default": 294.0}
+    st.temperature = {"method": method, "default": 294.0}
+    if tolerance is not None:
+        st.temperature["tolerance"] = tolerance          # nearest: how far from a tabulated temperature the data may be taken
     st.source = openmc.IndependentSource(space=openmc.stats.Box((-r["fuel"], -r["fuel"], -1), (r["fuel"], r["fuel"], 1)),
                                          constraints={"fissionable": True})
     st.output = {"summary": False}
@@ -78,13 +80,13 @@ def build_model(d: dict, fuel_temp: float, particles: int, batches: int, inactiv
     return model
 
 
-def run(temps, particles: int, batches: int, inactive: int) -> dict:
+def run(temps, particles: int, batches: int, inactive: int, method: str = "interpolation", tolerance: float | None = None) -> dict:
     import openmc
 
     d = json.loads(DATA.read_text(encoding="utf-8"))
     rows = []
     for T in temps:
-        model = build_model(d, T, particles, batches, inactive)
+        model = build_model(d, T, particles, batches, inactive, method, tolerance)
         with tempfile.TemporaryDirectory() as tmp:
             sp = model.run(cwd=tmp, output=False)
             with openmc.StatePoint(sp) as p:
@@ -98,8 +100,8 @@ def run(temps, particles: int, batches: int, inactive: int) -> dict:
         row["dRhoPcm"] = row["rhoPcm"] - base
         if row["T"] in ref_by_T:
             row["refDRhoPcm"] = ref_by_T[row["T"]] - ref_by_T[temps[0]]
-    return {"cellSideCm": cell_side(d), "particles": particles, "batches": batches, "inactive": inactive,
-            "openmc": openmc.__version__, "rows": rows}
+    return {"cellSideCm": cell_side(d), "particles": particles, "batches": batches, "inactive": inactive, "method": method, "tolerance": tolerance,
+            "crossSections": __import__("os").environ.get("OPENMC_CROSS_SECTIONS", ""), "openmc": openmc.__version__, "rows": rows}
 
 
 def main(argv=None) -> int:
@@ -108,9 +110,11 @@ def main(argv=None) -> int:
     ap.add_argument("--particles", type=int, default=40000)
     ap.add_argument("--batches", type=int, default=300)
     ap.add_argument("--inactive", type=int, default=50)
+    ap.add_argument("--method", choices=("interpolation", "nearest"), default="interpolation", help="OpenMC temperature treatment of the cross section data")
+    ap.add_argument("--tolerance", type=float, default=None, help="nearest only: temperature tolerance, K")
     ap.add_argument("--out", type=Path, default=REPO_ROOT / "pipeline" / "openmc" / "pin_cell_report.json")
     a = ap.parse_args(argv)
-    rep = run(a.temps, a.particles, a.batches, a.inactive)
+    rep = run(a.temps, a.particles, a.batches, a.inactive, a.method, a.tolerance)
     a.out.write_bytes((json.dumps(rep, indent=1) + "\n").encode("utf-8"))
     print(f"cell side {rep['cellSideCm']:.4f} cm")
     for row in rep["rows"]:
