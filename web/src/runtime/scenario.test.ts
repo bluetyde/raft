@@ -17,11 +17,13 @@ describe("scenario validator (docs/m5-scenarios-design.md §3)", () => {
     const libs: Record<string, Library> = {
       "synthetic-core": await loadSyntheticCore(),
       "triga-jsi-242": await loadLibrary(nodeReader(join(repoRoot, "libraries", "triga-jsi-242"))),
+      "triga-jsi-242-openmc": await loadLibrary(nodeReader(join(repoRoot, "libraries", "triga-jsi-242-openmc"))),
     };
     const all = shipped();
     expect(all.map((s) => s.id).sort()).toEqual([
       "synthetic-power-ascension",
       "synthetic-scram-and-restart",
+      "triga-242-openmc-low-power-ascension",
       "triga-power-ascension",
       "triga-scram-and-restart",
     ]);

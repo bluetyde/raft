@@ -1,0 +1,80 @@
+{
+  "format": "virtual-reactor-scenario",
+  "version": 1,
+  "id": "triga-242-openmc-low-power-ascension",
+  "library": "triga-jsi-242-openmc",
+  "title": "Low-power ascension (OpenMC core 242)",
+  "brief": "Start from shutdown with the source in the core. Withdraw the rods to raise the power to about a tenth of the power-high trip setpoint, then hold it there for two minutes. Watch the period while the power rises and do not trip the reactor. This is the supported lesson of the OpenMC TRIGA library: steady operation up to 15 % of the trip setpoint. The banner at the top of each window says when the state leaves what the model is meant for.",
+  "outerDt": 0.01,
+  "seed": 1,
+  "init": {
+    "rods": "shutdown"
+  },
+  "controls": {
+    "allow": [
+      "rod.move",
+      "scram"
+    ]
+  },
+  "envelope": {
+    "summary": "Steady, low-power ascension and hold, from shutdown to 15 % of the power-high setpoint; no pulses, no long runs.",
+    "power": {
+      "fromTrip": "power-high",
+      "times": 0.15,
+      "source": "the lesson's goals end at 15 % of the setpoint (docs/validation/supported-envelope.md)"
+    },
+    "fuelTemp": {
+      "max": 570,
+      "source": "libraries/triga-jsi-242-openmc/manifest.json domain.jointChecked: the warmest checked state is 569.8 K"
+    },
+    "modes": [
+      "steady"
+    ]
+  },
+  "goals": [
+    {
+      "id": "one-percent",
+      "text": "Raise the power above 1 % of the power-high setpoint",
+      "check": {
+        "signal": "indicated.linear",
+        "op": "gt",
+        "fromTrip": "power-high",
+        "times": 0.01
+      },
+      "within": 900
+    },
+    {
+      "id": "ten-percent",
+      "text": "Raise the power above 10 % of the power-high setpoint",
+      "check": {
+        "signal": "indicated.linear",
+        "op": "gt",
+        "fromTrip": "power-high",
+        "times": 0.1
+      },
+      "after": "one-percent",
+      "within": 900
+    },
+    {
+      "id": "hold",
+      "text": "Hold the power between 5 % and 12 % of the power-high setpoint for 2 minutes",
+      "check": {
+        "signal": "indicated.linear",
+        "op": "between",
+        "fromTrip": "power-high",
+        "times": [
+          0.05,
+          0.12
+        ]
+      },
+      "for": 120,
+      "after": "ten-percent",
+      "within": 900
+    }
+  ],
+  "hints": [
+    "Withdraw the large rods first, then use the regulating rod for fine control.",
+    "A short period means the power rises fast. The period-short trip acts below 3 s.",
+    "Fuel temperature feedback slows the rise as the fuel heats up."
+  ]
+}

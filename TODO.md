@@ -146,6 +146,7 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 
 ## Milestone 7: Validation (stretch) · [plan](docs/plans/07-validation.md)
 
+- [x] 2026-10-06 (`docs/validation/supported-envelope.md`): Pick one supported lesson and envelope with visible validity warnings: low-power ascension and hold on `triga-jsi-242-openmc` (scenario `triga-242-openmc-low-power-ascension`, steady, up to 15 % of the power-high setpoint, fuel at most 570 K); a banner in the operator and instructor windows; the AI operator is held to the envelope. Also fixed: the OpenMC libraries' 293.15 K heat sink (below their 294 K tables) made every run read `outOfDomain`
 - [ ] Compare against measured data from a real TRIGA
 - [ ] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
 

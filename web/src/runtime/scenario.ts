@@ -9,6 +9,7 @@ import { sha256Hex } from "../library/platform";
 import type { Issue } from "../library/validate";
 import { Engine, evalPredicate } from "../sim/engine";
 import type { Library } from "../sim/library";
+import { resolveEnvelope, validateEnvelope, type EnvelopeSpec, type ResolvedEnvelope } from "./envelope";
 import { isCoarse } from "./protocol";
 
 export const SCENARIO_FORMAT = "virtual-reactor-scenario";
@@ -76,6 +77,8 @@ export interface ScenarioFile {
   events?: ScenarioEvent[];
   goals: ScenarioGoal[];
   hints?: string[];
+  /** Where this lesson is meant to be used; the windows warn when the state leaves it (envelope.ts). */
+  envelope?: EnvelopeSpec;
 }
 
 /** A goal whose check has only plain values (the `fromTrip` thresholds resolved). */
@@ -95,6 +98,8 @@ export interface PreparedScenario {
   goals: ResolvedGoal[];
   /** The resolved `fromTrip` thresholds, by "goalId/leaf" (amendment 2: recorded in the session file). */
   thresholds: Record<string, number | [number, number]>;
+  /** The lesson envelope with its limits resolved, or null. */
+  envelope: ResolvedEnvelope | null;
   /** Each event with the engine step it is due at (the first boundary at or after `at`). */
   events: { step: number; cmd: Record<string, unknown>; note: string }[];
 }
@@ -234,6 +239,8 @@ export function validateScenario(obj: unknown, lib: Library): Issue[] {
     }
   }
 
+  if (f.envelope !== undefined) out.push(...validateEnvelope(f.envelope, lib));
+
   // events
   const periodTrips = lib.trips.filter((t: any) => t.input === "truth.period").map((t: any) => t.id as string);
   for (const [i, ev] of (f.events ?? []).entries()) {
@@ -350,6 +357,7 @@ export async function prepareScenario(obj: unknown, lib: Library): Promise<Prepa
     outerDt: file.outerDt,
     goals,
     thresholds,
+    envelope: file.envelope ? resolveEnvelope(file.envelope, lib) : null,
     events: (file.events ?? [])
       .map((e) => ({ step: dueStep(e.at, file.outerDt), cmd: e.cmd, note: e.note ?? String(e.cmd["type"]) }))
       .sort((a, b) => a.step - b.step),

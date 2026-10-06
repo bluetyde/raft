@@ -108,6 +108,18 @@ def isotonic(xs: list[float], ys: list[float] | None = None, ws: list[float] | N
     return result
 
 
+def _thermal_on_transport_grid(base_thermal):
+    """The base library's thermal block, with the heat sink at the transport reference temperature.
+
+    The base library assumes a 293.15 K sink, but the transport tables start at 294 K. The pool then cooled below the
+    first data point within seconds, and the runtime reported `outOfDomain` (R_DOMAIN_TFUEL / R_DOMAIN_TCOOLANT) for a
+    shift of under 1 K. The sink temperature is an assumption either way; 294 K keeps the state on the data.
+    """
+    thermal = copy.deepcopy(base_thermal)
+    thermal["heatExchanger"]["sinkTemp"] = {"value": 294.0, "source": "assumed"}
+    return thermal
+
+
 def interp(xs: list[float], ys: list[float], x: float) -> float:
     """Linear interpolation with clamping at the endpoints."""
     if not xs:
@@ -704,7 +716,7 @@ def _write_library(summary: dict[str, Any], out_dir: Path, created: str | None) 
             "coolantTemp": coolant_temp_table,
             "xenon": copy.deepcopy(base_manifest["reactivity"]["xenon"]),
         },
-        "thermal": copy.deepcopy(base_manifest["thermal"]),
+        "thermal": _thermal_on_transport_grid(base_manifest["thermal"]),
         "poisons": copy.deepcopy(base_manifest["poisons"]),
         "plant": copy.deepcopy(base_manifest["plant"]),
         "shapes": {

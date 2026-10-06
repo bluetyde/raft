@@ -14,6 +14,7 @@ import { LibraryError, loadLibrary, type Library } from "../sim/library";
 import { buildBranch, marksBefore, marksFrom, summarize, type Branch } from "./branches";
 import { CheckpointStore, checkSessionFile, replayCommands, sessionFile } from "./history";
 import { prepareScript, ScriptError, type PreparedScript } from "./script";
+import { evaluateValidity } from "./envelope";
 import { BAND_HIGH, BAND_LOW, RodSequencer, type RodStep, type SequenceContext } from "./sequencer";
 import { GoalTracker, prepareScenario, ScenarioError, type PreparedScenario } from "./scenario";
 import {
@@ -161,6 +162,7 @@ export class Runtime {
   /** The last thing the AI's choice or the runtime's guard did, in words (for the panels). */
   private lastAction: string | null = null;
   private lastSupervisionJson = "";
+  private lastValidityJson = "";
   /** Sim time of the last approved raise, for the cooldown. */
   private lastRaiseT = -Infinity;
   /** The instructor script for this session, or null. Its events are submitted as commands from "script". */
@@ -313,6 +315,11 @@ export class Runtime {
         this.postSupervision();
         return;
       }
+      case "resync":
+        this.lastValidityJson = "";
+        this.lastSupervisionJson = "";
+        this.maybeSnapshot();
+        return;
       case "supervisor.goal":
         this.goalPower = msg.powerW !== null && Number.isFinite(msg.powerW) && msg.powerW >= TARGET_FLOOR_W ? msg.powerW : null;
         this.goalStep = this.eng?.stepIndex ?? 0;
@@ -330,6 +337,12 @@ export class Runtime {
    * The next higher target the runtime would approve, or null. A raise needs an armed controller, a known
    * power-high trip to stay well under, a settled period, room on the regulating rod and time since the last raise.
    */
+  /** The highest power the AI may work toward: a fraction of the power-high setpoint, and the lesson's envelope if it has one. */
+  private powerCeiling(tripValue: number): number {
+    const lesson = this.scenario?.envelope?.powerMaxW;
+    return Math.min(tripValue * RAISE_CEILING_FRACTION, lesson ?? Infinity);
+  }
+
   private raiseTarget(): number | null {
     const e = this.eng;
     const target = this.controller.target;
@@ -337,7 +350,7 @@ export class Runtime {
     const tripValue = (e.lib.trips as any[]).find((x) => x.id === "power-high")?.predicate?.value;
     if (typeof tripValue !== "number") return null; // no trip to stay under: fail closed
     const next = target * RAISE_FACTOR;
-    if (next > tripValue * RAISE_CEILING_FRACTION) return null;
+    if (next > this.powerCeiling(tripValue)) return null;
     if (e.t - this.lastRaiseT < RAISE_COOLDOWN_S) return null;
     const truth = e.snapshot(false).truth;
     const period = truth?.period;
@@ -439,6 +452,19 @@ export class Runtime {
     };
   }
 
+  /** Tell every window how far to trust the state it shows, when that changed (envelope.ts). */
+  private postValidity(snap: Record<string, any>): void {
+    const view = evaluateValidity(snap.validity, this.scenario?.envelope ?? null, {
+      power: snap.truth?.power ?? 0,
+      fuelTemp: snap.truth?.fuelTemp ?? 0,
+      mode: String(snap.truth?.mode ?? ""),
+    });
+    const json = JSON.stringify(view);
+    if (json === this.lastValidityJson) return;
+    this.lastValidityJson = json;
+    this.host.post({ kind: "validity", view });
+  }
+
   /** Tell every window what the AI operator is doing, when it changed. */
   private postSupervision(): void {
     const e = this.eng;
@@ -467,7 +493,8 @@ export class Runtime {
               ? "sequencing"
               : "idle",
       target: this.controller.enabled ? this.controller.target : null,
-      goal: goal?.powerW ?? null,
+      goal: goal?.requested ?? null,
+      goalLimit: goal?.limited ? goal.powerW : null,
       goalSource: goal?.source ?? "none",
       goalAtT: goal?.t ?? null,
       step: plan ? `${plan.direction === "out" ? "withdrawing" : "inserting"} ${plan.rod} to ${Math.round(plan.to * 100)}% out` : null,
@@ -494,6 +521,8 @@ export class Runtime {
   private attach(port: Port, role: Role): void {
     if (!ROLES.includes(role)) return this.error("attach", "E_BAD_ARGUMENT", `role must be one of ${ROLES.join(", ")}`);
     port.role = role;
+    this.lastValidityJson = ""; // the new window gets the current validity and AI status at the next frame
+    this.lastSupervisionJson = "";
     this.reply({ kind: "attached", role, loaded: this.loadedInfo() });
     // a new window needs the current state now, not at the next change
     if (this.eng) {
@@ -595,6 +624,8 @@ export class Runtime {
     this.eng = eng;
 
     this.lastRaiseT = -Infinity;
+    this.lastValidityJson = "";
+    this.lastSupervisionJson = "";
     this.goalPower = null;
     this.goalStep = -1;
     this.sequencer.reset();
@@ -828,7 +859,7 @@ export class Runtime {
   }
 
   /** The goal power now: the instructor panel's, or the latest script goal event, whichever is newer. */
-  private effectiveGoal(): { powerW: number; source: "panel" | "script"; t: number | null } | null {
+  private effectiveGoal(): { powerW: number; requested: number; limited: boolean; source: "panel" | "script"; t: number | null } | null {
     const e = this.eng;
     let goal: number | null = this.goalPower;
     let source: "panel" | "script" = "panel";
@@ -842,7 +873,11 @@ export class Runtime {
         t = g.t;
       }
     }
-    return goal === null ? null : { powerW: goal, source, t };
+    if (goal === null) return null;
+    // the AI never works toward more than the lesson allows
+    const trip = (this.eng?.lib.trips as any[] | undefined)?.find((x) => x.id === "power-high")?.predicate?.value;
+    const cap = typeof trip === "number" ? this.powerCeiling(trip) : this.scenario?.envelope?.powerMaxW ?? Infinity;
+    return { powerW: Math.min(goal, cap), requested: goal, limited: goal > cap, source, t };
   }
 
   private scriptMessage(): Extract<FromWorker, { kind: "script" }> {
@@ -1288,6 +1323,7 @@ export class Runtime {
     }
     
     this.postSupervision();
+    this.postValidity(snapshot ?? e.snapshot(false));
 
     // Also dispatch inference requests if supervisor is enabled and not waiting
     if (this.supervisor.isTracking() && !this.supervisor.pendingRequest && this.supervisor.canDispatch()) {

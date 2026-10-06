@@ -116,6 +116,8 @@ export interface SupervisionView {
   goalSource: "none" | "panel" | "script";
   /** Simulation time the goal was set (s), when known. */
   goalAtT: number | null;
+  /** The highest goal the lesson envelope allows (W) when the instructor asked for more; the AI works toward this instead. */
+  goalLimit: number | null;
   /** The rod step in progress, in words. */
   step: string | null;
   /** The last thing the AI's choice (or the runtime's guard) did, in words. */
@@ -202,6 +204,8 @@ export type ToWorker =
   | { kind: "decision_response"; response: DecisionResponse }
   | { kind: "supervisor.enable" }
   | { kind: "supervisor.disable" }
+  /** A window finished subscribing: send it the current validity and AI status again. */
+  | { kind: "resync" }
   /** The power (W) the instructor wants the AI operator to work toward, or null for "hold the current power". Instructor and full windows only. */
   | { kind: "supervisor.goal"; powerW: number | null };
 
@@ -260,6 +264,7 @@ export type FromWorker =
   | { kind: "scenario"; scenario: ScenarioView | null }
   | { kind: "script"; script: ScriptView | null }
   | { kind: "supervision"; state: SupervisionView }
+  | { kind: "validity"; view: import("./envelope").ValidityView }
   | { kind: "timeline"; current: BranchSummary; branches: BranchSummary[]; marks: Mark[]; annotations: Annotation[] }
   | { kind: "error"; request: ToWorker["kind"]; code: string; message: string }
   | { kind: "fault"; message: string }

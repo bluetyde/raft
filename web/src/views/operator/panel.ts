@@ -42,6 +42,7 @@ const RATES = [0.1, 1, 10, 100];
 const SCRAM_COVER_MS = 5000;
 
 import { JevCopilot, createCopilotButton, describeSupervision } from "../copilot";
+import { createValidityBanner } from "../validity";
 
 export class OperatorPanel {
   readonly root: HTMLElement;
@@ -215,6 +216,7 @@ export class OperatorPanel {
 
     this.root = el("div", { className: "vr-operator" }, [
       hdr,
+      createValidityBanner(client),
       aiStatus,
       this.scenarioBox,
       el("section", {}, [el("h3", { textContent: "Instruments" }), ...meterRows, periodRow]),

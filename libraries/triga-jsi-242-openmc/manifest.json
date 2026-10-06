@@ -458,7 +458,7 @@
         "source": "assumed"
       },
       "sinkTemp": {
-        "value": 293.15,
+        "value": 294.0,
         "source": "assumed"
       },
       "pump": "primary"

@@ -57,6 +57,7 @@ function describe(ack: Ack): string {
 }
 
 import { JevCopilot, createCopilotButton, describeSupervision } from "../copilot";
+import { createValidityBanner } from "../validity";
 
 export class InstructorPanel {
   readonly root: HTMLElement;
@@ -219,7 +220,7 @@ export class InstructorPanel {
       const goal =
         s.goal === null
           ? "no goal: the AI holds the current power"
-          : `goal in effect: ${s.goal.toExponential(2)} W (${s.goalSource}${s.goalAtT !== null ? `, set at ${(s.goalAtT / 60).toFixed(1)} min` : ""})`;
+          : `goal in effect: ${s.goal.toExponential(2)} W (${s.goalSource}${s.goalLimit !== null ? `, limited to ${s.goalLimit.toExponential(2)} W by the lesson envelope` : ""}${s.goalAtT !== null ? `, set at ${(s.goalAtT / 60).toFixed(1)} min` : ""})`;
       this.goalText.textContent = `${goal}. ${describeSupervision(s)}${s.lastAction ? `. Last: ${s.lastAction}` : ""}`;
       if (s.scriptTotal > 0) {
         this.scriptProgress = `${s.scriptFired} of ${s.scriptTotal} script events fired${s.scriptNext ? `; next: ${(s.scriptNext.t / 60).toFixed(1)} min ${s.scriptNext.note}` : ""}`;
@@ -249,6 +250,7 @@ export class InstructorPanel {
 
     this.root = el("div", { className: "vr-instructor" }, [
       hdr,
+      createValidityBanner(client),
       el("section", {}, [
         el("h3", { textContent: "Time" }),
         el("div", { className: "vr-row" }, [this.play, this.rate, step, this.clockText]),

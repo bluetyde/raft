@@ -155,6 +155,11 @@ export class RuntimeClient {
     this.send({ kind: "supervisor.goal", powerW });
   }
 
+  /** Ask for the current validity and AI status again (a window calls this after it subscribed). */
+  resync(): void {
+    this.send({ kind: "resync" });
+  }
+
   supervisorDisable(): void {
     this.send({ kind: "supervisor.disable" });
   }
