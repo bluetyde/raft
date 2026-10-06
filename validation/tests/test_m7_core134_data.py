@@ -99,9 +99,11 @@ class WhatIf(unittest.TestCase):
         self.assertTrue(out["items"][0].startswith("1. OpenMC's temperature treatment is not"))
         self.assertIn("part D not run", out["items"][1])
         self.assertIn("kappa 1.13", out["items"][2])
+        self.assertIn("W3 not computed", out["items"][3])
         self.assertIn("70% of the step 7 shortfall", out["items"][3])
         self.assertTrue(dm.decide({"constant": False, "smoothAll": True}, None, c, {"W3": {"status": "x"}, "W1": good})["items"][0].startswith("1. a treatment artefact"))
-        self.assertTrue(dm.decide(p, None, c, {"W3": {"status": "x"}, "W1": good})["items"][3].startswith("4. the candidates"))
+        self.assertTrue(dm.decide(p, None, c, {"W3": {"status": "x"}, "W1": good})["items"][3].startswith("4. W3 not computed"))     # not computed is a residual, not an explanation
+        self.assertTrue(dm.decide(p, None, c, {"W3": good, "W1": bad})["items"][3].startswith("4. the evaluation of the data"))
         self.assertFalse(out["libraryChanged"])
 
 

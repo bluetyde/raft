@@ -197,12 +197,16 @@ def decide(p: dict, d: dict | None, c: dict, w: dict) -> dict:
         items.append(f"3. the uniform fuel temperature of the library is a known limit: kappa {c['primary']['kappa']:.2f} ({c['primary']['label']}); a transport test with per-element temperatures is the next protocol")
     else:
         items.append("3. the effective-temperature factor is negligible (kappa below 1.05)")
-    w3 = w["W3"] if "labels" in w["W3"] else None
-    final = w3 or w["W1"]
-    if final["labels"]["primary"]["worst"] in ok:
-        items.append("4. the candidates tested explain the weak feedback together (the what-if is good or plausible)")
+    if "labels" in w["W3"]:
+        final = w["W3"]
+        if final["labels"]["primary"]["worst"] in ok:
+            items.append("4. the evaluation of the data and the temperature distribution together explain the weak feedback (W3 is good or plausible)")
+        else:
+            items.append(f"4. a residual remains with the data and the distribution together: {1.0 - final['fractionOfShortfallRemoved']:.0%} of the step 7 shortfall")
     else:
-        items.append(f"4. a residual remains: {1.0 - final['fractionOfShortfallRemoved']:.0%} of the step 7 shortfall")
+        w1 = w["W1"]
+        items.append(f"4. W3 not computed (part D not run): a residual remains, {1.0 - w1['fractionOfShortfallRemoved']:.0%} of the step 7 shortfall after the effective temperature alone "
+                     f"(W1 is {w1['labels']['primary']['worst']} in the primary line)")
     return {"items": items, "libraryChanged": False}
 
 

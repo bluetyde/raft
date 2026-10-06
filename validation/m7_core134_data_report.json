@@ -1,0 +1,364 @@
+{
+  "protocol": "docs/validation/m7-core134-data-protocol.md",
+  "P": {
+    "R": {
+      "400.0": 0.8039514460205693,
+      "500.0": 0.8128452290890956,
+      "600.0": 0.8400224038105988
+    },
+    "RError": {
+      "400.0": 0.014138433541979968,
+      "500.0": 0.006255004177965404,
+      "600.0": 0.003985713444598633
+    },
+    "spread": 0.036070957790029445,
+    "constant": true,
+    "smooth": {
+      "330.0": {
+        "fractionOf400": 0.3221404270939954,
+        "linearExpectation": 0.33962264150943394,
+        "relativeDeparture": 0.05147540911212468,
+        "within": true
+      },
+      "372.0": {
+        "fractionOf400": 0.7331324223629111,
+        "linearExpectation": 0.7358490566037735,
+        "relativeDeparture": 0.0036918362760438245,
+        "within": true
+      }
+    },
+    "smoothAll": true,
+    "p2Effects": {
+      "330.0": {
+        "p1Pcm": -179.73577195562757,
+        "p2Pcm": 10.62857607879414,
+        "differencePcm": -190.3643480344217,
+        "sigmaPcm": 13.89703740700174,
+        "treatmentEffect": true
+      },
+      "372.0": {
+        "p1Pcm": -409.0455925317583,
+        "p2Pcm": -417.80126052749256,
+        "differencePcm": 8.755667995734257,
+        "sigmaPcm": 13.920745509534376,
+        "treatmentEffect": false
+      },
+      "400.0": {
+        "p1Pcm": -557.9423035382752,
+        "p2Pcm": -417.80126052643755,
+        "differencePcm": -140.1410430118376,
+        "sigmaPcm": 13.895568129812201,
+        "treatmentEffect": true
+      },
+      "500.0": {
+        "p1Pcm": -1310.3065092916222,
+        "p2Pcm": -1423.086081910813,
+        "differencePcm": 112.77957261919073,
+        "sigmaPcm": 14.24297313536749,
+        "treatmentEffect": true
+      }
+    }
+  },
+  "D": {
+    "status": "not run"
+  },
+  "C": {
+    "primary": {
+      "p": 2.0,
+      "n": 0.22,
+      "part": "full",
+      "kappa": 1.158527823535488,
+      "label": "partial"
+    },
+    "min": 1.0371483152485392,
+    "max": 1.268040493263012,
+    "cases": [
+      {
+        "p": 2.0,
+        "n": 0.22,
+        "part": "full",
+        "kappa": 1.158527823535488,
+        "label": "partial"
+      },
+      {
+        "p": 2.0,
+        "n": 0.22,
+        "part": "radial",
+        "kappa": 1.0801091324036138,
+        "label": "partial"
+      },
+      {
+        "p": 2.0,
+        "n": 0.22,
+        "part": "axial",
+        "kappa": 1.0677011234190128,
+        "label": "partial"
+      },
+      {
+        "p": 2.0,
+        "n": 0.0,
+        "part": "full",
+        "kappa": 1.1925051833626377,
+        "label": "partial"
+      },
+      {
+        "p": 2.0,
+        "n": 0.0,
+        "part": "radial",
+        "kappa": 1.0964440849033232,
+        "label": "partial"
+      },
+      {
+        "p": 2.0,
+        "n": 0.0,
+        "part": "axial",
+        "kappa": 1.0814690123218738,
+        "label": "partial"
+      },
+      {
+        "p": 1.0,
+        "n": 0.22,
+        "part": "full",
+        "kappa": 1.0851049793287944,
+        "label": "partial"
+      },
+      {
+        "p": 1.0,
+        "n": 0.22,
+        "part": "radial",
+        "kappa": 1.0441178253363068,
+        "label": "none"
+      },
+      {
+        "p": 1.0,
+        "n": 0.22,
+        "part": "axial",
+        "kappa": 1.0371483152485392,
+        "label": "none"
+      },
+      {
+        "p": 1.0,
+        "n": 0.0,
+        "part": "full",
+        "kappa": 1.1027558787822689,
+        "label": "partial"
+      },
+      {
+        "p": 1.0,
+        "n": 0.0,
+        "part": "radial",
+        "kappa": 1.0529248768087993,
+        "label": "partial"
+      },
+      {
+        "p": 1.0,
+        "n": 0.0,
+        "part": "axial",
+        "kappa": 1.0446342753175002,
+        "label": "none"
+      },
+      {
+        "p": 3.0,
+        "n": 0.22,
+        "part": "full",
+        "kappa": 1.2196734019492277,
+        "label": "partial"
+      },
+      {
+        "p": 3.0,
+        "n": 0.22,
+        "part": "radial",
+        "kappa": 1.109489467613282,
+        "label": "partial"
+      },
+      {
+        "p": 3.0,
+        "n": 0.22,
+        "part": "axial",
+        "kappa": 1.091899169591794,
+        "label": "partial"
+      },
+      {
+        "p": 3.0,
+        "n": 0.0,
+        "part": "full",
+        "kappa": 1.268040493263012,
+        "label": "partial"
+      },
+      {
+        "p": 3.0,
+        "n": 0.0,
+        "part": "radial",
+        "kappa": 1.1322275996431201,
+        "label": "partial"
+      },
+      {
+        "p": 3.0,
+        "n": 0.0,
+        "part": "axial",
+        "kappa": 1.1107406089400003,
+        "label": "partial"
+      }
+    ],
+    "volumeCells": 709
+  },
+  "W": {
+    "W0": {
+      "labels": {
+        "gammaB": 1.525,
+        "gammaA": 1.575,
+        "primary": {
+          "worst": "fails",
+          "perStep": [
+            {
+              "step": 1,
+              "meanFuelC": 29.468852459016375,
+              "modelPcm": 41.069575979310486,
+              "measuredPcm": 49.6,
+              "errorPcm": -8.530424020689516,
+              "label": "good"
+            },
+            {
+              "step": 2,
+              "meanFuelC": 38.911475409836044,
+              "modelPcm": 91.89868834622736,
+              "measuredPcm": 118.9,
+              "errorPcm": -27.001311653772646,
+              "label": "plausible"
+            },
+            {
+              "step": 3,
+              "meanFuelC": 51.50163934426229,
+              "modelPcm": 162.24687348835897,
+              "measuredPcm": 217.6,
+              "errorPcm": -55.35312651164102,
+              "label": "fails"
+            },
+            {
+              "step": 4,
+              "meanFuelC": 66.78032786885245,
+              "modelPcm": 249.26759995931909,
+              "measuredPcm": 344.8,
+              "errorPcm": -95.53240004068093,
+              "label": "fails"
+            },
+            {
+              "step": 5,
+              "meanFuelC": 78.58360655737704,
+              "modelPcm": 314.73601690764707,
+              "measuredPcm": 460.6,
+              "errorPcm": -145.86398309235295,
+              "label": "fails"
+            },
+            {
+              "step": 6,
+              "meanFuelC": 89.27213114754102,
+              "modelPcm": 373.29142891475306,
+              "measuredPcm": 563.6,
+              "errorPcm": -190.30857108524697,
+              "label": "fails"
+            },
+            {
+              "step": 7,
+              "meanFuelC": 98.71475409836069,
+              "modelPcm": 424.12054128167074,
+              "measuredPcm": 666.0,
+              "errorPcm": -241.87945871832926,
+              "label": "fails"
+            }
+          ]
+        },
+        "worst": "fails",
+        "best": "plausible"
+      },
+      "step7Pcm": 424.12054128167074,
+      "fractionOfShortfallRemoved": 0.0
+    },
+    "W1": {
+      "labels": {
+        "gammaB": 1.3163257446386967,
+        "gammaA": 1.3594839657743916,
+        "primary": {
+          "worst": "plausible",
+          "perStep": [
+            {
+              "step": 1,
+              "meanFuelC": 30.716284513066114,
+              "modelPcm": 48.80536629052409,
+              "measuredPcm": 49.6,
+              "errorPcm": -0.7946337094759102,
+              "label": "good"
+            },
+            {
+              "step": 2,
+              "meanFuelC": 41.655825928745514,
+              "modelPcm": 108.91742703089761,
+              "measuredPcm": 118.9,
+              "errorPcm": -9.982572969102392,
+              "label": "good"
+            },
+            {
+              "step": 3,
+              "meanFuelC": 56.241881149651306,
+              "modelPcm": 191.64287667097076,
+              "measuredPcm": 217.6,
+              "errorPcm": -25.95712332902923,
+              "label": "plausible"
+            },
+            {
+              "step": 4,
+              "meanFuelC": 73.94266691252142,
+              "modelPcm": 293.6839293295376,
+              "measuredPcm": 344.8,
+              "errorPcm": -51.11607067046242,
+              "label": "plausible"
+            },
+            {
+              "step": 5,
+              "meanFuelC": 87.61709368212064,
+              "modelPcm": 370.75603174468614,
+              "measuredPcm": 460.6,
+              "errorPcm": -89.84396825531388,
+              "label": "plausible"
+            },
+            {
+              "step": 6,
+              "meanFuelC": 100.00004681236874,
+              "modelPcm": 439.81922559118993,
+              "measuredPcm": 563.6,
+              "errorPcm": -123.78077440881009,
+              "label": "plausible"
+            },
+            {
+              "step": 7,
+              "meanFuelC": 110.93958822804814,
+              "modelPcm": 499.93128633156425,
+              "measuredPcm": 666.0,
+              "errorPcm": -166.06871366843575,
+              "label": "plausible"
+            }
+          ]
+        },
+        "worst": "plausible",
+        "best": "plausible"
+      },
+      "step7Pcm": 499.93128633156425,
+      "fractionOfShortfallRemoved": 0.3134236592540741
+    },
+    "W2": {
+      "status": "not computed (part D not run)"
+    },
+    "W3": {
+      "status": "not computed (part D not run)"
+    }
+  },
+  "decision": {
+    "items": [
+      "1. OpenMC's temperature treatment is not responsible for the shortfall (P1 constant, the curve smooth)",
+      "2. part D not run (no ENDF/B-VII.1 download approved)",
+      "3. the uniform fuel temperature of the library is a known limit: kappa 1.16 (partial); a transport test with per-element temperatures is the next protocol",
+      "4. W3 not computed (part D not run): a residual remains, 69% of the step 7 shortfall after the effective temperature alone (W1 is plausible in the primary line)"
+    ],
+    "libraryChanged": false
+  }
+}
