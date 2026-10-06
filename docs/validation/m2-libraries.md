@@ -97,6 +97,6 @@ already makes unreachable; it pins the rule):
 
 Physics tables (reference, kinetics, rod worths, temperature tables), geometry and plant data are unchanged by the fixes.
 
-**Open (a format decision, not fixed):** fuel-follower bins that the follower fuel only partly fills are given a full-height volume,
+**Decided 2026-10-06: deferred, documented (`library-format.md` section 10).** The viewer and the engine use element power (the shape summed over the axial bins) and nothing divides bin power by `volumes`, so the low density in partly filled follower bins changes no number the app shows. Follower bins that move with the rod would need a format extension (a fill fraction that depends on the rod position); it is worth doing when a lesson or view needs power density or a hot-spot temperature in those bins, not before. Original finding: fuel-follower bins that the follower fuel only partly fills are given a full-height volume,
 so power *density* there reads low (about 40% at core 242's reference in the bin holding the follower tip). Bin *power* is
 correct. Fixing it needs follower bins that move with the rod, which the format can't express yet.

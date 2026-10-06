@@ -58,4 +58,4 @@ The OpenMC libraries inherited a heat sink at 293.15 K from the M1 library, but 
 
 1. M7: compare against measured data; only then can `status` become `validated-for-domain` for this domain.
 2. A rod-pairs family (plan 02) would let the joint check cover the rod combinations a lesson uses.
-3. Fuel-follower bins (open decision in `TODO.md`) change the power density the shapes report.
+3. Fuel-follower bins: decided 2026-10-06 to defer (`TODO.md`). The lesson uses element power, which is unaffected; power density in partly filled follower bins reads low and must not be used.

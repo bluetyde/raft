@@ -162,6 +162,7 @@ In a trip, a predicate's `signal` may be omitted, and it then means the trip's `
 - `basis`: `"heating"` or `"fission"`, one per library.
 - `normalization`: `"fraction-of-total-power"`. **Each entry is a dimensionless fraction of total power P.**
   Bin power is `P × fraction` (W). **Power density** is bin power ÷ bin volume (`volumes` array, cm³).
+  Caveat (decided 2026-10-06): a bin that a moving fuel follower only partly fills still has a full-height volume, so its density reads low (about 40 % in core 242's bin holding the follower tip, at the reference state). Bin power is right. Use bin power, not density, in follower bins; nothing in the app divides by `volumes` today. Bins that move with the rod are deferred until a feature needs density there.
 - `form`: `"separable"`. The shape at a state is
 
   `shape = base + Σ_r rodDelta_r(x_r) + tempDelta(T_f)`
