@@ -673,8 +673,9 @@ def _write_library(summary: dict[str, Any], out_dir: Path, created: str | None) 
     data_digests = sorted({c["dataDigest"] for c in cases})
     xs_path = summary.get("nuclearData", {}).get("crossSections", "")
     model_id = hashlib.sha256("\n".join(sorted(c["key"] for c in cases)).encode()).hexdigest()
+    fuel_phrase = "fresh fuel (the 1994 benchmark core; default H/Zr 1.60 composition)" if burnup is None else f"a uniform burnup ({burnup} MWd/kg)"
     notes = (
-        f"Full-core OpenMC {openmc_version} transport at a uniform burnup ({burnup} MWd/kg), {len(cases)} cases "
+        f"Full-core OpenMC {openmc_version} transport with {fuel_phrase}, {len(cases)} cases "
         f"({summary.get('stats')}). Transport results: reference state rho, rod worth curves, fuel and coolant temperature "
         "reactivity feedback, kinetics (beta_eff and Lambda by IFP), and fission power shapes (fraction of all fuel fission; the "
         "lowest axial bin holds fuel-follower fuel below the core, zero for regular elements, whose volume there is nominal; "
@@ -710,9 +711,12 @@ def _write_library(summary: dict[str, Any], out_dir: Path, created: str | None) 
             "rho": {"value": rho_ref, "unc": sigma_ref, "source": "transport"},
             "calibration": {
                 "deltaRho": -rho_ref,
-                "reason": (f"Uniform-burnup model (B246 = {burnup} MWd/kg) is not exactly critical "
-                           "at the measured critical rods; this offset makes the measured critical state critical. "
-                           "docs/validation/m2-burnup-results.md"),
+                "reason": ((f"Uniform-burnup model (B246 = {burnup} MWd/kg) is not exactly critical "
+                            "at the measured critical rods; this offset makes the measured critical state critical. "
+                            "docs/validation/m2-burnup-results.md") if burnup is not None else
+                           ("The fresh-fuel model of the 1994 benchmark core is not exactly critical at the measured critical rods "
+                            "(the gate runs were +323 pcm); this offset makes the measured critical state critical. "
+                            "The fuel composition is uncertain by about 500 pcm (docs/validation/core134-library-gate.md)")),
             },
         },
         "kinetics": {

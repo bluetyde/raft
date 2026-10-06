@@ -8,7 +8,8 @@ beta_eff and Lambda (IFP). Families (plan 02 section 3, separable form):
   coolant-temp  water temperature grid, rods at the reference
   holdout       fixed pseudo-random joint states between grid points (tests the separable approximation; plan 07)
 
-Every fuel region has the calibrated uniform burnup B246 (docs/validation/m2-burnup-results.md), for both cores.
+Every fuel region has the calibrated uniform burnup B246 (docs/validation/m2-burnup-results.md), for cores 242 and 246; core 134 (the 1994
+benchmark core, docs/validation/core134-library-gate.md) is fresh.
 
 Resumable: a completed case is reused, an interrupted one re-run; stopping loses at most the case that was running. Progress goes
 to stdout and to <cache>/sweep.log. Run in the openmc-vr env (WSL) from the repo root:
@@ -32,7 +33,9 @@ RESULTS = REPO_ROOT / "pipeline" / "openmc" / "results"
 QUICK_CACHE = REPO_ROOT / "pipeline" / "cache" / "quick"           # never mixed with production results
 B246 = 23.675258421961058                                           # m2_burnup_report.json
 REFERENCE_RODS = {"242": {"T": 0.0, "K": 499.0, "V": 200.0, "R": 500.0},     # s242 header (400 W)
-                  "246": {"T": 0.0, "K": 536.6, "V": 200.0, "R": 535.0}}     # pungercic2024 section 2.3.1
+                  "246": {"T": 0.0, "K": 536.6, "V": 200.0, "R": 535.0},     # pungercic2024 section 2.3.1
+                  "134": {"T": 0.0, "K": 200.0, "V": 200.0, "R": 727.3}}     # 1994 benchmark core 134: regulating rod 28.7 cm inserted, the others out
+FRESH_CORES = {"134"}                                               # fresh fuel (the 1994 benchmark core): no burnup override
 ROD_GRID = {"T": [150, 300, 450, 600, 750, 900],
             "K": [200, 300, 400, 500, 600, 700, 800, 900],
             "V": [300, 400, 500, 600, 700, 800, 900],
@@ -77,7 +80,7 @@ def describe(c: dict) -> str:
 def build_case(c: dict, stats: dict):
     import openmc
     openmc.reset_auto_ids()                                          # stable IDs, so the same case always gets the same key
-    ov = {"burnup": B246}
+    ov = {} if c["core"] in FRESH_CORES else {"burnup": B246}
     for k in ("tfuel", "tcool"):
         if c[k] is not None:
             ov[k] = c[k]
@@ -176,7 +179,7 @@ def summary(cores: list[str], stats: dict, root: Path, out_dir: Path, only_sampl
             rows.append(dict(c, key=key, dataDigest=digest, **d))
             digests.add(digest)
         missing_total += missing
-        rep = {"core": core, "burnup": B246, "stats": stats, "openmc": cache.openmc_versions(),
+        rep = {"core": core, "burnup": None if core in FRESH_CORES else B246, "stats": stats, "openmc": cache.openmc_versions(),
                "nuclearData": {"crossSections": os.environ.get("OPENMC_CROSS_SECTIONS", ""),
                                "note": "each case's dataDigest hashes the data files it used (pipeline/runs/cache.py)"},
                "extractor": list(SUMMARY_EXTRACTOR), "cases": rows, "complete": missing == 0}

@@ -42,6 +42,7 @@ TABLE2_RHO_PCM = [0.0, -694.0, -1612.0, -2583.0, -3551.0, -4533.0, -4533.0 - 9.8
 VARIANTS = {
     "242": {"id": "triga-jsi-242", "name": "JSI TRIGA Mark II, core 242 (58 elements)", "mass": 58 * MASS_PER_ELEMENT, "fuel": "table2"},
     "246": {"id": "triga-jsi-246", "name": "JSI TRIGA Mark II, core 246 (64 elements)", "mass": 64 * MASS_PER_ELEMENT, "fuel": "table2"},
+    "134": {"id": "triga-jsi-134", "name": "JSI TRIGA Mark II, core 134 (45 elements, fresh; 1994 benchmark)", "mass": 45 * MASS_PER_ELEMENT, "fuel": "table2"},
     "paper": {"id": "triga-jsi-paper", "name": "JSI TRIGA Mark II, svajger2024 Table 10 inputs", "mass": 59 * 2.36, "fuel": "paper"},
 }
 
