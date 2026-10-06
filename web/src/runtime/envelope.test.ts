@@ -31,8 +31,20 @@ describe("envelope validation and resolution", () => {
   });
 });
 
+describe("known limits", () => {
+  it("each needs text and a source, and is always shown; they keep a supported state at caution", async () => {
+    const lib = await loadSyntheticCore();
+    expect(validateEnvelope(spec({ knownLimits: [{ text: "x", source: "" }] }), lib).map((i) => i.code)).toEqual(["E_SCN_SOURCE"]);
+    expect(validateEnvelope(spec({ knownLimits: [{ text: " ", source: "s" }] }), lib).map((i) => i.code)).toEqual(["E_SCN_ENVELOPE"]);
+    const env = { summary: "s", powerMaxW: 100, powerSource: "p", fuelTempMaxK: null, fuelTempSource: null, modes: null, knownLimits: ["the model disagrees with measurement"] };
+    const v = evaluateValidity({ status: "supported", reasons: [] }, env, { power: 1, fuelTemp: 300, mode: "steady" });
+    expect(v.level).toBe("caution");
+    expect(v.messages).toContain("the model disagrees with measurement");
+  });
+});
+
 describe("validity view", () => {
-  const env = { summary: "s", powerMaxW: 100, powerSource: "p", fuelTempMaxK: 400, fuelTempSource: "t", modes: ["steady"] };
+  const env = { summary: "s", powerMaxW: 100, powerSource: "p", fuelTempMaxK: 400, fuelTempSource: "t", modes: ["steady"], knownLimits: [] };
   const unvalidated = { status: "unvalidated", reasons: ["R_LIBRARY_EXPERIMENTAL", "R_JOINT_UNCHECKED"] };
 
   it("caution while the model is unvalidated and the state is inside the envelope", () => {

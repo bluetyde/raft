@@ -22,6 +22,8 @@ export interface EnvelopeSpec {
   fuelTemp?: { max: number; source: string };
   /** Allowed engine modes (`truth.mode`), for example ["steady"]: no pulses. */
   modes?: string[];
+  /** Where the model is known to disagree with measurement, in plain words, each with its source. Always shown. */
+  knownLimits?: { text: string; source: string }[];
 }
 
 export interface ResolvedEnvelope {
@@ -31,6 +33,7 @@ export interface ResolvedEnvelope {
   fuelTempMaxK: number | null;
   fuelTempSource: string | null;
   modes: string[] | null;
+  knownLimits: string[];
 }
 
 export interface ValidityView {
@@ -76,6 +79,10 @@ export function validateEnvelope(env: unknown, lib: Library): Issue[] {
     }
     sourced(e.fuelTemp, "/envelope/fuelTemp");
   }
+  for (const [i, k] of (e.knownLimits ?? []).entries()) {
+    if (typeof k?.text !== "string" || k.text.trim() === "") out.push(issue("E_SCN_ENVELOPE", `/envelope/knownLimits/${i}/text`, "a known limit needs its text"));
+    sourced(k, `/envelope/knownLimits/${i}`);
+  }
   if (e.modes !== undefined && !(Array.isArray(e.modes) && e.modes.length > 0 && e.modes.every((m) => typeof m === "string"))) {
     out.push(issue("E_SCN_ENVELOPE", "/envelope/modes", "modes must be a non-empty list of mode names"));
   }
@@ -91,6 +98,7 @@ export function resolveEnvelope(e: EnvelopeSpec, lib: Library): ResolvedEnvelope
     fuelTempMaxK: e.fuelTemp ? e.fuelTemp.max : null,
     fuelTempSource: e.fuelTemp ? e.fuelTemp.source : null,
     modes: e.modes ?? null,
+    knownLimits: (e.knownLimits ?? []).map((k) => k.text),
   };
 }
 
@@ -133,13 +141,14 @@ export function evaluateValidity(
   }
   const reasons = (validity?.reasons ?? []).map(describeReason);
   const outOfData = library === "outOfDomain";
-  const level: ValidityView["level"] = outOfData || outside.length > 0 ? "warning" : library === "supported" ? "ok" : "caution";
+  const known = env?.knownLimits ?? [];
+  const level: ValidityView["level"] = outOfData || outside.length > 0 ? "warning" : library === "supported" && known.length === 0 ? "ok" : "caution";
   return {
     level,
     library,
     envelope: env ? (outside.length > 0 ? "outside" : "inside") : "none",
     summary: env?.summary ?? null,
-    // the lesson's own limits first, then the data range, then the model's general status
-    messages: [...outside, ...reasons.filter((_, i) => (validity!.reasons[i] ?? "").startsWith("R_DOMAIN")), ...reasons.filter((_, i) => !(validity!.reasons[i] ?? "").startsWith("R_DOMAIN"))],
+    // the lesson's own limits first, then where the model disagrees with measurement, then the data range, then the model's general status
+    messages: [...outside, ...known, ...reasons.filter((_, i) => (validity!.reasons[i] ?? "").startsWith("R_DOMAIN")), ...reasons.filter((_, i) => !(validity!.reasons[i] ?? "").startsWith("R_DOMAIN"))],
   };
 }

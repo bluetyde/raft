@@ -29,6 +29,12 @@
     },
     "modes": [
       "steady"
+    ],
+    "knownLimits": [
+      {
+        "text": "Measured against a real JSI power ascension, this model's power defect is only about 0.35 to 0.45 of the real value (about 650 against 1427 pcm at 250 kW), because its fuel heats too little and in proportion to power. The regulating rod needs far less withdrawal to hold a given power than in the real reactor.",
+        "source": "docs/validation/m7-power-ascension-results.md (metric A fails for both OpenMC cores)"
+      }
     ]
   },
   "goals": [

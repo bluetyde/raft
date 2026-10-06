@@ -1,0 +1,1783 @@
+{
+  "protocol": "docs/validation/m7-power-ascension-protocol.md",
+  "libraries": {
+    "core242": {
+      "id": "triga-jsi-242-openmc",
+      "status": "experimental",
+      "hA_asShipped": 3000.0,
+      "variants": {
+        "V0": {
+          "summary": {
+            "A": {
+              "worst": "fails",
+              "best": "fails",
+              "sensitive": false
+            },
+            "B": {
+              "worst": "plausible",
+              "best": "plausible",
+              "sensitive": false
+            },
+            "C": {
+              "worst": "fails",
+              "best": "fails",
+              "sensitive": false
+            }
+          },
+          "cases": [
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pCalculated",
+                "pool-constant"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.4529145213546262,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.05906610820601871,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10772644702615558,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 83.30333333333334,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 646.2184390687806,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 493.91454542246333,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 267.91521936663753,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 122.5929982643788,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": 0.5171609291899415,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pCalculated",
+                "pool-rising-6K"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.45665699617785255,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.05825463796908703,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10362469038916344,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 86.90333333333336,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 651.55820214656,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 500.144269013206,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 275.0349034703435,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 130.6026428810479,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": 9.416766058822304,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pIndicated",
+                "pool-constant"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.4528963982494538,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.06429215925226289,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.11295249807239982,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 83.29999999999995,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 646.1925810223207,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 491.044302265461,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 250.56447019232823,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 105.75941001925939,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": -0.2585804645949734,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pIndicated",
+                "pool-rising-6K"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.4566388730726802,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.0634378256675523,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.1086340848613156,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 86.89999999999998,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 651.5323441001001,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 497.2740258562036,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 257.68415429603414,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 113.76905463592847,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": 8.641024665037396,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pCalculated",
+                "pool-constant"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.4529145213546261,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.05906610820601854,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10772644702615558,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 83.30333333333334,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 646.2184390687805,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 493.9145454224632,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 267.9152193666376,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 122.59299826437879,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": 0.5171609291899362,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pCalculated",
+                "pool-rising-6K"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.45665699617785255,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.05825463796908714,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10362469038916344,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 86.90333333333336,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 651.55820214656,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 500.14426901320587,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 275.03490347034347,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 130.6026428810479,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": 9.416766058822315,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pIndicated",
+                "pool-constant"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.45289639824945377,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.06429215925226278,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.11295249807239982,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 83.29999999999995,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 646.1925810223206,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 491.0443022654609,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 250.56447019232826,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 105.75941001925935,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": -0.25858046459496187,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pIndicated",
+                "pool-rising-6K"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.4566388730726802,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.0634378256675523,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.1086340848613156,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 86.89999999999998,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 651.5323441001001,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 497.27402585620354,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 257.6841542960341,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 113.76905463592848,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": 8.641024665037396,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            }
+          ]
+        },
+        "V1": {
+          "summary": {
+            "A": {
+              "worst": "good",
+              "best": "good",
+              "sensitive": false
+            },
+            "B": {
+              "worst": "plausible",
+              "best": "plausible",
+              "sensitive": false
+            },
+            "C": {
+              "worst": "fails",
+              "best": "fails",
+              "sensitive": false
+            }
+          },
+          "cases": [
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pCalculated",
+                "pool-constant"
+              ],
+              "hA": 1451.610043747753,
+              "A": {
+                "ratio": 1.0,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.08471900690206768,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10772644702615602,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 172.16056135488338,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.8,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 1059.9994897337601,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 553.6925440559845,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 253.35936216286274,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": 1.0688013590499832,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pCalculated",
+                "pool-rising-6K"
+              ],
+              "hA": 1460.9562621352072,
+              "A": {
+                "ratio": 0.9999999999999997,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.0852488884310445,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10568557922498628,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 174.659193541327,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.7999999999995,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 1064.0054977277812,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 557.2700745919383,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 259.74818349367996,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": 9.96156901436986,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pIndicated",
+                "pool-constant"
+              ],
+              "hA": 1451.560201627712,
+              "A": {
+                "ratio": 1.0000000000000004,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.08961282598664999,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.11295249807239977,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 172.15958368090674,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.8000000000006,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 1053.1363955150084,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 517.8520392981783,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 218.577382944226,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": -0.5344190292036686,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pIndicated",
+                "pool-rising-6K"
+              ],
+              "hA": 1460.9060991057454,
+              "A": {
+                "ratio": 1.0000000000000002,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.09011140014312125,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.11080390121000039,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 174.65822212185276,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.8000000000004,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 1057.1863089831663,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 521.6588533474476,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 225.1887160518501,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": 8.368604954974336,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pCalculated",
+                "pool-constant"
+              ],
+              "hA": 1457.615583842312,
+              "A": {
+                "ratio": 1.0,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.08626541470037252,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10772644702615602,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 171.4512404849781,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.8,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 1061.510749077806,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 551.4112685192468,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 252.3154931039234,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": 1.0643977772786517,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pCalculated",
+                "pool-rising-6K"
+              ],
+              "hA": 1467.03954679225,
+              "A": {
+                "ratio": 1.0000000000000002,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.08679529622934967,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10567725711412851,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 173.94987267142176,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.8000000000002,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 1065.516757071827,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 554.9887990552006,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 258.7043144347401,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": 9.957165432598098,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pIndicated",
+                "pool-constant"
+              ],
+              "hA": 1457.5655355175466,
+              "A": {
+                "ratio": 1.0000000000000002,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.09113907070008265,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.1129524980723996,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 171.45026683912812,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.8000000000002,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 1054.675931578897,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 515.7184306708223,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 217.67681955042977,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": -0.5322171627148773,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pIndicated",
+                "pool-rising-6K"
+              ],
+              "hA": 1466.9891748886453,
+              "A": {
+                "ratio": 1.0000000000000002,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.09163764485655429,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.1107951398099894,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 173.9489052800742,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.8000000000002,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 1058.7258450470554,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 519.5252447200918,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 224.28815265805383,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": 8.370806821462672,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "D": {
+        "maxAbsDiff": 0.04897073805594551,
+        "label": "good",
+        "reported": {
+          "modelTotalWorthPcm": 2427.0810194767655,
+          "measuredTotalWorthPcm_core200": 3292.5
+        }
+      }
+    },
+    "core246": {
+      "id": "triga-jsi-246-openmc",
+      "status": "experimental",
+      "hA_asShipped": 3000.0,
+      "variants": {
+        "V0": {
+          "summary": {
+            "A": {
+              "worst": "fails",
+              "best": "fails",
+              "sensitive": false
+            },
+            "B": {
+              "worst": "plausible",
+              "best": "plausible",
+              "sensitive": false
+            },
+            "C": {
+              "worst": "fails",
+              "best": "fails",
+              "sensitive": false
+            }
+          },
+          "cases": [
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pCalculated",
+                "pool-constant"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.474020797804594,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.0590661082060186,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10772644702615558,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 83.30333333333334,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 676.3328743075947,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 516.9314646132356,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 280.4003405506379,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 128.3059564280064,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": 0.5412611534617531,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pCalculated",
+                "pool-rising-6K"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.47069467957509453,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.0597657926474085,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10362469038916344,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 86.90333333333336,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 671.5871688177449,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 511.3948082084108,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 274.0727332308382,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 121.18739819323174,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": -7.368247996287906,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pIndicated",
+                "pool-constant"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.4740018301443238,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.06429215925226284,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.11295249807239982,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 83.29999999999995,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 676.3058112499211,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 513.9274652115247,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 262.24102885201006,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 110.68790588284025,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": -0.2706305767308761,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pIndicated",
+                "pool-rising-6K"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.4706757119148243,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.06502880276035106,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.1086340848613156,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 86.89999999999998,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 671.5601057600713,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 508.39080880669985,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 255.91342153221032,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 103.56934764806559,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": -8.18013972648054,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pCalculated",
+                "pool-constant"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.47402079780459405,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.05906610820601871,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10772644702615558,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 83.30333333333334,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 676.3328743075948,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 516.9314646132356,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 280.40034055063796,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 128.30595642800643,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": 0.541261153461754,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pCalculated",
+                "pool-rising-6K"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.4706946795750945,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.05976579264740833,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10362469038916344,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 86.90333333333336,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 671.5871688177448,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 511.3948082084107,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 274.07273323083825,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 121.18739819323176,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": -7.368247996287915,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pIndicated",
+                "pool-constant"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.47400183014432384,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.06429215925226278,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.11295249807239982,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 83.29999999999995,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 676.3058112499212,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 513.9274652115247,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 262.2410288520101,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 110.68790588284025,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": -0.27063057673087165,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pIndicated",
+                "pool-rising-6K"
+              ],
+              "hA": 3000.0,
+              "A": {
+                "ratio": 0.47067571191482427,
+                "label": "fails"
+              },
+              "B": {
+                "maxAbsDiff": 0.065028802760351,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.1086340848613156,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 86.89999999999998,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 671.5601057600712,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 508.3908088066999,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 255.91342153221026,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 103.56934764806559,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": -8.180139726480554,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            }
+          ]
+        },
+        "V1": {
+          "summary": {
+            "A": {
+              "worst": "good",
+              "best": "good",
+              "sensitive": false
+            },
+            "B": {
+              "worst": "fails",
+              "best": "plausible",
+              "sensitive": true
+            },
+            "C": {
+              "worst": "fails",
+              "best": "fails",
+              "sensitive": false
+            }
+          },
+          "cases": [
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pCalculated",
+                "pool-constant"
+              ],
+              "hA": 1548.0246588279003,
+              "A": {
+                "ratio": 1.0000000000000002,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.09169407532767987,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10772644702615597,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 161.43799685285472,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.8000000000004,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 1044.8081280885167,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 543.4028565726047,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 248.65099343796172,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": 1.0489390147140156,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pCalculated",
+                "pool-rising-6K"
+              ],
+              "hA": 1550.0987210178946,
+              "A": {
+                "ratio": 1.0,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.09385000244165465,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10556377246450982,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 164.82198967811098,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.8,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 1045.680703380971,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 536.3481656784044,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 241.19973534542837,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": -6.861973635806525,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pIndicated",
+                "pool-constant"
+              ],
+              "hA": 1547.974569438735,
+              "A": {
+                "ratio": 1.0000000000000007,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.09649766828484796,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.11295249807239971,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 161.43676061203564,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.8000000000009,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 1037.6615629085957,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 508.2273973281622,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 214.5149695636928,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": -0.5244864781510126,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=25.8C(Table1)",
+                "pIndicated",
+                "pool-rising-6K"
+              ],
+              "hA": 1550.0485645183594,
+              "A": {
+                "ratio": 0.9999999999999999,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.0986471680981656,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.1106756603778079,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 164.82075509140606,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.7999999999997,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 1038.5437004440387,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 501.21977188150055,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 207.10938613398847,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": -8.433293854807946,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pCalculated",
+                "pool-constant"
+              ],
+              "hA": 1557.2510829111104,
+              "A": {
+                "ratio": 1.0000000000000002,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.09387651865989849,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10772644702615575,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 160.48150663849316,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.8000000000002,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 1047.0713591405104,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 540.1832953484804,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 247.17778238076906,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": 1.0427242454366183,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pCalculated",
+                "pool-rising-6K"
+              ],
+              "hA": 1559.3499588882341,
+              "A": {
+                "ratio": 1.0000000000000002,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.09603244577387343,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.10555114883682831,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 163.86549946374947,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.8000000000002,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 191.1,
+                  "modelDefectPcm": 1047.943934432964,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 103.7,
+                  "modelDefectPcm": 533.12860445428,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 47.5,
+                  "modelDefectPcm": 239.7265242882357,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.29,
+                  "modelDefectPcm": -6.868188405083917,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pIndicated",
+                "pool-constant"
+              ],
+              "hA": 1557.200694982808,
+              "A": {
+                "ratio": 1.0,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.09865165121897651,
+                "label": "plausible"
+              },
+              "C": {
+                "maxAbsDiff": 0.11295249807239954,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 160.48027772217176,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.8,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 1039.9671360349093,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 505.21624418149685,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 213.24400812201435,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": -0.5213789929635482,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            },
+            {
+              "case": [
+                "T0=30.8C(Table2)",
+                "pIndicated",
+                "pool-rising-6K"
+              ],
+              "hA": 1559.2995030466625,
+              "A": {
+                "ratio": 1.0,
+                "label": "good"
+              },
+              "B": {
+                "maxAbsDiff": 0.1008011510322942,
+                "label": "fails"
+              },
+              "C": {
+                "maxAbsDiff": 0.11066237037707344,
+                "label": "fails"
+              },
+              "reported": {
+                "modelMeanFuelRiseAtPeakK": 163.8642722015423,
+                "measuredFuelRiseAtPeakK": 200.89999999999998,
+                "modelDefectAtPeakPcm": 1426.8,
+                "measuredDefectAtPeakPcm": 1426.8
+              },
+              "downLegDiagnostic": [
+                {
+                  "state": 8,
+                  "powerKW": 190,
+                  "modelDefectPcm": 1040.8492735703528,
+                  "measuredDefectPcm": 1140.7
+                },
+                {
+                  "state": 9,
+                  "powerKW": 97,
+                  "modelDefectPcm": 498.20861873483517,
+                  "measuredDefectPcm": 648.7
+                },
+                {
+                  "state": 10,
+                  "powerKW": 41,
+                  "modelDefectPcm": 205.83842469231053,
+                  "measuredDefectPcm": 308.7
+                },
+                {
+                  "state": 11,
+                  "powerKW": 0.0,
+                  "modelDefectPcm": -8.430186369620502,
+                  "measuredDefectPcm": -8.8
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "D": {
+        "maxAbsDiff": 0.06685771789866204,
+        "label": "plausible",
+        "reported": {
+          "modelTotalWorthPcm": 2459.9928099239833,
+          "measuredTotalWorthPcm_core200": 3292.5
+        }
+      }
+    }
+  }
+}

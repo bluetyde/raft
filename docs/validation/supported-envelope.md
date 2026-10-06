@@ -34,7 +34,7 @@ Evidence in the repository (not new claims):
 
 Not supported:
 
-- No comparison with measured transients or powers of a real TRIGA yet (M7). So the library status stays `experimental` and the state can be `caution` at best, never `ok`.
+- **A first comparison with a measured steady power ascension disagrees** (`m7-power-ascension-results.md`, 2026-10-06): the model's power defect at 250 kW is 0.45–0.47 of the measured 1427 pcm (metric A fails for both OpenMC cores), 0.35–0.36 at the lesson's powers, because the lumped fuel heats too little and linearly with power. The regulating rod curve and the rod worth shape agree. The lesson's banner carries this as a known limit. The library status stays `experimental` and the state can be `caution` at best, never `ok`.
 - Rod interaction: rod worths are added as if the rods acted alone. Only the six holdout states per core check that; every other combination of two or more moved rods is `R_JOINT_UNCHECKED`. A low-power ascension moves several rods, so this reason is normally present.
 - Long runs (xenon), high power, pulses, and the second TRIGA core.
 
@@ -56,6 +56,6 @@ The OpenMC libraries inherited a heat sink at 293.15 K from the M1 library, but 
 
 ## To widen or promote the envelope
 
-1. M7: compare against measured data; only then can `status` become `validated-for-domain` for this domain.
+1. M7: the first comparison (steady power ascension) failed on the power defect. A new dated protocol could make heat transfer depend on temperature (and add a hot-element temperature), then compare again; `validated-for-domain` also needs a matched core and stated uncertainties.
 2. A rod-pairs family (plan 02) would let the joint check cover the rod combinations a lesson uses.
 3. Fuel-follower bins: decided 2026-10-06 to defer (`TODO.md`). The lesson uses element power, which is unaffected; power density in partly filled follower bins reads low and must not be used.
