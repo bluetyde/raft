@@ -1,0 +1,2122 @@
+{
+  "protocol": "docs/validation/m7-heat-transfer-protocol.md",
+  "libraries": {
+    "core242": {
+      "id": "triga-jsi-242-openmc",
+      "status": "experimental",
+      "summary": {
+        "L0": {
+          "computed": true,
+          "A2": {
+            "worst": "plausible",
+            "best": "good"
+          },
+          "C2": {
+            "maxAbsDiff": 0.11295249807239977,
+            "worst": "fails",
+            "best": "fails"
+          },
+          "X": {
+            "defectWorst": "good",
+            "tempShapeWorst": "good"
+          },
+          "E": {
+            "min": 1.0268779903903718,
+            "max": 1.0514945472188229
+          }
+        },
+        "L1": {
+          "computed": true,
+          "A2": {
+            "worst": "good",
+            "best": "good"
+          },
+          "C2": {
+            "maxAbsDiff": 0.05074503522618956,
+            "worst": "plausible",
+            "best": "good"
+          },
+          "X": {
+            "defectWorst": "plausible",
+            "tempShapeWorst": "good"
+          },
+          "E": {
+            "min": 1.1504201055439174,
+            "max": 1.1720167198593607
+          },
+          "N": {
+            "min": 0.21687219631608234,
+            "max": 0.24839553653649293,
+            "allPhysical": true
+          }
+        }
+      },
+      "adoption": {
+        "adopt": true,
+        "improvementOverL0": true,
+        "reasons": []
+      },
+      "cases": [
+        {
+          "case": [
+            "T0=25.8C(Table1)",
+            "pCalculated",
+            "pool-constant"
+          ],
+          "L0": {
+            "hA": 1304.6773917952105,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 595.8334647323044,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1178.7282900258433,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1415.0022406886055,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.1077264470261558,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 16.886209358744438,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.0488163259239636,
+              "modelMeanRiseAtPeakK": 191.5492684794122,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.08287250209478103
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.12398715404145777
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "good",
+                "thetaDiff": 0.11492087375447177
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1288.6667167600701,
+            "n": 0.21687219631608234,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 629.3785349751477,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1106.237378801348,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1287.0997546625097,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.04821786661317018,
+              "label": "good"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 32.6404382070322,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.1671195562835617,
+              "modelMeanRiseAtPeakK": 172.1331794316962,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.04559005722815246
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.05410870641455778
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.05028868064864456
+              }
+            ]
+          }
+        },
+        {
+          "case": [
+            "T0=25.8C(Table1)",
+            "pCalculated",
+            "pool-rising-6K"
+          ],
+          "L0": {
+            "hA": 1312.688286891606,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 594.8671750426116,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1177.3818764902644,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1413.8733910230483,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.10588885676524307,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 17.67311901561371,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.0356721378599498,
+              "modelMeanRiseAtPeakK": 193.98030772086577,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.0754054273974597
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.10693656405534124
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "good",
+                "thetaDiff": 0.09060371396917338
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1298.295059888097,
+            "n": 0.217541890100858,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 628.2768938490821,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1105.1235456019765,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1286.4061871375127,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.05074503522618956,
+              "label": "plausible"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 33.38388028110357,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.1504201055439174,
+              "modelMeanRiseAtPeakK": 174.6318575552143,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.0379697460128956
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.03642286068443412
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.02442539975277752
+              }
+            ]
+          }
+        },
+        {
+          "case": [
+            "T0=25.8C(Table1)",
+            "pIndicated",
+            "pool-constant"
+          ],
+          "L0": {
+            "hA": 1293.3307574315324,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 593.2034276957085,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1211.8143897827015,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1435.4829660075318,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.11295249807239977,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 17.39423599916639,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.0397364912684866,
+              "modelMeanRiseAtPeakK": 193.2220343203502,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.08728369396539115
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.15082130413140854
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.1409637025541924
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1269.2469501316343,
+            "n": 0.244015431033218,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 632.8085486467214,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1128.761415923232,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1295.0894712687268,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.034780950525777066,
+              "label": "good"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 35.73961016119284,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.1671821291664215,
+              "modelMeanRiseAtPeakK": 172.12395133523745,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.04552286839616737
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "good",
+                "thetaDiff": 0.07238850423114007
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "good",
+                "thetaDiff": 0.07224907860699276
+              }
+            ]
+          }
+        },
+        {
+          "case": [
+            "T0=25.8C(Table1)",
+            "pIndicated",
+            "pool-rising-6K"
+          ],
+          "L0": {
+            "hA": 1301.280905904798,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 592.2491453022518,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1210.2569206142794,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1434.2184626724932,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.11103434668165307,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 18.177926791161255,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.0268779903903718,
+              "modelMeanRiseAtPeakK": 195.6415483436616,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.07979885370169082
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "good",
+                "thetaDiff": 0.13342171973089312
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.1163738116927786
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1278.9387170568486,
+            "n": 0.24470291154463336,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 631.6847186980693,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1127.4943252601015,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1294.341016445666,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.036584515215423385,
+              "label": "good"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 36.46719550627317,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.1504806961706682,
+              "modelMeanRiseAtPeakK": 174.62266048329894,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.037903395659107164
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "good",
+                "thetaDiff": 0.05432219359484558
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "good",
+                "thetaDiff": 0.04593662422866113
+              }
+            ]
+          }
+        },
+        {
+          "case": [
+            "T0=30.8C(Table2)",
+            "pCalculated",
+            "pool-constant"
+          ],
+          "L0": {
+            "hA": 1308.0089711072978,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 594.3158402447053,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1181.8084360847156,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1417.4805824606563,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.10772644702615591,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 16.84319914474607,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.0514945472188229,
+              "modelMeanRiseAtPeakK": 191.06138070936794,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.08287250209478114
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.1239871540414581
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "good",
+                "thetaDiff": 0.11492087375447196
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1292.6223950620965,
+            "n": 0.2204419433766277,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 628.1446786759801,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1108.3809961548232,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1288.0601193096443,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.04768770233592923,
+              "label": "good"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 32.83930043557794,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.1719528601270406,
+              "modelMeanRiseAtPeakK": 171.4232771941205,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.04507691810032666
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.05309443872029029
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "good",
+                "thetaDiff": 0.04928666345723992
+              }
+            ]
+          }
+        },
+        {
+          "case": [
+            "T0=30.8C(Table2)",
+            "pCalculated",
+            "pool-rising-6K"
+          ],
+          "L0": {
+            "hA": 1316.0609519524187,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 593.3495529917902,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1180.4620278997895,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1416.3517391120408,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.10588422332083364,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 17.63010887067464,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.0382835629307468,
+              "modelMeanRiseAtPeakK": 193.4924207341997,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.07538659932884861
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.10689357135858507
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "good",
+                "thetaDiff": 0.09054239877260445
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1302.336723394254,
+            "n": 0.22113885458745247,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 627.0425324212581,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1107.2666338700062,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1287.3662755786227,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.050233141798808334,
+              "label": "plausible"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 33.58311999753306,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.1551158217770177,
+              "modelMeanRiseAtPeakK": 173.92195329030955,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.037433205507641065
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.035351355808045604
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.023332245314508282
+              }
+            ]
+          }
+        },
+        {
+          "case": [
+            "T0=30.8C(Table2)",
+            "pIndicated",
+            "pool-constant"
+          ],
+          "L0": {
+            "hA": 1296.6807792220272,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 591.6708651399736,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1214.76133588358,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1437.8520562350072,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.11295249807239965,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 17.349297360019385,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.0424296460412374,
+              "modelMeanRiseAtPeakK": 192.7228381914731,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.08728369396539126
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.15082130413140848
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.1409637025541924
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1273.2096447134193,
+            "n": 0.24768007437206496,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 631.5592418102676,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1130.7633671894348,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1295.9967984375476,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.03375740339976435,
+              "label": "good"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 35.94690436632831,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.1720167198593607,
+              "modelMeanRiseAtPeakK": 171.41393684563434,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.04500890989215789
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "good",
+                "thetaDiff": 0.07135957316115016
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "good",
+                "thetaDiff": 0.07127367031431589
+              }
+            ]
+          }
+        },
+        {
+          "case": [
+            "T0=30.8C(Table2)",
+            "pIndicated",
+            "pool-rising-6K"
+          ],
+          "L0": {
+            "hA": 1304.6722870136514,
+            "A2": {
+              "label": "plausible",
+              "perState": {
+                "4": {
+                  "model": 590.7165857490207,
+                  "measured": 656.4,
+                  "label": "plausible"
+                },
+                "5": {
+                  "model": 1213.2038735047227,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1436.5875608216338,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.11102943984386388,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 18.132988240055028,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.0295048548560481,
+              "modelMeanRiseAtPeakK": 195.14235319277935,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.07977970667438661
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.1333772097205444
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.11631090810430647
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1282.9884332771999,
+            "n": 0.24839553653649293,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 630.4349039911708,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1129.495773547087,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1295.248081816331,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.03610501037991898,
+              "label": "good"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 36.67487148762016,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.155177655995639,
+              "modelMeanRiseAtPeakK": 173.91264361570927,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.03736604438334368
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "good",
+                "thetaDiff": 0.053234651065415695
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "good",
+                "thetaDiff": 0.04486779369250371
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "core246": {
+      "id": "triga-jsi-246-openmc",
+      "status": "experimental",
+      "summary": {
+        "L0": {
+          "computed": true,
+          "A2": {
+            "worst": "plausible",
+            "best": "plausible"
+          },
+          "C2": {
+            "maxAbsDiff": 0.11295249807239965,
+            "worst": "fails",
+            "best": "fails"
+          },
+          "X": {
+            "defectWorst": "good",
+            "tempShapeWorst": "good"
+          },
+          "E": {
+            "min": 1.088815862047915,
+            "max": 1.1243447397628636
+          }
+        },
+        "L1": {
+          "computed": true,
+          "A2": {
+            "worst": "good",
+            "best": "good"
+          },
+          "C2": {
+            "maxAbsDiff": 0.04783457296157334,
+            "worst": "good",
+            "best": "good"
+          },
+          "X": {
+            "defectWorst": "plausible",
+            "tempShapeWorst": "good"
+          },
+          "E": {
+            "min": 1.2191881960775957,
+            "max": 1.252269056696978
+          },
+          "N": {
+            "min": 0.2333236938373925,
+            "max": 0.2722085363127734,
+            "allPhysical": true
+          }
+        }
+      },
+      "adoption": {
+        "adopt": true,
+        "improvementOverL0": true,
+        "reasons": []
+      },
+      "cases": [
+        {
+          "case": [
+            "T0=25.8C(Table1)",
+            "pCalculated",
+            "pool-constant"
+          ],
+          "L0": {
+            "hA": 1393.3152858405851,
+            "A2": {
+              "label": "plausible",
+              "perState": {
+                "4": {
+                  "model": 583.9286420621906,
+                  "measured": 656.4,
+                  "label": "plausible"
+                },
+                "5": {
+                  "model": 1166.5188056997963,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1412.2281533482947,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.10772644702615586,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 16.548820910653898,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.120071389401679,
+              "modelMeanRiseAtPeakK": 179.3635672698657,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.08287250209478081
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.12398715404145794
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.11492087375447202
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1382.5004711089457,
+            "n": 0.2333236938373925,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 623.773745912864,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1096.9095114511613,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1283.158398558291,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.045797818911198496,
+              "label": "good"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 33.556368093094186,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.2447396309376675,
+              "modelMeanRiseAtPeakK": 161.39921555214016,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.043247837566718905
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.0494673073935194
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "good",
+                "thetaDiff": 0.045688573157377566
+              }
+            ]
+          }
+        },
+        {
+          "case": [
+            "T0=25.8C(Table1)",
+            "pCalculated",
+            "pool-rising-6K"
+          ],
+          "L0": {
+            "hA": 1392.0150565013687,
+            "A2": {
+              "label": "plausible",
+              "perState": {
+                "4": {
+                  "model": 582.1012152800615,
+                  "measured": 656.4,
+                  "label": "plausible"
+                },
+                "5": {
+                  "model": 1169.2355465852006,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1415.5358649198265,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.1057799927301854,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 15.773327631986012,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.0970282792818207,
+              "modelMeanRiseAtPeakK": 183.13110408741784,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.07496305681087301
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.10592643896626025
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.08916309676974962
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1380.9854479592832,
+            "n": 0.23896002231717628,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 622.6369585759036,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1097.9508610575629,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1283.606539466225,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.04783457296157334,
+              "label": "good"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 33.24819980616802,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.2191881960775957,
+              "modelMeanRiseAtPeakK": 164.78177909394196,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.03455123043561925
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.029486836051580423
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "good",
+                "thetaDiff": 0.017043717912756995
+              }
+            ]
+          }
+        },
+        {
+          "case": [
+            "T0=25.8C(Table1)",
+            "pIndicated",
+            "pool-constant"
+          ],
+          "L0": {
+            "hA": 1382.5465339532273,
+            "A2": {
+              "label": "plausible",
+              "perState": {
+                "4": {
+                  "model": 580.7840108382463,
+                  "measured": 656.4,
+                  "label": "plausible"
+                },
+                "5": {
+                  "model": 1199.5691245168803,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1431.94279722983,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.11295249807239965,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 17.030067051879875,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.1114589782761237,
+              "modelMeanRiseAtPeakK": 180.75340964143948,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.08728369396539082
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.15082130413140876
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.1409637025541925
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1363.7280826457786,
+            "n": 0.26092434494507066,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 627.1276872402227,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1120.1415900750183,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1291.387116755106,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.03147517188848714,
+              "label": "good"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 36.694906459289456,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.2448365657524672,
+              "modelMeanRiseAtPeakK": 161.38664747412992,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.04317434562514855
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "good",
+                "thetaDiff": 0.06767394300264262
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "good",
+                "thetaDiff": 0.0677642599885393
+              }
+            ]
+          }
+        },
+        {
+          "case": [
+            "T0=25.8C(Table1)",
+            "pIndicated",
+            "pool-rising-6K"
+          ],
+          "L0": {
+            "hA": 1381.3317127542152,
+            "A2": {
+              "label": "plausible",
+              "perState": {
+                "4": {
+                  "model": 578.9219323859112,
+                  "measured": 656.4,
+                  "label": "plausible"
+                },
+                "5": {
+                  "model": 1202.240634328796,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1435.1801323362663,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.11091865015706914,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 16.25409334063091,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.088815862047915,
+              "modelMeanRiseAtPeakK": 184.51237440840947,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.07934739298292137
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.13237223455779684
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.11489063110219208
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1362.166398025355,
+            "n": 0.2667128003909637,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 625.9840969747944,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1121.0733095773996,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1291.7920675710282,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.03387273362910115,
+              "label": "good"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 36.415355837004086,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.2192834071650547,
+              "modelMeanRiseAtPeakK": 164.76891165697958,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.03447738321089866
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "good",
+                "thetaDiff": 0.04727098634333726
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "good",
+                "thetaDiff": 0.03867364811158508
+              }
+            ]
+          }
+        },
+        {
+          "case": [
+            "T0=30.8C(Table2)",
+            "pCalculated",
+            "pool-constant"
+          ],
+          "L0": {
+            "hA": 1398.6311294879906,
+            "A2": {
+              "label": "plausible",
+              "perState": {
+                "4": {
+                  "model": 581.7092767863867,
+                  "measured": 656.4,
+                  "label": "plausible"
+                },
+                "5": {
+                  "model": 1170.950938973533,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1415.7264074545606,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.10772644702615591,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 16.48592302238653,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.1243447397628636,
+              "modelMeanRiseAtPeakK": 178.68185165554468,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.08287250209478125
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.12398715404145805
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.11492087375447185
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1389.1149057897737,
+            "n": 0.23861662237637293,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 622.0139612833066,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1100.100934615243,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1284.5867333645463,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.045031691681870045,
+              "label": "good"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 33.85072102899888,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.2521692365733406,
+              "modelMeanRiseAtPeakK": 160.44157142031264,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.04250640905753689
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.04799178102391166
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "good",
+                "thetaDiff": 0.04421826320599731
+              }
+            ]
+          }
+        },
+        {
+          "case": [
+            "T0=30.8C(Table2)",
+            "pCalculated",
+            "pool-rising-6K"
+          ],
+          "L0": {
+            "hA": 1397.3209995446211,
+            "A2": {
+              "label": "plausible",
+              "perState": {
+                "4": {
+                  "model": 579.8818353979805,
+                  "measured": 656.4,
+                  "label": "plausible"
+                },
+                "5": {
+                  "model": 1173.667645825043,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1419.0340788460721,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.10577271982528436,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 15.710429329769953,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.1011273132872317,
+              "modelMeanRiseAtPeakK": 182.4493839865316,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.07493350325624282
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.10585895530457756
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.0890668531215611
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1387.6221888018451,
+            "n": 0.24431082120755943,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 620.8713720620897,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1101.1359444899522,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1285.0315688808425,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.047100066146136266,
+              "label": "good"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 33.547059023003484,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.2263152830208741,
+              "modelMeanRiseAtPeakK": 163.82410199203258,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 191.1,
+                "defectLabel": "good",
+                "thetaDiff": 0.03377807231850216
+              },
+              {
+                "state": 9,
+                "powerKW": 103.7,
+                "defectLabel": "good",
+                "thetaDiff": 0.027929370257837483
+              },
+              {
+                "state": 10,
+                "powerKW": 47.5,
+                "defectLabel": "good",
+                "thetaDiff": 0.015436700461418595
+              }
+            ]
+          }
+        },
+        {
+          "case": [
+            "T0=30.8C(Table2)",
+            "pIndicated",
+            "pool-constant"
+          ],
+          "L0": {
+            "hA": 1387.892454271119,
+            "A2": {
+              "label": "plausible",
+              "perState": {
+                "4": {
+                  "model": 578.5469318525569,
+                  "measured": 656.4,
+                  "label": "plausible"
+                },
+                "5": {
+                  "model": 1203.8044558819117,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1435.2830656276424,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.11295249807239965,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 16.964470195878672,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.1157566789238407,
+              "modelMeanRiseAtPeakK": 180.05717894852324,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.08728369396539104
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.15082130413140865
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.14096370255419227
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1370.3673098210782,
+            "n": 0.2663601160071405,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 625.3458677535532,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1123.121929855975,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1292.7366092309292,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.030754803811685605,
+              "label": "good"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 37.001341833731246,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.252269056696978,
+              "modelMeanRiseAtPeakK": 160.42878239753026,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.042431627456331
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "good",
+                "thetaDiff": 0.06617609505772859
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "good",
+                "thetaDiff": 0.06633111047839749
+              }
+            ]
+          }
+        },
+        {
+          "case": [
+            "T0=30.8C(Table2)",
+            "pIndicated",
+            "pool-rising-6K"
+          ],
+          "L0": {
+            "hA": 1386.6682066645408,
+            "A2": {
+              "label": "plausible",
+              "perState": {
+                "4": {
+                  "model": 576.6848607735053,
+                  "measured": 656.4,
+                  "label": "plausible"
+                },
+                "5": {
+                  "model": 1206.4759833868277,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1438.5204213771576,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.11091094668429513,
+              "label": "fails"
+            },
+            "X": {
+              "defect": "good",
+              "tempShape": "good",
+              "modelDefectPcm": 16.18849670083376,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.0929398987008447,
+              "modelMeanRiseAtPeakK": 183.81614601022955,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.07931733317457224
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.13230235622318953
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "plausible",
+                "thetaDiff": 0.11479187583413411
+              }
+            ]
+          },
+          "L1": {
+            "h0": 1368.827054085703,
+            "n": 0.2722085363127734,
+            "nPhysical": true,
+            "A2": {
+              "label": "good",
+              "perState": {
+                "4": {
+                  "model": 624.1964399409586,
+                  "measured": 656.4,
+                  "label": "good"
+                },
+                "5": {
+                  "model": 1124.0476278140625,
+                  "measured": 1148.4,
+                  "label": "good"
+                },
+                "6": {
+                  "model": 1293.1384291691008,
+                  "measured": 1315.3,
+                  "label": "good"
+                }
+              }
+            },
+            "C2": {
+              "maxAbsDiff": 0.03318496508901858,
+              "label": "good"
+            },
+            "X": {
+              "defect": "plausible",
+              "tempShape": "good",
+              "modelDefectPcm": 36.72634331698258,
+              "measuredDefectPcm": 20.6
+            },
+            "E": {
+              "peakingFactor": 1.226413306793878,
+              "modelMeanRiseAtPeakK": 163.81100799142342,
+              "measuredRiseAtPeakK": 200.89999999999998
+            },
+            "returnLeg": [
+              {
+                "state": 8,
+                "powerKW": 190,
+                "defectLabel": "good",
+                "thetaDiff": 0.03370293772735178
+              },
+              {
+                "state": 9,
+                "powerKW": 97,
+                "defectLabel": "good",
+                "thetaDiff": 0.045688951466946626
+              },
+              {
+                "state": 10,
+                "powerKW": 41,
+                "defectLabel": "good",
+                "thetaDiff": 0.03709980557096093
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "adoptAsCandidate": true
+}

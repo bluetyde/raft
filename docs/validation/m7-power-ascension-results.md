@@ -68,6 +68,6 @@ Core 246's A ratios are within 0.02 of core 242's (it was not tabulated state by
 - **A fails:** the lesson's validity banner now carries a specific known limit from this result (`web/src/app/scenarios/triga-242-openmc-low-power-ascension.json`, `envelope.knownLimits`), and `supported-envelope.md` says so.
 - **The library status stays `experimental`.** This data cannot earn `validated-for-domain` (no matched core, no uncertainties), and the result would have prevented it anyway.
 - **No refit.** Changing `hA` or making heat transfer depend on temperature is a new, dated protocol. Candidates, in order of effort:
-  1. Make `hA` depend on the fuel-to-pool temperature difference (one extra table), calibrated on some states and held out on the others.
+  1. Make `hA` depend on the fuel-to-pool temperature difference, calibrated on some states and held out on the others. **Done 2026-10-06 as a second protocol: `m7-heat-transfer-protocol.md` and `m7-heat-transfer-results.md` (a power law with n = 0.22–0.27 meets the adoption rule for both cores).**
   2. Add a hot-element temperature (peaking factor from the shape arrays) so the absolute temperature can be compared.
   3. Find a measurement for core 242 or 246 with uncertainties (the 1994 steady-state benchmark, Mele, Ravnik and Trkov), and set the bands from its uncertainty.

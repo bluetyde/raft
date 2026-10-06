@@ -56,6 +56,6 @@ The OpenMC libraries inherited a heat sink at 293.15 K from the M1 library, but 
 
 ## To widen or promote the envelope
 
-1. M7: the first comparison (steady power ascension) failed on the power defect. A new dated protocol could make heat transfer depend on temperature (and add a hot-element temperature), then compare again; `validated-for-domain` also needs a matched core and stated uncertainties.
+1. M7: the first comparison (steady power ascension) failed on the power defect. A second dated protocol made heat transfer depend on temperature and a power law with n = 0.22–0.27 met its adoption rule for both cores (`m7-heat-transfer-results.md`); the library has not changed yet, and the hot-element temperature is still open; `validated-for-domain` also needs a matched core and stated uncertainties.
 2. A rod-pairs family (plan 02) would let the joint check cover the rod combinations a lesson uses.
 3. Fuel-follower bins: decided 2026-10-06 to defer (`TODO.md`). The lesson uses element power, which is unaffected; power density in partly filled follower bins reads low and must not be used.
