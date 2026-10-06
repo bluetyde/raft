@@ -117,8 +117,27 @@ def fit_exponent(power_kw: list[float], rise_k: list[float]) -> float | None:
     return None if b <= 0 else 1.0 / b - 1.0
 
 
+def law_h0(lib) -> float:
+    """The library's heat transfer coefficient at the 100 K reference of the helpers: hA (dT / dTRef)^n = h0 (dT / 100 K)^n with h0 = hA (100 / dTRef)^n."""
+    return lib.hA * (ht.DT_REF / getattr(lib, "hA_dt_ref", ht.DT_REF)) ** getattr(lib, "hA_exponent", 0.0)
+
+
 def predicted_rise_k(p_kw: float, h0: float, n: float, scale: float) -> float:
     return ht.delta_t(p_kw * 1e3, h0 * scale, n)
+
+
+def per_step_coefficients(lib, data: dict) -> list[dict]:
+    """Metric F: the incremental coefficient d(rho)/d(T mean) of each step of Table IX, measured and from the library's tables (primary conversion: TB, gamma_B, linear water warming), pcm/K."""
+    steps = data["steps"]
+    t0_c = data["conditions"]["T0C"]
+    t_mean = mean_fuel_temps_k(steps, 3, data["conversion"]["gammaB"], t0_c)
+    w = [t0_c + K0 + r for r in water_rise("linear", steps)]
+    model = model_loss_pcm(lib, t_mean, w)
+    out = []
+    for i in range(1, 14):
+        d_t = t_mean[i] - t_mean[i - 1]
+        out.append({"step": i, "dMeanFuelK": d_t, "measuredPcmPerK": steps[i][4] / d_t, "modelPcmPerK": -(model[i] - model[i - 1]) / d_t})
+    return out
 
 
 # ---------------------------------------------------------------- the metrics for one library
@@ -145,7 +164,10 @@ def heat_cases(lib, name: str, data: dict, gamma_key: str, column: int, profile:
     t_mean = mean_fuel_temps_k(steps, column, gamma, t0_c)
     wr = water_rise(profile, steps)
     measured = [t - (t0_c + K0) - w for t, w in zip(t_mean, wr)]          # mean fuel rise over the water
-    n_lib, h0 = lib.hA_exponent, lib.hA
+    # step 14 has the B-ring reading only (the paper gives no A-ring value for it that the protocol uses): TB with gamma_B whatever thermocouple the case selects
+    t_b14 = mean_fuel_temps_k(steps, 3, data["conversion"]["gammaB"], t0_c)[14]
+    measured[14] = t_b14 - (t0_c + K0) - wr[14]
+    n_lib, h0 = lib.hA_exponent, law_h0(lib)
     scale = POSITIONS[positions_key] / POSITIONS_LIB[name]
     fit = fit_exponent([steps[i][1] for i in FIT_STEPS], [measured[i] for i in FIT_STEPS])
     d = {"n134": fit, "nLibrary": n_lib}
@@ -167,8 +189,8 @@ def secondary(lib, name: str) -> dict:
         out["slopes"][label] = {"fuelPerMeanK": s_f, "coolantPerK": s_c, "isothermal": s_f + s_c}
     # the chain conversion r_B at 600 W with the library's own law and the core's F_tc
     n_el = powered_elements(lib)
-    dt_mean = ht.delta_t(POWER_2002_W, lib.hA, lib.hA_exponent)
-    tc = he.chain_temperatures([POWER_2002_W / 1e3], [K0 + 22.0], lib.hA, lib.hA_exponent, F_TC.get(name, 1.3), he.K_PRIMARY, he.R_TC_PRIMARY, n_el)[0]
+    dt_mean = ht.delta_t(POWER_2002_W, law_h0(lib), lib.hA_exponent)
+    tc = he.chain_temperatures([POWER_2002_W / 1e3], [K0 + 22.0], law_h0(lib), lib.hA_exponent, F_TC.get(name, 1.3), he.K_PRIMARY, he.R_TC_PRIMARY, n_el)[0]
     r_b = (tc - (K0 + 22.0)) / dt_mean
     out["rB"] = r_b
     return out
@@ -205,7 +227,8 @@ def evaluate_library(lib, name: str, data: dict) -> dict:
               "nLibrary": lib.hA_exponent},
         "E": {"primary": {"worst": hd_cases[0]["E"]["worst"], "ratioMin": hd_cases[0]["E"]["ratioMin"], "ratioMax": hd_cases[0]["E"]["ratioMax"]}, **worst_best([c["E"] for c in hd_cases], "worst"),
               "ratioMin": min(c["E"]["ratioMin"] for c in hd_cases), "ratioMax": max(c["E"]["ratioMax"] for c in hd_cases)},
-        "F": {"heatCases": hd_cases[:2], "cumulativeAtStep13": {"measuredPcm": -data["steps"][13][5], "modelPcm": a_cases[0]["allSteps"][13]["modelPcm"]}},
+        "F": {"heatCases": hd_cases[:2], "cumulativeAtStep13": {"measuredPcm": -data["steps"][13][5], "modelPcm": a_cases[0]["allSteps"][13]["modelPcm"]},
+              "perStepCoefficients": per_step_coefficients(lib, data)},
     }
 
 

@@ -100,6 +100,8 @@ def ring_factors(lib, rods: dict, t_fuel_k: float, f_tc: float | None) -> dict:
 
 def decide(h1_pulse: str, checks: list[str]) -> dict:
     ok = ("good", "plausible")
+    if h1_pulse not in ok and h1_pulse != "fails":
+        return {"case": None, "text": f"H-pulse is {h1_pulse!r}: nothing was computed to compare, so the decision is unresolved, not a failure."}
     if h1_pulse in ok and all(c in ok for c in checks):
         return {"case": 1, "text": "the chain reproduces the measured rise with the pulse peaking, which is stable; the instrumented elements are not necessarily the library's hottest B element; the library's fuel rise needs no correction."}
     if h1_pulse in ok:
@@ -134,15 +136,20 @@ def run(libs: dict, records, meas: dict | None = None) -> dict:
             entry["W"] = ring_factors(lib, rods, case0["tFuelPeakK"], entry["stage1"]["primary"]["both"]["median"])
 
     names = list(libs)
-    if len(names) > 1:
-        k2 = labelled(ratio(stab[names[0]]["both"]["median"], stab[names[-1]]["both"]["median"]))
-    else:
-        k2 = {"label": "not computed", "ratio": None}
-    report["K2"] = {"coresCompared": names, **k2}
+    k2_all = {}
+    for key in ("both", "tc1", "tc2"):
+        if len(names) > 1:
+            k2_all[key] = labelled(ratio(stab[names[0]][key]["median"], stab[names[-1]][key]["median"]))
+        else:
+            k2_all[key] = {"label": "not computed", "ratio": None}
+    k2 = k2_all["both"]
+    report["K2"] = {"coresCompared": names, **k2, "perThermocouple": {"tc1": k2_all["tc1"], "tc2": k2_all["tc2"]}}
+    # the protocol's label for K1 and T is the worst of the two cores (separately for each thermocouple and together)
+    aggregate = {key: {check: base.worst([stab[n][key][check]["label"] for n in names]) for check in ("K1", "T")} for key in ("both", "tc1", "tc2")}
+    report["stabilityAggregate"] = aggregate
     for name in names:
         entry = report["libraries"][name]
-        st = entry["stability"]["both"]
-        checks = {"K1": st["K1"]["label"], "K2": k2["label"], "T": st["T"]["label"]}
+        checks = {"K1": aggregate["both"]["K1"], "K2": k2["label"], "T": aggregate["both"]["T"]}
         entry["decision2"] = {**decide(entry["H1pulse"]["primary"]["label"], list(checks.values())), "checks": checks}
     return report
 

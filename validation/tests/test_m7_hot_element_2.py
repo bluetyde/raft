@@ -58,6 +58,7 @@ class Decision(unittest.TestCase):
         self.assertEqual(he2.decide("plausible", ["good", "fails", "good"])["case"], 2)
         self.assertEqual(he2.decide("plausible", ["good", "not computed", "good"])["case"], 2)
         self.assertEqual(he2.decide("fails", ["good", "good", "good"])["case"], 3)
+        self.assertIsNone(he2.decide("not computed", ["good", "good", "good"])["case"])       # nothing compared: unresolved, not a failure
 
 
 class Run(unittest.TestCase):
@@ -71,6 +72,8 @@ class Run(unittest.TestCase):
         report = he2.run({"core242": lib, "core246": lib}, recs, meas)
         self.assertEqual(he.ENERGY_COLUMNS, before)
         self.assertEqual(report["K2"]["label"], "good")
+        self.assertEqual(set(report["K2"]["perThermocouple"]), {"tc1", "tc2"})
+        self.assertEqual(report["stabilityAggregate"]["both"], {"K1": "good", "T": "good"})
         for name in ("core242", "core246"):
             e = report["libraries"][name]
             for key in ("stability", "decision2", "W", "recordOnly", "H1pulse", "H1shape", "G"):

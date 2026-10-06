@@ -366,6 +366,8 @@
         },
         "mean": 1.142743149019676,
         "ratioToPaper": 0.7493397698489679,
+        "complete": true,
+        "partialMean": null,
         "label": "differs"
       },
       "A": {
@@ -380,6 +382,8 @@
         },
         "mean": 1.192874577859593,
         "ratioToPaper": 0.7573806843552972,
+        "complete": true,
+        "partialMean": null,
         "label": "differs"
       }
     },

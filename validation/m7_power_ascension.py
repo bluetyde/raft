@@ -90,6 +90,9 @@ def pool_temperatures(n: int, t0_k: float, rising: bool) -> list[float]:
 
 def model_states(lib, powers_kw: list[float], t0_k: float, rising: bool, hA: float | None = None) -> list[dict]:
     """T_fuel, feedback and power defect at each state (state 1 is the reference)."""
+    if hA is None and getattr(lib, "hA_exponent", 0.0) != 0.0:
+        raise ValueError(f"{lib.id} carries a temperature-dependent hA (exponent {lib.hA_exponent}); this protocol compared the libraries as shipped "
+                         "on 2026-10-06 with a constant hA (3000 W/K), and its 'as shipped' numbers cannot be reproduced on this library")
     hA = lib.hA if hA is None else hA
     pool = pool_temperatures(len(powers_kw), t0_k, rising)
     rows = []

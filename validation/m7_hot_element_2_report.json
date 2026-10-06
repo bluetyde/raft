@@ -1965,7 +1965,7 @@
         "checks": {
           "K1": "good",
           "K2": "good",
-          "T": "good"
+          "T": "plausible"
         }
       }
     }
@@ -1976,6 +1976,30 @@
       "core246"
     ],
     "ratio": 0.9179170187694574,
-    "label": "good"
+    "label": "good",
+    "perThermocouple": {
+      "tc1": {
+        "ratio": 0.9566939781322712,
+        "label": "good"
+      },
+      "tc2": {
+        "ratio": 0.8784698249604806,
+        "label": "good"
+      }
+    }
+  },
+  "stabilityAggregate": {
+    "both": {
+      "K1": "good",
+      "T": "plausible"
+    },
+    "tc1": {
+      "K1": "good",
+      "T": "plausible"
+    },
+    "tc2": {
+      "K1": "good",
+      "T": "plausible"
+    }
   }
 }

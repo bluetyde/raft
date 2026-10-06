@@ -35,7 +35,7 @@ Protocol: `m7-fuel-coefficient-protocol.md` (fifth protocol, amended before the 
 
 ## D and E: the heat transfer law on core 134
 
-- **n134 = 0.61–0.70 in every combination** (0.642 on the primary line), from the rise of the volume-averaged fuel temperature over the warming water, steps 4–13 (45–236 kW). The exponent estimated by hand on the whole range (5–250 kW, no water correction) was 0.37–0.43; over 45–236 kW the data are nearer to linear in power, which is the same physics as the constant `hA` law the first protocol rejected for the other exercise.
+- **n134 = 0.61–0.70 in every combination** (0.642 on the primary line), from the rise of the volume-averaged fuel temperature over the warming water, steps 4–13 (45–236 kW). The exponent estimated by hand on the whole range (5–250 kW, no water correction) was 0.37–0.43; over 45–236 kW the rise goes as P^0.61 (n = 0.64, since the rise goes as P^(1/(1+n))), more sublinear than the P^0.70–0.73 of the whole range, so the fitted exponent is larger and further from a constant `hA` (n = 0, rise linear in power) than the hand estimate was.
 - **The model's mean fuel rise is too high at every step, by 20 % at 45 kW rising to 70 % at 236 kW**, with `h0` scaled by 48 / N_lib. The scaling (the same per-element cooling in both cores) is an assumption; the 47.6-position sensitivity does not change the label.
 - Both libraries give the same D and E to within a few per cent, as expected (the same law, the same scaling).
 
@@ -60,3 +60,12 @@ The script wrote its report and then failed in `print_summary`, which looked up 
 ## Limits, repeated
 
 Core 134 is fresh, 45 elements, cooling off, pool warming of about 8 °C with no times; cores 242 and 246 are burned and mixed with cooling on in the other exercise; the library tables resolve nothing between 294 and 400 K; the temperature conversion γ and the water profile are assumptions; the heat transfer scaling by fuel positions is an assumption. "Fails" in D and E means this law with this scaling does not describe this experiment, not that either experiment is wrong.
+
+## Erratum (Codex review, 2026-10-06)
+
+A review of the script against the protocol found the following. Each was checked against the code; the aggregate labels and the decision are unchanged, and the script was re-run (report `validation/m7_fuel_coefficient_report.json`, only additions).
+
+- **The isothermal intervals depart from the protocol's text.** The protocol specifies the slopes of both tables over 294–400 K and, as the sensitivity, 294–500 K. The coolant table covers 294–333.15 K only, so the script takes the coolant slope over its first interval (294–313.15 K) and over the whole table (294–333.15 K) and the fuel slope over 294–400 K and 294–500 K. The results above describe those intervals. Evaluating the coolant table beyond its data (a linear extrapolation) at 294–500 K gives isothermal coefficients of about +7.8 and +6.4 pcm/K, "fails"; the "good on a wider interval" label depends on the interval and is a statement about the table's resolution, as the text says.
+- **Step 14 in metric E.** The protocol says step 14 uses the B-ring reading only. The script used the thermocouple of the sensitivity case (the A ring in the A-ring cases). Fixed; the aggregate E results and ranges are unchanged because the extremes lie elsewhere.
+- **Metric F.** The per-step coefficients `Δρ/ΔT̄` are now in the report (`F.perStepCoefficients`). Measured (shared by both cores), TB with γ_B, linear water warming: −6.3, −7.3, −7.8, −8.3, −9.8, −9.6, −10.8 pcm/K at steps 1–7 (and −11.6, −12.3 at steps 8–9; the later steps are noisy and above the reliable range). The burned libraries' tables give −7.3 to −7.5 (core 242) and −7.4 to −7.8 (core 246) at steps 1–9: the model's coefficient is flat where the measured one grows with temperature.
+- **`dTRef`.** The script's helpers assumed a 100 K reference; they now normalise `hA` to it. The shipped libraries have `dTRef` 100 K, so no number changed.

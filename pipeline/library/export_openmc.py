@@ -115,8 +115,10 @@ HEAT_TRANSFER_NOTE = (
     " Heat transfer: hA(dT) = h0 (dT / 100 K)^n with h0 = {h0} W/K and n = {n}, fitted to the measured power defect at 43.6 and 250 kW "
     "of the IAEA/JSI steady power ascension (one exercise, unknown core; docs/validation/m7-heat-transfer-results.md). It reproduces the "
     "held-out defect within 4 % and the shape of the fuel temperature rise within 0.03-0.05, but overshoots the defect at 2.9 kW "
-    "(33-37 against 20.6 pcm). It is consistent with the measured hot-element temperature given a thermocouple peaking of {f_tc} "
-    "from the pulse database (docs/validation/m7-hot-element-2-results.md); the library's own shape arrays give a larger peaking."
+    "(33-37 against 20.6 pcm). At the primary configuration it is consistent with the measured hot-element temperature (1.18 times the measured rise) "
+    "given a thermocouple peaking of {f_tc} from the pulse database; with other conductivities or thermocouple radii the prediction reaches 1.7 to 1.8 "
+    "times the measured rise, and the library's own shape arrays give a larger peaking and a prediction 1.6 to 1.8 times too hot "
+    "(docs/validation/m7-hot-element-2-results.md)."
 )
 HEAT_TRANSFER_F_TC = {"242": "1.28", "246": "1.39"}
 # Core 134 (the 1994 benchmark core): what its checks found, so the library carries its own limits (docs/validation/core134-status.md)
@@ -683,9 +685,9 @@ def _write_library(summary: dict[str, Any], out_dir: Path, created: str | None) 
     data_digests = sorted({c["dataDigest"] for c in cases})
     xs_path = summary.get("nuclearData", {}).get("crossSections", "")
     model_id = hashlib.sha256("\n".join(sorted(c["key"] for c in cases)).encode()).hexdigest()
-    fuel_phrase = "fresh fuel (the 1994 benchmark core; default H/Zr 1.60 composition)" if burnup is None else f"a uniform burnup ({burnup} MWd/kg)"
+    fuel_phrase = "with fresh fuel (the 1994 benchmark core; default H/Zr 1.60 composition)" if burnup is None else f"at a uniform burnup ({burnup} MWd/kg)"
     notes = (
-        f"Full-core OpenMC {openmc_version} transport with {fuel_phrase}, {len(cases)} cases "
+        f"Full-core OpenMC {openmc_version} transport {fuel_phrase}, {len(cases)} cases "
         f"({summary.get('stats')}). Transport results: reference state rho, rod worth curves, fuel and coolant temperature "
         "reactivity feedback, kinetics (beta_eff and Lambda by IFP), and fission power shapes (fraction of all fuel fission; the "
         "lowest axial bin holds fuel-follower fuel below the core, zero for regular elements, whose volume there is nominal; "

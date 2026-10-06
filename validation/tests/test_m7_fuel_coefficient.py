@@ -87,6 +87,32 @@ class HeatTransfer(unittest.TestCase):
         self.assertEqual(hot["E"]["worst"], "fails")
         self.assertLess(hot["E"]["ratioMax"], 1.0)                   # the model is too cold against a 1.6 times hotter measurement
 
+    def test_the_reference_difference_of_the_law_does_not_change_the_prediction(self):
+        lib = synthetic()
+        same = synthetic()
+        same.hA, same.hA_dt_ref = 2000.0 * 100.0 ** 0.25, 10000.0                      # the same physical law written with another dTRef
+        self.assertAlmostEqual(fc.law_h0(same), 2000.0, places=6)
+        a = fc.heat_cases(lib, "core242", planted(lib), "gammaB", 3, "linear", "primary")
+        b = fc.heat_cases(same, "core242", planted(lib), "gammaB", 3, "linear", "primary")
+        self.assertAlmostEqual(a["E"]["ratioMin"], b["E"]["ratioMin"], places=9)
+        self.assertEqual(b["E"]["worst"], "good")
+
+    def test_step_14_always_uses_the_b_ring_reading(self):
+        lib = synthetic()
+        data = planted(lib)
+        data["steps"][14][2] += 25.0                                                    # an A-ring value at step 14 that must not be used
+        a_ring = fc.heat_cases(lib, "core242", data, "gammaA", 2, "linear", "primary")
+        b_ring = fc.heat_cases(lib, "core242", data, "gammaB", 3, "linear", "primary")
+        self.assertAlmostEqual(a_ring["E"]["perStep"][-1]["measuredRiseK"], b_ring["E"]["perStep"][-1]["measuredRiseK"], places=9)
+
+    def test_per_step_coefficients_are_reported_and_equal_for_planted_data(self):
+        lib = synthetic()
+        rows = fc.per_step_coefficients(lib, planted(lib))
+        self.assertEqual([r["step"] for r in rows], list(range(1, 14)))
+        for r in rows:
+            self.assertAlmostEqual(r["modelPcmPerK"], r["measuredPcmPerK"], places=5)
+        self.assertEqual(len(fc.evaluate_library(lib, "core242", planted(lib))["F"]["perStepCoefficients"]), 13)
+
     def test_a_degenerate_fit_is_not_computed(self):
         self.assertIsNone(fc.fit_exponent([10.0, 20.0, 30.0], [5.0, 5.0, 5.0]))
         self.assertIsNone(fc.fit_exponent([0.0, 10.0], [1.0, 2.0]))

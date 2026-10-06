@@ -51,6 +51,13 @@ class ModelArithmetic(unittest.TestCase):
         expected = -((-10.0) * (pool_rise + dT_peak) + 4.0 * pool_rise)
         self.assertAlmostEqual(rows[6]["defectPcm"], expected, places=6)
 
+    def test_a_library_with_a_temperature_dependent_hA_is_refused_as_shipped(self):
+        lib = synthetic_lib()
+        lib.hA_exponent = 0.25
+        with self.assertRaises(ValueError):
+            m7.model_states(lib, self.P, 299.0, False)
+        self.assertEqual(len(m7.model_states(lib, self.P, 299.0, False, hA=3000.0)), 11)       # an explicit hA is the caller's choice
+
     def test_hA_calibration_hits_the_target_and_reports_what_it_cannot_reach(self):
         lib = synthetic_lib()
         hA = m7.calibrate_hA(lib, self.P, 299.0, False, 1426.8)

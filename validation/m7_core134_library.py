@@ -110,7 +110,7 @@ def reported(lib, data: dict, feedback: dict) -> dict:
     t_mean = fc.mean_fuel_temps_k(steps, 3, data["conversion"]["gammaB"], t0_c)
     wr = fc.water_rise("linear", steps)
     meas = [t - (t0_c + base.K0) - w for t, w in zip(t_mean, wr)]
-    ratios = [{"step": i, "powerKW": steps[i][1], "modelRiseK": ht.delta_t(steps[i][1] * 1e3, lib.hA, lib.hA_exponent), "measuredRiseK": meas[i]} for i in fc.RISE_STEPS]
+    ratios = [{"step": i, "powerKW": steps[i][1], "modelRiseK": ht.delta_t(steps[i][1] * 1e3, fc.law_h0(lib), lib.hA_exponent), "measuredRiseK": meas[i]} for i in fc.RISE_STEPS]
     for r in ratios:
         r["ratio"] = r["modelRiseK"] / r["measuredRiseK"]
     return {

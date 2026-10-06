@@ -1359,7 +1359,87 @@
         "cumulativeAtStep13": {
           "measuredPcm": 1276.3,
           "modelPcm": 942.3222857751141
-        }
+        },
+        "perStepCoefficients": [
+          {
+            "step": 1,
+            "dMeanFuelK": 7.868852459016352,
+            "measuredPcmPerK": -6.3033333333333665,
+            "modelPcmPerK": -7.301791400473366
+          },
+          {
+            "step": 2,
+            "dMeanFuelK": 9.442622950819668,
+            "measuredPcmPerK": -7.3390625000000025,
+            "modelPcmPerK": -7.377728490034934
+          },
+          {
+            "step": 3,
+            "dMeanFuelK": 12.590163934426243,
+            "measuredPcmPerK": -7.8394531249999915,
+            "modelPcmPerK": -7.4726498519869775
+          },
+          {
+            "step": 4,
+            "dMeanFuelK": 15.278688524590166,
+            "measuredPcmPerK": -8.325321888412017,
+            "modelPcmPerK": -7.522758553789968
+          },
+          {
+            "step": 5,
+            "dMeanFuelK": 11.803278688524586,
+            "measuredPcmPerK": -9.810833333333337,
+            "modelPcmPerK": -7.4536655795965725
+          },
+          {
+            "step": 6,
+            "dMeanFuelK": 10.68852459016398,
+            "measuredPcmPerK": -9.636503067484622,
+            "modelPcmPerK": -7.421986302969616
+          },
+          {
+            "step": 7,
+            "dMeanFuelK": 9.442622950819668,
+            "measuredPcmPerK": -10.844444444444449,
+            "modelPcmPerK": -7.377728490034958
+          },
+          {
+            "step": 8,
+            "dMeanFuelK": 9.901639344262321,
+            "measuredPcmPerK": -11.644536423841028,
+            "modelPcmPerK": -7.395329802185026
+          },
+          {
+            "step": 9,
+            "dMeanFuelK": 10.557377049180275,
+            "measuredPcmPerK": -12.313664596273354,
+            "modelPcmPerK": -7.417819500051931
+          },
+          {
+            "step": 10,
+            "dMeanFuelK": 4.262295081967238,
+            "measuredPcmPerK": -25.924999999999848,
+            "modelPcmPerK": -6.9162646380836925
+          },
+          {
+            "step": 11,
+            "dMeanFuelK": 9.901639344262264,
+            "measuredPcmPerK": -8.584437086092741,
+            "modelPcmPerK": -8.235647495348703
+          },
+          {
+            "step": 12,
+            "dMeanFuelK": 8.0,
+            "measuredPcmPerK": -12.3125,
+            "modelPcmPerK": -8.591766969007338
+          },
+          {
+            "step": 13,
+            "dMeanFuelK": 4.5901639344262435,
+            "measuredPcmPerK": -15.467857142857095,
+            "modelPcmPerK": -8.258853077533447
+          }
+        ]
       },
       "decision": {
         "feedback": "consistent",
@@ -2728,7 +2808,87 @@
         "cumulativeAtStep13": {
           "measuredPcm": 1276.3,
           "modelPcm": 975.9456640954303
-        }
+        },
+        "perStepCoefficients": [
+          {
+            "step": 1,
+            "dMeanFuelK": 7.868852459016352,
+            "measuredPcmPerK": -6.3033333333333665,
+            "modelPcmPerK": -7.433599089491791
+          },
+          {
+            "step": 2,
+            "dMeanFuelK": 9.442622950819668,
+            "measuredPcmPerK": -7.3390625000000025,
+            "modelPcmPerK": -7.547818791563077
+          },
+          {
+            "step": 3,
+            "dMeanFuelK": 12.590163934426243,
+            "measuredPcmPerK": -7.8394531249999915,
+            "modelPcmPerK": -7.6905934191523055
+          },
+          {
+            "step": 4,
+            "dMeanFuelK": 15.278688524590166,
+            "measuredPcmPerK": -8.325321888412017,
+            "modelPcmPerK": -7.765963716119981
+          },
+          {
+            "step": 5,
+            "dMeanFuelK": 11.803278688524586,
+            "measuredPcmPerK": -9.810833333333337,
+            "modelPcmPerK": -7.662038493634472
+          },
+          {
+            "step": 6,
+            "dMeanFuelK": 10.68852459016398,
+            "measuredPcmPerK": -9.636503067484622,
+            "modelPcmPerK": -7.6143885565739815
+          },
+          {
+            "step": 7,
+            "dMeanFuelK": 9.442622950819668,
+            "measuredPcmPerK": -10.844444444444449,
+            "modelPcmPerK": -7.547818791563125
+          },
+          {
+            "step": 8,
+            "dMeanFuelK": 9.901639344262321,
+            "measuredPcmPerK": -11.644536423841028,
+            "modelPcmPerK": -7.574293556943916
+          },
+          {
+            "step": 9,
+            "dMeanFuelK": 10.557377049180275,
+            "measuredPcmPerK": -12.313664596273354,
+            "modelPcmPerK": -7.6081211187435995
+          },
+          {
+            "step": 10,
+            "dMeanFuelK": 4.262295081967238,
+            "measuredPcmPerK": -25.924999999999848,
+            "modelPcmPerK": -6.853714448206534
+          },
+          {
+            "step": 11,
+            "dMeanFuelK": 9.901639344262264,
+            "measuredPcmPerK": -8.584437086092741,
+            "modelPcmPerK": -8.832758534586816
+          },
+          {
+            "step": 12,
+            "dMeanFuelK": 8.0,
+            "measuredPcmPerK": -12.3125,
+            "modelPcmPerK": -9.36552325584303
+          },
+          {
+            "step": 13,
+            "dMeanFuelK": 4.5901639344262435,
+            "measuredPcmPerK": -15.467857142857095,
+            "modelPcmPerK": -8.864775522171842
+          }
+        ]
       },
       "decision": {
         "feedback": "consistent",

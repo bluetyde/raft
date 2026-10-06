@@ -20,7 +20,8 @@ def line(rho_pcm, tfuel=None, fuel1994=False, particles=100000):
         ov["tfuel"] = tfuel
     if fuel1994:
         ov["fuel1994"] = True
-    return {"core": "134", "overrides": ov, "particles": particles, "k": k, "kStd": SIGMA / fb.PCM * k**2}
+    return {"core": "134", "rods": dict(fb.EXPECTED["rods"]), "overrides": ov, "particles": particles, "batches": 150, "inactive": 50, "k": k,
+            "kStd": SIGMA / fb.PCM * k**2}
 
 
 def planted_runs(slope_a=10.0, slope_b=10.0, offset=0.0, bend=0.0, base_rho=300.0):
@@ -88,6 +89,24 @@ class Metrics(unittest.TestCase):
         both = fb.analyse(lib, load(planted_runs(slope_a=5.0, slope_b=5.0)), planted(lib))
         self.assertTrue(any(i.startswith("5.") for i in both["decision"]["items"]))
         self.assertFalse(both["decision"]["libraryChanged"])
+
+    def test_runs_of_another_configuration_and_duplicates_are_refused(self):
+        wrong_core = planted_runs()
+        wrong_core[3] = {**wrong_core[3], "core": "242"}
+        with self.assertRaises(ValueError):
+            load(wrong_core)
+        burned = planted_runs()
+        burned[2] = {**burned[2], "overrides": {**burned[2]["overrides"], "burnup": 23.7}}
+        with self.assertRaises(ValueError):
+            load(burned)
+        wrong_rods = planted_runs()
+        wrong_rods[1] = {**wrong_rods[1], "rods": {"T": 0.0, "K": 200.0, "V": 200.0, "R": 200.0}}
+        with self.assertRaises(ValueError):
+            load(wrong_rods)
+        with self.assertRaises(ValueError):
+            load(planted_runs() + [planted_runs()[1]])                                        # the same case twice
+        with self.assertRaises(ValueError):
+            load([line(300.0, particles=20000)])
 
     def test_missing_runs_are_refused(self):
         lib = synthetic()

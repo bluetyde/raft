@@ -37,14 +37,27 @@ D3_BANDS = (0.9, 1.1)
 
 # ---------------------------------------------------------------- the runs
 
+EXPECTED = {"core": "134", "rods": {"T": 0.0, "K": 200.0, "V": 200.0, "R": 727.3}, "particles": 100000, "batches": 150, "inactive": 50}
+ALLOWED_OVERRIDES = {"tfuel", "fuel1994"}
+
+
 def load_runs(path: Path) -> dict:
-    """{(composition, tfuel): {rho, sigma, k, kStd, particles}} with composition "A" (default) or "B" (--fuel1994); A0 is (A, None)."""
+    """{(composition, tfuel): {rho, sigma, k, kStd, particles}} with composition "A" (default) or "B" (--fuel1994); A0 is (A, None).
+    Every line must be a run of the protocol's configuration (core 134, the reference rods, 100000 particles x 150 batches, 50 inactive, only the
+    tfuel and fuel1994 overrides) and no case may appear twice: anything else is refused, not silently used."""
     runs = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         r = json.loads(line)
+        for key, want in EXPECTED.items():
+            if r.get(key) != want:
+                raise ValueError(f"{path.name} line {n}: {key} is {r.get(key)!r}, the protocol's runs have {want!r}")
         ov = r.get("overrides", {})
+        if set(ov) - ALLOWED_OVERRIDES or r.get("prompt"):
+            raise ValueError(f"{path.name} line {n}: unexpected overrides {sorted(ov)} (allowed: {sorted(ALLOWED_OVERRIDES)})")
         comp = "B" if ov.get("fuel1994") else "A"
         t = ov.get("tfuel")
+        if (comp, t) in runs:
+            raise ValueError(f"{path.name} line {n}: the case {comp}{'0' if t is None else int(t)} appears twice")
         k, sd = r["k"], r["kStd"]
         runs[(comp, t)] = {"rho": (k - 1.0) / k * PCM, "sigma": sd / k**2 * PCM, "k": k, "kStd": sd, "particles": r["particles"]}
     return runs

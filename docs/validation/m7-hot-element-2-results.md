@@ -4,6 +4,8 @@ Protocol: `m7-hot-element-2-protocol.md` (fourth protocol; not blind, see its di
 
 ## Result in one paragraph
 
+*(Read on the primary line, which the script's docstring fixed before the run. The protocol text asks for labels "worst over the sensitivities" and leaves the decision open; read on the worst H1 label, which fails (ratios up to 1.74 and 1.79 with the other conductivity, radius or element), the decision would be case 3. See the erratum.)*
+
 **Decision case 1 for both cores: the chain with the pulse-derived thermocouple peaking reproduces the measured hot-element rise, and the peaking is stable.** With the whole-pulse energy column, F_tc is **1.28 (core 242) and 1.39 (core 246)**, the same in both cores (K2 ratio 0.92) and in both halves of the pulses (K1 0.998 and 1.005). The predicted rise at 250 kW is **237–238 K against 201 K measured (ratio 1.18–1.19, "plausible")**. The library's own B-ring peaking (1.8–1.9) still fails high (ratio 1.82 and 1.60), so the thermocouples read elements with a peaking nearer the D ring's than the B ring's. The protocol reads that as "no correction to the library's fuel rise is needed". It is a consistency result: the first run's conflict (R_α about 2) disappears once the thermocouple's own peaking replaces the library's hottest B element.
 
 ## Labels (primary line; worst and best over the sensitivities beside it)
@@ -33,3 +35,9 @@ K2, core 242 over core 246: 0.918, **good**.
 ## Limits, repeated
 
 Thermocouple lag biases F_tc low and conduction during slow pulses spreads heat; the initial temperature of each pulse is assumed (25 °C; 20 and 30 move F_tc by under 15 %); the instrumented elements' positions and the pulse database's core assignment are not independently confirmed (the database lists 31 `core_config` values, and cores 242 and 246 are two of them); the first run's result was seen, so a good H-pulse here is a stability check, not a blind confirmation; a "plausible" result means the chain is consistent with the data, not that each factor is right.
+
+## Erratum (Codex review, 2026-10-06)
+
+- **The decision reads the primary line.** `validation/m7_hot_element_2.py` passes the primary H1 label (plausible, 1.18 and 1.19) into the decision; the worst label over the sensitivities is "fails" (the other conductivity 25 W/m·K or the thermocouple at 0.762 cm, ratios 1.74 and 1.79). The protocol says labels are the worst over the sensitivities and gives no rule for which line the decision reads; the script's docstring chose the primary line before the run. Under the other reading the decision is case 3. The library notes of the two OpenMC libraries are reworded to say "at the primary configuration".
+- **K1 and T aggregates.** The protocol asks for K1 and T for each thermocouple separately and together, with the label the worst of the two cores, and K2 separately for each thermocouple. The script used each core's own labels and one pooled K2. Now implemented (`stabilityAggregate`, `K2.perThermocouple`): the aggregate T is **plausible** (core 246's own T was good), K1 good, K2 good (0.957 and 0.878 for the two thermocouples, 0.918 pooled). The decision is unchanged (case 1 for both cores).
+- **Unresolved is not "fails".** A missing H-pulse (too few readings) now gives an unresolved decision instead of "H-pulse fails". Not triggered here.

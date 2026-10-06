@@ -85,6 +85,20 @@ class Implied(unittest.TestCase):
         self.assertLess(cv.implied_gamma(weak, data, 3, 7), 1.525 * 0.7)
         self.assertEqual(cv.labels_for(lib, data, 1.525, 1.575)["primary"]["worst"], "good")
 
+    def test_a_missing_root_makes_the_implied_conversion_incomplete_not_a_partial_mean(self):
+        lib = synthetic()
+        data = planted(lib)
+        data["steps"][7][5] = -1.0e6                                                  # no conversion gives a million pcm at step 7
+        res = cv.c3(lib, data, cv.c1(rings(), LOADING, RADII), cv.c2(shapes_lib()))
+        im = res["implied"]["B"]
+        self.assertIsNone(im["perStep"][7])
+        self.assertFalse(im["complete"])
+        self.assertIsNone(im["mean"])
+        self.assertEqual(im["label"], "not computed")
+        self.assertAlmostEqual(im["partialMean"], 1.525, places=3)                   # reported separately, never used
+        c1, c2, _ = Implied.make()
+        self.assertIsNone(cv.decide(c1, c2, res)["case"])
+
     def test_the_shortfall_removed_and_the_decision_branches(self):
         lib = synthetic()
         data = planted(lib)

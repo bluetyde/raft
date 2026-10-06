@@ -206,8 +206,10 @@ def c3(lib, data: dict, c1_res: dict, c2_res: dict) -> dict:
     for ring, col in (("B", 3), ("A", 2)):
         per = {s: implied_gamma(lib, data, col, s) for s in steps}
         vals = [v for v in per.values() if v is not None]
-        mean = sum(vals) / len(vals) if vals else None
-        implied[ring] = {"perStep": per, "mean": mean, "ratioToPaper": None if mean is None else mean / PAPER_GAMMA[ring]}
+        complete = len(vals) == len(per)                                    # a mean over a partial set of steps is not the protocol's quantity
+        mean = sum(vals) / len(vals) if complete else None
+        implied[ring] = {"perStep": per, "mean": mean, "ratioToPaper": None if mean is None else mean / PAPER_GAMMA[ring],
+                         "complete": complete, "partialMean": sum(vals) / len(vals) if vals and not complete else None}
         implied[ring]["label"] = "not computed" if mean is None else label_ratio(mean / PAPER_GAMMA[ring])
     routes = {
         "paper": (PAPER_GAMMA["B"], PAPER_GAMMA["A"]),
@@ -235,6 +237,8 @@ def decide(c1_res: dict, c2_res: dict, c3_res: dict) -> dict:
     indep_ok = all(routes[k]["primary"]["worst"] in ok for k in ("table8-radial-times-paper-axial", "model-power-factors"))
     paper_ok = routes["paper"]["primary"]["worst"] in ok
     g3_differs = c3_res["implied"]["B"]["label"] == "differs"
+    if c3_res["implied"]["B"]["label"] == "not computed":
+        return {"case": None, "text": "G3 is incomplete (the implied conversion has no root at some step): the decision is not made on partial evidence", "removed": {}}
     removed = {k: v["fractionOfShortfallRemoved"] for k, v in c3_res["step7"].items() if k != "paper"}
     if g1_ok and g2_ok and indep_ok:
         return {"case": 1, "text": "the paper's conversion was too high; the feedback is consistent with the measurement with the independent conversion", "removed": removed}
@@ -267,7 +271,7 @@ def print_summary(r: dict) -> None:
     c3r = r["G3G4"]
     for ring in "BA":
         im = c3r["implied"][ring]
-        print(f"  G3 {ring}: implied conversion by step {{ {', '.join(f'{s}: {v:.2f}' if v else f'{s}: none' for s, v in im['perStep'].items())} }} mean {im['mean']:.3f} = {im['ratioToPaper']:.2f} x paper [{im['label']}]")
+        print(f"  G3 {ring}: implied conversion by step {{ {', '.join(f'{s}: {v:.2f}' if v else f'{s}: none' for s, v in im['perStep'].items())} }} mean {'incomplete' if im['mean'] is None else format(im['mean'], '.3f')} = {'n/a' if im['ratioToPaper'] is None else format(im['ratioToPaper'], '.2f')} x paper [{im['label']}]")
     for k, v in c3r["routes"].items():
         steps = "  ".join(f"{s['step']}:{s['modelPcm']:.0f}/{s['measuredPcm']:.0f}[{s['label'][0]}]" for s in v["primary"]["perStep"])
         print(f"  G4 {k} (gamma_B {v['gammaB']:.3f}): primary {v['primary']['worst']} worst {v['worst']} best {v['best']}   {steps}")
