@@ -77,7 +77,7 @@ triga-jsi/
   "thermal": {
     "fuel":    { "mass": ..., "cp": { "T": [...], "c": [...] } },
     "coolant": { "mass": ..., "cp": ... },
-    "hA": ..., "heatExchanger": { "maxRemoval": ..., "model": "..." },
+    "hA": ... /* optional exponent, dTRef: see library-format.md section 8 */, "heatExchanger": { "maxRemoval": ..., "model": "..." },
     "reference": { "Tfuel": ..., "Tcoolant": ... }
   },
 

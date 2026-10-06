@@ -10,6 +10,9 @@ Law L0:  constant hA (n = 0), refitted on the same two states, as the baseline.
 Fitted to the measured power defect at states 3 and 7 only; scored on held-out states 4, 5, 6 (reactivity and temperature shape),
 state 2 (extrapolation) and the return leg (information only).
 
+NOTE (2026-10-06): run once on the libraries as shipped then (constant hA 3000 W/K). The libraries now carry the fitted heat transfer law
+(thermal.hA.exponent); this script reads only the scalar hA, so re-running it on them is not the comparison the protocol describes.
+
 Run from the repo root:  python -m validation.m7_heat_transfer [--out PATH]
 """
 from __future__ import annotations

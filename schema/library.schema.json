@@ -111,7 +111,16 @@
           "type": "object", "required": ["mass", "cp"], "additionalProperties": false,
           "properties": { "mass": { "$ref": "#/$defs/scalarPositive" }, "cp": { "$ref": "#/$defs/scalarPositive" } }
         },
-        "hA": { "$ref": "#/$defs/scalarPositive" },
+        "hA": {
+          "type": "object", "required": ["value", "source"], "additionalProperties": false,
+          "properties": {
+            "value": { "type": "number", "exclusiveMinimum": 0 },
+            "unc": { "type": "number", "minimum": 0 },
+            "source": { "$ref": "#/$defs/source" },
+            "exponent": { "type": "number", "minimum": 0, "maximum": 1 },
+            "dTRef": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
         "heatExchanger": {
           "type": "object", "required": ["UA", "sinkTemp", "pump"], "additionalProperties": false,
           "properties": {

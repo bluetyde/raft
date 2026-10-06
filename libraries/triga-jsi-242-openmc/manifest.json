@@ -4,7 +4,7 @@
   "name": "JSI TRIGA Mark II, core 242 (58 elements) \u2014 OpenMC (M2)",
   "status": "experimental",
   "capabilities": [
-    "point-kinetics/lumped-thermal-v1"
+    "point-kinetics/lumped-thermal-v2"
   ],
   "provenance": {
     "generator": "pipeline.library.export_openmc",
@@ -12,7 +12,7 @@
     "nuclearData": "/root/nuclear_data/endfb-viii.0-hdf5/cross_sections.xml (data digests 2fa6354d2216)",
     "model": "sha256 of the 41 sweep case keys: a8d95a83c9aa77fdb52844c049787073901019c81b74795cbee9a3e07db7a21f",
     "created": "2026-09-28",
-    "notes": "Full-core OpenMC 0.15.3 transport at a uniform burnup (23.675258421961058 MWd/kg), 41 cases ({'particles': 20000, 'batches': 150, 'inactive': 50}). Transport results: reference state rho, rod worth curves, fuel and coolant temperature reactivity feedback, kinetics (beta_eff and Lambda by IFP), and fission power shapes (fraction of all fuel fission; the lowest axial bin holds fuel-follower fuel below the core, zero for regular elements, whose volume there is nominal; its relative uncertainty is the region total's). Base library inputs: thermal properties, poisons, plant instrumentation/trips/interlocks, delayed group lambdas, external source, rod scram profiles, and xenon table.",
+    "notes": "Full-core OpenMC 0.15.3 transport at a uniform burnup (23.675258421961058 MWd/kg), 41 cases ({'particles': 20000, 'batches': 150, 'inactive': 50}). Transport results: reference state rho, rod worth curves, fuel and coolant temperature reactivity feedback, kinetics (beta_eff and Lambda by IFP), and fission power shapes (fraction of all fuel fission; the lowest axial bin holds fuel-follower fuel below the core, zero for regular elements, whose volume there is nominal; its relative uncertainty is the region total's). Base library inputs: thermal properties, poisons, plant instrumentation/trips/interlocks, delayed group lambdas, external source, rod scram profiles, and xenon table. Heat transfer: hA(dT) = h0 (dT / 100 K)^n with h0 = 1288.7 W/K and n = 0.2169, fitted to the measured power defect at 43.6 and 250 kW of the IAEA/JSI steady power ascension (one exercise, unknown core; docs/validation/m7-heat-transfer-results.md). It reproduces the held-out defect within 4 % and the shape of the fuel temperature rise within 0.03-0.05, but overshoots the defect at 2.9 kW (33-37 against 20.6 pcm). It is consistent with the measured hot-element temperature given a thermocouple peaking of 1.28 from the pulse database (docs/validation/m7-hot-element-2-results.md); the library's own shape arrays give a larger peaking.",
     "sources": [
       {
         "id": "keepin1965",
@@ -449,8 +449,10 @@
       }
     },
     "hA": {
-      "value": 3000.0,
-      "source": "assumed"
+      "value": 1288.7,
+      "source": "calibration",
+      "exponent": 0.2169,
+      "dTRef": 100.0
     },
     "heatExchanger": {
       "UA": {

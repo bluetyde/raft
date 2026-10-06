@@ -10,7 +10,7 @@ import type { LibraryReader } from "./platform";
 import { sha256Hex } from "./platform";
 
 export const SUPPORTED_VERSIONS = ["0.1.0"];
-export const SUPPORTED_CAPABILITIES = ["point-kinetics/lumped-thermal-v1"];
+export const SUPPORTED_CAPABILITIES = ["point-kinetics/lumped-thermal-v1", "point-kinetics/lumped-thermal-v2"];
 export const TRUTH_SIGNALS = ["power", "period", "fuelTemp", "coolantTemp", "xenon", "mode"];
 
 export const TABLE_REF_TOL = 1e-9; // reactivity tables (JSON doubles)
@@ -148,6 +148,10 @@ class Checker {
       if (!SUPPORTED_CAPABILITIES.includes(cap)) {
         this.add("E_CAPABILITY_UNSUPPORTED", "$.capabilities", `'${cap}' isn't implemented`);
       }
+    }
+    const hA = (m.thermal as { hA: Record<string, unknown> }).hA;
+    if ((Object.hasOwn(hA, "exponent") || Object.hasOwn(hA, "dTRef")) && !capabilities.includes("point-kinetics/lumped-thermal-v2")) {
+      this.add("E_CAPABILITY_UNSUPPORTED", "$.thermal.hA", "exponent and dTRef need the capability point-kinetics/lumped-thermal-v2");
     }
     if (this.issues.length > 0) {
       return this.issues;

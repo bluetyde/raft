@@ -62,7 +62,7 @@ Every table carries one `source` for the whole table. `Source` is one of:
 | `id` | Lowercase slug, also the folder name |
 | `name` | Human-readable name |
 | `status` | `"synthetic"`, `"experimental"` or `"validated-for-domain"` (see plan 07) |
-| `capabilities` | Required model capabilities. v0 defines only `"point-kinetics/lumped-thermal-v1"` |
+| `capabilities` | Required model capabilities. v0 defines `"point-kinetics/lumped-thermal-v1"` and `"point-kinetics/lumped-thermal-v2"` (v1 plus a temperature-dependent `hA`, section 8); an engine accepts either |
 | `provenance` | Generator, codes, data, dates and a list of cited `sources` `{id, cite}` |
 | `reference` | The reference state (section 5) |
 | `kinetics`, `reactivity`, `thermal`, `poisons` | Physics inputs (sections 6–8) |
@@ -121,7 +121,7 @@ Pulse-capable rods must have `fireTime`, and only they may have it (`E_SCHEMA`).
 `thermal`:
 - `fuel`: `{ mass: scalar, cp: table over T with value column "c" }`
 - `coolant`: `{ mass: scalar, cp: scalar }`
-- `hA`: scalar, fuel-to-coolant, W/K
+- `hA`: scalar, fuel-to-coolant, W/K. Optional `exponent` n (0 to 1) and `dTRef` (K, default 100) make it temperature dependent: `q = hA · sign(ΔT) · |ΔT / dTRef|^n · |ΔT|` with `ΔT = T_fuel − T_coolant`, so `hA` is the coefficient at `|ΔT| = dTRef` and `n = 0` (or no `exponent`) is the constant law `q = hA · ΔT`. `exponent` and `dTRef` need the capability `point-kinetics/lumped-thermal-v2` (`E_CAPABILITY_UNSUPPORTED` otherwise); an `exponent` outside [0, 1] is `E_SCHEMA`. The flow is zero-slope at ΔT = 0 for n > 0. The OpenMC libraries ship n = 0.217 / 0.233 fitted to a measured power ascension (`docs/validation/m7-heat-transfer-results.md`)
 - `heatExchanger`: `{ UA: scalar (W/K), sinkTemp: scalar (K), pump: pump id (E_PUMP_UNKNOWN) }`. Removal is `UA·(T_c − sinkTemp)` while that pump runs, else 0.
 - `deposition`: `{ fuelFraction: scalar }`, the fraction of P deposited in fuel; the rest goes to the coolant. There's no decay-heat inventory in this capability.
 

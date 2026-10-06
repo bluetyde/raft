@@ -172,6 +172,8 @@ export class Library {
   coolMass: number;
   coolCp: number;
   hA: number;
+  hAExponent: number;
+  hADtRef: number;
   UA: number;
   sinkTemp: number;
   hxPump: string;
@@ -236,6 +238,8 @@ export class Library {
     this.coolMass = t.coolant.mass.value;
     this.coolCp = t.coolant.cp.value;
     this.hA = t.hA.value;
+    this.hAExponent = t.hA.exponent ?? 0.0; // hA(dT) = hA * |dT / dTRef|^exponent; 0 is the constant law
+    this.hADtRef = t.hA.dTRef ?? 100.0;
     this.UA = t.heatExchanger.UA.value;
     this.sinkTemp = t.heatExchanger.sinkTemp.value;
     this.hxPump = t.heatExchanger.pump;

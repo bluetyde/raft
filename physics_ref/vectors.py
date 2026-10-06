@@ -110,6 +110,31 @@ def _scenarios(lib: Library) -> list[dict]:
             ],
         },
         {
+            "name": "heat-law-forward",
+            "description": "Rod withdrawal with the temperature-dependent heat transfer law (hA exponent 0.25, 2000 W/K at 100 K): the fuel-to-coolant difference starts at zero and grows.",
+            "libraryOverrides": {"hA": 2000, "hAExponent": 0.25},
+            "init": {"rods": copy.deepcopy(_near_crit)},
+            "seed": 1,
+            "config": {"outerDt": 0.01},
+            "steps": 500,
+            "sampleEvery": 25,
+            "script": [
+                {"step": 0, "cmd": {"type": "rod.move", "rod": "transient", "direction": "out"}},
+                {"step": 300, "cmd": {"type": "rod.move", "rod": "transient", "direction": "stop"}},
+            ],
+        },
+        {
+            "name": "heat-law-reversed",
+            "description": "The same law with the coolant 15 K warmer than the fuel: heat flows from coolant to fuel (negative difference).",
+            "libraryOverrides": {"hA": 2000, "hAExponent": 0.25},
+            "init": {"rods": copy.deepcopy(_near_crit), "Tfuel": 300.0, "Tcoolant": 315.0},
+            "seed": 1,
+            "config": {"outerDt": 0.01},
+            "steps": 300,
+            "sampleEvery": 25,
+            "script": [],
+        },
+        {
             "name": "period-trip",
             "description": "Transient rod withdrawal triggering internal short-period trip.",
             "init": {"rods": copy.deepcopy(_near_crit)},
@@ -147,7 +172,17 @@ def sample_from_engine(e: Engine) -> dict:
     }
 
 
+def apply_overrides(lib: Library, overrides: dict) -> Library:
+    """Test-only changes to a freshly loaded library (the digest changes, so the vector pins the override)."""
+    for key, value in overrides.items():
+        setattr(lib, {"hA": "hA", "hAExponent": "hA_exponent"}[key], value)
+    lib.mark_modified("vector-overrides:" + json.dumps(overrides, sort_keys=True, separators=(",", ":")))
+    return lib
+
+
 def run_scenario(lib: Library, sc: dict) -> dict:
+    if sc.get("libraryOverrides"):
+        lib = apply_overrides(Library(SYNTHETIC_CORE), sc["libraryOverrides"])
     e = Engine(lib, init=sc["init"], seed=sc["seed"], config=sc["config"])
     sample_every = sc["sampleEvery"]
     total_steps = sc["steps"]
@@ -179,6 +214,7 @@ def run_scenario(lib: Library, sc: dict) -> dict:
         "sampleEvery": sc["sampleEvery"],
         "script": copy.deepcopy(sc["script"]),
         "libraryId": lib.id,
+        **({"libraryOverrides": copy.deepcopy(sc["libraryOverrides"])} if sc.get("libraryOverrides") else {}),
         "pins": e.pins(),
         "samples": samples,
         "events": copy.deepcopy(e.events),

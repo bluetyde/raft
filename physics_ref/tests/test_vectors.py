@@ -86,7 +86,7 @@ class TestEngineVectors(unittest.TestCase):
             raise ValueError(f"non-finite constant in JSON: {c}")
 
         files = sorted(VECTORS_DIR.glob("*.json"))
-        self.assertEqual(len(files), 6)
+        self.assertEqual(len(files), 8)
         for p in files:
             with self.subTest(file=p.name):
                 content = p.read_text(encoding="utf-8")
@@ -139,14 +139,23 @@ class TestEngineVectors(unittest.TestCase):
         self.assertLess(abs(p_last / p_first - 1.0), 1e-8)
 
     def test_pins_match_current_engine(self):
-        lib = Library(SYNTHETIC_CORE)
         files = sorted(VECTORS_DIR.glob("*.json"))
-        self.assertEqual(len(files), 6)
+        self.assertEqual(len(files), 8)
         for p in files:
             with self.subTest(file=p.name):
                 doc = json.loads(p.read_text(encoding="utf-8"))
+                lib = Library(SYNTHETIC_CORE)
+                if doc.get("libraryOverrides"):
+                    vectors.apply_overrides(lib, doc["libraryOverrides"])
                 self.assertEqual(doc["pins"]["engineVersion"], ENGINE_VERSION)
                 self.assertEqual(doc["pins"]["libraryDigest"], lib.digest)
+
+    def test_heat_transfer_law_vectors_move_heat_the_right_way(self):
+        fwd = json.loads((VECTORS_DIR / "heat-law-forward.json").read_text(encoding="utf-8"))["samples"]
+        self.assertGreater(fwd[-1]["fuelTemp"], fwd[-1]["coolantTemp"])          # the fuel heats above the coolant
+        rev = json.loads((VECTORS_DIR / "heat-law-reversed.json").read_text(encoding="utf-8"))["samples"]
+        self.assertTrue(all(b["fuelTemp"] > a["fuelTemp"] for a, b in zip(rev, rev[1:])))   # coolant warmer: the fuel warms
+        self.assertTrue(all(b["coolantTemp"] < a["coolantTemp"] for a, b in zip(rev, rev[1:])))
 
 
 if __name__ == "__main__":

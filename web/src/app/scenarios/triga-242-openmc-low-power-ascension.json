@@ -32,8 +32,8 @@
     ],
     "knownLimits": [
       {
-        "text": "Measured against a real JSI power ascension, this model's power defect is only about 0.35 to 0.45 of the real value (about 650 against 1427 pcm at 250 kW), because its fuel heats too little and in proportion to power. The regulating rod needs far less withdrawal to hold a given power than in the real reactor.",
-        "source": "docs/validation/m7-power-ascension-results.md (metric A fails for both OpenMC cores)"
+        "text": "The heat transfer law (hA grows with the fuel-to-pool temperature difference, exponent 0.217) was fitted to one real JSI power ascension on an unstated core. It predicts the power defect at 100 to 223 kW within about 4 %, but at the low end it overshoots: about 33 to 37 pcm against 20.6 pcm measured at 2.9 kW, so the regulating rod may need a little less withdrawal than in the real reactor at the lowest powers. Nothing has been checked at low power by an independent measurement.",
+        "source": "docs/validation/m7-heat-transfer-results.md (adopted as a candidate; the library stays experimental)"
       }
     ]
   },

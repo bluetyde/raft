@@ -387,10 +387,19 @@ def invalid_cases() -> list[tuple[str, list[str], Callable]]:
     def offset(m, b):
         m["arrays"]["base"]["byteLength"] += 4
 
+    def hA_exponent_on_v1(m, b):
+        m["thermal"]["hA"]["exponent"] = 0.25           # the capability stays v1
+
+    def hA_exponent_too_large(m, b):
+        m["capabilities"] = ["point-kinetics/lumped-thermal-v2"]
+        m["thermal"]["hA"]["exponent"] = 2.0
+
     return [
         ("bad-json", ["E_JSON"], bad_json),
         ("unsupported-version", ["E_VERSION_UNSUPPORTED"], setp(["schemaVersion"], "9.0.0")),
         ("unsupported-capability", ["E_CAPABILITY_UNSUPPORTED"], setp(["capabilities"], ["point-kinetics/lumped-thermal-v1", "spatial-kinetics-v1"])),
+        ("hA-exponent-needs-v2", ["E_CAPABILITY_UNSUPPORTED"], hA_exponent_on_v1),
+        ("hA-exponent-out-of-range", ["E_SCHEMA"], hA_exponent_too_large),
         ("schema-missing-field", ["E_SCHEMA"], delp(["kinetics", "genTime"])),
         ("schema-unknown-field", ["E_SCHEMA"], setp(["reactivity", "extra"], 1)),
         ("schema-bad-operator", ["E_SCHEMA"], setp(["plant", "trips", 0, "predicate"], {"op": "approx", "value": 1.0})),

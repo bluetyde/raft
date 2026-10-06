@@ -103,7 +103,7 @@ class RealLibrariesLoad(unittest.TestCase):
     def test_the_two_libraries_load_with_what_the_script_reads(self):
         for name, path in m7.LIBRARIES.items():
             lib = m7.load_library(path)
-            self.assertEqual(lib.hA, 3000.0, name)
+            self.assertGreater(lib.hA, 0.0, name)       # 3000 W/K constant when the protocols were run; a fitted law since 2026-10-06
             self.assertIn("regulating", lib.rod_by_id, name)
             self.assertGreater(lib.fuel_mass, 0.0, name)
 

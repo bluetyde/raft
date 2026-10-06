@@ -13,6 +13,9 @@ to heating. In the model each state is quasi-steady: T_fuel = T_pool + P / hA, a
     rho_fb = fuelTemp(T_fuel) + coolantTemp(T_pool)         (library tables are absolute reactivity; pcm = 1e5 x)
     defect = -(rho_fb - rho_fb at the reference state)       (the reactivity the rod must add)
 
+NOTE (2026-10-06): run once on the libraries as shipped then (constant hA 3000 W/K). The libraries now carry the fitted heat transfer law
+(thermal.hA.exponent); this script reads only the scalar hA, so re-running it on them is not the comparison the protocol describes.
+
 Run from the repo root:  python -m validation.m7_power_ascension [--out PATH]
 """
 from __future__ import annotations

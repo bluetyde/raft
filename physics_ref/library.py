@@ -142,6 +142,8 @@ class Library:
         self.cool_mass = t["coolant"]["mass"]["value"]
         self.cool_cp = t["coolant"]["cp"]["value"]
         self.hA = t["hA"]["value"]
+        self.hA_exponent = t["hA"].get("exponent", 0.0)        # hA(dT) = hA * |dT / dTRef|^exponent, 0 is the constant law
+        self.hA_dt_ref = t["hA"].get("dTRef", 100.0)
         self.UA = t["heatExchanger"]["UA"]["value"]
         self.sink_temp = t["heatExchanger"]["sinkTemp"]["value"]
         self.hx_pump = t["heatExchanger"]["pump"]

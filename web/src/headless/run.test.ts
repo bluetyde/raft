@@ -47,7 +47,11 @@ function caseFolder(name = "scram", edit: (c: Record<string, any>) => void = () 
   return { dir, casePath, vec };
 }
 
-const VECTORS = readdirSync(engineVectorsDir).filter((f) => f.endsWith(".json")).map((f) => f.replace(".json", ""));
+// vectors that override library fields in code (the heat-law ones) run in sim/vectors.test.ts; a case folder holds an unmodified library
+const VECTORS = readdirSync(engineVectorsDir)
+  .filter((f) => f.endsWith(".json"))
+  .map((f) => f.replace(".json", ""))
+  .filter((name) => !vector(name).libraryOverrides);
 
 describe("every engine golden vector, run through the headless runner (oracle agreement)", () => {
   it.each(VECTORS)("%s matches the committed vector within its declared tolerances", async (name) => {

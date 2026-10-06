@@ -34,7 +34,7 @@ Evidence in the repository (not new claims):
 
 Not supported:
 
-- **A first comparison with a measured steady power ascension disagrees** (`m7-power-ascension-results.md`, 2026-10-06): the model's power defect at 250 kW is 0.45–0.47 of the measured 1427 pcm (metric A fails for both OpenMC cores), 0.35–0.36 at the lesson's powers, because the lumped fuel heats too little and linearly with power. The regulating rod curve and the rod worth shape agree. The lesson's banner carries this as a known limit. The library status stays `experimental` and the state can be `caution` at best, never `ok`.
+- **A first comparison with a measured steady power ascension disagrees** (`m7-power-ascension-results.md`, 2026-10-06): the model's power defect at 250 kW is 0.45–0.47 of the measured 1427 pcm (metric A fails for both OpenMC cores), 0.35–0.36 at the lesson's powers, because the lumped fuel heats too little and linearly with power. The regulating rod curve and the rod worth shape agree. The first comparison used the libraries as shipped then (constant `hA` 3000 W/K). Since 2026-10-06 the two OpenMC libraries carry a fitted power law `hA = h0 (ΔT / 100 K)^n` (n 0.217 and 0.233): it predicts the held-out defect within 4 % and the fuel temperature shape within 0.03–0.05, but overshoots the defect at the lesson's lowest measured state (33–37 against 20.6 pcm at 2.9 kW) and is fitted to one exercise on an unstated core (`m7-heat-transfer-results.md`, `m7-hot-element-2-results.md`). The lesson's banner states that as its known limit. The library status stays `experimental` and the state can be `caution` at best, never `ok`.
 - Rod interaction: rod worths are added as if the rods acted alone. Only the six holdout states per core check that; every other combination of two or more moved rods is `R_JOINT_UNCHECKED`. A low-power ascension moves several rods, so this reason is normally present.
 - Long runs (xenon), high power, pulses, and the second TRIGA core.
 
@@ -56,6 +56,6 @@ The OpenMC libraries inherited a heat sink at 293.15 K from the M1 library, but 
 
 ## To widen or promote the envelope
 
-1. M7: the first comparison (steady power ascension) failed on the power defect. A second dated protocol made heat transfer depend on temperature and a power law with n = 0.22–0.27 met its adoption rule for both cores (`m7-heat-transfer-results.md`); the library has not changed yet, and the hot-element temperature is still open; `validated-for-domain` also needs a matched core and stated uncertainties.
+1. M7: the first comparison (steady power ascension) failed on the power defect. A second dated protocol made heat transfer depend on temperature and a power law with n = 0.22–0.27 met its adoption rule for both cores (`m7-heat-transfer-results.md`); the libraries now carry it (format v2, 2026-10-06), and a second hot-element protocol found the measured thermocouple temperature consistent with it given the thermocouple's own pulse-derived peaking (`m7-hot-element-2-results.md`); `validated-for-domain` also needs a matched core and stated uncertainties.
 2. A rod-pairs family (plan 02) would let the joint check cover the rod combinations a lesson uses.
 3. Fuel-follower bins: decided 2026-10-06 to defer (`TODO.md`). The lesson uses element power, which is unaffected; power density in partly filled follower bins reads low and must not be used.

@@ -21,8 +21,9 @@ import math
 from .library import Library
 from .numerics import SplitMix64, lu_factor, lu_solve
 
-ENGINE_VERSION = "0.2.0"
+ENGINE_VERSION = "0.3.0"
 CAPABILITY = "point-kinetics/lumped-thermal-v1"
+CAPABILITY_V2 = "point-kinetics/lumped-thermal-v2"      # adds thermal.hA.exponent: hA depends on the fuel-to-coolant temperature difference
 
 DEFAULT_CONFIG = {
     "outerDt": 0.01,     # s, fixed scheduling interval
@@ -146,8 +147,8 @@ def eval_predicate(p, get, default=None) -> bool:
 
 class Engine:
     def __init__(self, lib: Library, init: dict | None = None, seed: int = 1, config: dict | None = None):
-        if CAPABILITY not in lib.manifest["capabilities"]:
-            raise InitError("E_INIT_INVALID", f"library doesn't declare {CAPABILITY}")
+        if CAPABILITY not in lib.manifest["capabilities"] and CAPABILITY_V2 not in lib.manifest["capabilities"]:
+            raise InitError("E_INIT_INVALID", f"library doesn't declare {CAPABILITY} or {CAPABILITY_V2}")
         self.lib = lib
         self.config = dict(DEFAULT_CONFIG, **(config or {}))
         method = self.config.get("method")
@@ -335,7 +336,8 @@ class Engine:
             d[IP] += lib.lam[k] * c
             d[IC0 + k] = lib.beta[k] / L * P - lib.lam[k] * c
         q_hx = lib.UA * (tc - lib.sink_temp) if self.pumps.get(lib.hx_pump, False) else 0.0
-        q_fc = lib.hA * (tf - tc)
+        dt_fc = tf - tc
+        q_fc = lib.hA * dt_fc if lib.hA_exponent == 0.0 else lib.hA * math.copysign(abs(dt_fc / lib.hA_dt_ref) ** lib.hA_exponent, dt_fc) * abs(dt_fc)
         d[ITF] = (lib.fuel_fraction * P - q_fc) / (lib.fuel_mass * lib.fuel_cp(tf))
         d[ITC] = ((1.0 - lib.fuel_fraction) * P + q_fc - q_hx) / (lib.cool_mass * lib.cool_cp)
         phi = lib.flux_per_watt * P

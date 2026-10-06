@@ -7,8 +7,9 @@
 import { Library, Table } from "./library";
 import { MASK64, SplitMix64, luFactor, luSolve, type LUFactored } from "./numerics";
 
-export const ENGINE_VERSION = "0.2.0";
+export const ENGINE_VERSION = "0.3.0";
 export const CAPABILITY = "point-kinetics/lumped-thermal-v1";
+export const CAPABILITY_V2 = "point-kinetics/lumped-thermal-v2"; // adds thermal.hA.exponent
 
 export interface EngineConfig {
   outerDt: number;
@@ -220,8 +221,8 @@ export class Engine {
   private _stepFac: (err: number) => number;
 
   constructor(lib: Library, init?: any, seed: number | bigint = 1, config?: Partial<EngineConfig>) {
-    if (!lib.manifest.capabilities.includes(CAPABILITY)) {
-      throw new InitError("E_INIT_INVALID", `library doesn't declare ${CAPABILITY}`);
+    if (!lib.manifest.capabilities.includes(CAPABILITY) && !lib.manifest.capabilities.includes(CAPABILITY_V2)) {
+      throw new InitError("E_INIT_INVALID", `library doesn't declare ${CAPABILITY} or ${CAPABILITY_V2}`);
     }
     this.lib = lib;
     this.config = { ...DEFAULT_CONFIG, ...(config ?? {}) };
@@ -519,7 +520,11 @@ export class Engine {
       Object.hasOwn(this.pumps, lib.hxPump) && this.pumps[lib.hxPump]
         ? lib.UA * (tc - lib.sinkTemp)
         : 0.0;
-    const q_fc = lib.hA * (tf - tc);
+    const dt_fc = tf - tc;
+    const q_fc =
+      lib.hAExponent === 0.0
+        ? lib.hA * dt_fc
+        : lib.hA * Math.sign(dt_fc) * Math.abs(dt_fc / lib.hADtRef) ** lib.hAExponent * Math.abs(dt_fc);
     d[ITF] = (lib.fuelFraction * P - q_fc) / (lib.fuelMass * lib.fuelCp.at(tf));
     d[ITC] = ((1.0 - lib.fuelFraction) * P + q_fc - q_hx) / (lib.coolMass * lib.coolCp);
     const phi = lib.fluxPerWatt * P;

@@ -14,6 +14,17 @@ export const TOLERANCES = {
   eventTime: { abs: 1e-9 },
 };
 
+/** Test-only changes to a freshly loaded library; the digest changes, so a vector pins its overrides (mirrors physics_ref.vectors.apply_overrides). */
+export async function applyOverrides(lib: Library, overrides: { hA?: number; hAExponent?: number }): Promise<Library> {
+  const keys = Object.keys(overrides).sort() as (keyof typeof overrides)[];
+  for (const key of keys) {
+    lib[key] = overrides[key]!;
+  }
+  const sorted = Object.fromEntries(keys.map((k) => [k, overrides[k]]));
+  await lib.markModified("vector-overrides:" + JSON.stringify(sorted));
+  return lib;
+}
+
 export function nearCriticalRods(lib: Library, targetRho: number): Record<string, number> {
   const base = lib.refRho + lib.rodById.safety!.worth.at(1.0);
   const reg = lib.rodById.regulating!.worth;
@@ -107,6 +118,7 @@ export function runScenario(
     sampleEvery: sc.sampleEvery,
     script: structuredClone(sc.script),
     libraryId: lib.id,
+    ...(sc.libraryOverrides ? { libraryOverrides: structuredClone(sc.libraryOverrides) } : {}),
     pins: e.pins(),
     samples,
     events: structuredClone(e.events),

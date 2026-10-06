@@ -108,7 +108,20 @@ def isotonic(xs: list[float], ys: list[float] | None = None, ws: list[float] | N
     return result
 
 
-def _thermal_on_transport_grid(base_thermal):
+# Heat transfer law hA(dT) = h0 (dT / 100 K)^n, fitted to the measured reactivity at two states of the IAEA/JSI power ascension
+# (docs/validation/m7-heat-transfer-results.md, first sensitivity combination; one exercise, the measured core is not stated).
+HEAT_TRANSFER_LAW = {"242": {"h0": 1288.7, "n": 0.2169}, "246": {"h0": 1382.5, "n": 0.2333}}
+HEAT_TRANSFER_NOTE = (
+    " Heat transfer: hA(dT) = h0 (dT / 100 K)^n with h0 = {h0} W/K and n = {n}, fitted to the measured power defect at 43.6 and 250 kW "
+    "of the IAEA/JSI steady power ascension (one exercise, unknown core; docs/validation/m7-heat-transfer-results.md). It reproduces the "
+    "held-out defect within 4 % and the shape of the fuel temperature rise within 0.03-0.05, but overshoots the defect at 2.9 kW "
+    "(33-37 against 20.6 pcm). It is consistent with the measured hot-element temperature given a thermocouple peaking of {f_tc} "
+    "from the pulse database (docs/validation/m7-hot-element-2-results.md); the library's own shape arrays give a larger peaking."
+)
+HEAT_TRANSFER_F_TC = {"242": "1.28", "246": "1.39"}
+
+
+def _thermal_on_transport_grid(base_thermal, core=None):
     """The base library's thermal block, with the heat sink at the transport reference temperature.
 
     The base library assumes a 293.15 K sink, but the transport tables start at 294 K. The pool then cooled below the
@@ -117,6 +130,9 @@ def _thermal_on_transport_grid(base_thermal):
     """
     thermal = copy.deepcopy(base_thermal)
     thermal["heatExchanger"]["sinkTemp"] = {"value": 294.0, "source": "assumed"}
+    law = HEAT_TRANSFER_LAW.get(core)
+    if law:
+        thermal["hA"] = {"value": law["h0"], "source": "calibration", "exponent": law["n"], "dTRef": 100.0}
     return thermal
 
 
@@ -665,6 +681,9 @@ def _write_library(summary: dict[str, Any], out_dir: Path, created: str | None) 
         "its relative uncertainty is the region total's). Base library inputs: thermal properties, poisons, plant "
         "instrumentation/trips/interlocks, delayed group lambdas, external source, rod scram profiles, and xenon table."
     )
+    law = HEAT_TRANSFER_LAW.get(core)
+    if law:
+        notes += HEAT_TRANSFER_NOTE.format(h0=law["h0"], n=law["n"], f_tc=HEAT_TRANSFER_F_TC[core])
 
     ref_rods_dict = {ROD_ID_MAP[r]: step_to_x(r, ref_case["rods"][r]) for r in ("T", "K", "V", "R")}
 
@@ -673,7 +692,7 @@ def _write_library(summary: dict[str, Any], out_dir: Path, created: str | None) 
         "id": f"triga-jsi-{core}-openmc",
         "name": f"{base_manifest['name']} — OpenMC (M2)",
         "status": "experimental",
-        "capabilities": base_manifest["capabilities"],
+        "capabilities": ["point-kinetics/lumped-thermal-v2"] if law else base_manifest["capabilities"],
         "provenance": {
             "generator": "pipeline.library.export_openmc",
             "transportCode": f"OpenMC {openmc_version}",
@@ -716,7 +735,7 @@ def _write_library(summary: dict[str, Any], out_dir: Path, created: str | None) 
             "coolantTemp": coolant_temp_table,
             "xenon": copy.deepcopy(base_manifest["reactivity"]["xenon"]),
         },
-        "thermal": _thermal_on_transport_grid(base_manifest["thermal"]),
+        "thermal": _thermal_on_transport_grid(base_manifest["thermal"], core),
         "poisons": copy.deepcopy(base_manifest["poisons"]),
         "plant": copy.deepcopy(base_manifest["plant"]),
         "shapes": {

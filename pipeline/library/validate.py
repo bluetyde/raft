@@ -24,7 +24,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_PATH = REPO_ROOT / "schema" / "library.schema.json"
 
 SUPPORTED_VERSIONS = ("0.1.0",)
-SUPPORTED_CAPABILITIES = ("point-kinetics/lumped-thermal-v1",)
+SUPPORTED_CAPABILITIES = ("point-kinetics/lumped-thermal-v1", "point-kinetics/lumped-thermal-v2")
 TRUTH_SIGNALS = ("power", "period", "fuelTemp", "coolantTemp", "xenon", "mode")
 
 TABLE_REF_TOL = 1e-9     # reactivity tables (JSON doubles)
@@ -114,6 +114,9 @@ class _Checker:
         for cap in m["capabilities"]:
             if cap not in SUPPORTED_CAPABILITIES:
                 self.add("E_CAPABILITY_UNSUPPORTED", "$.capabilities", f"{cap!r} isn't implemented")
+        hA = m["thermal"]["hA"]
+        if ("exponent" in hA or "dTRef" in hA) and "point-kinetics/lumped-thermal-v2" not in m["capabilities"]:
+            self.add("E_CAPABILITY_UNSUPPORTED", "$.thermal.hA", "exponent and dTRef need the capability point-kinetics/lumped-thermal-v2")
         if self.issues:
             return self.issues
 
