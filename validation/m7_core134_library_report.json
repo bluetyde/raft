@@ -1,0 +1,1181 @@
+{
+  "protocol": "docs/validation/m7-core134-library-protocol.md",
+  "id": "triga-jsi-134-openmc",
+  "status": "experimental",
+  "rods": {
+    "regulating": {
+      "modelTotalPcm": 2460.0957426076775,
+      "measuredTotalPcm": 2550.0,
+      "R1": {
+        "ratio": 0.9647434284735991,
+        "label": "good"
+      },
+      "R2": {
+        "maxAbsDiff": 0.04126980635201016,
+        "label": "good"
+      },
+      "R3": {
+        "modelPcm": 2169.0021463231624,
+        "measuredPcm": 2154.5,
+        "differencePcm": 14.502146323162378,
+        "label": "good"
+      }
+    },
+    "shim": {
+      "modelTotalPcm": 3176.8484449324524,
+      "measuredTotalPcm": 2430.0,
+      "R1": {
+        "ratio": 1.3073450390668528,
+        "label": "fails"
+      },
+      "R2": {
+        "maxAbsDiff": 0.034796366029707926,
+        "label": "good"
+      }
+    },
+    "safety": {
+      "modelTotalPcm": 3840.5012150834505,
+      "measuredTotalPcm": 3440.0,
+      "R1": {
+        "ratio": 1.1164247718265845,
+        "label": "plausible"
+      },
+      "R2": {
+        "maxAbsDiff": 0.11705430048340637,
+        "label": "fails"
+      }
+    },
+    "transient": {
+      "modelTotalPcm": 2755.515596996134,
+      "measuredTotalPcm": 2270.0,
+      "R1": {
+        "ratio": 1.2138835229057858,
+        "label": "plausible"
+      },
+      "R2": {
+        "maxAbsDiff": 0.09934230752252798,
+        "label": "plausible"
+      }
+    }
+  },
+  "A": {
+    "primary": {
+      "worst": "fails",
+      "perStep": [
+        {
+          "step": 1,
+          "meanFuelC": 29.468852459016375,
+          "modelPcm": 41.069575979310486,
+          "measuredPcm": 49.6,
+          "errorPcm": -8.530424020689516,
+          "label": "good"
+        },
+        {
+          "step": 2,
+          "meanFuelC": 38.911475409836044,
+          "modelPcm": 91.89868834622736,
+          "measuredPcm": 118.9,
+          "errorPcm": -27.001311653772646,
+          "label": "plausible"
+        },
+        {
+          "step": 3,
+          "meanFuelC": 51.50163934426229,
+          "modelPcm": 162.24687348835897,
+          "measuredPcm": 217.6,
+          "errorPcm": -55.35312651164102,
+          "label": "fails"
+        },
+        {
+          "step": 4,
+          "meanFuelC": 66.78032786885245,
+          "modelPcm": 249.26759995931909,
+          "measuredPcm": 344.8,
+          "errorPcm": -95.53240004068093,
+          "label": "fails"
+        },
+        {
+          "step": 5,
+          "meanFuelC": 78.58360655737704,
+          "modelPcm": 314.73601690764707,
+          "measuredPcm": 460.6,
+          "errorPcm": -145.86398309235295,
+          "label": "fails"
+        },
+        {
+          "step": 6,
+          "meanFuelC": 89.27213114754102,
+          "modelPcm": 373.29142891475306,
+          "measuredPcm": 563.6,
+          "errorPcm": -190.30857108524697,
+          "label": "fails"
+        },
+        {
+          "step": 7,
+          "meanFuelC": 98.71475409836069,
+          "modelPcm": 424.12054128167074,
+          "measuredPcm": 666.0,
+          "errorPcm": -241.87945871832926,
+          "label": "fails"
+        }
+      ]
+    },
+    "worst": "fails",
+    "best": "plausible",
+    "cases": [
+      {
+        "gamma": "gammaB",
+        "profile": "linear",
+        "A": {
+          "worst": "fails",
+          "perStep": [
+            {
+              "step": 1,
+              "meanFuelC": 29.468852459016375,
+              "modelPcm": 41.069575979310486,
+              "measuredPcm": 49.6,
+              "errorPcm": -8.530424020689516,
+              "label": "good"
+            },
+            {
+              "step": 2,
+              "meanFuelC": 38.911475409836044,
+              "modelPcm": 91.89868834622736,
+              "measuredPcm": 118.9,
+              "errorPcm": -27.001311653772646,
+              "label": "plausible"
+            },
+            {
+              "step": 3,
+              "meanFuelC": 51.50163934426229,
+              "modelPcm": 162.24687348835897,
+              "measuredPcm": 217.6,
+              "errorPcm": -55.35312651164102,
+              "label": "fails"
+            },
+            {
+              "step": 4,
+              "meanFuelC": 66.78032786885245,
+              "modelPcm": 249.26759995931909,
+              "measuredPcm": 344.8,
+              "errorPcm": -95.53240004068093,
+              "label": "fails"
+            },
+            {
+              "step": 5,
+              "meanFuelC": 78.58360655737704,
+              "modelPcm": 314.73601690764707,
+              "measuredPcm": 460.6,
+              "errorPcm": -145.86398309235295,
+              "label": "fails"
+            },
+            {
+              "step": 6,
+              "meanFuelC": 89.27213114754102,
+              "modelPcm": 373.29142891475306,
+              "measuredPcm": 563.6,
+              "errorPcm": -190.30857108524697,
+              "label": "fails"
+            },
+            {
+              "step": 7,
+              "meanFuelC": 98.71475409836069,
+              "modelPcm": 424.12054128167074,
+              "measuredPcm": 666.0,
+              "errorPcm": -241.87945871832926,
+              "label": "fails"
+            }
+          ]
+        },
+        "allSteps": [
+          {
+            "step": 0,
+            "meanFuelC": 21.600000000000023,
+            "modelPcm": -0.0,
+            "measuredPcm": -0.0
+          },
+          {
+            "step": 1,
+            "meanFuelC": 29.468852459016375,
+            "modelPcm": 41.069575979310486,
+            "measuredPcm": 49.6
+          },
+          {
+            "step": 2,
+            "meanFuelC": 38.911475409836044,
+            "modelPcm": 91.89868834622736,
+            "measuredPcm": 118.9
+          },
+          {
+            "step": 3,
+            "meanFuelC": 51.50163934426229,
+            "modelPcm": 162.24687348835897,
+            "measuredPcm": 217.6
+          },
+          {
+            "step": 4,
+            "meanFuelC": 66.78032786885245,
+            "modelPcm": 249.26759995931909,
+            "measuredPcm": 344.8
+          },
+          {
+            "step": 5,
+            "meanFuelC": 78.58360655737704,
+            "modelPcm": 314.73601690764707,
+            "measuredPcm": 460.6
+          },
+          {
+            "step": 6,
+            "meanFuelC": 89.27213114754102,
+            "modelPcm": 373.29142891475306,
+            "measuredPcm": 563.6
+          },
+          {
+            "step": 7,
+            "meanFuelC": 98.71475409836069,
+            "modelPcm": 424.12054128167074,
+            "measuredPcm": 666.0
+          },
+          {
+            "step": 8,
+            "meanFuelC": 108.616393442623,
+            "modelPcm": 477.7961850949739,
+            "measuredPcm": 781.3
+          },
+          {
+            "step": 9,
+            "meanFuelC": 119.17377049180328,
+            "modelPcm": 535.5383024031121,
+            "measuredPcm": 911.3
+          },
+          {
+            "step": 10,
+            "meanFuelC": 123.43606557377052,
+            "modelPcm": 554.2422741608237,
+            "measuredPcm": 1021.8
+          },
+          {
+            "step": 11,
+            "meanFuelC": 133.33770491803278,
+            "modelPcm": 625.3906796733258,
+            "measuredPcm": 1106.8
+          },
+          {
+            "step": 12,
+            "meanFuelC": 141.33770491803278,
+            "modelPcm": 688.8192426048173,
+            "measuredPcm": 1205.3
+          },
+          {
+            "step": 13,
+            "meanFuelC": 145.92786885245903,
+            "modelPcm": 721.9187335503148,
+            "measuredPcm": 1276.3
+          },
+          {
+            "step": 14,
+            "meanFuelC": 153.00983606557378,
+            "modelPcm": 777.1817771009617,
+            "measuredPcm": null
+          }
+        ]
+      },
+      {
+        "gamma": "gammaB",
+        "profile": "none",
+        "A": {
+          "worst": "fails",
+          "perStep": [
+            {
+              "step": 1,
+              "meanFuelC": 29.468852459016375,
+              "modelPcm": 48.79768193803444,
+              "measuredPcm": 49.6,
+              "errorPcm": -0.8023180619655648,
+              "label": "good"
+            },
+            {
+              "step": 2,
+              "meanFuelC": 38.911475409836044,
+              "modelPcm": 107.35490026367603,
+              "measuredPcm": 118.9,
+              "errorPcm": -11.545099736323976,
+              "label": "good"
+            },
+            {
+              "step": 3,
+              "meanFuelC": 51.50163934426229,
+              "modelPcm": 185.4311913645316,
+              "measuredPcm": 217.6,
+              "errorPcm": -32.168808635468395,
+              "label": "plausible"
+            },
+            {
+              "step": 4,
+              "meanFuelC": 66.78032786885245,
+              "modelPcm": 280.18002379421563,
+              "measuredPcm": 344.8,
+              "errorPcm": -64.61997620578438,
+              "label": "plausible"
+            },
+            {
+              "step": 5,
+              "meanFuelC": 78.58360655737704,
+              "modelPcm": 353.3765467012676,
+              "measuredPcm": 460.6,
+              "errorPcm": -107.22345329873241,
+              "label": "plausible"
+            },
+            {
+              "step": 6,
+              "meanFuelC": 89.27213114754102,
+              "modelPcm": 419.6600646670983,
+              "measuredPcm": 563.6,
+              "errorPcm": -143.9399353329017,
+              "label": "fails"
+            },
+            {
+              "step": 7,
+              "meanFuelC": 98.71475409836069,
+              "modelPcm": 478.21728299273997,
+              "measuredPcm": 666.0,
+              "errorPcm": -187.78271700726003,
+              "label": "fails"
+            }
+          ]
+        },
+        "allSteps": [
+          {
+            "step": 0,
+            "meanFuelC": 21.600000000000023,
+            "modelPcm": -0.0,
+            "measuredPcm": -0.0
+          },
+          {
+            "step": 1,
+            "meanFuelC": 29.468852459016375,
+            "modelPcm": 48.79768193803444,
+            "measuredPcm": 49.6
+          },
+          {
+            "step": 2,
+            "meanFuelC": 38.911475409836044,
+            "modelPcm": 107.35490026367603,
+            "measuredPcm": 118.9
+          },
+          {
+            "step": 3,
+            "meanFuelC": 51.50163934426229,
+            "modelPcm": 185.4311913645316,
+            "measuredPcm": 217.6
+          },
+          {
+            "step": 4,
+            "meanFuelC": 66.78032786885245,
+            "modelPcm": 280.18002379421563,
+            "measuredPcm": 344.8
+          },
+          {
+            "step": 5,
+            "meanFuelC": 78.58360655737704,
+            "modelPcm": 353.3765467012676,
+            "measuredPcm": 460.6
+          },
+          {
+            "step": 6,
+            "meanFuelC": 89.27213114754102,
+            "modelPcm": 419.6600646670983,
+            "measuredPcm": 563.6
+          },
+          {
+            "step": 7,
+            "meanFuelC": 98.71475409836069,
+            "modelPcm": 478.21728299273997,
+            "measuredPcm": 666.0
+          },
+          {
+            "step": 8,
+            "meanFuelC": 108.616393442623,
+            "modelPcm": 539.6210327647672,
+            "measuredPcm": 781.3
+          },
+          {
+            "step": 9,
+            "meanFuelC": 119.17377049180328,
+            "modelPcm": 605.09125603163,
+            "measuredPcm": 911.3
+          },
+          {
+            "step": 10,
+            "meanFuelC": 123.43606557377052,
+            "modelPcm": 631.5233337480655,
+            "measuredPcm": 1021.8
+          },
+          {
+            "step": 11,
+            "meanFuelC": 133.33770491803278,
+            "modelPcm": 710.3998452192916,
+            "measuredPcm": 1106.8
+          },
+          {
+            "step": 12,
+            "meanFuelC": 141.33770491803278,
+            "modelPcm": 781.556514109507,
+            "measuredPcm": 1205.3
+          },
+          {
+            "step": 13,
+            "meanFuelC": 145.92786885245903,
+            "modelPcm": 822.3841110137291,
+            "measuredPcm": 1276.3
+          },
+          {
+            "step": 14,
+            "meanFuelC": 153.00983606557378,
+            "modelPcm": 885.3752605231001,
+            "measuredPcm": null
+          }
+        ]
+      },
+      {
+        "gamma": "gammaB",
+        "profile": "cumulative",
+        "A": {
+          "worst": "fails",
+          "perStep": [
+            {
+              "step": 1,
+              "meanFuelC": 29.468852459016375,
+              "modelPcm": 48.44160552090972,
+              "measuredPcm": 49.6,
+              "errorPcm": -1.1583944790902834,
+              "label": "good"
+            },
+            {
+              "step": 2,
+              "meanFuelC": 38.911475409836044,
+              "modelPcm": 106.05152620854066,
+              "measuredPcm": 118.9,
+              "errorPcm": -12.848473791459341,
+              "label": "plausible"
+            },
+            {
+              "step": 3,
+              "meanFuelC": 51.50163934426229,
+              "modelPcm": 182.30712468598634,
+              "measuredPcm": 217.6,
+              "errorPcm": -35.292875314013656,
+              "label": "plausible"
+            },
+            {
+              "step": 4,
+              "meanFuelC": 66.78032786885245,
+              "modelPcm": 274.0125115127001,
+              "measuredPcm": 344.8,
+              "errorPcm": -70.78748848729992,
+              "label": "plausible"
+            },
+            {
+              "step": 5,
+              "meanFuelC": 78.58360655737704,
+              "modelPcm": 343.0704858735505,
+              "measuredPcm": 460.6,
+              "errorPcm": -117.5295141264495,
+              "label": "fails"
+            },
+            {
+              "step": 6,
+              "meanFuelC": 89.27213114754102,
+              "modelPcm": 404.01957600547775,
+              "measuredPcm": 563.6,
+              "errorPcm": -159.58042399452228,
+              "label": "fails"
+            },
+            {
+              "step": 7,
+              "meanFuelC": 98.71475409836069,
+              "modelPcm": 456.19429251473616,
+              "measuredPcm": 666.0,
+              "errorPcm": -209.80570748526384,
+              "label": "fails"
+            }
+          ]
+        },
+        "allSteps": [
+          {
+            "step": 0,
+            "meanFuelC": 21.600000000000023,
+            "modelPcm": -0.0,
+            "measuredPcm": -0.0
+          },
+          {
+            "step": 1,
+            "meanFuelC": 29.468852459016375,
+            "modelPcm": 48.44160552090972,
+            "measuredPcm": 49.6
+          },
+          {
+            "step": 2,
+            "meanFuelC": 38.911475409836044,
+            "modelPcm": 106.05152620854066,
+            "measuredPcm": 118.9
+          },
+          {
+            "step": 3,
+            "meanFuelC": 51.50163934426229,
+            "modelPcm": 182.30712468598634,
+            "measuredPcm": 217.6
+          },
+          {
+            "step": 4,
+            "meanFuelC": 66.78032786885245,
+            "modelPcm": 274.0125115127001,
+            "measuredPcm": 344.8
+          },
+          {
+            "step": 5,
+            "meanFuelC": 78.58360655737704,
+            "modelPcm": 343.0704858735505,
+            "measuredPcm": 460.6
+          },
+          {
+            "step": 6,
+            "meanFuelC": 89.27213114754102,
+            "modelPcm": 404.01957600547775,
+            "measuredPcm": 563.6
+          },
+          {
+            "step": 7,
+            "meanFuelC": 98.71475409836069,
+            "modelPcm": 456.19429251473616,
+            "measuredPcm": 666.0
+          },
+          {
+            "step": 8,
+            "meanFuelC": 108.616393442623,
+            "modelPcm": 510.07340856639604,
+            "measuredPcm": 781.3
+          },
+          {
+            "step": 9,
+            "meanFuelC": 119.17377049180328,
+            "modelPcm": 566.4737608310307,
+            "measuredPcm": 911.3
+          },
+          {
+            "step": 10,
+            "meanFuelC": 123.43606557377052,
+            "modelPcm": 582.1429249581553,
+            "measuredPcm": 1021.8
+          },
+          {
+            "step": 11,
+            "meanFuelC": 133.33770491803278,
+            "modelPcm": 648.8053434797137,
+            "measuredPcm": 1106.8
+          },
+          {
+            "step": 12,
+            "meanFuelC": 141.33770491803278,
+            "modelPcm": 706.0078478724264,
+            "measuredPcm": 1205.3
+          },
+          {
+            "step": 13,
+            "meanFuelC": 145.92786885245903,
+            "modelPcm": 730.9866850031245,
+            "measuredPcm": 1276.3
+          },
+          {
+            "step": 14,
+            "meanFuelC": 153.00983606557378,
+            "modelPcm": 777.1817771009617,
+            "measuredPcm": null
+          }
+        ]
+      },
+      {
+        "gamma": "gammaA",
+        "profile": "linear",
+        "A": {
+          "worst": "fails",
+          "perStep": [
+            {
+              "step": 1,
+              "meanFuelC": 29.219047619047615,
+              "modelPcm": 39.52044321937295,
+              "measuredPcm": 49.6,
+              "errorPcm": -10.079556780627051,
+              "label": "plausible"
+            },
+            {
+              "step": 2,
+              "meanFuelC": 38.36190476190478,
+              "modelPcm": 88.49059627436489,
+              "measuredPcm": 118.9,
+              "errorPcm": -30.409403725635116,
+              "label": "fails"
+            },
+            {
+              "step": 3,
+              "meanFuelC": 50.86984126984129,
+              "modelPcm": 158.3288585496836,
+              "measuredPcm": 217.6,
+              "errorPcm": -59.27114145031641,
+              "label": "fails"
+            },
+            {
+              "step": 4,
+              "meanFuelC": 66.86984126984129,
+              "modelPcm": 249.8227058649635,
+              "measuredPcm": 344.8,
+              "errorPcm": -94.97729413503652,
+              "label": "fails"
+            },
+            {
+              "step": 5,
+              "meanFuelC": 80.58412698412701,
+              "modelPcm": 327.1419884268143,
+              "measuredPcm": 460.6,
+              "errorPcm": -133.45801157318573,
+              "label": "fails"
+            },
+            {
+              "step": 6,
+              "meanFuelC": 94.29841269841268,
+              "modelPcm": 404.4612709886641,
+              "measuredPcm": 563.6,
+              "errorPcm": -159.1387290113359,
+              "label": "fails"
+            },
+            {
+              "step": 7,
+              "meanFuelC": 104.0761904761905,
+              "modelPcm": 457.3688031418317,
+              "measuredPcm": 666.0,
+              "errorPcm": -208.63119685816832,
+              "label": "fails"
+            }
+          ]
+        },
+        "allSteps": [
+          {
+            "step": 0,
+            "meanFuelC": 21.600000000000023,
+            "modelPcm": -0.0,
+            "measuredPcm": -0.0
+          },
+          {
+            "step": 1,
+            "meanFuelC": 29.219047619047615,
+            "modelPcm": 39.52044321937295,
+            "measuredPcm": 49.6
+          },
+          {
+            "step": 2,
+            "meanFuelC": 38.36190476190478,
+            "modelPcm": 88.49059627436489,
+            "measuredPcm": 118.9
+          },
+          {
+            "step": 3,
+            "meanFuelC": 50.86984126984129,
+            "modelPcm": 158.3288585496836,
+            "measuredPcm": 217.6
+          },
+          {
+            "step": 4,
+            "meanFuelC": 66.86984126984129,
+            "modelPcm": 249.8227058649635,
+            "measuredPcm": 344.8
+          },
+          {
+            "step": 5,
+            "meanFuelC": 80.58412698412701,
+            "modelPcm": 327.1419884268143,
+            "measuredPcm": 460.6
+          },
+          {
+            "step": 6,
+            "meanFuelC": 94.29841269841268,
+            "modelPcm": 404.4612709886641,
+            "measuredPcm": 563.6
+          },
+          {
+            "step": 7,
+            "meanFuelC": 104.0761904761905,
+            "modelPcm": 457.3688031418317,
+            "measuredPcm": 666.0
+          },
+          {
+            "step": 8,
+            "meanFuelC": 115.06031746031749,
+            "modelPcm": 517.7573555815311,
+            "measuredPcm": 781.3
+          },
+          {
+            "step": 9,
+            "meanFuelC": 124.2031746031746,
+            "modelPcm": 566.7275086365225,
+            "measuredPcm": 911.3
+          },
+          {
+            "step": 10,
+            "meanFuelC": 130.29841269841268,
+            "modelPcm": 606.0855468655353,
+            "measuredPcm": 1021.8
+          },
+          {
+            "step": 11,
+            "meanFuelC": 134.74285714285713,
+            "modelPcm": 637.8889236235977,
+            "measuredPcm": 1106.8
+          },
+          {
+            "step": 12,
+            "meanFuelC": 144.64761904761906,
+            "modelPcm": 718.2595505765693,
+            "measuredPcm": 1205.3
+          },
+          {
+            "step": 13,
+            "meanFuelC": 152.64761904761906,
+            "modelPcm": 781.6881135080602,
+            "measuredPcm": 1276.3
+          },
+          {
+            "step": 14,
+            "meanFuelC": 160.26666666666665,
+            "modelPcm": 841.7282636352553,
+            "measuredPcm": null
+          }
+        ]
+      },
+      {
+        "gamma": "gammaA",
+        "profile": "none",
+        "A": {
+          "worst": "plausible",
+          "perStep": [
+            {
+              "step": 1,
+              "meanFuelC": 29.219047619047615,
+              "modelPcm": 47.24854917809691,
+              "measuredPcm": 49.6,
+              "errorPcm": -2.351450821903093,
+              "label": "good"
+            },
+            {
+              "step": 2,
+              "meanFuelC": 38.36190476190478,
+              "modelPcm": 103.94680819181356,
+              "measuredPcm": 118.9,
+              "errorPcm": -14.953191808186446,
+              "label": "plausible"
+            },
+            {
+              "step": 3,
+              "meanFuelC": 50.86984126984129,
+              "modelPcm": 181.51317642585624,
+              "measuredPcm": 217.6,
+              "errorPcm": -36.08682357414375,
+              "label": "plausible"
+            },
+            {
+              "step": 4,
+              "meanFuelC": 66.86984126984129,
+              "modelPcm": 280.7351296998601,
+              "measuredPcm": 344.8,
+              "errorPcm": -64.06487030013989,
+              "label": "plausible"
+            },
+            {
+              "step": 5,
+              "meanFuelC": 80.58412698412701,
+              "modelPcm": 365.7825182204349,
+              "measuredPcm": 460.6,
+              "errorPcm": -94.81748177956513,
+              "label": "plausible"
+            },
+            {
+              "step": 6,
+              "meanFuelC": 94.29841269841268,
+              "modelPcm": 450.8299067410093,
+              "measuredPcm": 563.6,
+              "errorPcm": -112.7700932589907,
+              "label": "plausible"
+            },
+            {
+              "step": 7,
+              "meanFuelC": 104.0761904761905,
+              "modelPcm": 511.4655448529009,
+              "measuredPcm": 666.0,
+              "errorPcm": -154.5344551470991,
+              "label": "plausible"
+            }
+          ]
+        },
+        "allSteps": [
+          {
+            "step": 0,
+            "meanFuelC": 21.600000000000023,
+            "modelPcm": -0.0,
+            "measuredPcm": -0.0
+          },
+          {
+            "step": 1,
+            "meanFuelC": 29.219047619047615,
+            "modelPcm": 47.24854917809691,
+            "measuredPcm": 49.6
+          },
+          {
+            "step": 2,
+            "meanFuelC": 38.36190476190478,
+            "modelPcm": 103.94680819181356,
+            "measuredPcm": 118.9
+          },
+          {
+            "step": 3,
+            "meanFuelC": 50.86984126984129,
+            "modelPcm": 181.51317642585624,
+            "measuredPcm": 217.6
+          },
+          {
+            "step": 4,
+            "meanFuelC": 66.86984126984129,
+            "modelPcm": 280.7351296998601,
+            "measuredPcm": 344.8
+          },
+          {
+            "step": 5,
+            "meanFuelC": 80.58412698412701,
+            "modelPcm": 365.7825182204349,
+            "measuredPcm": 460.6
+          },
+          {
+            "step": 6,
+            "meanFuelC": 94.29841269841268,
+            "modelPcm": 450.8299067410093,
+            "measuredPcm": 563.6
+          },
+          {
+            "step": 7,
+            "meanFuelC": 104.0761904761905,
+            "modelPcm": 511.4655448529009,
+            "measuredPcm": 666.0
+          },
+          {
+            "step": 8,
+            "meanFuelC": 115.06031746031749,
+            "modelPcm": 579.5822032513242,
+            "measuredPcm": 781.3
+          },
+          {
+            "step": 9,
+            "meanFuelC": 124.2031746031746,
+            "modelPcm": 636.2804622650405,
+            "measuredPcm": 911.3
+          },
+          {
+            "step": 10,
+            "meanFuelC": 130.29841269841268,
+            "modelPcm": 683.3666064527771,
+            "measuredPcm": 1021.8
+          },
+          {
+            "step": 11,
+            "meanFuelC": 134.74285714285713,
+            "modelPcm": 722.8980891695635,
+            "measuredPcm": 1106.8
+          },
+          {
+            "step": 12,
+            "meanFuelC": 144.64761904761906,
+            "modelPcm": 810.996822081259,
+            "measuredPcm": 1205.3
+          },
+          {
+            "step": 13,
+            "meanFuelC": 152.64761904761906,
+            "modelPcm": 882.1534909714746,
+            "measuredPcm": 1276.3
+          },
+          {
+            "step": 14,
+            "meanFuelC": 160.26666666666665,
+            "modelPcm": 949.9217470573938,
+            "measuredPcm": null
+          }
+        ]
+      },
+      {
+        "gamma": "gammaA",
+        "profile": "cumulative",
+        "A": {
+          "worst": "fails",
+          "perStep": [
+            {
+              "step": 1,
+              "meanFuelC": 29.219047619047615,
+              "modelPcm": 46.89247276097218,
+              "measuredPcm": 49.6,
+              "errorPcm": -2.7075272390278187,
+              "label": "good"
+            },
+            {
+              "step": 2,
+              "meanFuelC": 38.36190476190478,
+              "modelPcm": 102.64343413667818,
+              "measuredPcm": 118.9,
+              "errorPcm": -16.256565863321825,
+              "label": "plausible"
+            },
+            {
+              "step": 3,
+              "meanFuelC": 50.86984126984129,
+              "modelPcm": 178.38910974731098,
+              "measuredPcm": 217.6,
+              "errorPcm": -39.21089025268901,
+              "label": "plausible"
+            },
+            {
+              "step": 4,
+              "meanFuelC": 66.86984126984129,
+              "modelPcm": 274.5676174183445,
+              "measuredPcm": 344.8,
+              "errorPcm": -70.23238258165549,
+              "label": "plausible"
+            },
+            {
+              "step": 5,
+              "meanFuelC": 80.58412698412701,
+              "modelPcm": 355.47645739271775,
+              "measuredPcm": 460.6,
+              "errorPcm": -105.12354260728227,
+              "label": "plausible"
+            },
+            {
+              "step": 6,
+              "meanFuelC": 94.29841269841268,
+              "modelPcm": 435.18941807938876,
+              "measuredPcm": 563.6,
+              "errorPcm": -128.41058192061126,
+              "label": "plausible"
+            },
+            {
+              "step": 7,
+              "meanFuelC": 104.0761904761905,
+              "modelPcm": 489.4425543748971,
+              "measuredPcm": 666.0,
+              "errorPcm": -176.5574456251029,
+              "label": "fails"
+            }
+          ]
+        },
+        "allSteps": [
+          {
+            "step": 0,
+            "meanFuelC": 21.600000000000023,
+            "modelPcm": -0.0,
+            "measuredPcm": -0.0
+          },
+          {
+            "step": 1,
+            "meanFuelC": 29.219047619047615,
+            "modelPcm": 46.89247276097218,
+            "measuredPcm": 49.6
+          },
+          {
+            "step": 2,
+            "meanFuelC": 38.36190476190478,
+            "modelPcm": 102.64343413667818,
+            "measuredPcm": 118.9
+          },
+          {
+            "step": 3,
+            "meanFuelC": 50.86984126984129,
+            "modelPcm": 178.38910974731098,
+            "measuredPcm": 217.6
+          },
+          {
+            "step": 4,
+            "meanFuelC": 66.86984126984129,
+            "modelPcm": 274.5676174183445,
+            "measuredPcm": 344.8
+          },
+          {
+            "step": 5,
+            "meanFuelC": 80.58412698412701,
+            "modelPcm": 355.47645739271775,
+            "measuredPcm": 460.6
+          },
+          {
+            "step": 6,
+            "meanFuelC": 94.29841269841268,
+            "modelPcm": 435.18941807938876,
+            "measuredPcm": 563.6
+          },
+          {
+            "step": 7,
+            "meanFuelC": 104.0761904761905,
+            "modelPcm": 489.4425543748971,
+            "measuredPcm": 666.0
+          },
+          {
+            "step": 8,
+            "meanFuelC": 115.06031746031749,
+            "modelPcm": 550.0345790529531,
+            "measuredPcm": 781.3
+          },
+          {
+            "step": 9,
+            "meanFuelC": 124.2031746031746,
+            "modelPcm": 597.6629670644412,
+            "measuredPcm": 911.3
+          },
+          {
+            "step": 10,
+            "meanFuelC": 130.29841269841268,
+            "modelPcm": 633.9861976628669,
+            "measuredPcm": 1021.8
+          },
+          {
+            "step": 11,
+            "meanFuelC": 134.74285714285713,
+            "modelPcm": 661.3035874299856,
+            "measuredPcm": 1106.8
+          },
+          {
+            "step": 12,
+            "meanFuelC": 144.64761904761906,
+            "modelPcm": 735.4481558441784,
+            "measuredPcm": 1205.3
+          },
+          {
+            "step": 13,
+            "meanFuelC": 152.64761904761906,
+            "modelPcm": 790.75606496087,
+            "measuredPcm": 1276.3
+          },
+          {
+            "step": 14,
+            "meanFuelC": 160.26666666666665,
+            "modelPcm": 841.7282636352553,
+            "measuredPcm": null
+          }
+        ]
+      }
+    ]
+  },
+  "F": {
+    "cumulativeAtStep13": {
+      "measuredPcm": 1276.3,
+      "modelPcm": 721.9187335503148
+    },
+    "slopesPerK": {
+      "fuelFirstInterval": -6.201372079625242,
+      "coolantFirstInterval": 13.524185427767298
+    },
+    "calibrationOffsetPcm": 323.4914385557434,
+    "hA": 3000.0,
+    "hAExponent": 0.0,
+    "meanRiseAtPowers": [
+      {
+        "step": 4,
+        "powerKW": 45.3,
+        "modelRiseK": 15.1,
+        "measuredRiseK": 42.894613583138145,
+        "ratio": 0.35202555143044356
+      },
+      {
+        "step": 5,
+        "powerKW": 61.6,
+        "modelRiseK": 20.533333333333335,
+        "measuredRiseK": 54.12646370023416,
+        "ratio": 0.379358486212069
+      },
+      {
+        "step": 6,
+        "powerKW": 79.4,
+        "modelRiseK": 26.466666666666665,
+        "measuredRiseK": 64.24355971896956,
+        "ratio": 0.4119738504909108
+      },
+      {
+        "step": 7,
+        "powerKW": 95.0,
+        "modelRiseK": 31.666666666666668,
+        "measuredRiseK": 73.11475409836066,
+        "ratio": 0.43310911808669655
+      },
+      {
+        "step": 8,
+        "powerKW": 112.0,
+        "modelRiseK": 37.333333333333336,
+        "measuredRiseK": 82.44496487119441,
+        "ratio": 0.4528273302276255
+      },
+      {
+        "step": 9,
+        "powerKW": 135.0,
+        "modelRiseK": 45.0,
+        "measuredRiseK": 92.43091334894612,
+        "ratio": 0.4868501064153239
+      },
+      {
+        "step": 10,
+        "powerKW": 160.2,
+        "modelRiseK": 53.4,
+        "measuredRiseK": 96.12177985948479,
+        "ratio": 0.5555452684923496
+      },
+      {
+        "step": 11,
+        "powerKW": 181.8,
+        "modelRiseK": 60.6,
+        "measuredRiseK": 105.45199063231847,
+        "ratio": 0.574669094785467
+      },
+      {
+        "step": 12,
+        "powerKW": 207.7,
+        "modelRiseK": 69.23333333333333,
+        "measuredRiseK": 112.8805620608899,
+        "ratio": 0.6133326417704013
+      },
+      {
+        "step": 13,
+        "powerKW": 235.9,
+        "modelRiseK": 78.63333333333334,
+        "measuredRiseK": 116.89929742388757,
+        "ratio": 0.6726587333386758
+      },
+      {
+        "step": 14,
+        "powerKW": 250.0,
+        "modelRiseK": 83.33333333333333,
+        "measuredRiseK": 123.40983606557376,
+        "ratio": 0.6752568189868934
+      }
+    ]
+  },
+  "decision": {
+    "regulatingRod": "supported",
+    "feedback": "fails",
+    "others": {
+      "shim": [
+        "fails",
+        "good"
+      ],
+      "safety": [
+        "plausible",
+        "fails"
+      ],
+      "transient": [
+        "plausible",
+        "plausible"
+      ]
+    },
+    "next": "the fresh-fuel feedback fails: record; fuel hydrogen and the temperature conversion are the first suspects; no seventh protocol yet"
+  }
+}
