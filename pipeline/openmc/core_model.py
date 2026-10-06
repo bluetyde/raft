@@ -171,6 +171,20 @@ def build(core: str, rods: dict[str, float], particles: int, batches: int, inact
     occ = json.loads((DATA / "jsi_core_occupancy.json").read_text(encoding="utf-8"))["cores"][core]
     ov = overrides or {}
     M = materials(fd, ov)
+    element_t = ov.get("elementTfuel")                 # {position: K}: one fuel material per position with its own temperature
+    extra_fuel: list = []
+
+    def fuel_for(lab: str):
+        if not element_t:
+            return M["fuel"]
+        if lab not in element_t:
+            raise ValueError(f"elementTfuel has no temperature for the fuel position {lab}")
+        m = M["fuel"].clone()
+        m.name = f"U-ZrH1.6 {lab}"
+        m.temperature = float(element_t[lab])
+        extra_fuel.append(m)
+        return m
+
     rr = geo["grid"]["ringRadiiCm"]
     rad = fd["radiiCm"]
     zb_s, zt_s = openmc.ZPlane(ZMIN, boundary_type="vacuum"), openmc.ZPlane(ZMAX, boundary_type="vacuum")
@@ -178,16 +192,16 @@ def build(core: str, rods: dict[str, float], particles: int, batches: int, inact
     fe = geo["fuelElement"]
     g_up, g_lo, mo_t = fe["graphiteUpperIn"] * IN, fe["graphiteLowerIn"] * IN, fe["moDiscIn"] * IN
 
-    def fuel_element_layers():
+    def fuel_element_layers(fuel):
         clad = (rad["clad"], M["ss"])
         return [
-            (-HALF_FUEL, HALF_FUEL, [(rad["zrRod"], M["zr"]), (rad["fuel"], M["fuel"]), (rad["gap"], None), clad]),
+            (-HALF_FUEL, HALF_FUEL, [(rad["zrRod"], M["zr"]), (rad["fuel"], fuel), (rad["gap"], None), clad]),
             (HALF_FUEL, HALF_FUEL + g_up, [(rad["fuel"], M["graphite"]), (rad["gap"], None), clad]),
             (-HALF_FUEL - mo_t, -HALF_FUEL, [(rad["fuel"], M["mo"]), (rad["gap"], None), clad]),
             (-HALF_FUEL - mo_t - g_lo, -HALF_FUEL - mo_t, [(rad["fuel"], M["graphite"]), (rad["gap"], None), clad]),
         ]
 
-    def ffcr_layers(steps):
+    def ffcr_layers(steps, fuel):
         c = geo["controlRods"]["fueledFollower"]
         r_out = c["outerDiameterIn"] * IN / 2
         r_in = r_out - c["cladIn"] * IN
@@ -198,7 +212,7 @@ def build(core: str, rods: dict[str, float], particles: int, batches: int, inact
         return [
             (zb, zb + L, [(r_abs, M["b4c"]), (r_in, None), clad]),
             (zb + L, zb + L + c["voidsIn"]["top"] * IN, [(r_in, None), clad]),
-            (zb - L, zb, [(rad["zrRod"], M["zr"]), (r_abs, M["fuel"]), (r_in, None), clad]),
+            (zb - L, zb, [(rad["zrRod"], M["zr"]), (r_abs, fuel), (r_in, None), clad]),
             (zb - L - c["voidsIn"]["bottom"] * IN, zb - L, [(r_in, None), clad]),
         ]
 
@@ -227,17 +241,20 @@ def build(core: str, rods: dict[str, float], particles: int, batches: int, inact
             x, y = position_xy(lab, rr)
             what = occ["fuel"].get(lab) and "fuel" or occ["other"].get(lab)
             rod = next((rid for rid, p in ROD_AT.items() if p == lab), None)
+            fm = M["fuel"]
             if rod == "T":
                 layers = transient_layers(rods["T"])
             elif rod is not None:
-                layers = ffcr_layers(rods[rod])
+                fm = fuel_for(lab)
+                layers = ffcr_layers(rods[rod], fm)
             elif what == "fuel":
-                layers = fuel_element_layers()
+                fm = fuel_for(lab)
+                layers = fuel_element_layers(fm)
             else:
                 layers = []                       # channels and empty positions: water (assumed)
             cyl, pc = layered_cells(x, y, r_pos, layers, M["water"], (zb_s, zt_s))
             for c in pc:
-                if c.fill is M["fuel"]:
+                if c.fill is fm:
                     c.name = lab                  # fuel cells carry their grid position (shapes.py bins power by it)
             pos_cyls.append(cyl)
             cells += pc
@@ -272,7 +289,7 @@ def build(core: str, rods: dict[str, float], particles: int, batches: int, inact
     outside = -pool & zrange & ~(-c_core & zrange) & ~(+c_core & -c_ao & +z_ab & -z_at)
     cells.append(openmc.Cell(fill=M["water"], region=outside))
 
-    model = openmc.model.Model(geometry=openmc.Geometry(cells), materials=openmc.Materials(M.values()))
+    model = openmc.model.Model(geometry=openmc.Geometry(cells), materials=openmc.Materials(list(M.values()) + extra_fuel))
     st = model.settings
     st.run_mode, st.particles, st.batches, st.inactive = "eigenvalue", particles, batches, inactive
     if source_from is not None:
@@ -283,7 +300,7 @@ def build(core: str, rods: dict[str, float], particles: int, batches: int, inact
     st.sourcepoint = {"separate": True}
     st.output = {"summary": False}
     st.seed = 1
-    if "tfuel" in ov or "tcool" in ov:
+    if "tfuel" in ov or "tcool" in ov or "elementTfuel" in ov:
         # nuclide data exist at 294/600/900 K only: interpolate between them. S(a,b) tables are finer (ZrH every 100 K from 296 K,
         # H2O about every 25 K); the 10 K tolerance lets 294 K materials use the 296 K ZrH table, as the default method does.
         st.temperature = {"method": "interpolation", "default": T_REF, "tolerance": 10.0}
@@ -316,6 +333,7 @@ def main(argv=None) -> int:
     ap.add_argument("--tcool", type=float, default=None, help="water temperature, K (default 294; all water, density follows)")
     ap.add_argument("--burnup", type=float, default=None,
                     help="calibration: give every fuel region this burnup, MWd/kg (default fresh); see docs/validation/m2-burnup.md")
+    ap.add_argument("--element-tfuel", type=Path, default=None, help="JSON {position: K}: every fuel position gets its own fuel temperature (K)")
     ap.add_argument("--fuel1994", action="store_true", help="fresh fuel of the 1994 benchmark (Table II: H/Zr 1.65), for cores 133 and 134")
     ap.add_argument("--json", type=Path, default=None, help="append the result as one JSON line to this file")
     a = ap.parse_args(argv)
@@ -326,7 +344,8 @@ def main(argv=None) -> int:
         a.inactive = 10
         a.batches = a.inactive + active
     rods = {kv.split("=")[0]: float(kv.split("=")[1]) for kv in a.rods.split(",")}
-    overrides = {k: v for k, v in (("b4c", a.b4c), ("graphite", a.graphite), ("burnup", a.burnup), ("tfuel", a.tfuel), ("tcool", a.tcool), ("fuel1994", a.fuel1994 or None)) if v is not None}
+    overrides = {k: v for k, v in (("b4c", a.b4c), ("graphite", a.graphite), ("burnup", a.burnup), ("tfuel", a.tfuel), ("tcool", a.tcool), ("fuel1994", a.fuel1994 or None),
+                                                    ("elementTfuel", json.loads(a.element_tfuel.read_text(encoding="utf-8")) if a.element_tfuel else None)) if v is not None}
     if a.kinetics and a.inactive < IFP_GENERATIONS:
         ap.error(f"--kinetics needs at least {IFP_GENERATIONS} inactive batches")
     model = build(a.core, rods, a.particles, a.batches, a.inactive, a.source_from,
