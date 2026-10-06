@@ -49,3 +49,10 @@ Protocol: `m7-hot-element-protocol.md` (third protocol; not blind, see its discl
 ## Limits, repeated
 
 One steady-state exercise; unknown instrumented-element positions and core; thermocouple lag; a constant-conductivity annulus without gap or clad; a pulse database whose energy columns disagree. A "fails" here means these inputs do not account for the measurement, not that any one of them is wrong.
+
+## Addendum: what `energy_1000pts_mws` is (data check, 2026-10-06; not part of the protocol, nothing re-scored)
+
+- The README defines it as the energy "integrated over ±1000 points around the peak", i.e. a fixed sample window, whereas the other two columns integrate between power thresholds (1 % of peak, or tangents at 1/10 of peak). The fetch script reads the columns in the order of the source table (cells 5, 6, 7), so the columns are not mislabelled.
+- Across the 666 pulses that have all three columns, the ratio of the 1000-point energy to the 1 % energy has a median near 0.4 (deciles 0.03–1.0). It is about 0.9–1.0 for the high-reactivity pulses and about 0.17 for the broad low-reactivity ones, whose power curve is wider than the window. **The 1000-point column is truncated for wide pulses**, so it understates the energy and inflates F_tc. That explains the factor 5–7 and the 8.7 and 7.9.
+- The protocol's primary column was therefore the wrong choice for these cores' pulses. The 1 % and tangent columns give F_tc 1.2–2.1, the range of a plausible peaking, but that is a **sensitivity result, not a rescored primary**: the protocol fixed the primary column, and changing it after seeing the result would be a new protocol. A follow-up protocol should fix the 1 % column in advance and state that its own result has been seen.
+- A check on the narrow pulses (ratio ≥ 0.9) did not help: only 2 such thermocouple readings fall in core 242 and none in core 246, below the 5-pulse minimum.
