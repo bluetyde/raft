@@ -2,6 +2,8 @@
 
 It follows `m7-heat-transfer-protocol.md` and its results. The heat transfer law fitted the reactivity and the temperature *shape*, but needed the measured hot-element rise (201 K at 250 kW) to be only 1.15–1.25 times the model's mean fuel rise. That looks too low for an element at maximum power density. This protocol tests whether the library's own shape arrays, an in-element conduction model and independent pulse data can account for the measured thermocouple temperature, **without changing any fitted number**. Nothing here has been run.
 
+**Amendment, 2026-10-06, before any run:** the primary fuel conductivity changed from 18 to 17.6 W/m·K after reading the primary source (see the inputs table). The bracket (15–25) is unchanged, and the source also says the conductivity is insensitive to temperature, which supports the constant-conductivity model. Nothing else changed.
+
 ## Disclosure: what was seen before writing
 
 This protocol is **not blind**, and one result is expected in advance.
@@ -52,7 +54,7 @@ Inputs fixed now:
 
 | Input | Primary | Sensitivities | Source and caveat |
 |---|---|---|---|
-| Conductivity `k` | 18 W/m·K | 15 and 25 | the value usually quoted for U-ZrH1.6; **to be confirmed against Simnad, GA-A16377 (1981), before the run**; if that gives a value outside 15–25 the bracket is widened to include it, and that is the only allowed change. Temperature dependence ignored |
+| Conductivity `k` | **17.6 W/m·K** (0.042 ± 0.002 cal/s·cm·°C, "used for the thermal conductivity for design calculations"; Simnad, *Nucl. Eng. Des.* 64 (1981) 403–422, section 2.8, pp. 409–410; local copy `research/VIRTUAL REACTOR/PII_ 0029-5493(81)90135-7.pdf`) | 15 and 25 W/m·K | for U-ZrH1.6 the source reports it "insensitive both to the weight fraction of uranium and to temperature", so a constant `k` is the source's own simplification. The KSU and UT Austin safety reports quote 0.18 W/cm·K (18 W/m·K), the same data rounded. The measurement's ±0.002 (±5 %) lies inside the bracket |
 | Thermocouple radius `r_tc` | `Ri` (the hottest radius, next to the Zr rod) | 0.762 cm (the placement of the KSU instrumented elements) | the JSI description says only that the tip is "in the centre of the fuel element" |
 | Axial position | centre-plane bin | the element's hottest bin | |
 | Elements | the B element above | each of B1–B6 | position of the instrumented elements in cores 242 and 246 is not known |
