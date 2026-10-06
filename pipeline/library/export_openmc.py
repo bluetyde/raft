@@ -119,6 +119,16 @@ HEAT_TRANSFER_NOTE = (
     "from the pulse database (docs/validation/m7-hot-element-2-results.md); the library's own shape arrays give a larger peaking."
 )
 HEAT_TRANSFER_F_TC = {"242": "1.28", "246": "1.39"}
+# Core 134 (the 1994 benchmark core): what its checks found, so the library carries its own limits (docs/validation/core134-status.md)
+CORE134_NOTE = (
+    " STATUS: parked as a regulating-rod library. Checked against the 1994 benchmark of this core (docs/validation/m7-core134-*): the regulating rod "
+    "worth is reproduced (total 0.965 of measured, shape within 0.041, 15 pcm at the critical position); the shim, safety and transient rod worths "
+    "are 12-31 % high and are not to be used; the fuel temperature feedback is 37-40 % weaker than the measured reactivity loss at 60-100 C average "
+    "fuel temperature and is not explained (not the reference treatment, the interval, the fuel hydrogen or the thermocouple conversion); the heat "
+    "transfer is the base library's constant assumed hA (3000 W/K), not fitted, and gives a fuel rise 35-68 % of the measured one; the model is 323 pcm "
+    "above critical at the measured critical rods (calibrated out) with about 500 pcm of input uncertainty from the fuel composition. Do not compare a "
+    "power ascension on this library."
+)
 
 
 def _thermal_on_transport_grid(base_thermal, core=None):
@@ -682,6 +692,8 @@ def _write_library(summary: dict[str, Any], out_dir: Path, created: str | None) 
         "its relative uncertainty is the region total's). Base library inputs: thermal properties, poisons, plant "
         "instrumentation/trips/interlocks, delayed group lambdas, external source, rod scram profiles, and xenon table."
     )
+    if core == "134":
+        notes += CORE134_NOTE
     law = HEAT_TRANSFER_LAW.get(core)
     if law:
         notes += HEAT_TRANSFER_NOTE.format(h0=law["h0"], n=law["n"], f_tc=HEAT_TRANSFER_F_TC[core])
