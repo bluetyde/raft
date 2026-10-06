@@ -1,0 +1,615 @@
+{
+  "protocol": "docs/validation/m7-core134-conversion-protocol.md",
+  "G1": {
+    "primary": {
+      "T0C": 21.6,
+      "weighting": "count",
+      "powerKW": "250",
+      "gammaA": 1.1885500517719363,
+      "gammaB": 1.1351080530411837,
+      "meanFuelC": 208.71875,
+      "labelA": "plausible",
+      "labelB": "plausible"
+    },
+    "worst": "plausible",
+    "best": "good",
+    "gammaBRange": [
+      1.1283470932830173,
+      1.23473031385078
+    ],
+    "gammaARange": [
+      1.1810735929691396,
+      1.277015598571697
+    ],
+    "cases": [
+      {
+        "T0C": 21.6,
+        "weighting": "count",
+        "powerKW": "250",
+        "gammaA": 1.1885500517719363,
+        "gammaB": 1.1351080530411837,
+        "meanFuelC": 208.71875,
+        "labelA": "plausible",
+        "labelB": "plausible"
+      },
+      {
+        "T0C": 21.6,
+        "weighting": "count",
+        "powerKW": "125",
+        "gammaA": 1.2666119770303528,
+        "gammaB": 1.2255947497949138,
+        "meanFuelC": 143.5,
+        "labelA": "good",
+        "labelB": "good"
+      },
+      {
+        "T0C": 21.6,
+        "weighting": "count-no-followers",
+        "powerKW": "250",
+        "gammaA": 1.189587543088078,
+        "gammaB": 1.1360988945679307,
+        "meanFuelC": 208.55555555555554,
+        "labelA": "plausible",
+        "labelB": "plausible"
+      },
+      {
+        "T0C": 21.6,
+        "weighting": "count-no-followers",
+        "powerKW": "125",
+        "gammaA": 1.2692729265619291,
+        "gammaB": 1.2281695286810377,
+        "meanFuelC": 143.24444444444444,
+        "labelA": "good",
+        "labelB": "good"
+      },
+      {
+        "T0C": 21.6,
+        "weighting": "area",
+        "powerKW": "250",
+        "gammaA": 1.1826141699248554,
+        "gammaB": 1.1294390723562917,
+        "meanFuelC": 209.65795301280005,
+        "labelA": "plausible",
+        "labelB": "plausible"
+      },
+      {
+        "T0C": 21.6,
+        "weighting": "area",
+        "powerKW": "125",
+        "gammaA": 1.254431560793154,
+        "gammaB": 1.2138087770887125,
+        "meanFuelC": 144.68363790080005,
+        "labelA": "good",
+        "labelB": "good"
+      },
+      {
+        "T0C": 20.0,
+        "weighting": "count",
+        "powerKW": "250",
+        "gammaA": 1.1869514820334492,
+        "gammaB": 1.1339625765855275,
+        "meanFuelC": 208.71875,
+        "labelA": "plausible",
+        "labelB": "plausible"
+      },
+      {
+        "T0C": 20.0,
+        "weighting": "count",
+        "powerKW": "125",
+        "gammaA": 1.263157894736842,
+        "gammaB": 1.222672064777328,
+        "meanFuelC": 143.5,
+        "labelA": "good",
+        "labelB": "good"
+      },
+      {
+        "T0C": 20.0,
+        "weighting": "count-no-followers",
+        "powerKW": "250",
+        "gammaA": 1.1879787860931055,
+        "gammaB": 1.1349440188568063,
+        "meanFuelC": 208.55555555555554,
+        "labelA": "plausible",
+        "labelB": "plausible"
+      },
+      {
+        "T0C": 20.0,
+        "weighting": "count-no-followers",
+        "powerKW": "125",
+        "gammaA": 1.2657771366750812,
+        "gammaB": 1.225207356653444,
+        "meanFuelC": 143.24444444444444,
+        "labelA": "good",
+        "labelB": "good"
+      },
+      {
+        "T0C": 20.0,
+        "weighting": "area",
+        "powerKW": "250",
+        "gammaA": 1.1810735929691396,
+        "gammaB": 1.1283470932830173,
+        "meanFuelC": 209.65795301280005,
+        "labelA": "plausible",
+        "labelB": "plausible"
+      },
+      {
+        "T0C": 20.0,
+        "weighting": "area",
+        "powerKW": "125",
+        "gammaA": 1.2511665734690518,
+        "gammaB": 1.2110650807296592,
+        "meanFuelC": 144.68363790080005,
+        "labelA": "good",
+        "labelB": "good"
+      },
+      {
+        "T0C": 25.0,
+        "weighting": "count",
+        "powerKW": "250",
+        "gammaA": 1.1920394624936215,
+        "gammaB": 1.1376084368089812,
+        "meanFuelC": 208.71875,
+        "labelA": "plausible",
+        "labelB": "plausible"
+      },
+      {
+        "T0C": 25.0,
+        "weighting": "count",
+        "powerKW": "125",
+        "gammaA": 1.2742616033755274,
+        "gammaB": 1.2320675105485233,
+        "meanFuelC": 143.5,
+        "labelA": "good",
+        "labelB": "good"
+      },
+      {
+        "T0C": 25.0,
+        "weighting": "count-no-followers",
+        "powerKW": "250",
+        "gammaA": 1.1930992736077484,
+        "gammaB": 1.1386198547215498,
+        "meanFuelC": 208.55555555555554,
+        "labelA": "plausible",
+        "labelB": "plausible"
+      },
+      {
+        "T0C": 25.0,
+        "weighting": "count-no-followers",
+        "powerKW": "125",
+        "gammaA": 1.277015598571697,
+        "gammaB": 1.23473031385078,
+        "meanFuelC": 143.24444444444444,
+        "labelA": "good",
+        "labelB": "good"
+      },
+      {
+        "T0C": 25.0,
+        "weighting": "area",
+        "powerKW": "250",
+        "gammaA": 1.1859765389298962,
+        "gammaB": 1.1318223590700836,
+        "meanFuelC": 209.65795301280005,
+        "labelA": "plausible",
+        "labelB": "plausible"
+      },
+      {
+        "T0C": 25.0,
+        "weighting": "area",
+        "powerKW": "125",
+        "gammaA": 1.261659510426618,
+        "gammaB": 1.219882705445604,
+        "meanFuelC": 144.68363790080005,
+        "labelA": "good",
+        "labelB": "good"
+      }
+    ]
+  },
+  "G2": {
+    "primary": {
+      "A": {
+        "ring": "A",
+        "element": "A1",
+        "n": 0.0,
+        "axial": "midplane",
+        "Fr": 1.2939504396996404,
+        "Fz": 1.2402491962905131,
+        "gammaR": 1.2939504396996404,
+        "gammaZ": 1.2402491962905131,
+        "gamma": 1.604820992877235,
+        "poweredElements": 48,
+        "relativeDifference": 0.01893396373157774,
+        "label": "good"
+      },
+      "B": {
+        "ring": "B",
+        "element": "B5",
+        "n": 0.0,
+        "axial": "midplane",
+        "Fr": 1.379313417111676,
+        "Fz": 1.259807180820026,
+        "gammaR": 1.379313417111676,
+        "gammaZ": 1.259807180820026,
+        "gamma": 1.7376689474786973,
+        "poweredElements": 48,
+        "relativeDifference": 0.13945504752701465,
+        "label": "plausible"
+      }
+    },
+    "worst": "plausible",
+    "best": "good",
+    "cases": [
+      {
+        "ring": "A",
+        "element": "A1",
+        "n": 0.0,
+        "axial": "midplane",
+        "Fr": 1.2939504396996404,
+        "Fz": 1.2402491962905131,
+        "gammaR": 1.2939504396996404,
+        "gammaZ": 1.2402491962905131,
+        "gamma": 1.604820992877235,
+        "poweredElements": 48,
+        "relativeDifference": 0.01893396373157774,
+        "label": "good"
+      },
+      {
+        "ring": "A",
+        "element": "A1",
+        "n": 0.0,
+        "axial": "three-bins",
+        "Fr": 1.2939504396996404,
+        "Fz": 1.2369045151133489,
+        "gammaR": 1.2939504396996404,
+        "gammaZ": 1.2369045151133489,
+        "gamma": 1.6004931411973884,
+        "poweredElements": 48,
+        "relativeDifference": 0.016186121395167286,
+        "label": "good"
+      },
+      {
+        "ring": "A",
+        "element": "A1",
+        "n": 0.22,
+        "axial": "midplane",
+        "Fr": 1.2939504396996404,
+        "Fz": 1.2402491962905131,
+        "gammaR": 1.2351957040586832,
+        "gammaZ": 1.1930171417489293,
+        "gamma": 1.4736096483566465,
+        "poweredElements": 48,
+        "relativeDifference": 0.06437482644022441,
+        "label": "good"
+      },
+      {
+        "ring": "A",
+        "element": "A1",
+        "n": 0.22,
+        "axial": "three-bins",
+        "Fr": 1.2939504396996404,
+        "Fz": 1.2369045151133489,
+        "gammaR": 1.2351957040586832,
+        "gammaZ": 1.1903793632488615,
+        "gamma": 1.4703514756851044,
+        "poweredElements": 48,
+        "relativeDifference": 0.06644350750152095,
+        "label": "good"
+      },
+      {
+        "ring": "B",
+        "element": "B5",
+        "n": 0.0,
+        "axial": "midplane",
+        "Fr": 1.379313417111676,
+        "Fz": 1.259807180820026,
+        "gammaR": 1.379313417111676,
+        "gammaZ": 1.259807180820026,
+        "gamma": 1.7376689474786973,
+        "poweredElements": 48,
+        "relativeDifference": 0.13945504752701465,
+        "label": "plausible"
+      },
+      {
+        "ring": "B",
+        "element": "B5",
+        "n": 0.0,
+        "axial": "three-bins",
+        "Fr": 1.379313417111676,
+        "Fz": 1.2473459658734833,
+        "gammaR": 1.379313417111676,
+        "gammaZ": 1.2473459658734833,
+        "gamma": 1.7204810265094184,
+        "poweredElements": 48,
+        "relativeDifference": 0.12818427967830726,
+        "label": "plausible"
+      },
+      {
+        "ring": "B",
+        "element": "B5",
+        "n": 0.22,
+        "axial": "midplane",
+        "Fr": 1.379313417111676,
+        "Fz": 1.259807180820026,
+        "gammaR": 1.3016008894468116,
+        "gammaZ": 1.2084159768480056,
+        "gamma": 1.5728753102871018,
+        "poweredElements": 48,
+        "relativeDifference": 0.031393646089902916,
+        "label": "good"
+      },
+      {
+        "ring": "B",
+        "element": "B5",
+        "n": 0.22,
+        "axial": "three-bins",
+        "Fr": 1.379313417111676,
+        "Fz": 1.2473459658734833,
+        "gammaR": 1.3016008894468116,
+        "gammaZ": 1.1986097575663195,
+        "gamma": 1.5601115265479486,
+        "poweredElements": 48,
+        "relativeDifference": 0.02302395183472039,
+        "label": "good"
+      }
+    ]
+  },
+  "G3G4": {
+    "implied": {
+      "B": {
+        "perStep": {
+          "1": 1.2980799506804233,
+          "2": 1.2185236586061001,
+          "3": 1.1744226921635996,
+          "4": 1.1372382417514655,
+          "5": 1.0794380695457702,
+          "6": 1.0492041083849513,
+          "7": 1.0422953220054225
+        },
+        "mean": 1.142743149019676,
+        "ratioToPaper": 0.7493397698489679,
+        "label": "differs"
+      },
+      "A": {
+        "perStep": {
+          "1": 1.2980799506804233,
+          "2": 1.2185236586061001,
+          "3": 1.1873001339636393,
+          "4": 1.176851765411894,
+          "5": 1.1539677406306335,
+          "6": 1.1640878915705128,
+          "7": 1.151310904153949
+        },
+        "mean": 1.192874577859593,
+        "ratioToPaper": 0.7573806843552972,
+        "label": "differs"
+      }
+    },
+    "routes": {
+      "paper": {
+        "gammaB": 1.525,
+        "gammaA": 1.575,
+        "primary": {
+          "worst": "fails",
+          "perStep": [
+            {
+              "step": 1,
+              "meanFuelC": 29.468852459016375,
+              "modelPcm": 41.069575979310486,
+              "measuredPcm": 49.6,
+              "errorPcm": -8.530424020689516,
+              "label": "good"
+            },
+            {
+              "step": 2,
+              "meanFuelC": 38.911475409836044,
+              "modelPcm": 91.89868834622736,
+              "measuredPcm": 118.9,
+              "errorPcm": -27.001311653772646,
+              "label": "plausible"
+            },
+            {
+              "step": 3,
+              "meanFuelC": 51.50163934426229,
+              "modelPcm": 162.24687348835897,
+              "measuredPcm": 217.6,
+              "errorPcm": -55.35312651164102,
+              "label": "fails"
+            },
+            {
+              "step": 4,
+              "meanFuelC": 66.78032786885245,
+              "modelPcm": 249.26759995931909,
+              "measuredPcm": 344.8,
+              "errorPcm": -95.53240004068093,
+              "label": "fails"
+            },
+            {
+              "step": 5,
+              "meanFuelC": 78.58360655737704,
+              "modelPcm": 314.73601690764707,
+              "measuredPcm": 460.6,
+              "errorPcm": -145.86398309235295,
+              "label": "fails"
+            },
+            {
+              "step": 6,
+              "meanFuelC": 89.27213114754102,
+              "modelPcm": 373.29142891475306,
+              "measuredPcm": 563.6,
+              "errorPcm": -190.30857108524697,
+              "label": "fails"
+            },
+            {
+              "step": 7,
+              "meanFuelC": 98.71475409836069,
+              "modelPcm": 424.12054128167074,
+              "measuredPcm": 666.0,
+              "errorPcm": -241.87945871832926,
+              "label": "fails"
+            }
+          ]
+        },
+        "worst": "fails",
+        "best": "plausible"
+      },
+      "table8-radial-times-paper-axial": {
+        "gammaB": 1.4188850663014796,
+        "gammaA": 1.4856875647149204,
+        "primary": {
+          "worst": "fails",
+          "perStep": [
+            {
+              "step": 1,
+              "meanFuelC": 30.057344632768377,
+              "modelPcm": 44.71903491469411,
+              "measuredPcm": 49.6,
+              "errorPcm": -4.880965085305888,
+              "label": "good"
+            },
+            {
+              "step": 2,
+              "meanFuelC": 40.20615819209041,
+              "modelPcm": 99.92749800407113,
+              "measuredPcm": 118.9,
+              "errorPcm": -18.97250199592888,
+              "label": "plausible"
+            },
+            {
+              "step": 3,
+              "meanFuelC": 53.73790960451976,
+              "modelPcm": 176.11481744281593,
+              "measuredPcm": 217.6,
+              "errorPcm": -41.48518255718406,
+              "label": "plausible"
+            },
+            {
+              "step": 4,
+              "meanFuelC": 70.15925376647834,
+              "modelPcm": 270.2215766799789,
+              "measuredPcm": 344.8,
+              "errorPcm": -74.5784233200211,
+              "label": "plausible"
+            },
+            {
+              "step": 5,
+              "meanFuelC": 82.84527071563093,
+              "modelPcm": 341.16418203138244,
+              "measuredPcm": 460.6,
+              "errorPcm": -119.43581796861758,
+              "label": "fails"
+            },
+            {
+              "step": 6,
+              "meanFuelC": 94.3331638418079,
+              "modelPcm": 404.6767757590503,
+              "measuredPcm": 563.6,
+              "errorPcm": -158.9232242409497,
+              "label": "fails"
+            },
+            {
+              "step": 7,
+              "meanFuelC": 104.48197740112994,
+              "modelPcm": 459.88523884842806,
+              "measuredPcm": 666.0,
+              "errorPcm": -206.11476115157194,
+              "label": "fails"
+            }
+          ]
+        },
+        "worst": "fails",
+        "best": "plausible"
+      },
+      "model-power-factors": {
+        "gammaB": 1.7376689474786973,
+        "gammaA": 1.604820992877235,
+        "primary": {
+          "worst": "fails",
+          "perStep": [
+            {
+              "step": 1,
+              "meanFuelC": 28.505803327734895,
+              "modelPcm": 35.097349985274164,
+              "measuredPcm": 49.6,
+              "errorPcm": -14.502650014725837,
+              "label": "plausible"
+            },
+            {
+              "step": 2,
+              "meanFuelC": 36.79276732101681,
+              "modelPcm": 78.7597911593476,
+              "measuredPcm": 118.9,
+              "errorPcm": -40.140208840652406,
+              "label": "fails"
+            },
+            {
+              "step": 3,
+              "meanFuelC": 47.84205264539264,
+              "modelPcm": 139.55241471102084,
+              "measuredPcm": 217.6,
+              "errorPcm": -78.04758528897915,
+              "label": "fails"
+            },
+            {
+              "step": 4,
+              "meanFuelC": 61.25082077341125,
+              "modelPcm": 214.9770690435603,
+              "measuredPcm": 344.8,
+              "errorPcm": -129.8229309564397,
+              "label": "fails"
+            },
+            {
+              "step": 5,
+              "meanFuelC": 71.60952576501359,
+              "modelPcm": 271.4871470008338,
+              "measuredPcm": 460.6,
+              "errorPcm": -189.11285299916625,
+              "label": "fails"
+            },
+            {
+              "step": 6,
+              "meanFuelC": 80.98990861852019,
+              "modelPcm": 321.9302853660401,
+              "measuredPcm": 563.6,
+              "errorPcm": -241.66971463395993,
+              "label": "fails"
+            },
+            {
+              "step": 7,
+              "meanFuelC": 89.2768726118021,
+              "modelPcm": 365.5927265401144,
+              "measuredPcm": 666.0,
+              "errorPcm": -300.4072734598856,
+              "label": "fails"
+            }
+          ]
+        },
+        "worst": "fails",
+        "best": "plausible"
+      }
+    },
+    "step7": {
+      "paper": {
+        "lossPcm": 424.12054128167074,
+        "measuredPcm": 666.0,
+        "fractionOfShortfallRemoved": 0.0
+      },
+      "table8-radial-times-paper-axial": {
+        "lossPcm": 459.88523884842806,
+        "measuredPcm": 666.0,
+        "fractionOfShortfallRemoved": 0.14786165702646797
+      },
+      "model-power-factors": {
+        "lossPcm": 365.5927265401144,
+        "measuredPcm": 666.0,
+        "fractionOfShortfallRemoved": -0.2419710009757896
+      }
+    }
+  },
+  "decision": {
+    "case": 2,
+    "text": "the paper's conversion is supported; the feedback is too weak by the implied factor; the next protocol tests OpenMC's fuel temperature treatment",
+    "removed": {
+      "table8-radial-times-paper-axial": 0.14786165702646797,
+      "model-power-factors": -0.2419710009757896
+    }
+  }
+}
