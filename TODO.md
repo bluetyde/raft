@@ -147,6 +147,8 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 ## Milestone 7: Validation (stretch) · [plan](docs/plans/07-validation.md)
 
 - [x] 2026-10-06 (`docs/validation/supported-envelope.md`): Pick one supported lesson and envelope with visible validity warnings: low-power ascension and hold on `triga-jsi-242-openmc` (scenario `triga-242-openmc-low-power-ascension`, steady, up to 15 % of the power-high setpoint, fuel at most 570 K); a banner in the operator and instructor windows; the AI operator is held to the envelope. Also fixed: the OpenMC libraries' 293.15 K heat sink (below their 294 K tables) made every run read `outOfDomain`
+- [x] 2026-10-06 (`validation/data/jsi-steady-power/`): Collected the first measured steady-state data: the IAEA/JSI power-ascension protocol (fuel temperature, indicated power and regulating rod position at 11 states from 0.1 to 250 kW; power defect 1427 pcm at 250 kW) and the core-200 regulating rod worth table; checked against each other (4.2 pcm). Open items are in its README: the core of the power data is not stated, the temperature is a hot-element centre value, and no uncertainties are given
+- [ ] Level-5 comparison protocol for the steady power ascension (metrics, uncertainty, calibration versus held-out) before any comparison; find the steady-state benchmark paper (Mele, Ravnik, Trkov, Nucl. Technol. 105, 1994) or other data for core 242 or 246
 - [ ] Compare against measured data from a real TRIGA
 - [ ] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
 
