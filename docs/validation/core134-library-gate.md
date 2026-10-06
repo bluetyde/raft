@@ -59,3 +59,19 @@ The paper's composition **moves the model away from the measurement by about 960
 - **Continue to the full sweep with the default composition (H/Zr 1.60)**, and the same reference offset that the 242 and 246 libraries use (`reference.calibration.deltaRho`, which makes the measured critical state critical: here about −323 pcm). The offset is a calibration, and the library is `experimental` like the others.
 - **Reservation, to be stated in the library and in the next protocol:** the model's reactivity moves about 200 pcm per 0.01 of H/Zr, so the constant offset absorbs the fuel composition only to first order. A rod or feedback result that depends on the fuel hydrogen (the temperature coefficient above all) carries that uncertainty; the sweep's own feedback tables are the test.
 - **The gate does not test** the feedback tables or the shape of the regulating rod curve beyond 28.7 cm; those are the checks of the library (step 6 of the TODO).
+
+### Addendum: sensitivity scan on core 133 (2026-10-06, after the criticism that +364 pcm on a +310 pcm measurement is a 100 % error)
+
+Core 133, all rods out, 40000 particles, 150 batches (statistical error 43–52 pcm), one assumed input changed at a time; raw lines in `pipeline/openmc/results/core133_sensitivity.jsonl`. Not a fit: every run is listed.
+
+| Change | Model (pcm) | Change from the baseline |
+|---|---|---|
+| baseline (graphite 1.6, B4C 2.48 g/cm³, 294 K) | 647 ± 45 | |
+| reflector graphite 1.5 / 1.7 g/cm³ | 552 ± 52 / 788 ± 50 | −95 / +141 |
+| B4C 2.2 / 2.7 g/cm³ | 639 ± 43 / 685 ± 47 | −8 / +38 (rods are out; no effect beyond the noise) |
+| whole core at 295.65 K (22.5 °C, the paper's water) | 746 ± 49 | +99 (the wrong direction) |
+
+- **None of these inputs explains the +340 to +360 pcm.** Closing it with the reflector alone would take a graphite density of about 1.2 g/cm³, which is not physical.
+- **What the 1994 paper itself says about this:** the uranium content of the core is known only to about ±10 g of 235U (0.5 %), and its own linear estimate is 100 pcm per 2 g, so **the calculation of these cores is uncertain by about ±500 pcm from the fuel composition alone**. The offset found is inside that. (The measured reactivities, ±15 pcm, are not.)
+- **Data not yet used:** Table III gives each element's own 235U content. The pipeline uses the batch average for every element. For the cores here the sum of the individual values is 0.9 g (core 133) and 3.9 g (core 134) below 40 and 45 times the average, which by the paper's estimate is about −46 and −195 pcm: it moves core 134 toward the measurement and core 133 barely.
+- **The hydrogen content of the fuel remains the largest single lever** (about 200 pcm per 0.01 of H/Zr; an H/Zr of about 1.58 would remove the offset).

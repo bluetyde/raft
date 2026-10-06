@@ -1,0 +1,6 @@
+{"core": "133", "rods": {"T": 0.0, "K": 200.0, "V": 200.0, "R": 200.0}, "overrides": {}, "prompt": false, "particles": 40000, "batches": 150, "inactive": 50, "k": 1.006507606881137, "kStd": 0.00045272563008437775}
+{"core": "133", "rods": {"T": 0.0, "K": 200.0, "V": 200.0, "R": 200.0}, "overrides": {"graphite": 1.5}, "prompt": false, "particles": 40000, "batches": 150, "inactive": 50, "k": 1.005555034808047, "kStd": 0.0005174209362896705}
+{"core": "133", "rods": {"T": 0.0, "K": 200.0, "V": 200.0, "R": 200.0}, "overrides": {"graphite": 1.7}, "prompt": false, "particles": 40000, "batches": 150, "inactive": 50, "k": 1.0079412765715743, "kStd": 0.0005021122630294018}
+{"core": "133", "rods": {"T": 0.0, "K": 200.0, "V": 200.0, "R": 200.0}, "overrides": {"b4c": 2.2}, "prompt": false, "particles": 40000, "batches": 150, "inactive": 50, "k": 1.0064341333202746, "kStd": 0.00042869889150798856}
+{"core": "133", "rods": {"T": 0.0, "K": 200.0, "V": 200.0, "R": 200.0}, "overrides": {"b4c": 2.7}, "prompt": false, "particles": 40000, "batches": 150, "inactive": 50, "k": 1.0068959492335852, "kStd": 0.00046689515677905046}
+{"core": "133", "rods": {"T": 0.0, "K": 200.0, "V": 200.0, "R": 200.0}, "overrides": {"tfuel": 295.65, "tcool": 295.65}, "prompt": false, "particles": 40000, "batches": 150, "inactive": 50, "k": 1.0075184154095365, "kStd": 0.00048758119750018825}
