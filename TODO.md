@@ -159,7 +159,7 @@ ROS3P and golden vectors done since; M1 GO on 2026-09-27.
 
 ## Milestone 8: Second reactor
 
-- [ ] Choose a second reactor of a different type (open)
+- [ ] Choose a second reactor of a different type (open; plan of 2026-10-07 in `docs/m8-second-reactor-plan.md` recommends a PWR from BEAVRS at hot zero power, runner-up the HTR-10; step 0 is a feasibility run of the full-core OpenMC model)
 - [ ] Build its library with no changes to simulation or view code; record anything that forced a code change
 - [ ] **[codex]** Codex review of the milestone's merged diff before closing it (`codex-review` skill; pick the auditor that fits; log it as pending if the quota is out)
 
