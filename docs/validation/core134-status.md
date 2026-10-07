@@ -23,11 +23,15 @@
 - the fuel hydrogen content (H/Zr 1.65 against 1.60 gives the same slope, 1.05 ± 0.13);
 - the thermocouple-to-mean-temperature conversion of the paper (its radial factor is reproduced from the paper's own Table VIII at 125 kW, its axial factor agrees with the model's within 1 %; the conversion that would remove the shortfall is 25 % below every independent estimate).
 
+- OpenMC's temperature treatment (the pin cell's ratio to the Serpent reference is 0.80–0.84 at 400, 500 and 600 K, constant, and the curve is smooth; the deficit exists at 600 K where every datum is tabulated);
+- the zirconium hydride and nuclide evaluation (ENDF/B-VII.1 gives a pin cell 15–18 % below the reference, as ENDF/B-VIII.0 does, and a fuel feedback only 1.6 % stronger);
+- the radial distribution of the fuel temperature (per-element temperatures in transport change the reactivity loss by a factor 1.033 ± 0.038 against the uniform fuel; the axial distribution is untested, its proxy factor is 1.07);
+
 The shortfall is not a constant factor: the conversion it would need falls from 1.30 at step 1 to 1.04 at step 7, so the model's feedback has too little temperature dependence between 30 and 100 °C.
 
 ## What would unpark the power ascension
 
-1. A cause for the weak feedback, found by one of these (each a dated protocol written before its run): OpenMC's treatment of the zirconium hydride thermal scattering temperatures and of the Doppler interpolation between 294, 600 and 900 K data; a test of ENDF/B-VIII.0's ZrH scattering law against the measured fuel coefficient (the 2002 isothermal and fuel coefficients are a second measurement, on core 176); a finer table with knots between 294 and 400 K and a longer sweep.
+1. A cause for the weak feedback, found by one of these (each a dated protocol written before its run): the code and cell differences against the Serpent reference (the pin cell is 15–18 % weaker with either evaluation); an axial per-bin fuel temperature in transport; the temperatures of the zirconium rod and the cladding (the model keeps them at 294 K); a further measurement of the fuel coefficient (the 2002 isothermal and fuel coefficients, on core 176).
 2. A fitted heat transfer for core 134 (the earlier law does not transfer: the fitted exponent is 0.64, not 0.22), written as a protocol with a held-out part of Table IX.
 3. Only then the seventh comparison of the power ascension itself.
 
