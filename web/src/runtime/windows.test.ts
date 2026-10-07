@@ -123,11 +123,22 @@ describe("two windows on one runtime (D2a)", () => {
   });
 
   it("an instructor window may send everything", async () => {
+    const { host, rt, to } = await twoWindows();
+    rt.connect("C");
+    await to("C", { kind: "attach", role: "instructor" });
+    await to("C", { kind: "step", n: 3 });
+    await to("C", { kind: "annotate", text: "ok" });
+    expect(host.seenBy("C", "error")).toHaveLength(0);
+  });
+
+  it("a window cannot change its role by attaching again", async () => {
     const { host, to } = await twoWindows();
     await to("B", { kind: "attach", role: "instructor" });
-    await to("B", { kind: "step", n: 3 });
-    await to("B", { kind: "annotate", text: "ok" });
-    expect(host.seenBy("B", "error")).toHaveLength(0);
+    expect(host.seenBy("B", "error").at(-1)).toMatchObject({ request: "attach", code: "E_ROLE" });
+    await to("B", { kind: "time", paused: false });
+    expect(host.seenBy("B", "error").at(-1)).toMatchObject({ request: "time", code: "E_ROLE" });
+    await to("B", { kind: "attach", role: "operator" }); // the same role again is harmless
+    expect(host.seenBy("B", "attached")).toHaveLength(2);
   });
 
   it("a detached window gets nothing more, and its pending acks are dropped", async () => {

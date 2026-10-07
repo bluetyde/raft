@@ -35,9 +35,11 @@ export class LoadError extends Error {
 
 export class RuntimeClient {
   private nextClientSeq = 1;
+  private nextReqId = 1;
+  private readonly reqPrefix = Math.random().toString(36).slice(2, 8);
   private acks = new Map<number, { resolve: (a: Ack) => void; onQueued?: (q: Queued) => void }>();
   private listeners = new Map<Kind, Set<(msg: any) => void>>();
-  private waiters: { kinds: Kind[]; request: ToWorker["kind"]; resolve: (msg: FromWorker) => void }[] = [];
+  private waiters: { kinds: Kind[]; request: ToWorker["kind"]; reqId?: string; resolve: (msg: FromWorker) => void }[] = [];
   /** True after the worker failed. Views disable their controls and say so. */
   disconnected = false;
 
@@ -95,8 +97,9 @@ export class RuntimeClient {
   }
 
   rewind(step: number): Promise<Msg<"rewound">> {
-    const done = this.next(["rewound", "error"], "rewind");
-    this.send({ kind: "rewind", step });
+    const reqId = this.newReqId();
+    const done = this.next(["rewound", "error"], "rewind", reqId);
+    this.send({ kind: "rewind", step, reqId });
     return done.then((m) => this.orThrow(m, "rewound"));
   }
 
@@ -115,8 +118,9 @@ export class RuntimeClient {
 
   /** Import a session file. A version 3 file that runs a scenario needs that scenario file too. */
   importSession(file: SessionFile, scenario?: unknown): Promise<Msg<"rewound">> {
-    const done = this.next(["rewound", "error"], "session.import");
-    this.send(scenario === undefined ? { kind: "session.import", file } : { kind: "session.import", file, scenario });
+    const reqId = this.newReqId();
+    const done = this.next(["rewound", "error"], "session.import", reqId);
+    this.send(scenario === undefined ? { kind: "session.import", file, reqId } : { kind: "session.import", file, scenario, reqId });
     return done.then((m) => this.orThrow(m, "rewound"));
   }
 
@@ -170,8 +174,9 @@ export class RuntimeClient {
 
   /** Make another branch the current timeline. Resolves like a rewind; the clock is paused. */
   switchBranch(id: number): Promise<Msg<"rewound">> {
-    const done = this.next(["rewound", "error"], "branch.switch");
-    this.send({ kind: "branch.switch", id });
+    const reqId = this.newReqId();
+    const done = this.next(["rewound", "error"], "branch.switch", reqId);
+    this.send({ kind: "branch.switch", id, reqId });
     return done.then((m) => this.orThrow(m, "rewound"));
   }
 
@@ -190,12 +195,18 @@ export class RuntimeClient {
    * The answer to a request: the next message of one of `kinds`, where an `error` must name `request`.
    * Requests of one kind are answered in order, because the worker handles messages in order.
    */
-  private next(kinds: Kind[], request: ToWorker["kind"]): Promise<FromWorker> {
-    return new Promise((resolve) => this.waiters.push({ kinds, request, resolve }));
+  private next(kinds: Kind[], request: ToWorker["kind"], reqId?: string): Promise<FromWorker> {
+    return new Promise((resolve) => this.waiters.push({ kinds, request, reqId, resolve }));
   }
 
-  private matches(w: { kinds: Kind[]; request: ToWorker["kind"] }, msg: FromWorker): boolean {
+  private newReqId(): string {
+    return `${this.reqPrefix}-${this.nextReqId++}`;
+  }
+
+  private matches(w: { kinds: Kind[]; request: ToWorker["kind"]; reqId?: string }, msg: FromWorker): boolean {
     if (!w.kinds.includes(msg.kind)) return false;
+    // another window's rewind is broadcast to every window; it does not answer this window's request
+    if (msg.kind === "rewound" && w.reqId !== undefined && msg.reqId !== w.reqId) return false;
     return msg.kind !== "error" || msg.request === w.request;
   }
 

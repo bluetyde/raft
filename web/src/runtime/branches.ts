@@ -48,12 +48,13 @@ export function marksFrom(events: Record<string, any>[], commandLog: Record<stri
 }
 
 /**
- * The marks that stay after a rewind to time `t`. Trips at or before `t` stay. Command marks at `t` itself go:
+ * The marks that stay after a rewind to time `t`. Trips at or before `t` stay, except manual ones at `t` (from a command). Command marks at `t` itself go:
  * those commands were logged at that step, so they are still queued and mark again when they apply.
  */
 export function marksBefore(marks: Mark[], t: number, outerDt: number): Mark[] {
   const eps = 1e-9 * outerDt;
-  return marks.filter((m) => (m.kind === "trip" ? m.t <= t + eps : m.t < t - eps));
+  // a manual trip comes from a SCRAM command, so at `t` itself it is still queued and marks again when it applies
+  return marks.filter((m) => (m.kind === "trip" && m.label !== "trip manual" ? m.t <= t + eps : m.t < t - eps));
 }
 
 export function summarize(e: Engine, info: BranchInfo, annotationCount: number): BranchSummary {

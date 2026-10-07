@@ -226,6 +226,61 @@ describe("annotations and session files version 2 (D6)", () => {
   });
 });
 
+describe("review fixes (M6 Codex review, 2026-10-07)", () => {
+  it("a rewind to the step of a SCRAM drops the manual trip mark, which the queued command makes again", async () => {
+    const { host, rt } = await loadedRuntime({}, { init: INIT, seed: 3 });
+    await send(rt, { kind: "step", n: 10 });
+    await cmd(rt, { type: "scram" });
+    await send(rt, { kind: "step", n: 20 });
+    expect(timeline(host).marks.filter((m) => m.label === "trip manual")).toHaveLength(1);
+    await send(rt, { kind: "rewind", step: 10 });
+    expect(timeline(host).marks.filter((m) => m.label === "trip manual")).toHaveLength(0);
+    await send(rt, { kind: "step", n: 1 });
+    expect(timeline(host).marks.filter((m) => m.label === "trip manual")).toHaveLength(1); // once, not twice
+    // trips that are not from a command stay at the boundary
+    const marks = [{ kind: "trip" as const, t: 1, label: "trip highPower" }];
+    expect(marksBefore(marks, 1, 0.01)).toHaveLength(1);
+  });
+
+  it("an import keeps the replaced timeline when it holds only a note", async () => {
+    const { host, rt } = await loadedRuntime();
+    await send(rt, { kind: "session.export" });
+    const file = host.last("session")!.file;
+    await send(rt, { kind: "annotate", text: "briefing" }); // step 0, no steps, no commands
+    await send(rt, { kind: "session.import", file });
+    expect(timeline(host).branches).toHaveLength(1);
+    expect(timeline(host).branches[0]!.annotationCount).toBe(1);
+  });
+
+  it("an import refuses a note after the end or with a time that is not its step's", async () => {
+    const { host, rt } = await loadedRuntime();
+    await send(rt, { kind: "step", n: 20 });
+    await send(rt, { kind: "session.export" });
+    const file = host.last("session")!.file;
+    const late = { ...file, annotations: [{ id: 1, step: 1000, t: 10, text: "future" }] } as SessionFile;
+    await send(rt, { kind: "session.import", file: late });
+    expect(host.last("error")).toMatchObject({ request: "session.import", code: "E_SESSION" });
+    const off = { ...file, annotations: [{ id: 1, step: 5, t: 500, text: "wrong time" }] } as SessionFile;
+    await send(rt, { kind: "session.import", file: off });
+    expect(host.last("error")!.message).toContain("not step 5");
+    const ok = { ...file, annotations: [{ id: 1, step: 5, t: 5 * file.session.pins.config.outerDt, text: "fine" }] } as SessionFile;
+    await send(rt, { kind: "session.import", file: ok });
+    expect(timeline(host).annotations.map((a) => a.text)).toEqual(["fine"]);
+  });
+
+  it("the rewound message carries the outer step and says whether the timeline was replaced", async () => {
+    const { host, rt } = await loadedRuntime();
+    await send(rt, { kind: "step", n: 20 });
+    await send(rt, { kind: "rewind", step: 10 });
+    expect(host.last("rewound")).toMatchObject({ outerDt: 0.01, replaced: false });
+    await send(rt, { kind: "session.export" });
+    await send(rt, { kind: "session.import", file: host.last("session")!.file });
+    expect(host.last("rewound")).toMatchObject({ outerDt: 0.01, replaced: true });
+    await send(rt, { kind: "branch.switch", id: 1 });
+    expect(host.last("rewound")).toMatchObject({ replaced: true });
+  });
+});
+
 describe("CSV traces (D6a)", () => {
   it("equal a step-by-step run's snapshots at the sampled steps", async () => {
     const { host, rt } = await branchA();

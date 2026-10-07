@@ -234,3 +234,11 @@ The other session will do D3a (rod stuck, no-scram, drop and clear; instrument d
 | D4 | Operator sees faults | **(a)** no, only through the instruments |
 | D5 | Rates above about 150× | **(a)** outer step chosen at session start (10 ms or 1 s) |
 | D6 | CSV export | **(a)** replay in a separate worker, sample every 0.1 s |
+
+## Amendments after the Codex review (2026-10-07)
+
+- A window's role is bound at its first `attach`; a later `attach` with another role is refused with `E_ROLE` (a new window is a new port).
+- `rewind`, `session.import` and `branch.switch` carry an optional `reqId`; the `rewound` broadcast echoes the asker's id, and a client completes its request only on its own id.
+- `rewound` also carries `outerDt` (every window follows an imported or switched step size) and `replaced` (true for an import or a branch switch: the operator charts start clean).
+- A manual trip mark at a rewind boundary is dropped, since its SCRAM command is still queued and marks again.
+- An import keeps the replaced timeline as a branch when it holds notes, and refuses a note after the session's end or whose time is not its step times the outer step.

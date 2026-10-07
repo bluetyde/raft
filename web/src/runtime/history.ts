@@ -174,6 +174,14 @@ export function checkSessionFile(file: unknown, lib: Library): SessionFile {
   if (s.pins.libraryDigest !== lib.digest) {
     throw new CheckpointError("library digest doesn't match the session");
   }
+  // a note sits inside the session and its time is its step on the session's own clock
+  const dt = s.pins.config?.outerDt;
+  for (const a of f.annotations ?? []) {
+    if (a.step > f.endStep) throw new CheckpointError(`annotation ${a.id} is at step ${a.step}, after the end (${f.endStep})`);
+    if (typeof dt === "number" && Math.abs(a.t - a.step * dt) > 1e-6 * Math.max(1, Math.abs(a.t))) {
+      throw new CheckpointError(`annotation ${a.id} has t = ${a.t}, not step ${a.step} × ${dt}`);
+    }
+  }
   return f;
 }
 

@@ -162,8 +162,8 @@ client.on("scenario", (m) => {
   operator?.onScenario(m.scenario);
 });
 client.on("rewound", (m) => {
-  operator?.onRewound();
-  instructor?.onRewound(m.t);
+  operator?.onRewound(m.replaced);
+  instructor?.onRewound(m.t, m.outerDt);
 });
 client.on("loaded", (m) => {
   // a new session: state from the old one must not reach the new panels (the new state follows this message)

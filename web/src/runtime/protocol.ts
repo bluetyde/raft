@@ -185,13 +185,13 @@ export type ToWorker =
   | { kind: "command"; clientSeq: number; clientId: string; cmd: unknown }
   | { kind: "time"; rate?: number; paused?: boolean }
   | { kind: "step"; n: number }
-  | { kind: "rewind"; step: number }
+  | { kind: "rewind"; step: number; reqId?: string }
   | { kind: "session.export" }
   /** `scenario` is the scenario file that a version 3 session names (the runtime checks its digest). */
-  | { kind: "session.import"; file: SessionFile; scenario?: unknown }
+  | { kind: "session.import"; file: SessionFile; scenario?: unknown; reqId?: string }
   | { kind: "annotate"; text: string; step?: number }
   | { kind: "annotation.delete"; id: number }
-  | { kind: "branch.switch"; id: number }
+  | { kind: "branch.switch"; id: number; reqId?: string }
   /** The instructor ends the running scenario: the goals not met yet fail at this step, and the score is final. */
   | { kind: "scenario.end" }
   /** Load an instructor script (docs: script.ts), or null to clear it. */
@@ -259,7 +259,8 @@ export type FromWorker =
       step: number;
     }
   | { kind: "history"; checkpointSteps: number[]; thinned: boolean }
-  | { kind: "rewound"; step: number; t: number; previous: SessionFile }
+  /** `reqId` is the id the asking window sent: every window gets this message, only the asker completes its request with it. */
+  | { kind: "rewound"; step: number; t: number; previous: SessionFile; outerDt: number; /** true when the timeline was replaced (branch switch, import), not just cut back */ replaced: boolean; reqId?: string }
   | { kind: "session"; file: SessionFile }
   | { kind: "scenario"; scenario: ScenarioView | null }
   | { kind: "script"; script: ScriptView | null }

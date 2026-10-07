@@ -493,7 +493,7 @@ export class InstructorPanel {
 
   private async exportSession(): Promise<void> {
     const file = await this.client.exportSession();
-    const t = file.endStep * this.outerDt;
+    const t = file.endStep * file.session.pins.config.outerDt; // the file's own step, not the panel's
     download(`${this.opts.libraryId}-${timeTag(t)}.session.json`, JSON.stringify(file), "application/json");
     this.exportText.textContent = `session file: ${file.session.commands.length} commands, ${file.annotations?.length ?? 0} notes, t = ${t.toFixed(2)} s`;
   }
@@ -506,7 +506,7 @@ export class InstructorPanel {
       this.exportText.textContent = `CSV failed: ${reply.message}`;
       return;
     }
-    download(`${this.opts.libraryId}-${timeTag(file.endStep * this.outerDt)}.csv`, reply.csv, "text/csv");
+    download(`${this.opts.libraryId}-${timeTag(file.endStep * file.session.pins.config.outerDt)}.csv`, reply.csv, "text/csv");
     this.exportText.textContent = `CSV: ${reply.rows} rows`;
   }
 
@@ -556,7 +556,9 @@ export class InstructorPanel {
     this.clockText.textContent = `${m.paused ? "paused" : `${m.achievedRate.toFixed(1)}× achieved`}${limit}, step ${m.step}`;
   }
 
-  onRewound(t: number): void {
+  onRewound(t: number, outerDt: number): void {
+    // an import or a branch switch can bring another outer step; every window follows it
+    if (outerDt !== this.outerDt) this.setOuterDt(outerDt);
     this.timeline.rewoundTo(t);
     this.drawTimeline();
   }

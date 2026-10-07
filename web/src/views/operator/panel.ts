@@ -292,9 +292,11 @@ export class OperatorPanel {
   }
 
   /** After a rewind or a session import: the alarm history belongs to another timeline. */
-  onRewound(): void {
+  onRewound(replaced = false): void {
     this.annunciator.reset();
     this.period.reset();
+    // a switched or imported timeline is another history: the old readings must not stay on the charts
+    if (replaced) for (const c of this.charts) c.buffer.dropAfter(-Infinity);
     this.renderTiles();
   }
 

@@ -153,3 +153,30 @@ describe("RuntimeClient frame acks", () => {
     expect(later).toBe(1); // the other views still get the message
   });
 });
+
+describe("RuntimeClient requests answered by broadcasts", () => {
+  it("another window's rewound broadcast does not complete this window's request", async () => {
+    const sent: any[] = [];
+    const worker: WorkerLike = { onmessage: null, onerror: null, postMessage: (msg) => sent.push(msg) };
+    const client = new RuntimeClient(worker);
+    const deliver = (msg: object) => worker.onmessage!({ data: msg } as MessageEvent);
+    let outcome = "pending";
+    client.switchBranch(999).then(() => (outcome = "resolved"), () => (outcome = "rejected"));
+    const mine = sent[0].reqId as string;
+    expect(typeof mine).toBe("string");
+    deliver({ kind: "rewound", step: 5, t: 0.05, previous: {}, reqId: "other-1" }); // window A's rewind
+    deliver({ kind: "rewound", step: 6, t: 0.06, previous: {} }); // no id at all
+    await Promise.resolve();
+    expect(outcome).toBe("pending");
+    deliver({ kind: "error", request: "branch.switch", code: "E_NO_BRANCH", message: "no such branch" });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(outcome).toBe("rejected");
+    // and the asker's own reply still completes it
+    let ok = false;
+    client.rewind(3).then(() => (ok = true));
+    deliver({ kind: "rewound", step: 3, t: 0.03, previous: {}, reqId: sent[1].reqId });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(ok).toBe(true);
+    expect(sent[1].reqId).not.toBe(mine);
+  });
+});

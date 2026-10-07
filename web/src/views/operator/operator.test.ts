@@ -162,6 +162,16 @@ describe("strip-chart buffer (amendment 1)", () => {
     expect(b.bucketCount).toBeLessThanOrEqual(3001);
   });
 
+  it("dropAfter(-Infinity) empties it, so a replaced timeline starts a clean chart", () => {
+    const b = new StripBuffer(600, 3000);
+    for (let i = 0; i < 1000; i++) b.push(i * 0.01, 1 + i);
+    expect(b.points().length).toBeGreaterThan(0);
+    b.dropAfter(-Infinity);
+    expect(b.points()).toEqual([]);
+    b.push(2, 5);
+    expect(b.points()).toEqual([[2, 5]]); // only the new reading
+  });
+
   it("stays bounded over a long run, keeping the last window", () => {
     const b = new StripBuffer(10, 50);
     for (let i = 0; i < 100_000; i++) b.push(i * 0.01, i);

@@ -189,6 +189,8 @@ export class Runtime {
   private ports = new Map<string, Port>();
   /** The window whose message is being handled: replies go there. */
   private replyTo = MAIN_PORT;
+  /** The id the window of the message being handled gave its rewind, import or branch switch (echoed in `rewound`). */
+  private reqId: string | undefined;
 
   private history: CheckpointStore;
   private checkpointEvery = 1;
@@ -247,6 +249,7 @@ export class Runtime {
     this.inbox = this.inbox
       .then(() => {
         this.replyTo = from;
+        this.reqId = (msg as { reqId?: string }).reqId;
         return this.handle(msg, from);
       })
       .catch((err: unknown) => this.host.post({ kind: "fault", message: String(err) }));
@@ -520,6 +523,10 @@ export class Runtime {
 
   private attach(port: Port, role: Role): void {
     if (!ROLES.includes(role)) return this.error("attach", "E_BAD_ARGUMENT", `role must be one of ${ROLES.join(", ")}`);
+    // the role is bound at the first attach; a window cannot raise its own role (a new window gets a new port)
+    if (port.role !== null && port.role !== role) {
+      return this.error("attach", "E_ROLE", `this window is attached as ${port.role} and cannot change its role`);
+    }
     port.role = role;
     this.lastValidityJson = ""; // the new window gets the current validity and AI status at the next frame
     this.lastSupervisionJson = "";
@@ -1054,7 +1061,7 @@ export class Runtime {
     this.install(ne);
     this.submitDueEvents();
     this.historyDirty = true;
-    this.host.post({ kind: "rewound", step: ne.stepIndex, t: ne.t, previous });
+    this.host.post({ kind: "rewound", step: ne.stepIndex, t: ne.t, previous, outerDt: ne.config.outerDt, replaced: false, reqId: this.reqId });
     this.afterChange();
   }
 
@@ -1132,7 +1139,7 @@ export class Runtime {
     this.submitDueEvents();
     this.historyDirty = true;
     this.timelineDirty = true;
-    this.host.post({ kind: "rewound", step: built.engine.stepIndex, t: built.engine.t, previous });
+    this.host.post({ kind: "rewound", step: built.engine.stepIndex, t: built.engine.t, previous, outerDt: built.engine.config.outerDt, replaced: true, reqId: this.reqId });
     this.afterChange();
   }
 
@@ -1214,7 +1221,7 @@ export class Runtime {
     const previous = this.fileOf(e);
     this.rejectPending("REJ_SESSION_REPLACED");
     // the replaced timeline is kept as a branch; the imported one starts a new tree (its ids came from another runtime)
-    if (e.stepIndex > 0 || e.commandLog.length > 0) this.saveBranch(e, previous);
+    if (e.stepIndex > 0 || e.commandLog.length > 0 || this.annotations.length > 0) this.saveBranch(e, previous); // a note alone is worth keeping
     this.current = { id: this.nextBranchId++, parent: null, forkStep: 0 };
     this.marks = marksFrom(ne.events, ne.commandLog);
     this.annotations = structuredClone(file.annotations ?? []);
@@ -1230,7 +1237,7 @@ export class Runtime {
     this.install(ne);
     this.submitDueEvents();
     this.historyDirty = true;
-    this.host.post({ kind: "rewound", step: ne.stepIndex, t: ne.t, previous });
+    this.host.post({ kind: "rewound", step: ne.stepIndex, t: ne.t, previous, outerDt: ne.config.outerDt, replaced: true, reqId: this.reqId });
     this.afterChange();
   }
 
