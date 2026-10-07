@@ -60,7 +60,24 @@
     }
   },
   "D": {
-    "status": "not run"
+    "RVII1": {
+      "400.0": 0.8169868673567573,
+      "500.0": 0.827123912638716,
+      "600.0": 0.8527948747744009
+    },
+    "RVIII0": {
+      "400.0": 0.8039514460205693,
+      "500.0": 0.8128452290890956,
+      "600.0": 0.8400224038105988
+    },
+    "meanVII1": 0.8323018849232914,
+    "meanVIII0": 0.8189396929734212,
+    "label": "not the explanation",
+    "factorsVII1OverVIII0": {
+      "400.0": 1.01621418980053,
+      "500.0": 1.0175663004944022,
+      "600.0": 1.0152049170425244
+    }
   },
   "C": {
     "primary": {
@@ -346,18 +363,154 @@
       "fractionOfShortfallRemoved": 0.3134236592540741
     },
     "W2": {
-      "status": "not computed (part D not run)"
+      "labels": {
+        "gammaB": 1.525,
+        "gammaA": 1.575,
+        "primary": {
+          "worst": "fails",
+          "perStep": [
+            {
+              "step": 1,
+              "meanFuelC": 29.468852459016375,
+              "modelPcm": 41.866367421596564,
+              "measuredPcm": 49.6,
+              "errorPcm": -7.733632578403437,
+              "label": "good"
+            },
+            {
+              "step": 2,
+              "meanFuelC": 38.911475409836044,
+              "modelPcm": 93.65162951925673,
+              "measuredPcm": 118.9,
+              "errorPcm": -25.248370480743276,
+              "label": "plausible"
+            },
+            {
+              "step": 3,
+              "meanFuelC": 51.50163934426229,
+              "modelPcm": 165.2746809690461,
+              "measuredPcm": 217.6,
+              "errorPcm": -52.32531903095389,
+              "label": "plausible"
+            },
+            {
+              "step": 4,
+              "meanFuelC": 66.78032786885245,
+              "modelPcm": 253.84251082377833,
+              "measuredPcm": 344.8,
+              "errorPcm": -90.95748917622169,
+              "label": "fails"
+            },
+            {
+              "step": 5,
+              "meanFuelC": 78.58360655737704,
+              "modelPcm": 320.5061149355355,
+              "measuredPcm": 460.6,
+              "errorPcm": -140.09388506446453,
+              "label": "fails"
+            },
+            {
+              "step": 6,
+              "meanFuelC": 89.27213114754102,
+              "modelPcm": 380.1438353184135,
+              "measuredPcm": 563.6,
+              "errorPcm": -183.45616468158653,
+              "label": "fails"
+            },
+            {
+              "step": 7,
+              "meanFuelC": 98.71475409836069,
+              "modelPcm": 431.92909741607434,
+              "measuredPcm": 666.0,
+              "errorPcm": -234.07090258392566,
+              "label": "fails"
+            }
+          ]
+        },
+        "worst": "fails",
+        "best": "plausible"
+      },
+      "step7Pcm": 431.92909741607434,
+      "fractionOfShortfallRemoved": 0.032282841113418954
     },
     "W3": {
-      "status": "not computed (part D not run)"
+      "labels": {
+        "gammaB": 1.3163257446386967,
+        "gammaA": 1.3594839657743916,
+        "primary": {
+          "worst": "plausible",
+          "perStep": [
+            {
+              "step": 1,
+              "meanFuelC": 30.716284513066114,
+              "modelPcm": 49.728471345967485,
+              "measuredPcm": 49.6,
+              "errorPcm": 0.12847134596748333,
+              "label": "good"
+            },
+            {
+              "step": 2,
+              "meanFuelC": 41.655825928745514,
+              "modelPcm": 110.9482581528731,
+              "measuredPcm": 118.9,
+              "errorPcm": -7.951741847126911,
+              "label": "good"
+            },
+            {
+              "step": 3,
+              "meanFuelC": 56.241881149651306,
+              "modelPcm": 195.1506758816557,
+              "measuredPcm": 217.6,
+              "errorPcm": -22.449324118344293,
+              "label": "plausible"
+            },
+            {
+              "step": 4,
+              "meanFuelC": 73.94266691252142,
+              "modelPcm": 298.9840908562084,
+              "measuredPcm": 344.8,
+              "errorPcm": -45.8159091437916,
+              "label": "plausible"
+            },
+            {
+              "step": 5,
+              "meanFuelC": 87.61709368212064,
+              "modelPcm": 377.4408508545222,
+              "measuredPcm": 460.6,
+              "errorPcm": -83.15914914547784,
+              "label": "plausible"
+            },
+            {
+              "step": 6,
+              "meanFuelC": 100.00004681236874,
+              "modelPcm": 447.7579290680033,
+              "measuredPcm": 563.6,
+              "errorPcm": -115.84207093199672,
+              "label": "plausible"
+            },
+            {
+              "step": 7,
+              "meanFuelC": 110.93958822804814,
+              "modelPcm": 508.97771587490956,
+              "measuredPcm": 666.0,
+              "errorPcm": -157.02228412509044,
+              "label": "plausible"
+            }
+          ]
+        },
+        "worst": "plausible",
+        "best": "good"
+      },
+      "step7Pcm": 508.97771587490956,
+      "fractionOfShortfallRemoved": 0.3508242289067454
     }
   },
   "decision": {
     "items": [
       "1. OpenMC's temperature treatment is not responsible for the shortfall (P1 constant, the curve smooth)",
-      "2. part D not run (no ENDF/B-VII.1 download approved)",
+      "2. the ENDF/B-VII.1 data do not explain the pin-cell deficit",
       "3. the uniform fuel temperature of the library is a known limit: kappa 1.16 (partial); a transport test with per-element temperatures is the next protocol",
-      "4. W3 not computed (part D not run): a residual remains, 69% of the step 7 shortfall after the effective temperature alone (W1 is plausible in the primary line)"
+      "4. the evaluation of the data and the temperature distribution together explain the weak feedback (W3 is good or plausible)"
     ],
     "libraryChanged": false
   }

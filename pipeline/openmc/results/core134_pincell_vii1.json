@@ -1,0 +1,48 @@
+{
+ "cellSideCm": 5.088476064351859,
+ "particles": 200000,
+ "batches": 300,
+ "inactive": 50,
+ "method": "interpolation",
+ "tolerance": null,
+ "crossSections": "/root/nuclear_data/endfb-vii.1-extract/endfb-vii.1-hdf5/cross_sections.xml",
+ "openmc": "0.15.3",
+ "rows": [
+  {
+   "T": 294.0,
+   "k": 1.360076001252478,
+   "kUnc": 0.00011648918527332777,
+   "rhoPcm": 26474.697069934933,
+   "rhoUncPcm": 6.297370608267905,
+   "dRhoPcm": 0.0,
+   "refDRhoPcm": 0
+  },
+  {
+   "T": 400.0,
+   "k": 1.3496680632895597,
+   "kUnc": 0.0001290235112341424,
+   "rhoPcm": 25907.708183989344,
+   "rhoUncPcm": 7.082962030076182,
+   "dRhoPcm": -566.9888859455896,
+   "refDRhoPcm": -694
+  },
+  {
+   "T": 500.0,
+   "k": 1.3358513833169978,
+   "kUnc": 0.00012409147172765455,
+   "rhoPcm": 25141.373322761323,
+   "rhoUncPcm": 6.953855250592088,
+   "dRhoPcm": -1333.3237471736102,
+   "refDRhoPcm": -1612
+  },
+  {
+   "T": 600.0,
+   "k": 1.320514272158298,
+   "kUnc": 0.00012961950011595744,
+   "rhoPcm": 24271.927908392656,
+   "rhoUncPcm": 7.433342491040224,
+   "dRhoPcm": -2202.7691615422773,
+   "refDRhoPcm": -2583
+  }
+ ]
+}

@@ -1,6 +1,6 @@
 # M7 core 134 feedback: ZrH data, temperature treatment and effective temperature: results, parts P and C (2026-10-06)
 
-Protocol: `m7-core134-data-protocol.md` (ninth protocol; not blind, see its disclosure). Runs: the pin-cell sets P1 and P2 (`pipeline/openmc/results/core134_pincell_p1.json`, `_p2.json`, 200 000 particles × 300 batches, ENDF/B-VIII.0, 68 and 55 minutes). Script: `validation/m7_core134_data.py`, run once (`python -m validation.m7_core134_data`). Full output: `validation/m7_core134_data_report.json`. **Part D (the ENDF/B-VII.1 data) was not run: it needs a download that has not been approved.** Every metric of the parts run is reported. Nothing was changed after seeing the results, and no library was changed.
+Protocol: `m7-core134-data-protocol.md` (ninth protocol; not blind, see its disclosure). Runs: the pin-cell sets P1 and P2 (`pipeline/openmc/results/core134_pincell_p1.json`, `_p2.json`, 200 000 particles × 300 batches, ENDF/B-VIII.0, 68 and 55 minutes). Script: `validation/m7_core134_data.py`, run once (`python -m validation.m7_core134_data`). Full output: `validation/m7_core134_data_report.json`. **Part D (the ENDF/B-VII.1 data) was not run when this note was first written (the download was not yet approved); it was run on 2026-10-07 and is reported in the update at the end. The text above is the state before it.** Every metric of the parts run is reported. Nothing was changed after seeing the results, and no library was changed.
 
 ## Result in one paragraph
 
@@ -71,3 +71,19 @@ Protocol: `m7-core134-data-protocol.md` (ninth protocol; not blind, see its disc
 ## Limits, repeated
 
 The pin cell is an equivalent unit cell, not the core, and the reference is another code and evaluation; ratios at 400 K carry 1.4 %; part C is a proxy for the transport effect and uses the model's own shape arrays; a "partial" label says how much of the shortfall a candidate could remove, not that it does; the 31 % is a what-if with a fixed κ for all steps, though κ depends weakly on the power shape and on the temperature level.
+
+## Update 2026-10-07: part D run (the ENDF/B-VII.1 download was approved)
+
+The ENDF/B-VII.1 OpenMC library (`endfb71.tar.xz`, 1 697 275 216 bytes, from the OpenMC data page, extracted to WSL `/root/nuclear_data/endfb-vii.1-extract`) has the same thermal scattering names and temperature grids for the ZrH (296, 400, 500, 600, 700, 800, 1000, 1200 K) and the same nuclide temperatures as the ENDF/B-VIII.0 library. The pin cell of part P (P1 settings, 200 000 particles × 300 batches, 46 minutes) was run with it at 294, 400, 500 and 600 K (`pipeline/openmc/results/core134_pincell_vii1.json`), and `validation/m7_core134_data.py` was run again with that file present; the P and C results are identical to those above.
+
+| T (K) | VII.1 (pcm ± σ) | VIII.0 (P1) | Reference (Serpent, ENDF/B-VII.0) | R VII.1 | R VIII.0 | Δρ VII.1 / Δρ VIII.0 |
+|---|---|---|---|---|---|---|
+| 400 | −567 ± 10 | −558 | −694 | 0.817 | 0.804 | 1.016 |
+| 500 | −1333 ± 9 | −1310 | −1612 | 0.827 | 0.813 | 1.018 |
+| 600 | −2203 ± 10 | −2170 | −2583 | 0.853 | 0.840 | 1.015 |
+
+- **D1 label: not the explanation.** The ratios with VII.1 are 0.817, 0.827 and 0.853 (mean 0.832); none is within 0.95–1.05, and the mean rises by 0.013 over VIII.0, below the 0.05 of the "part" band. **The pin cell is 15–18 % weaker than the reference with either evaluation**, and the older evaluation gives a fuel feedback only 1.5–1.8 % stronger (D2). So the difference from the reference does not come from the VII.1 to VIII.0 change of the ZrH and nuclide data; what remains is the code and the cell (Serpent against OpenMC, and the details of the equivalent cell), not tested here.
+- **W2 (fuel table × 1.016): not an explanation by itself:** step 7 432 pcm (3 % of the shortfall removed), labels as W0.
+- **W3 (the effective temperature of part C and the VII.1 factor together):** primary plausible at every step, best good; step 7 **509 pcm against 666 (24 % short, at the edge of the plausible band), 35 % of the step 7 shortfall removed**; steps 1–2 good, 3–7 plausible.
+- **Decision items revised:** (2) the ENDF/B-VII.1 data do not explain the pin-cell deficit. (4) By the protocol's rule W3 is "good or plausible", so the data evaluation and the temperature distribution together are said to explain the weak feedback. **That rule is a weak statement here:** 65 % of the step 7 shortfall (157 of 242 pcm) remains and step 7 sits at the edge of the band; the effective temperature accounts for nearly all of what W3 removes (31 of the 35 %).
+- **Not changed:** no library; the transport test of the per-element temperatures (tenth protocol, running) tests κ in transport.
