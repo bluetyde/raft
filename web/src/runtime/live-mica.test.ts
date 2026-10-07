@@ -3,7 +3,13 @@
  * Skipped unless JEV_LIVE is set. Start the server first (python jev-server/server.py), then:
  *   JEV_LIVE=1 npx vitest run src/runtime/live-mica.test.ts
  * Set JEV_SECONDS (wall seconds, default 40) and JEV_RATE (sim speed, default 5). The report goes to stdout.
+ *
+ * Baseline: JEV_POLICY=baseline answers the same decision requests locally with a fixed rule (no server needed), so a model run and a
+ * baseline run see the same candidates, library, seed (JEV_SEED), goal and disturbance. JEV_OUT=path appends one JSON line of summary
+ * metrics per run (docs/validation/ai-operator-baseline.md). The baseline answers at once; the model takes its latency, which at JEV_RATE
+ * is a few tenths of a second of simulated time.
  */
+import { appendFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { repoRoot } from "../sim/testing";
@@ -17,6 +23,9 @@ const RATE = Number(process.env["JEV_RATE"] ?? 5);
 const URL = process.env["JEV_URL"] ?? "ws://localhost:8000/jev";
 /** Deadline for a reply (ms). Default 2000; a CPU-only Mica needs about 5000 and a slow sim rate. */
 const WALL_MS = Number(process.env["JEV_WALL_MS"] ?? 2000);
+const POLICY = process.env["JEV_POLICY"] ?? "model";
+/** The fixed rule of the baseline: advance toward the goal whenever that is offered, never lower the target, insert a rod or scram. */
+const BASELINE_ORDER = ["raise", "engage", "withdraw", "hold", "wait", "stop"];
 
 class RealHost implements RuntimeHost {
   out: FromWorker[] = [];
@@ -37,11 +46,13 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 describe.skipIf(!LIVE)("live jev-server on TRIGA", () => {
   it("runs supervised in real time and reports latency, choices and power", async () => {
-    const ws = new WebSocket(URL);
-    await new Promise<void>((res, rej) => {
-      ws.onopen = () => res();
-      ws.onerror = () => rej(new Error(`cannot reach ${URL}: start jev-server first`));
-    });
+    const ws = POLICY === "baseline" ? null : new WebSocket(URL);
+    if (ws) {
+      await new Promise<void>((res, rej) => {
+        ws.onopen = () => res();
+        ws.onerror = () => rej(new Error(`cannot reach ${URL}: start jev-server first`));
+      });
+    }
 
     const host = new RealHost();
     const rt = new Runtime(host, { supervisorMaxWallMs: WALL_MS, supervisorMaxSimS: Math.max(1, (WALL_MS / 1000) * RATE * 1.5) });
@@ -49,15 +60,15 @@ describe.skipIf(!LIVE)("live jev-server on TRIGA", () => {
     rt.receive({ kind: "load", protocol: 1, source: { kind: "files", files } });
     await rt.idle();
     // start at the library's reference rod positions (its critical configuration)
-    rt.receive({ kind: "load", protocol: 1, source: { kind: "files", files }, init: { rods: { ...rt.engine!.lib.refRods } } });
+    const seed = process.env["JEV_SEED"] ? Number(process.env["JEV_SEED"]) : undefined;
+    rt.receive({ kind: "load", protocol: 1, source: { kind: "files", files }, init: { rods: { ...rt.engine!.lib.refRods } }, ...(seed !== undefined ? { seed } : {}) });
     await rt.idle();
     expect(rt.engine, "TRIGA library did not load").not.toBeNull();
 
     const pending = new Map<string, { sentAt: number; req: DecisionRequest }>();
     const rows: { t: number; wallMs: number; choice: string; status: string; ms: number; power: number; regPos: number; target: string; rods: string }[] = [];
     let outcome = { timeouts: 0, errors: 0 };
-    ws.onmessage = (ev) => {
-      const res = JSON.parse(String(ev.data)) as DecisionResponse;
+    const onResponse = (res: DecisionResponse) => {
       const p = pending.get(res.requestId);
       if (!p) return;
       pending.delete(res.requestId);
@@ -77,9 +88,15 @@ describe.skipIf(!LIVE)("live jev-server on TRIGA", () => {
       });
       rt.receive({ kind: "decision_response", response: res });
     };
+    if (ws) ws.onmessage = (ev) => onResponse(JSON.parse(String(ev.data)) as DecisionResponse);
     host.onRequest = (req) => {
       pending.set(req.requestId, { sentAt: performance.now(), req });
-      ws.send(JSON.stringify(req));
+      if (ws) return ws.send(JSON.stringify(req));
+      const pick = BASELINE_ORDER.map((id) => req.candidates.find((c) => c.id === id)).find((c) => c !== undefined);
+      const { sessionId, connectionId, temporalEpoch, requestId, observationStep } = req;
+      const res: DecisionResponse = { protocolVersion: 1, sessionId, connectionId, temporalEpoch, requestId, observationStep, status: "ok", inferenceDurationMs: 0 };
+      if (pick) res.candidateId = pick.id;
+      queueMicrotask(() => onResponse(res));
     };
 
     const s0 = rt.engine!.snapshot(false);
@@ -134,10 +151,16 @@ describe.skipIf(!LIVE)("live jev-server on TRIGA", () => {
     rt.receive({ kind: "time", rate: RATE, paused: false });
     const start = performance.now();
     const mid = SECONDS / 2;
+    const goalW = process.env["JEV_GOAL_W"] ? Number(process.env["JEV_GOAL_W"]) : process.env["JEV_GOAL_X"] ? p0 * Number(process.env["JEV_GOAL_X"]) : null;
+    let maxPower = 0;
+    let reachedAt: number | null = null;
     let disturbed = false;
     while ((performance.now() - start) / 1000 < SECONDS) {
       await sleep(250);
       for (const m of host.out.splice(0)) if (m.kind === "snapshot") rt.receive({ kind: "frameAck" });
+      const now = rt.engine!.snapshot(false);
+      maxPower = Math.max(maxPower, now.truth.power);
+      if (goalW !== null && reachedAt === null && now.truth.power >= 0.9 * goalW) reachedAt = now.t;
       if (!disturbed && (performance.now() - start) / 1000 > mid && process.env["JEV_GOAL2_X"]) {
         disturbed = true;
         rt.receive({ kind: "supervisor.goal", powerW: p0 * Number(process.env["JEV_GOAL2_X"]) });
@@ -167,7 +190,17 @@ describe.skipIf(!LIVE)("live jev-server on TRIGA", () => {
     );
     console.log(`supervisor rod commands: ${sup.length} ${JSON.stringify(sup.slice(0, 12).map((c: any) => `${c.t.toFixed(1)}s ${c.cmd.rod ?? c.cmd.type}:${c.cmd.direction ?? ""}`))}`);
     console.log(`end: t=${end.t.toFixed(1)} power=${end.truth.power.toExponential(3)} W, reg rod ${end.truth.rods?.["regulating"]?.position?.toFixed(3)}, clock limited=${clock?.limited ?? "no"} ${clock?.reason ?? ""}, trips=${JSON.stringify(end.trips)}`);
-    ws.close();
+    ws?.close();
+    if (process.env["JEV_OUT"]) {
+      const summary = {
+        policy: POLICY, seed: seed ?? null, rate: RATE, wallSeconds: SECONDS, goalW, startPowerW: p0, library: "triga-jsi-242",
+        goalX2: process.env["JEV_GOAL2_X"] ?? null, deltaRho: process.env["JEV_GOAL2_X"] ? null : Number(process.env["JEV_DELTA_RHO"] ?? 0.00003),
+        simEndS: end.t, startSimS: sr.t, reachedGoalAtSimS: reachedAt, maxPowerW: maxPower, maxOverGoal: goalW ? maxPower / goalW : null,
+        finalPowerW: end.truth.power, tripsLatched: (end.trips as any)?.latched ?? null, requests: rows.length, errors: outcome.errors, choices: counts,
+        supervisorRodCommands: sup.length,
+      };
+      appendFileSync(process.env["JEV_OUT"], JSON.stringify(summary) + String.fromCharCode(10));
+    }
     expect(rows.length).toBeGreaterThan(0);
   }, (SECONDS + 120) * 1000);
 });

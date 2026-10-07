@@ -692,7 +692,9 @@ def _write_library(summary: dict[str, Any], out_dir: Path, created: str | None) 
         "reactivity feedback, kinetics (beta_eff and Lambda by IFP), and fission power shapes (fraction of all fuel fission; the "
         "lowest axial bin holds fuel-follower fuel below the core, zero for regular elements, whose volume there is nominal; "
         "its relative uncertainty is the region total's). Base library inputs: thermal properties, poisons, plant "
-        "instrumentation/trips/interlocks, delayed group lambdas, external source, rod scram profiles, and xenon table."
+        "instrumentation/trips/interlocks, delayed group lambdas, external source, rod scram profiles, and xenon table. "
+        "The plant block's setpoints (power-high 275 kW, fuel-temp-high 873.15 K, period-short 3 s) have no source recorded in this "
+        "repository: they are assumed generic TRIGA-like values, not JSI's."
     )
     if core == "134":
         notes += CORE134_NOTE
