@@ -6,6 +6,7 @@ Results are appended, one JSON line per case, to pipeline/openmc/results/beavrs_
 Run in the openmc-vr env (WSL), from the repo root, with the BEAVRS repository (mit-crpg/BEAVRS, MIT) cloned somewhere:
 
   export OPENMC_CROSS_SECTIONS=/root/nuclear_data/endfb-viii.0-hdf5/cross_sections.xml
+  python -m pipeline.openmc.beavrs_run --beavrs ~/beavrs --stage 1          # W0 W7 K0a K0b (then --stage 2, --stage 3)
   python -m pipeline.openmc.beavrs_run --beavrs ~/beavrs --all              # the 20 cases in the protocol's order
   python -m pipeline.openmc.beavrs_run --beavrs ~/beavrs --case W3          # one case
   python -m pipeline.openmc.beavrs_run --beavrs ~/beavrs --case T0p --dry   # build the model only and report what it would run
@@ -33,6 +34,11 @@ from validation import m8_beavrs_hzp as bv  # noqa: E402
 RESULTS = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_hzp.jsonl"
 WATER = ("Borated Water", "Water SPN")             # the materials that are water; their density follows the temperature
 PRESSURE_MPA = 15.5
+# Stages, so a defect in the runner shows up after minutes, not hours. Stage 1 exercises the whole path (bank insertion, boron, the convergence windows,
+# the boron worth pair); stage 2 is the rest of the 300-batch cases; stage 3 holds the long temperature cases.
+STAGES = {1: ["W0", "W7", "K0a", "K0b"],
+          2: ["W1", "W2", "W3", "W4", "W5", "W6", "B1", "B2", "B4", "B7", "K7a", "K7b"],
+          3: ["T0m", "T0p", "T2m", "T2p"]}
 
 
 def build(beavrs_dir: Path, spec: dict):
@@ -95,17 +101,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--beavrs", type=Path, required=True, help="the clone of mit-crpg/BEAVRS")
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--all", action="store_true")
+    g.add_argument("--stage", type=int, choices=sorted(STAGES), help="1: W0 W7 K0a K0b; 2: the other 300-batch cases; 3: the four long temperature cases")
     g.add_argument("--case", action="append")
     ap.add_argument("--out", type=Path, default=RESULTS)
     ap.add_argument("--dry", action="store_true", help="build each model and print it; run nothing")
     ap.add_argument("--smoke", default=None, help="particles,batches,inactive for a test run; only with an --out other than the protocol's file")
     args = ap.parse_args(argv)
     plan = bv.cases()
-    ids = list(plan) if args.all else args.case
+    ids = list(plan) if args.all else STAGES[args.stage] if args.stage else args.case
     for cid in ids:
         if cid not in plan:
             raise SystemExit(f"{cid} is not one of the protocol's cases: {', '.join(plan)}")
-    if args.all:
+    if args.all or args.stage:
         # one process per case: BEAVRS objects keep their ids, and a crash costs one case
         done = {json.loads(x).get("case") for x in args.out.read_text(encoding="utf-8").splitlines() if x.strip()} if args.out.exists() else set()
         for cid in ids:

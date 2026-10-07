@@ -1,0 +1,480 @@
+{
+  "protocol": "docs/validation/m8-beavrs-hzp-protocol.md",
+  "A": {
+    "states": {
+      "0": {
+        "computed": true,
+        "case": "W0",
+        "measuredPpm": 975.0,
+        "errorPpm": 8.038557157624382,
+        "sigmaModelPpm": 1.9540860011792114,
+        "z": 0.3639560912537356,
+        "label": "good",
+        "within50ppm": true,
+        "rhoPcm": 101.38499610218751,
+        "errorPpmWithBwS7": 7.8947386737588765
+      },
+      "1": {
+        "computed": true,
+        "case": "B1",
+        "measuredPpm": 902.0,
+        "errorPpm": 21.147543685055833,
+        "sigmaModelPpm": 2.044489357045214,
+        "z": 0.9571278810688997,
+        "label": "good",
+        "within50ppm": true,
+        "rhoPcm": 266.71995882328844,
+        "errorPpmWithBwS7": 20.769191250579507
+      },
+      "2": {
+        "computed": true,
+        "case": "B2",
+        "measuredPpm": 810.0,
+        "errorPpm": 15.643464344288427,
+        "sigmaModelPpm": 2.13010939522191,
+        "z": 0.7077567880647282,
+        "label": "good",
+        "within50ppm": true,
+        "rhoPcm": 197.30065240204155,
+        "errorPpmWithBwS7": 15.363585843671464
+      },
+      "4": {
+        "computed": true,
+        "case": "B4",
+        "measuredPpm": 686.0,
+        "errorPpm": -2.321606275565641,
+        "sigmaModelPpm": 2.0140817363324746,
+        "z": -0.10508809206544156,
+        "label": "good",
+        "within50ppm": true,
+        "rhoPcm": -29.28088195227771,
+        "errorPpmWithBwS7": -2.280070227723049
+      },
+      "7": {
+        "computed": true,
+        "case": "B7",
+        "measuredPpm": 508.0,
+        "errorPpm": -14.883411882608543,
+        "sigmaModelPpm": 2.038662761574404,
+        "z": -0.673632636385305,
+        "label": "good",
+        "within50ppm": true,
+        "rhoPcm": -187.71461421709373,
+        "errorPpmWithBwS7": -14.61713154277512
+      }
+    },
+    "aggregate": {
+      "count": 5,
+      "computed": true,
+      "meanErrorPpm": 5.5249094057588914,
+      "standardError": 6.445299322124869,
+      "sameSign": 3,
+      "systematic": false,
+      "meanErrorPcm": 69.6820222316292
+    }
+  },
+  "B": {
+    "banks": {
+      "D": {
+        "computed": false,
+        "reason": "needs W0 and W1"
+      },
+      "C": {
+        "computed": false,
+        "reason": "needs W1 and W2"
+      },
+      "B": {
+        "computed": true,
+        "measuredPcm": 1171.0,
+        "worthPcm": 1237.5768617991637,
+        "sigmaModel": 37.192114409666544,
+        "difference": 66.57686179916368,
+        "relative": 0.05685470691645062,
+        "z": 1.3750580891910769,
+        "label": "plausible"
+      },
+      "A": {
+        "computed": true,
+        "measuredPcm": 548.0,
+        "worthPcm": 504.9206758509131,
+        "sigmaModel": 37.65142643982573,
+        "difference": -43.079324149086915,
+        "relative": -0.07861190538154547,
+        "z": -0.9414969639628458,
+        "label": "good"
+      },
+      "SE": {
+        "computed": true,
+        "measuredPcm": 461.0,
+        "worthPcm": 407.5271211580871,
+        "sigmaModel": 37.38661522795295,
+        "difference": -53.472878841912916,
+        "relative": -0.11599322959200199,
+        "z": -1.1889442616211543,
+        "label": "plausible"
+      },
+      "SD": {
+        "computed": true,
+        "measuredPcm": 772.0,
+        "worthPcm": 732.624896563766,
+        "sigmaModel": 35.91951193075326,
+        "difference": -39.375103436233985,
+        "relative": -0.05100401999512174,
+        "z": -0.8645601340651928,
+        "label": "good"
+      },
+      "SC": {
+        "computed": true,
+        "measuredPcm": 1099.0,
+        "worthPcm": 1148.6869909134412,
+        "sigmaModel": 36.26381719180939,
+        "difference": 49.68699091344115,
+        "relative": 0.04521109273288549,
+        "z": 1.0414787657259872,
+        "label": "plausible"
+      }
+    },
+    "total": {
+      "computed": true,
+      "measuredPcm": 6042.0,
+      "sigmaMeasured": 76.62897624267207,
+      "worthPcm": 6028.157512109251,
+      "sigmaModel": 35.85962665742002,
+      "difference": -13.842487890748998,
+      "relative": -0.002291044007075306,
+      "z": -0.16361418367535158,
+      "label": "good"
+    }
+  },
+  "C": {
+    "0": {
+      "computed": true,
+      "measuredPcmPerF": -1.75,
+      "itcPcmPerF": -3.3133621529272457,
+      "sigmaModel": 0.1349957105242124,
+      "difference": -1.5633621529272457,
+      "z": -2.8086794488864535,
+      "label": "fails"
+    },
+    "2": {
+      "computed": true,
+      "measuredPcmPerF": -8.01,
+      "itcPcmPerF": -10.044120277748195,
+      "sigmaModel": 0.13515815945284124,
+      "difference": -2.0341202777481957,
+      "z": -3.6541675383967256,
+      "label": "fails"
+    }
+  },
+  "D": {
+    "S0": {
+      "computed": true,
+      "bw": 12.612337527018294,
+      "sigma": 0.17526372855967437
+    },
+    "S7": {
+      "computed": true,
+      "bw": 12.842096526789234,
+      "sigma": 0.17459355150681055
+    },
+    "relativeDifference": 0.018217003729780287,
+    "sensitive": false
+  },
+  "E": {
+    "convergence": {
+      "W0": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 1.1253920763533072,
+        "converged": true
+      },
+      "W7": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 0.8433175058305834,
+        "converged": true
+      },
+      "K0a": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 1.1775906170341033,
+        "converged": true
+      },
+      "K0b": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 1.3770924753426599,
+        "converged": true
+      },
+      "W1": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 2.3302902369077283,
+        "converged": false
+      },
+      "W2": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 1.8350053886128876,
+        "converged": true
+      },
+      "W3": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 0.43372134203094265,
+        "converged": true
+      },
+      "W4": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 0.14741968818184073,
+        "converged": true
+      },
+      "W5": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 0.15273922252260702,
+        "converged": true
+      },
+      "W6": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 0.5423566941368451,
+        "converged": true
+      },
+      "B1": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 0.33143212076693523,
+        "converged": true
+      },
+      "B2": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 1.8490755455463168,
+        "converged": true
+      },
+      "B4": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 1.5664093078811587,
+        "converged": true
+      },
+      "B7": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 1.9585685461351559,
+        "converged": true
+      },
+      "K7a": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 1.7822398334428753,
+        "converged": true
+      },
+      "K7b": {
+        "windows": [
+          [
+            101,
+            200
+          ],
+          [
+            201,
+            300
+          ]
+        ],
+        "z": 0.08281226878772129,
+        "converged": true
+      },
+      "T0m": {
+        "windows": [
+          [
+            101,
+            400
+          ],
+          [
+            401,
+            800
+          ]
+        ],
+        "z": 1.347582672084366,
+        "converged": true
+      },
+      "T0p": {
+        "windows": [
+          [
+            101,
+            400
+          ],
+          [
+            401,
+            800
+          ]
+        ],
+        "z": 0.9450329658667412,
+        "converged": true
+      },
+      "T2m": {
+        "windows": [
+          [
+            101,
+            400
+          ],
+          [
+            401,
+            800
+          ]
+        ],
+        "z": 1.1455555946134035,
+        "converged": true
+      },
+      "T2p": {
+        "windows": [
+          [
+            101,
+            400
+          ],
+          [
+            401,
+            800
+          ]
+        ],
+        "z": 0.9438522947874779,
+        "converged": true
+      }
+    },
+    "unconverged": [
+      "W1"
+    ],
+    "missing": []
+  },
+  "decision": {
+    "items": [
+      "1. the transport model reproduces the critical boron (no systematic offset): the library of step 3 is built without a calibration offset",
+      "4. the isothermal temperature coefficient fails: the library's temperature feedback is marked not validated at HZP",
+      "5. cases unconverged: ['W1']; cases missing: none; metrics not computed: ['B:D', 'B:C'] (they enter no decision item)",
+      "6. the library status stays experimental and step 2 (the format fit check) goes ahead; this outcome changes what the library may claim"
+    ],
+    "libraryChanged": false
+  }
+}
