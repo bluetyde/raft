@@ -6,10 +6,19 @@ It is for students, instructors and reactor-physics hobbyists who want to see ho
 
 **Status: experimental and educational. Results are not validated for safety, licensing or operation.** No library in this repository is marked validated; see [what has been compared with measurements](#what-has-been-compared-with-measurements) and [limits](#limits).
 
+![The operator panel and the 3D view of the core during a low-power ascension of the OpenMC-built TRIGA core 242, at about 3 W](docs/images/operator-and-core.png)
+
+*The operator panel (instruments, annunciator, rod controls) beside the 3D core, on the low-power ascension scenario of the OpenMC-built TRIGA core 242. The yellow box is the app's own warning that the state is not validated.*
+
 ## What works
 
 - **Physics:** point kinetics with six delayed-neutron groups, fuel and coolant temperature feedback, xenon and iodine, rod motion and scram, trips and interlocks, instrument noise and faults. A Python reference engine (`physics_ref/`) and the TypeScript engine the browser runs (`web/src/sim/`) produce the same results on shared golden vectors. A library may also declare soluble boron (an operator-set concentration that moves at a limited rate); see [docs/library-format.md](docs/library-format.md).
 - **Views:** an operator panel that shows instruments only (no true values), a 3D explorer with power overlays, and an instructor panel with time control, rewind, branches, notes, fault injection, session files and two linked windows.
+
+  ![The operator panel next to the instructor panel: time control, scenario goals, the AI goal, fault scripts, timeline and notes](docs/images/instructor.png)
+
+  *The instructor layout: the operator panel on the left, the instructor panel on the right.*
+
 - **Scenarios:** short exercises with goals and a score (low-power ascension, scram and restart).
 - **Libraries in the app:** the TRIGA Mark II research reactor of the Jožef Stefan Institute in Ljubljana, cores 242 and 246, built with OpenMC from open data; an earlier TRIGA library for core 242 whose values are mostly assumed; and a synthetic test core. All are `experimental` or synthetic. Core 134 (fresh fuel, the 1994 benchmark) is built too but is not in the app. [docs/validation/supported-envelope.md](docs/validation/supported-envelope.md) says which lesson the app supports and under what warnings.
 - **Headless runner:** `node web/dist-headless/raft-headless.mjs run <case.json>` runs a scripted case without a browser; see [docs/headless.md](docs/headless.md).
