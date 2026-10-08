@@ -93,6 +93,9 @@ class Rod:
         return ts[-1]
 
 
+BORON_CAPABILITY = "point-kinetics/boron-v1"
+
+
 def _digest(folder: Path, manifest: dict) -> str:
     h = hashlib.sha256((folder / "manifest.json").read_bytes())
     for name in sorted(manifest["arrays"]):
@@ -135,6 +138,14 @@ class Library:
         self.fuel_temp = Table(r["fuelTemp"]["T"], r["fuelTemp"]["rho"], r["fuelTemp"]["outOfRange"])
         self.cool_temp = Table(r["coolantTemp"]["T"], r["coolantTemp"]["rho"], r["coolantTemp"]["outOfRange"])
         self.xenon = Table(r["xenon"]["N"], r["xenon"]["rho"], r["xenon"]["outOfRange"])
+        self.has_boron = BORON_CAPABILITY in m["capabilities"]
+        self.boron = None
+        self.ref_boron = None
+        self.boron_range = None
+        self.boron_max_rate = None
+        if self.has_boron:
+            self.install_boron(ref["boron"]["value"], m["plant"]["boron"]["range"], m["plant"]["boron"]["maxRatePpmPerS"],
+                               r["boron"]["C"], r["boron"]["rho"], r["boron"]["outOfRange"])
 
         t = m["thermal"]
         self.fuel_mass = t["fuel"]["mass"]["value"]
@@ -175,6 +186,14 @@ class Library:
         data = (folder / d["file"]).read_bytes()
         n = int(d["byteLength"]) // 4        # integral floats (0.0) are valid JSON integers
         return list(struct.unpack_from(f"<{n}f", data, int(d["offset"])))
+
+    def install_boron(self, ref: float, rng, max_rate: float, axis, rho, out_of_range: str = "clamp-and-flag") -> None:
+        """Set the soluble-boron fields (from the manifest at load, or by a test override); `ref` is the reference concentration, ppm."""
+        self.has_boron = True
+        self.ref_boron = float(ref)
+        self.boron_range = (float(rng[0]), float(rng[1]))
+        self.boron_max_rate = float(max_rate)
+        self.boron = Table(axis, rho, out_of_range)
 
     def mark_modified(self, note: str) -> None:
         """Call after changing fields in a test; the digest then can't match an unmodified library."""

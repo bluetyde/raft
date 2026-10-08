@@ -142,6 +142,8 @@ export class Rod {
   }
 }
 
+export const BORON_CAPABILITY = "point-kinetics/boron-v1";
+
 export class Library {
   manifest: any;
   id: string;
@@ -166,6 +168,12 @@ export class Library {
   fuelTemp: Table;
   coolTemp: Table;
   xenon: Table;
+  /** Soluble boron (capability point-kinetics/boron-v1); null and false without it. */
+  hasBoron = false;
+  boron: Table | null = null;
+  refBoron = 0;
+  boronRange: [number, number] = [0, 0];
+  boronMaxRate = 0;
 
   fuelMass: number;
   fuelCp: Table;
@@ -231,6 +239,9 @@ export class Library {
     this.fuelTemp = new Table(r.fuelTemp.T, r.fuelTemp.rho, r.fuelTemp.outOfRange);
     this.coolTemp = new Table(r.coolantTemp.T, r.coolantTemp.rho, r.coolantTemp.outOfRange);
     this.xenon = new Table(r.xenon.N, r.xenon.rho, r.xenon.outOfRange);
+    if (m.capabilities.includes(BORON_CAPABILITY)) {
+      this.installBoron(ref.boron.value, m.plant.boron.range, m.plant.boron.maxRatePpmPerS, r.boron.C, r.boron.rho, r.boron.outOfRange);
+    }
 
     const t = m.thermal;
     this.fuelMass = t.fuel.mass.value;
@@ -265,6 +276,15 @@ export class Library {
     this.domain = m.domain;
     this.shapes = m.shapes;
     this.arrays = arrays;
+  }
+
+  /** Set the soluble-boron fields (from the manifest at load, or by a test override); `ref` is the reference concentration, ppm. */
+  installBoron(ref: number, range: number[], maxRate: number, axis: number[], rho: number[], outOfRange = "clamp-and-flag"): void {
+    this.hasBoron = true;
+    this.refBoron = Number(ref);
+    this.boronRange = [Number(range[0]), Number(range[1])];
+    this.boronMaxRate = Number(maxRate);
+    this.boron = new Table(axis, rho, outOfRange as any);
   }
 
   async markModified(note: string): Promise<void> {

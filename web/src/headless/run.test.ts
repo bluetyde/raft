@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { compareDocs } from "../sim/compare";
-import { engineVectorsDir, syntheticCorePath } from "../sim/testing";
+import { engineVectorsDir, fixturesDir, syntheticCorePath } from "../sim/testing";
 import { parseCase } from "./case";
 import { describe as describeRunner, main } from "./cli";
 import { findNonFinite, replayRun, runCase, validateCase } from "./run";
@@ -27,8 +27,8 @@ function vector(name: string): Record<string, any> {
 /** A case folder: the synthetic library copied in, and the golden vector's scenario as a case file. */
 function caseFolder(name = "scram", edit: (c: Record<string, any>) => void = () => {}): { dir: string; casePath: string; vec: Record<string, any> } {
   const dir = tmp();
-  cpSync(syntheticCorePath, join(dir, "lib"), { recursive: true });
   const vec = vector(name);
+  cpSync(vec.libraryFixture ? join(fixturesDir, vec.libraryFixture) : syntheticCorePath, join(dir, "lib"), { recursive: true });
   const c: Record<string, any> = {
     format: "raft-headless-case",
     version: 1,
@@ -316,7 +316,7 @@ describe("command line", () => {
   it("describe lists the engine version and every command type of the schema", () => {
     const d = describeRunner() as Record<string, any>;
     expect(d.engine.version).toMatch(/^\d+\.\d+\.\d+$/);
-    expect(d.commands).toEqual(["fault.instrument", "fault.reactivity", "mode.set", "pump.set", "rod.fire", "rod.move", "scram", "trip.reset"]);
+    expect(d.commands).toEqual(["boron.set", "fault.instrument", "fault.reactivity", "mode.set", "pump.set", "rod.fire", "rod.move", "scram", "trip.reset"]);
   });
 
   it("exit codes: 0 completed, 1 failed, 2 refused or bad usage; one JSON object on stdout", async () => {

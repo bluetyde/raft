@@ -21,9 +21,10 @@ import math
 from .library import Library
 from .numerics import SplitMix64, lu_factor, lu_solve
 
-ENGINE_VERSION = "0.3.0"
+ENGINE_VERSION = "0.4.0"
 CAPABILITY = "point-kinetics/lumped-thermal-v1"
 CAPABILITY_V2 = "point-kinetics/lumped-thermal-v2"      # adds thermal.hA.exponent: hA depends on the fuel-to-coolant temperature difference
+CAPABILITY_BORON = "point-kinetics/boron-v1"             # adds soluble boron: a concentration the operator changes at a limited rate (ppm), and its reactivity table
 
 DEFAULT_CONFIG = {
     "outerDt": 0.01,     # s, fixed scheduling interval
@@ -204,6 +205,15 @@ class Engine:
         for rid, m in self.motions.items():
             if not 0.0 <= m["x0"] <= 1.0:
                 raise InitError("E_INIT_INVALID", f"rod {rid} position must be in [0, 1]")
+        self.boron_motion = None
+        if lib.has_boron:
+            b0 = float(init.get("boron", lib.ref_boron))
+            lo, hi = lib.boron_range
+            if not lo <= b0 <= hi:
+                raise InitError("E_INIT_INVALID", f"boron {b0} is outside the library's range [{lo}, {hi}]")
+            self.boron_motion = {"kind": "still", "t0": 0.0, "x0": b0}
+        elif "boron" in init:
+            raise InitError("E_INIT_INVALID", "the library has no soluble boron")
         self.mode = init.get("mode", lib.initial_mode)
         if self.mode not in lib.modes:
             raise InitError("E_INIT_INVALID", f"unknown mode {self.mode!r}")
@@ -266,6 +276,23 @@ class Engine:
         for ins in self.lagged:
             y[self.lag_index[ins["id"]]] = self._truth_signal(ins["signal"], 0.0, y)
 
+    # ------------------------------------------------ boron
+    def boron_value(self, t: float) -> float:
+        """The boron concentration (ppm) at time t: still, or a linear ramp at the library's rate toward the commanded value."""
+        m = self.boron_motion
+        if m["kind"] == "still":
+            return m["x0"]
+        x = m["x0"] + m["v"] * (t - m["t0"])
+        return min(x, m["target"]) if m["v"] > 0 else max(x, m["target"])
+
+    def _rebase_boron(self, t: float) -> None:
+        m = self.boron_motion
+        if m is None or m["kind"] == "still":
+            return
+        x = self.boron_value(t)
+        if x == m["target"]:        # the ramp is evaluated from its own start (no rebase per step, so no rounding drift); it ends here
+            self.boron_motion = {"kind": "still", "t0": t, "x0": x}
+
     # ------------------------------------------------ rods
     def rod_position(self, rid: str, t: float) -> float:
         m = self.motions[rid]
@@ -316,9 +343,13 @@ class Engine:
         cool = lib.cool_temp(y[ITC])
         xe = lib.xenon(y[IX])
         base = lib.ref_rho + lib.calibration
-        return {"total": base + self.extra_rho + rods + fuel + cool + xe, "reference": lib.ref_rho,
-                "calibration": lib.calibration, "fault": self.extra_rho,
-                "rods": rods, "fuel": fuel, "coolant": cool, "xenon": xe}
+        out = {"total": base + self.extra_rho + rods + fuel + cool + xe, "reference": lib.ref_rho,
+               "calibration": lib.calibration, "fault": self.extra_rho,
+               "rods": rods, "fuel": fuel, "coolant": cool, "xenon": xe}
+        if lib.has_boron:
+            out["boron"] = lib.boron(self.boron_value(t))
+            out["total"] += out["boron"]
+        return out
 
     def rhs(self, t, y) -> list[float]:
         self.diag["rhsCalls"] += 1
@@ -328,6 +359,8 @@ class Engine:
         for r in lib.rods:
             rho += r.worth(self.rod_position(r.id, t))
         rho += lib.fuel_temp(tf) + lib.cool_temp(tc) + lib.xenon(x_)
+        if lib.has_boron:
+            rho += lib.boron(self.boron_value(t))
         L = lib.gen_time
         d = [0.0] * len(y)
         d[IP] = (rho - lib.beta_total) / L * P + lib.ext_source
@@ -362,6 +395,8 @@ class Engine:
             return y[IX]
         if name == "mode":
             return self.mode
+        if name == "boron":
+            return self.boron_value(t)
         if name == "period":
             dp = self.rhs(t, y)[IP]
             return math.inf if dp == 0.0 else y[IP] / dp
@@ -570,6 +605,7 @@ class Engine:
     def _boundary(self, first=False) -> None:
         t = self.t
         self._rebase_rods(t)
+        self._rebase_boron(t)
         self._sample_instruments(t)
         get = lambda s: self._signal(s, t, self.y)
         # non-latching trips clear when their condition clears
@@ -589,6 +625,8 @@ class Engine:
         checks = [(lib.fuel_temp, self.y[ITF], "fuelTemp"), (lib.cool_temp, self.y[ITC], "coolantTemp"),
                   (lib.xenon, self.y[IX], "xenon"), (lib.fuel_cp, self.y[ITF], "fuelCp")]
         checks += [(r.worth, self.rod_position(r.id, self.t), f"rod.{r.id}") for r in lib.rods]
+        if lib.has_boron:
+            checks.append((lib.boron, self.boron_value(self.t), "boron"))
         for table, x, name in checks:
             if table.out_of_range == "reject" and table.value(x)[1]:
                 self.halted = f"R_TABLE_REJECT_{name}"
@@ -660,6 +698,22 @@ class Engine:
                 status, reason = "rejected", f"REJ_INTERLOCK:{il['id']}"
             else:
                 self.mode = mode
+        elif ctype == "boron.set" and self.lib.has_boron:
+            ppm = cmd.get("ppm")
+            lo, hi = self.lib.boron_range
+            if isinstance(ppm, bool) or not isinstance(ppm, (int, float)) or not math.isfinite(ppm):
+                status, reason = "rejected", "REJ_BAD_ARGUMENT"
+            elif not lo <= ppm <= hi:
+                status, reason = "rejected", "REJ_OUT_OF_RANGE"
+            elif il:
+                status, reason = "rejected", f"REJ_INTERLOCK:{il['id']}"
+            else:
+                x = self.boron_value(t)
+                if ppm == x:
+                    self.boron_motion = {"kind": "still", "t0": t, "x0": x}
+                else:
+                    self.boron_motion = {"kind": "move", "t0": t, "x0": x, "target": float(ppm),
+                                         "v": math.copysign(self.lib.boron_max_rate, ppm - x)}
         elif ctype == "pump.set":
             pump = cmd.get("pump")
             if pump not in self.pumps:
@@ -740,6 +794,10 @@ class Engine:
             lo, hi = dom[{"TFUEL": "Tfuel", "TCOOLANT": "Tcoolant", "XENON": "xenon"}[name]]
             if not lo <= val <= hi:
                 out.append(f"R_DOMAIN_{name}")
+        if lib.has_boron:
+            lo, hi = dom["boron"]
+            if not lo <= self.boron_value(self.t) <= hi:
+                out.append("R_DOMAIN_BORON")
         moved = {r.id: self.rod_position(r.id, self.t) for r in lib.rods
                  if abs(self.rod_position(r.id, self.t) - lib.ref_rods[r.id]) > 1e-9}
         if len(moved) >= 2:
@@ -795,6 +853,10 @@ class Engine:
             "validity": self.validity(),
             "diagnostics": dict(self.diag, events=len(self.events), h=self.h),
         }
+        if self.lib.has_boron:
+            snap["truth"]["boron"] = self.boron_value(t)
+            m = self.boron_motion
+            snap["truth"]["boronTarget"] = m["target"] if m["kind"] == "move" else None
         if include_shape:
             snap["truth"]["shape"] = self.shape()
         return snap
@@ -804,7 +866,7 @@ class Engine:
         return {"engineVersion": ENGINE_VERSION, "libraryDigest": self.lib.digest, "config": cfg}
 
     def checkpoint(self) -> dict:
-        return {
+        cp = {
             "pins": self.pins(), "seed": self.seed, "init": copy.deepcopy(self.init_spec),
             "stepIndex": self.step_index, "y": list(self.y), "h": self.h, "motions": copy.deepcopy(self.motions),
             "mode": self.mode, "pumps": dict(self.pumps), "latched": list(self.latched),
@@ -814,6 +876,9 @@ class Engine:
             "peak": [self.peak_power, self.peak_time], "halted": self.halted,
             "commandLog": copy.deepcopy(self.command_log), "eventCount": len(self.events),
         }
+        if self.boron_motion is not None:
+            cp["boronMotion"] = copy.deepcopy(self.boron_motion)
+        return cp
 
     @classmethod
     def restore(cls, lib: Library, cp: dict) -> "Engine":
@@ -830,6 +895,8 @@ class Engine:
         e.pending, e.next_seq = copy.deepcopy(cp["pending"]), cp["nextSeq"]
         e.peak_power, e.peak_time = cp["peak"]
         e.halted, e.command_log = cp["halted"], copy.deepcopy(cp["commandLog"])
+        if lib.has_boron:
+            e.boron_motion = copy.deepcopy(cp["boronMotion"])
         e.events = [{"type": "restored", "t": e.t, "eventCount": cp["eventCount"]}]
         e.diag = {"steps": 0, "rejected": 0, "rhsCalls": 0}
         return e

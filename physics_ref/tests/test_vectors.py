@@ -86,7 +86,7 @@ class TestEngineVectors(unittest.TestCase):
             raise ValueError(f"non-finite constant in JSON: {c}")
 
         files = sorted(VECTORS_DIR.glob("*.json"))
-        self.assertEqual(len(files), 8)
+        self.assertEqual(len(files), 9)
         for p in files:
             with self.subTest(file=p.name):
                 content = p.read_text(encoding="utf-8")
@@ -140,11 +140,11 @@ class TestEngineVectors(unittest.TestCase):
 
     def test_pins_match_current_engine(self):
         files = sorted(VECTORS_DIR.glob("*.json"))
-        self.assertEqual(len(files), 8)
+        self.assertEqual(len(files), 9)
         for p in files:
             with self.subTest(file=p.name):
                 doc = json.loads(p.read_text(encoding="utf-8"))
-                lib = Library(SYNTHETIC_CORE)
+                lib = Library(vectors.FIXTURES / doc["libraryFixture"] if doc.get("libraryFixture") else SYNTHETIC_CORE)
                 if doc.get("libraryOverrides"):
                     vectors.apply_overrides(lib, doc["libraryOverrides"])
                 self.assertEqual(doc["pins"]["engineVersion"], ENGINE_VERSION)

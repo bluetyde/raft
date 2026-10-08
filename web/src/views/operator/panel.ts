@@ -21,6 +21,8 @@ export interface OperatorLibrary {
   interlocks: { id: string; reason?: string }[];
   rods: { id: string; pulseCapable: boolean }[];
   modes: string[];
+  /** Present when the library has soluble boron: the range the plant accepts (ppm) and the rate it moves at. */
+  boron?: { range: [number, number]; maxRatePpmPerS: number };
 }
 
 type SnapshotMsg = Extract<FromWorker, { kind: "snapshot" }>;
@@ -73,7 +75,10 @@ export class OperatorPanel {
   private readonly scenarioBox: HTMLElement;
   private readonly elapsed: HTMLElement;
   /** Each control with the command type it sends, so a scenario's allowed controls can disable the others (D7a). */
-  private readonly controls: { el: HTMLButtonElement | HTMLSelectElement; type: string }[] = [];
+  private readonly controls: { el: HTMLButtonElement | HTMLSelectElement | HTMLInputElement; type: string }[] = [];
+  private boronReading: HTMLElement | null = null;
+  private boronInput: HTMLInputElement | null = null;
+  private boronInputTouched = false;
   /** Whether an instructor fault was active at the last snapshot (for the faultsVisible tile). */
   private faultActive = false;
 
@@ -164,6 +169,37 @@ export class OperatorPanel {
     reset.dataset["op"] = "reset";
     this.controls.push({ el: this.mode, type: "mode.set" }, { el: reset, type: "trip.reset" }, { el: this.scramCover, type: "scram" }, { el: this.scram, type: "scram" });
 
+    let boronSection: HTMLElement | null = null;
+    if (lib.boron) {
+      const [lo, hi] = lib.boron.range;
+      this.boronReading = el("span", { className: "vr-value", textContent: "–" });
+      this.boronReading.dataset["op"] = "boron-reading";
+      this.boronInput = el("input", { type: "number", min: String(lo), max: String(hi), step: "1" });
+      this.boronInput.dataset["op"] = "boron-input";
+      this.boronInput.oninput = () => (this.boronInputTouched = true);
+      const setBtn = el("button", {
+        textContent: "set boron",
+        onclick: () => {
+          const ppm = Number(this.boronInput!.value);
+          if (this.boronInput!.value === "" || !Number.isFinite(ppm)) {
+            this.message.textContent = "enter a boron concentration in ppm";
+            return;
+          }
+          this.boronInputTouched = false;
+          void this.send({ type: "boron.set", ppm });
+        },
+      });
+      setBtn.dataset["op"] = "boron-set";
+      this.controls.push({ el: this.boronInput, type: "boron.set" }, { el: setBtn, type: "boron.set" });
+      boronSection = el("section", { className: "vr-row" }, [
+        el("h3", { textContent: "Boron" }),
+        this.boronReading,
+        el("span", { className: "vr-note", textContent: `(${lo} to ${hi} ppm, moves at ${lib.boron.maxRatePpmPerS} ppm/s)` }),
+        this.boronInput,
+        setBtn,
+      ]);
+    }
+
     this.elapsed = el("span", { className: "vr-scn-elapsed" });
     this.elapsed.dataset["op"] = "scenario-elapsed";
     this.scenarioBox = el("section", { className: "vr-scenario", hidden: true });
@@ -222,6 +258,7 @@ export class OperatorPanel {
       el("section", {}, [el("h3", { textContent: "Instruments" }), ...meterRows, periodRow]),
       el("section", {}, [el("h3", { textContent: "Annunciator" }), this.tileBox, ack]),
       el("section", {}, [el("h3", { textContent: "Rods" }), ...rodRows]),
+      ...(boronSection ? [boronSection] : []),
       el("section", { className: "vr-row" }, [el("label", {}, ["mode ", this.mode]), reset, this.scramCover, this.scram]),
       el("section", {}, [el("h3", { textContent: "Strip charts" }), ...this.charts.map((c) => c.chart.root)]),
       el(
@@ -348,6 +385,11 @@ export class OperatorPanel {
       if (e.fire) e.fire.disabled = view.console.mode !== "pulse" || !this.allows("rod.fire");
     }
     if (this.mode.value !== view.console.mode) this.mode.value = view.console.mode;
+    if (this.boronReading && view.console.boron) {
+      const b = view.console.boron;
+      this.boronReading.textContent = `${b.ppm.toFixed(1)} ppm${b.target !== null ? ` → ${b.target.toFixed(0)}` : ""}`;
+      if (this.boronInput && !this.boronInputTouched && document.activeElement !== this.boronInput) this.boronInput.value = (b.target ?? b.ppm).toFixed(0);
+    }
     this.annunciator.update(view.console.trips, states);
     // a scenario with faultsVisible shows one tile while an instructor fault is active (M6 D4b); otherwise there is no tile
     const f = msg.faults;

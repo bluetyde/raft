@@ -81,6 +81,19 @@
   "truth": {
    "additionalProperties": false,
    "properties": {
+    "boron": {
+     "type": "number"
+    },
+    "boronTarget": {
+     "anyOf": [
+      {
+       "type": "null"
+      },
+      {
+       "type": "number"
+      }
+     ]
+    },
     "coolantTemp": {
      "type": "number"
     },
@@ -135,6 +148,9 @@
     "reactivity": {
      "additionalProperties": false,
      "properties": {
+      "boron": {
+       "type": "number"
+      },
       "calibration": {
        "type": "number"
       },

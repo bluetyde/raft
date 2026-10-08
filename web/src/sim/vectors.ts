@@ -48,7 +48,7 @@ export function sampleFromEngine(e: Engine): Record<string, any> {
   for (const [rid, r] of Object.entries<any>(truth.rods)) {
     rods[rid] = r.position;
   }
-  return {
+  const out: Record<string, any> = {
     step: e.stepIndex,
     t: snap.t,
     power: truth.power,
@@ -66,6 +66,10 @@ export function sampleFromEngine(e: Engine): Record<string, any> {
     latched: [...snap.trips.latched],
     validityStatus: snap.validity.status,
   };
+  if (truth.boron !== undefined) {
+    out.boron = truth.boron;
+  }
+  return out;
 }
 
 export function runScenario(
@@ -119,6 +123,7 @@ export function runScenario(
     script: structuredClone(sc.script),
     libraryId: lib.id,
     ...(sc.libraryOverrides ? { libraryOverrides: structuredClone(sc.libraryOverrides) } : {}),
+    ...(sc.libraryFixture ? { libraryFixture: sc.libraryFixture } : {}),
     pins: e.pins(),
     samples,
     events: structuredClone(e.events),

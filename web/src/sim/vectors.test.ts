@@ -4,22 +4,20 @@ import { describe, expect, it } from "vitest";
 import { jsonForm, validateSnapshot } from "../contracts/validate";
 import { compareDocs } from "./compare";
 import { ENGINE_VERSION } from "./engine";
-import { engineVectorsDir, loadSyntheticCore } from "./testing";
-import { applyOverrides, runScenario } from "./vectors";
+import { engineVectorsDir, loadVectorLibrary } from "./testing";
+import { runScenario } from "./vectors";
 
 describe("Engine golden vectors (the main oracle)", () => {
   it("reproduces every golden vector within declared tolerances and validates snapshots", async () => {
     const files = readdirSync(engineVectorsDir)
       .filter((f) => f.endsWith(".json"))
       .sort();
-    expect(files.length).toBe(8);
+    expect(files.length).toBe(9);
 
     for (const file of files) {
       const content = readFileSync(join(engineVectorsDir, file), "utf-8");
       const committed = JSON.parse(content);
-      const lib = committed.libraryOverrides
-        ? await applyOverrides(await loadSyntheticCore(), committed.libraryOverrides)
-        : await loadSyntheticCore();
+      const lib = await loadVectorLibrary(committed);
 
       const sc = {
         name: committed.name,
@@ -31,6 +29,7 @@ describe("Engine golden vectors (the main oracle)", () => {
         sampleEvery: committed.sampleEvery,
         script: committed.script,
         libraryOverrides: committed.libraryOverrides,
+        libraryFixture: committed.libraryFixture,
       };
 
       const produced = runScenario(lib, sc, (e) => {
@@ -78,7 +77,7 @@ describe("Engine golden vectors (the main oracle)", () => {
     const files = readdirSync(engineVectorsDir)
       .filter((f) => f.endsWith(".json"))
       .sort();
-    expect(files.length).toBe(8);
+    expect(files.length).toBe(9);
 
     for (const file of files) {
       const content = readFileSync(join(engineVectorsDir, file), "utf-8");
@@ -143,14 +142,12 @@ describe("Engine golden vectors (the main oracle)", () => {
     const files = readdirSync(engineVectorsDir)
       .filter((f) => f.endsWith(".json"))
       .sort();
-    expect(files.length).toBe(8);
+    expect(files.length).toBe(9);
 
     for (const file of files) {
       const doc = JSON.parse(readFileSync(join(engineVectorsDir, file), "utf-8"));
       expect(doc.pins.engineVersion).toBe(ENGINE_VERSION);
-      const lib = doc.libraryOverrides
-        ? await applyOverrides(await loadSyntheticCore(), doc.libraryOverrides)
-        : await loadSyntheticCore();
+      const lib = await loadVectorLibrary(doc);
       expect(doc.pins.libraryDigest).toBe(lib.digest);
     }
   });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Engine } from "../../sim/engine";
-import { loadSyntheticCore } from "../../sim/testing";
+import { loadBoronCore, loadSyntheticCore } from "../../sim/testing";
 import { nearCriticalRods } from "../../sim/vectors";
 import { Annunciator } from "./annunciator";
 import { CONSOLE_TRUTH_FIELDS, consoleState, operatorView, stripTruthPhysics } from "./console";
@@ -33,6 +33,21 @@ describe("what the operator may read", () => {
     expect(Object.keys(stripped.truth).sort()).toEqual([...CONSOLE_TRUTH_FIELDS].sort());
     expect(stripped.truth.power).toBeUndefined();
     expect(operatorView(stripped)).toEqual(operatorView(snap));
+  });
+});
+
+describe("soluble boron on the console", () => {
+  it("is read when the library has boron, kept by the truth guard, and absent otherwise", async () => {
+    const L = await loadBoronCore();
+    const e = new Engine(L, {}, 1);
+    e.submit({ type: "boron.set", ppm: 990 });
+    e.advance(2);
+    const snap = e.snapshot();
+    expect(consoleState(snap).boron).toEqual({ ppm: 999, target: 990 });
+    const stripped = stripTruthPhysics(snap);
+    expect(stripped.truth.boron).toBe(999);
+    expect(operatorView(stripped)).toEqual(operatorView(snap));
+    expect(consoleState(new Engine(await loadSyntheticCore(), {}, 1).snapshot()).boron).toBeUndefined();
   });
 });
 

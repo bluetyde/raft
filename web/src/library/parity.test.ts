@@ -47,7 +47,7 @@ describe("parity oracle", () => {
       .filter((d) => d.isDirectory())
       .map((d) => join(invalidDir, d.name))
       .sort();
-    expect(invalidCases.length).toBe(35);
+    expect(invalidCases.length).toBe(40);
 
     const origText = readFileSync(join(syntheticCore, "manifest.json"), "utf-8");
 
@@ -149,6 +149,7 @@ describe("parity oracle", () => {
     const allFolders = [
       ...invalidCases,
       syntheticCore,
+      join(vectors, "synthetic-core-boron"),
       trigaJsi,
       ...generatedCases,
     ];

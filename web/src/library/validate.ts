@@ -10,7 +10,9 @@ import type { LibraryReader } from "./platform";
 import { sha256Hex } from "./platform";
 
 export const SUPPORTED_VERSIONS = ["0.1.0"];
-export const SUPPORTED_CAPABILITIES = ["point-kinetics/lumped-thermal-v1", "point-kinetics/lumped-thermal-v2"];
+// soluble boron: reference.boron, reactivity.boron, plant.boron, domain.boron, truth.boron, boron.set
+export const BORON_CAPABILITY = "point-kinetics/boron-v1";
+export const SUPPORTED_CAPABILITIES = ["point-kinetics/lumped-thermal-v1", "point-kinetics/lumped-thermal-v2", BORON_CAPABILITY];
 export const TRUTH_SIGNALS = ["power", "period", "fuelTemp", "coolantTemp", "xenon", "mode"];
 
 export const TABLE_REF_TOL = 1e-9; // reactivity tables (JSON doubles)
@@ -84,6 +86,7 @@ const libraryValidator = new Validator(librarySchema);
 class Checker {
   private issues: Issue[] = [];
   private arrays = new Map<string, number[]>();
+  private hasBoron = false;
 
   constructor(private reader: LibraryReader) {}
 
@@ -152,6 +155,22 @@ class Checker {
     const hA = (m.thermal as { hA: Record<string, unknown> }).hA;
     if ((Object.hasOwn(hA, "exponent") || Object.hasOwn(hA, "dTRef")) && !capabilities.includes("point-kinetics/lumped-thermal-v2")) {
       this.add("E_CAPABILITY_UNSUPPORTED", "$.thermal.hA", "exponent and dTRef need the capability point-kinetics/lumped-thermal-v2");
+    }
+    this.hasBoron = capabilities.includes(BORON_CAPABILITY);
+    const mm = m as Record<string, Record<string, unknown>>;
+    const boronFields: [string, boolean][] = [
+      ["$.reference.boron", Object.hasOwn(mm.reference!, "boron")],
+      ["$.reactivity.boron", Object.hasOwn(mm.reactivity!, "boron")],
+      ["$.plant.boron", Object.hasOwn(mm.plant!, "boron")],
+      ["$.domain.boron", Object.hasOwn(mm.domain!, "boron")],
+    ];
+    for (const [fieldPath, present] of boronFields) {
+      if (present && !this.hasBoron) {
+        this.add("E_CAPABILITY_UNSUPPORTED", fieldPath, `boron needs the capability ${BORON_CAPABILITY}`);
+      }
+      if (this.hasBoron && !present) {
+        this.add("E_SCHEMA", fieldPath, `required by the capability ${BORON_CAPABILITY}`);
+      }
     }
     if (this.issues.length > 0) {
       return this.issues;
@@ -324,6 +343,19 @@ class Checker {
     this.table(r.fuelTemp, "T", "rho", "$.reactivity.fuelTemp", ref.Tfuel.value);
     this.table(r.coolantTemp, "T", "rho", "$.reactivity.coolantTemp", ref.Tcoolant.value);
     this.table(r.xenon, "N", "rho", "$.reactivity.xenon", ref.xenon.value);
+    if (this.hasBoron) {
+      this.table(r.boron, "C", "rho", "$.reactivity.boron", ref.boron.value);
+      const [lo, hi] = m.plant.boron.range as number[];
+      if (!(lo! < hi!) || lo! < 0) {
+        this.add("E_SCHEMA", "$.plant.boron.range", "range must be [lo, hi] with 0 <= lo < hi");
+      } else if (!(lo! <= ref.boron.value && ref.boron.value <= hi!)) {
+        this.add("E_REF_NONZERO", "$.plant.boron.range", "the reference boron must lie inside the range");
+      }
+      const [dlo, dhi] = m.domain.boron as number[];
+      if (dlo! > dhi!) {
+        this.add("E_SCHEMA", "$.domain.boron", "must be [lo, hi] with lo <= hi");
+      }
+    }
     this.table(m.thermal.fuel.cp, "T", "c", "$.thermal.fuel.cp", null);
   }
 
@@ -332,6 +364,7 @@ class Checker {
       const name = sig.slice("truth.".length);
       return (
         TRUTH_SIGNALS.includes(name) ||
+        (name === "boron" && this.hasBoron) ||
         (name.startsWith("rod.") && rods.has(name.slice(4)))
       );
     }
@@ -387,7 +420,9 @@ class Checker {
     }
     for (let i = 0; i < p.instruments.length; i++) {
       const ins = p.instruments[i];
-      if (
+      if (ins.signal === "truth.boron") {
+        this.add("E_SIGNAL_UNKNOWN", `$.plant.instruments[${i}]`, "no instrument can measure boron in this version of the capability");
+      } else if (
         !ins.signal.startsWith("truth.") ||
         !this.signalOk(ins.signal, inst, rods)
       ) {

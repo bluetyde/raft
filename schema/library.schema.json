@@ -41,6 +41,7 @@
         "Tfuel": { "$ref": "#/$defs/scalarPositive" },
         "Tcoolant": { "$ref": "#/$defs/scalarPositive" },
         "xenon": { "$ref": "#/$defs/scalarNonNegative" },
+        "boron": { "$ref": "#/$defs/scalarNonNegative" },
         "rho": { "$ref": "#/$defs/scalar" },
         "calibration": {
           "anyOf": [
@@ -83,7 +84,8 @@
         "rods": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/rod" } },
         "fuelTemp": { "$ref": "#/$defs/tableT" },
         "coolantTemp": { "$ref": "#/$defs/tableT" },
-        "xenon": { "$ref": "#/$defs/tableN" }
+        "xenon": { "$ref": "#/$defs/tableN" },
+        "boron": { "$ref": "#/$defs/tableC" }
       }
     },
     "thermal": {
@@ -154,6 +156,10 @@
       "required": ["modes", "initialMode", "pumps", "instruments", "trips", "interlocks"],
       "additionalProperties": false,
       "properties": {
+        "boron": {
+          "type": "object", "required": ["range", "maxRatePpmPerS"], "additionalProperties": false,
+          "properties": { "range": { "$ref": "#/$defs/interval" }, "maxRatePpmPerS": { "type": "number", "exclusiveMinimum": 0 } }
+        },
         "modes": { "type": "array", "minItems": 1, "items": { "type": "string" } },
         "initialMode": { "type": "string" },
         "pumps": {
@@ -194,7 +200,7 @@
             "properties": {
               "id": { "type": "string" },
               "when": { "$ref": "#/$defs/predicate" },
-              "blocks": { "type": "array", "minItems": 1, "items": { "enum": ["rod.move", "rod.setTarget", "rod.fire", "mode.set", "pump.set"] } },
+              "blocks": { "type": "array", "minItems": 1, "items": { "enum": ["rod.move", "rod.setTarget", "rod.fire", "mode.set", "pump.set", "boron.set"] } },
               "reason": { "type": "string", "minLength": 1 }
             }
           }
@@ -269,6 +275,7 @@
         "Tfuel": { "$ref": "#/$defs/interval" },
         "Tcoolant": { "$ref": "#/$defs/interval" },
         "xenon": { "$ref": "#/$defs/interval" },
+        "boron": { "$ref": "#/$defs/interval" },
         "jointChecked": {
           "type": "array",
           "items": {
@@ -318,6 +325,13 @@
       "type": "object", "required": ["N", "rho", "interp", "outOfRange", "source"], "additionalProperties": false,
       "properties": {
         "N": { "$ref": "#/$defs/numbers" }, "rho": { "$ref": "#/$defs/numbers" }, "unc": { "$ref": "#/$defs/numbers" },
+        "interp": { "$ref": "#/$defs/interp" }, "outOfRange": { "$ref": "#/$defs/outOfRange" }, "source": { "$ref": "#/$defs/source" }
+      }
+    },
+    "tableC": {
+      "type": "object", "required": ["C", "rho", "interp", "outOfRange", "source"], "additionalProperties": false,
+      "properties": {
+        "C": { "$ref": "#/$defs/numbers" }, "rho": { "$ref": "#/$defs/numbers" }, "unc": { "$ref": "#/$defs/numbers" },
         "interp": { "$ref": "#/$defs/interp" }, "outOfRange": { "$ref": "#/$defs/outOfRange" }, "source": { "$ref": "#/$defs/source" }
       }
     },

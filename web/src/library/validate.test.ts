@@ -39,6 +39,11 @@ describe("library fixtures", () => {
     expect(issues).toEqual([]);
   });
 
+  it("the synthetic core with soluble boron is valid", async () => {
+    const issues = await validateLibrary(nodeReader(join(vectors, "synthetic-core-boron")));
+    expect(issues).toEqual([]);
+  });
+
   it("triga-jsi is valid", async () => {
     const issues = await validateLibrary(nodeReader(trigaJsiPath));
     expect(issues).toEqual([]);
@@ -51,7 +56,7 @@ describe("library fixtures", () => {
       .map((d) => d.name)
       .sort();
 
-    expect(cases.length).toBe(35);
+    expect(cases.length).toBe(40);
 
     for (const caseName of cases) {
       const caseFolder = join(invalidDir, caseName);

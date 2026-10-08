@@ -214,7 +214,14 @@ async function build(info: LoadedInfo): Promise<void> {
     operator?.dispose();
     operator = new OperatorPanel(
       client,
-      { instruments: lib.instruments, trips: lib.trips, interlocks: lib.interlocks, rods, modes: lib.modes },
+      {
+        instruments: lib.instruments,
+        trips: lib.trips,
+        interlocks: lib.interlocks,
+        rods,
+        modes: lib.modes,
+        ...(lib.hasBoron ? { boron: { range: lib.boronRange, maxRatePpmPerS: lib.boronMaxRate } } : {}),
+      },
       { timeControls: role !== "operator" },
     );
     opBox.replaceChildren(operator.root);

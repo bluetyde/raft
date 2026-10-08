@@ -24,7 +24,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_PATH = REPO_ROOT / "schema" / "library.schema.json"
 
 SUPPORTED_VERSIONS = ("0.1.0",)
-SUPPORTED_CAPABILITIES = ("point-kinetics/lumped-thermal-v1", "point-kinetics/lumped-thermal-v2")
+BORON_CAPABILITY = "point-kinetics/boron-v1"      # soluble boron: reference.boron, reactivity.boron, plant.boron, domain.boron, truth.boron, boron.set
+SUPPORTED_CAPABILITIES = ("point-kinetics/lumped-thermal-v1", "point-kinetics/lumped-thermal-v2", BORON_CAPABILITY)
 TRUTH_SIGNALS = ("power", "period", "fuelTemp", "coolantTemp", "xenon", "mode")
 
 TABLE_REF_TOL = 1e-9     # reactivity tables (JSON doubles)
@@ -80,6 +81,7 @@ class _Checker:
         self.folder = folder
         self.issues: list[Issue] = []
         self.arrays: dict[str, list[float]] = {}
+        self.has_boron = False
 
     def add(self, code: str, path: str, message: str) -> None:
         self.issues.append(Issue(code, path, message))
@@ -117,6 +119,14 @@ class _Checker:
         hA = m["thermal"]["hA"]
         if ("exponent" in hA or "dTRef" in hA) and "point-kinetics/lumped-thermal-v2" not in m["capabilities"]:
             self.add("E_CAPABILITY_UNSUPPORTED", "$.thermal.hA", "exponent and dTRef need the capability point-kinetics/lumped-thermal-v2")
+        self.has_boron = BORON_CAPABILITY in m["capabilities"]
+        boron_fields = (("$.reference.boron", "boron" in m["reference"]), ("$.reactivity.boron", "boron" in m["reactivity"]),
+                        ("$.plant.boron", "boron" in m["plant"]), ("$.domain.boron", "boron" in m["domain"]))
+        for path, present in boron_fields:
+            if present and not self.has_boron:
+                self.add("E_CAPABILITY_UNSUPPORTED", path, f"boron needs the capability {BORON_CAPABILITY}")
+            if self.has_boron and not present:
+                self.add("E_SCHEMA", path, f"required by the capability {BORON_CAPABILITY}")
         if self.issues:
             return self.issues
 
@@ -209,12 +219,22 @@ class _Checker:
         self._table(r["fuelTemp"], "T", "rho", "$.reactivity.fuelTemp", ref["Tfuel"]["value"])
         self._table(r["coolantTemp"], "T", "rho", "$.reactivity.coolantTemp", ref["Tcoolant"]["value"])
         self._table(r["xenon"], "N", "rho", "$.reactivity.xenon", ref["xenon"]["value"])
+        if self.has_boron:
+            self._table(r["boron"], "C", "rho", "$.reactivity.boron", ref["boron"]["value"])
+            lo, hi = m["plant"]["boron"]["range"]
+            if not lo < hi or lo < 0:
+                self.add("E_SCHEMA", "$.plant.boron.range", "range must be [lo, hi] with 0 <= lo < hi")
+            elif not lo <= ref["boron"]["value"] <= hi:
+                self.add("E_REF_NONZERO", "$.plant.boron.range", "the reference boron must lie inside the range")
+            dlo, dhi = m["domain"]["boron"]
+            if dlo > dhi:
+                self.add("E_SCHEMA", "$.domain.boron", "must be [lo, hi] with lo <= hi")
         self._table(m["thermal"]["fuel"]["cp"], "T", "c", "$.thermal.fuel.cp", None)
 
     def _signal_ok(self, sig: str, instruments: set[str], rods: set[str]) -> bool:
         if sig.startswith("truth."):
             name = sig[len("truth."):]
-            return name in TRUTH_SIGNALS or (name.startswith("rod.") and name[4:] in rods)
+            return name in TRUTH_SIGNALS or (name == "boron" and self.has_boron) or (name.startswith("rod.") and name[4:] in rods)
         if sig.startswith("indicated."):
             return sig[len("indicated."):] in instruments
         return False
@@ -248,7 +268,9 @@ class _Checker:
         if m["thermal"]["heatExchanger"]["pump"] not in pumps:
             self.add("E_PUMP_UNKNOWN", "$.thermal.heatExchanger.pump", "unknown pump")
         for i, ins in enumerate(p["instruments"]):
-            if not ins["signal"].startswith("truth.") or not self._signal_ok(ins["signal"], inst, rods):
+            if ins["signal"] == "truth.boron":
+                self.add("E_SIGNAL_UNKNOWN", f"$.plant.instruments[{i}]", "no instrument can measure boron in this version of the capability")
+            elif not ins["signal"].startswith("truth.") or not self._signal_ok(ins["signal"], inst, rods):
                 self.add("E_SIGNAL_UNKNOWN", f"$.plant.instruments[{i}]", f"instrument signal must be a truth signal, got {ins['signal']!r}")
         for i, t in enumerate(p["trips"]):
             path = f"$.plant.trips[{i}]"

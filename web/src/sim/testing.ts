@@ -12,9 +12,28 @@ import { nearCriticalRods } from "./vectors";
 export const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
 export const syntheticCorePath = join(repoRoot, "schema", "vectors", "synthetic-core");
 export const engineVectorsDir = join(repoRoot, "schema", "engine-vectors");
+export const fixturesDir = join(repoRoot, "schema", "vectors");
 
 export async function loadSyntheticCore(): Promise<Library> {
   return await loadLibrary(nodeReader(syntheticCorePath));
+}
+
+/** The synthetic core with soluble boron (capability point-kinetics/boron-v1). */
+export async function loadBoronCore(): Promise<Library> {
+  return await loadLibrary(nodeReader(join(fixturesDir, "synthetic-core-boron")));
+}
+
+/** The library a committed golden vector was recorded on: a named fixture, or the synthetic core with the vector's overrides. */
+export async function loadVectorLibrary(doc: Record<string, any>): Promise<Library> {
+  if (doc.libraryFixture) {
+    return await loadLibrary(nodeReader(join(fixturesDir, doc.libraryFixture)));
+  }
+  const lib = await loadSyntheticCore();
+  if (doc.libraryOverrides) {
+    const { applyOverrides } = await import("./vectors");
+    return await applyOverrides(lib, doc.libraryOverrides);
+  }
+  return lib;
 }
 
 export async function kineticsOnlyLib(): Promise<Library> {

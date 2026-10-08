@@ -346,6 +346,7 @@ export class InstructorPanel {
       ["coolant", `${kelvinToCelsius(tr.coolantTemp).toFixed(2)} °C`],
       ["iodine", Number(tr.iodine).toPrecision(4)],
       ["xenon", Number(tr.xenon).toPrecision(4)],
+      ...(typeof tr.boron === "number" ? ([["boron", `${tr.boron.toFixed(1)} ppm${typeof tr.boronTarget === "number" ? ` → ${tr.boronTarget.toFixed(0)}` : ""}`]] as [string, string][]) : []),
       ["peak power", `${formatPower(tr.peakPower)} at ${Number(tr.peakTime).toFixed(3)} s`],
       ["mode", String(tr.mode)],
     ];

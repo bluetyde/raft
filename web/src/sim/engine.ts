@@ -7,9 +7,10 @@
 import { Library, Table } from "./library";
 import { MASK64, SplitMix64, luFactor, luSolve, type LUFactored } from "./numerics";
 
-export const ENGINE_VERSION = "0.3.0";
+export const ENGINE_VERSION = "0.4.0";
 export const CAPABILITY = "point-kinetics/lumped-thermal-v1";
 export const CAPABILITY_V2 = "point-kinetics/lumped-thermal-v2"; // adds thermal.hA.exponent
+export const CAPABILITY_BORON = "point-kinetics/boron-v1"; // adds soluble boron: a concentration the operator changes at a limited rate (ppm), and its reactivity table
 
 export interface EngineConfig {
   outerDt: number;
@@ -203,6 +204,8 @@ export class Engine {
   diag: { steps: number; rejected: number; rhsCalls: number };
 
   motions: Record<string, any>;
+  /** The soluble-boron actuator: still, or a linear ramp toward a commanded value; null without the capability. */
+  boronMotion: Record<string, any> | null = null;
   mode: string;
   pumps: Record<string, boolean>;
   y: number[];
@@ -312,6 +315,17 @@ export class Engine {
         throw new InitError("E_INIT_INVALID", `rod ${rid} position must be in [0, 1]`);
       }
     }
+    this.boronMotion = null;
+    if (lib.hasBoron) {
+      const b0 = Number(init.boron ?? lib.refBoron);
+      const [lo, hi] = lib.boronRange;
+      if (!(lo <= b0 && b0 <= hi)) {
+        throw new InitError("E_INIT_INVALID", `boron ${b0} is outside the library's range [${lo}, ${hi}]`);
+      }
+      this.boronMotion = { kind: "still", t0: 0.0, x0: b0 };
+    } else if (Object.hasOwn(init, "boron")) {
+      throw new InitError("E_INIT_INVALID", "the library has no soluble boron");
+    }
 
     this.mode = init.mode ?? lib.initialMode;
     if (!lib.modes.includes(this.mode)) {
@@ -416,6 +430,24 @@ export class Engine {
     }
   }
 
+  /** The boron concentration (ppm) at time t: still, or a linear ramp at the library's rate toward the commanded value. */
+  boronValue(t: number): number {
+    const m = this.boronMotion!;
+    if (m.kind === "still") return m.x0;
+    const x = m.x0 + m.v * (t - m.t0);
+    return m.v > 0 ? Math.min(x, m.target) : Math.max(x, m.target);
+  }
+
+  private _rebaseBoron(t: number): void {
+    const m = this.boronMotion;
+    if (m === null || m.kind === "still") return;
+    const x = this.boronValue(t);
+    if (x === m.target) {
+      // the ramp is evaluated from its own start (no rebase per step, so no rounding drift); it ends here
+      this.boronMotion = { kind: "still", t0: t, x0: x };
+    }
+  }
+
   rodPosition(rid: string, t: number): number {
     const m = this.motions[rid]!;
     const k = m.kind;
@@ -481,7 +513,7 @@ export class Engine {
     const cool = lib.coolTemp.at(y[ITC]!);
     const xe = lib.xenon.at(y[IX]!);
     const base = lib.refRho + lib.calibration;
-    return {
+    const out: Record<string, any> = {
       total: base + this.extraRho + rods + fuel + cool + xe,
       reference: lib.refRho,
       calibration: lib.calibration,
@@ -491,6 +523,11 @@ export class Engine {
       coolant: cool,
       xenon: xe,
     };
+    if (lib.hasBoron) {
+      out.boron = lib.boron!.at(this.boronValue(t));
+      out.total += out.boron;
+    }
+    return out;
   }
 
   rhs(t: number, y: number[]): number[] {
@@ -507,6 +544,9 @@ export class Engine {
       rho += r.worth.at(this.rodPosition(r.id, t));
     }
     rho += lib.fuelTemp.at(tf) + lib.coolTemp.at(tc) + lib.xenon.at(x_);
+    if (lib.hasBoron) {
+      rho += lib.boron!.at(this.boronValue(t));
+    }
 
     const L = lib.genTime;
     const d = new Array<number>(y.length).fill(0.0);
@@ -546,6 +586,7 @@ export class Engine {
     if (name === "coolantTemp") return y[ITC]!;
     if (name === "xenon") return y[IX]!;
     if (name === "mode") return this.mode;
+    if (name === "boron") return this.boronValue(t);
     if (name === "period") {
       const dp = this.rhs(t, y)[IP]!;
       return dp === 0.0 ? Infinity : y[IP]! / dp;
@@ -927,6 +968,7 @@ export class Engine {
   private _boundary(first = false): void {
     const t = this.t;
     this._rebaseRods(t);
+    this._rebaseBoron(t);
     this._sampleInstruments(t);
     const get = (s: string) => this._signal(s, t, this.y);
 
@@ -965,6 +1007,9 @@ export class Engine {
     ];
     for (const r of lib.rods) {
       checks.push([r.worth, this.rodPosition(r.id, this.t), `rod.${r.id}`]);
+    }
+    if (lib.hasBoron) {
+      checks.push([lib.boron!, this.boronValue(this.t), "boron"]);
     }
     for (const [table, x, name] of checks) {
       if (table.outOfRange === "reject" && table.value(x)[1]) {
@@ -1069,6 +1114,26 @@ export class Engine {
         reason = `REJ_INTERLOCK:${il.id}`;
       } else {
         this.mode = mode;
+      }
+    } else if (ctype === "boron.set" && this.lib.hasBoron) {
+      const ppm = cmd.ppm;
+      const [lo, hi] = this.lib.boronRange;
+      if (typeof ppm !== "number" || !Number.isFinite(ppm)) {
+        status = "rejected";
+        reason = "REJ_BAD_ARGUMENT";
+      } else if (!(lo <= ppm && ppm <= hi)) {
+        status = "rejected";
+        reason = "REJ_OUT_OF_RANGE";
+      } else if (il) {
+        status = "rejected";
+        reason = `REJ_INTERLOCK:${il.id}`;
+      } else {
+        const x = this.boronValue(t);
+        if (ppm === x) {
+          this.boronMotion = { kind: "still", t0: t, x0: x };
+        } else {
+          this.boronMotion = { kind: "move", t0: t, x0: x, target: ppm, v: ppm > x ? this.lib.boronMaxRate : -this.lib.boronMaxRate };
+        }
       }
     } else if (ctype === "pump.set") {
       const pump = cmd.pump;
@@ -1219,6 +1284,14 @@ export class Engine {
       }
     }
 
+    if (lib.hasBoron) {
+      const [lo, hi] = dom.boron;
+      const b = this.boronValue(this.t);
+      if (!(lo <= b && b <= hi)) {
+        out.push("R_DOMAIN_BORON");
+      }
+    }
+
     const moved: Record<string, number> = {};
     for (const r of lib.rods) {
       const pos = this.rodPosition(r.id, this.t);
@@ -1317,6 +1390,11 @@ export class Engine {
       validity: this.validity(),
       diagnostics: { ...this.diag, events: this.events.length, h: this.h },
     };
+    if (this.lib.hasBoron) {
+      snap.truth.boron = this.boronValue(t);
+      const bm = this.boronMotion!;
+      snap.truth.boronTarget = bm.kind === "move" ? bm.target : null;
+    }
     if (includeShape) {
       snap.truth.shape = this.shape();
     }
@@ -1333,7 +1411,7 @@ export class Engine {
   }
 
   checkpoint(): Record<string, any> {
-    return {
+    const cp: Record<string, any> = {
       pins: this.pins(),
       seed: this.seed,
       init: structuredClone(this.initSpec),
@@ -1356,6 +1434,10 @@ export class Engine {
       commandLog: structuredClone(this.commandLog),
       eventCount: this.events.length,
     };
+    if (this.boronMotion !== null) {
+      cp.boronMotion = structuredClone(this.boronMotion);
+    }
+    return cp;
   }
 
   static restore(lib: Library, cp: Record<string, any>): Engine {
@@ -1387,6 +1469,9 @@ export class Engine {
     e.peakTime = cp.peak[1];
     e.halted = cp.halted;
     e.commandLog = structuredClone(cp.commandLog);
+    if (lib.hasBoron) {
+      e.boronMotion = structuredClone(cp.boronMotion);
+    }
     e.events = [{ type: "restored", t: e.t, eventCount: cp.eventCount }];
     e.diag = { steps: 0, rejected: 0, rhsCalls: 0 };
     return e;

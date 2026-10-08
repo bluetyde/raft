@@ -18,6 +18,8 @@ export interface ConsoleState {
   trips: { latched: string[]; active: string[] };
   tripped: boolean;
   validity: { status: string; reasons: string[] };
+  /** Soluble boron (libraries with the capability point-kinetics/boron-v1): the concentration the plant holds, ppm, and the value it is moving to. */
+  boron?: { ppm: number; target: number | null };
 }
 
 export interface OperatorView {
@@ -27,12 +29,14 @@ export interface OperatorView {
 
 /** The fields of `truth` the operator view may read. Everything else in `truth` is physics. */
 export const CONSOLE_TRUTH_FIELDS = ["rods", "mode", "pumps"] as const;
+/** Console fields that exist only in some libraries (boron): kept when present. The reading is the plant's chemistry state, shown ideal (no instrument noise in this version). */
+export const CONSOLE_TRUTH_OPTIONAL = ["boron", "boronTarget"] as const;
 
 export function consoleState(snapshot: Record<string, any>): ConsoleState {
   const truth = snapshot.truth ?? {};
   const rods: Record<string, RodConsole> = {};
   for (const [id, r] of Object.entries<any>(truth.rods ?? {})) rods[id] = { position: r.position, moving: r.moving ?? null };
-  return {
+  const out: ConsoleState = {
     t: snapshot.t,
     rods,
     mode: truth.mode,
@@ -41,6 +45,8 @@ export function consoleState(snapshot: Record<string, any>): ConsoleState {
     tripped: Boolean(snapshot.tripped),
     validity: { status: snapshot.validity?.status ?? "unknown", reasons: [...(snapshot.validity?.reasons ?? [])] },
   };
+  if (typeof truth.boron === "number") out.boron = { ppm: truth.boron, target: typeof truth.boronTarget === "number" ? truth.boronTarget : null };
+  return out;
 }
 
 export function operatorView(snapshot: Record<string, any>): OperatorView {
@@ -51,7 +57,7 @@ export function operatorView(snapshot: Record<string, any>): OperatorView {
 export function stripTruthPhysics(snapshot: Record<string, any>): Record<string, any> {
   const copy = structuredClone(snapshot);
   const kept: Record<string, unknown> = {};
-  for (const f of CONSOLE_TRUTH_FIELDS) if (f in (copy.truth ?? {})) kept[f] = copy.truth[f];
+  for (const f of [...CONSOLE_TRUTH_FIELDS, ...CONSOLE_TRUTH_OPTIONAL]) if (f in (copy.truth ?? {})) kept[f] = copy.truth[f];
   copy.truth = kept;
   return copy;
 }

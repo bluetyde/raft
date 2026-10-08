@@ -25,6 +25,7 @@ export const COMMAND_TYPES = [
   "trip.reset",
   "fault.instrument",
   "fault.reactivity",
+  "boron.set",
 ] as const;
 
 /** The outer steps a scenario may use: fine (pulses allowed) and coarse (M6 D5). */
@@ -287,6 +288,7 @@ export function validateScenario(obj: unknown, lib: Library): Issue[] {
       const sig = leaf.signal;
       const known =
         TRUTH_SIGNALS.includes(sig) ||
+        (sig === "truth.boron" && lib.hasBoron) ||
         (sig.startsWith("truth.rod.") && lib.rods.some((r) => r.id === sig.slice("truth.rod.".length))) ||
         (sig.startsWith("indicated.") && lib.instruments.some((x: any) => x.id === sig.slice("indicated.".length)));
       if (!known) out.push(issue("E_SCN_CHECK", `${path}/signal`, `unknown signal ${sig}`));

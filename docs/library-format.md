@@ -62,7 +62,7 @@ Every table carries one `source` for the whole table. `Source` is one of:
 | `id` | Lowercase slug, also the folder name |
 | `name` | Human-readable name |
 | `status` | `"synthetic"`, `"experimental"` or `"validated-for-domain"` (see plan 07) |
-| `capabilities` | Required model capabilities. v0 defines `"point-kinetics/lumped-thermal-v1"` and `"point-kinetics/lumped-thermal-v2"` (v1 plus a temperature-dependent `hA`, section 8); an engine accepts either |
+| `capabilities` | Required model capabilities. v0 defines `"point-kinetics/lumped-thermal-v1"` and `"point-kinetics/lumped-thermal-v2"` (v1 plus a temperature-dependent `hA`, section 8); an engine accepts either. A library may add `"point-kinetics/boron-v1"` (soluble boron, section 15) |
 | `provenance` | Generator, codes, data, dates and a list of cited `sources` `{id, cite}` |
 | `reference` | The reference state (section 5) |
 | `kinetics`, `reactivity`, `thermal`, `poisons` | Physics inputs (sections 6–8) |
@@ -80,6 +80,8 @@ Every table carries one `source` for the whole table. `Source` is one of:
 - Total reactivity at runtime is
 
   `ρ = reference.rho + calibration.deltaRho + Σ_r rodWorth_r(x_r) + fuelTemp(T_f) + coolantTemp(T_c) + xenon(N)`
+
+  (plus `boron(C)` with the capability `point-kinetics/boron-v1`, section 15)
 
 - **Every table is a delta from the reference** and must be **zero at the reference point**: within 1e-9 absolute for JSON tables and 1e-6 for float32 arrays (`E_REF_NONZERO`).
   The reference point must lie inside each table's axis range.
@@ -138,7 +140,7 @@ Pulse-capable rods must have `fireTime`, and only they may have it (`E_SCHEMA`).
 - `interlocks`: `[{ id, when: predicate, blocks: [commandType, ...], reason }]`. While `when` is true, the listed command types are rejected with `reason`.
 
 **Signals** are always written with a prefix:
-- `truth.<name>`, where name is `power`, `period`, `fuelTemp`, `coolantTemp`, `xenon`, `mode` or `rod.<rodId>`
+- `truth.<name>`, where name is `power`, `period`, `fuelTemp`, `coolantTemp`, `xenon`, `mode` or `rod.<rodId>` (and `boron` with the capability `point-kinetics/boron-v1`)
 - `indicated.<instrumentId>`, an instrument's reading
 
 An instrument's `signal` must be a truth signal. An unknown signal anywhere is an error (`E_SIGNAL_UNKNOWN`).
@@ -244,3 +246,18 @@ Reason codes (`R_*`) are defined with the engine, not in this format.
 | `E_GEOMETRY_ID` | Geometry names an unknown element or rod, or a shape element has no geometry |
 
 Validators in every language report `{ code, path, message }` and must give the same codes for the fixtures in `schema/vectors/`.
+
+## 15. Soluble boron (capability `point-kinetics/boron-v1`)
+
+For a reactor whose operator changes a dissolved absorber (a PWR). Adds, **all required together** with the capability and refused without it (`E_CAPABILITY_UNSUPPORTED` when present without it, `E_SCHEMA` when missing with it):
+
+- `reference.boron`: a scalar, the reference concentration in ppm (≥ 0).
+- `reactivity.boron`: a table `{ "C": [ppm...], "rho": [...], "unc"?, "interp", "outOfRange", "source" }`, a delta from the reference like every table (zero at `reference.boron`, `E_REF_NONZERO`).
+- `plant.boron`: `{ "range": [lo, hi], "maxRatePpmPerS": number > 0 }`. The plant accepts a concentration only inside `range` (`0 <= lo < hi`, containing the reference), and moves toward a commanded value at `maxRatePpmPerS`.
+- `domain.boron`: `[lo, hi]`, where the table has data (`R_DOMAIN_BORON` outside it).
+
+The reactivity gains one term, `boron(C(t))`, in the sum of section 5. **The concentration is not an ODE state**: like a rod it is an actuator, evaluated from the last command as a linear ramp from the value at the command to the target and held there. The engine's checkpoint carries it (`boronMotion`) only when the library has the capability, so other libraries' checkpoints are unchanged.
+
+Command `boron.set { ppm }`: accepted inside the range (`REJ_OUT_OF_RANGE` outside, `REJ_BAD_ARGUMENT` for a non-number), blockable by an interlock (`"boron.set"` in `blocks`), allowed to an operator window, and never blocked by a trip (boration after a trip is allowed). A new target in mid-ramp starts from the current value. `init.boron` sets the starting concentration (default `reference.boron`; `E_INIT_INVALID` outside the range or without the capability). The snapshot's `truth` gains `boron` and `boronTarget` (null when still), and `reactivity.boron`; trips, interlocks and scenario goals may read `truth.boron`.
+
+Not in this version: an instrument that measures boron (the schema refuses `truth.boron` as an instrument signal, `E_SIGNAL_UNKNOWN`: the operator view shows the plant's concentration ideally), a boron term in the power shapes, and a coupling of the moderator coefficient to the concentration (the coolant table is built at the reference boron; a library says so in its notes).

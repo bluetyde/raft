@@ -17,6 +17,7 @@ from .library import Library
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUT = REPO_ROOT / "schema" / "engine-vectors"
 SYNTHETIC_CORE = REPO_ROOT / "schema" / "vectors" / "synthetic-core"
+FIXTURES = REPO_ROOT / "schema" / "vectors"          # a scenario may name another fixture library with "libraryFixture"
 
 TOLERANCES = {
     "power": {"rel": 1e-9, "abs": 1e-15},
@@ -135,6 +136,22 @@ def _scenarios(lib: Library) -> list[dict]:
             "script": [],
         },
         {
+            "name": "boron-dilution",
+            "description": "Soluble boron (synthetic-core-boron, reference 1000 ppm, 12 pcm/ppm, 0.5 ppm/s): dilute toward 980 ppm, reverse to 1010 ppm after 10 s (the ramp restarts from the current value, 995 ppm), "
+                           "reach the target and stay; one command out of range is rejected.",
+            "libraryFixture": "synthetic-core-boron",
+            "init": {"rods": copy.deepcopy(_near_crit)},
+            "seed": 1,
+            "config": {"outerDt": 0.01},
+            "steps": 6000,
+            "sampleEvery": 200,
+            "script": [
+                {"step": 0, "cmd": {"type": "boron.set", "ppm": 980.0}},
+                {"step": 5, "cmd": {"type": "boron.set", "ppm": 3000.0}},
+                {"step": 1000, "cmd": {"type": "boron.set", "ppm": 1010.0}},
+            ],
+        },
+        {
             "name": "period-trip",
             "description": "Transient rod withdrawal triggering internal short-period trip.",
             "init": {"rods": copy.deepcopy(_near_crit)},
@@ -152,7 +169,7 @@ def _scenarios(lib: Library) -> list[dict]:
 def sample_from_engine(e: Engine) -> dict:
     snap = e.snapshot()
     truth = snap["truth"]
-    return {
+    out = {
         "step": e.step_index,
         "t": snap["t"],
         "power": truth["power"],
@@ -170,6 +187,9 @@ def sample_from_engine(e: Engine) -> dict:
         "latched": list(snap["trips"]["latched"]),
         "validityStatus": snap["validity"]["status"],
     }
+    if "boron" in truth:
+        out["boron"] = truth["boron"]
+    return out
 
 
 def apply_overrides(lib: Library, overrides: dict) -> Library:
@@ -181,6 +201,8 @@ def apply_overrides(lib: Library, overrides: dict) -> Library:
 
 
 def run_scenario(lib: Library, sc: dict) -> dict:
+    if sc.get("libraryFixture"):
+        lib = Library(FIXTURES / sc["libraryFixture"])
     if sc.get("libraryOverrides"):
         lib = apply_overrides(Library(SYNTHETIC_CORE), sc["libraryOverrides"])
     e = Engine(lib, init=sc["init"], seed=sc["seed"], config=sc["config"])
@@ -215,6 +237,7 @@ def run_scenario(lib: Library, sc: dict) -> dict:
         "script": copy.deepcopy(sc["script"]),
         "libraryId": lib.id,
         **({"libraryOverrides": copy.deepcopy(sc["libraryOverrides"])} if sc.get("libraryOverrides") else {}),
+        **({"libraryFixture": sc["libraryFixture"]} if sc.get("libraryFixture") else {}),
         "pins": e.pins(),
         "samples": samples,
         "events": copy.deepcopy(e.events),

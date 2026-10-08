@@ -1,5 +1,21 @@
 {
  "$defs": {
+  "boronSet": {
+   "additionalProperties": false,
+   "properties": {
+    "ppm": {
+     "type": "number"
+    },
+    "type": {
+     "const": "boron.set"
+    }
+   },
+   "required": [
+    "type",
+    "ppm"
+   ],
+   "type": "object"
+  },
   "faultInstrument": {
    "additionalProperties": false,
    "properties": {
@@ -170,6 +186,9 @@
   },
   {
    "$ref": "#/$defs/faultInstrument"
+  },
+  {
+   "$ref": "#/$defs/boronSet"
   }
  ],
  "description": "Structure only. Keywords used are limited to the subset implemented by pipeline/library/minischema.py.",
