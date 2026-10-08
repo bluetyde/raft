@@ -428,6 +428,15 @@ def invalid_cases() -> list[tuple[str, list[str], Callable]]:
         add_boron(m)
         m["plant"]["boron"]["range"] = [0.0, 500.0]
 
+    def boron_domain_beyond_table(m, b):
+        add_boron(m)
+        m["reactivity"]["boron"]["C"] = [900.0, 1000.0, 1100.0]
+        m["reactivity"]["boron"]["rho"] = [round(BORON_WORTH * (c - BORON_REF), 12) for c in (900.0, 1000.0, 1100.0)]
+
+    def boron_without_base_capability(m, b):
+        add_boron(m)
+        m["capabilities"] = [BORON_CAPABILITY]
+
     def boron_instrument(m, b):
         add_boron(m)
         m["plant"]["instruments"].append({"id": "boron-meter", "signal": "truth.boron", "scale": "linear", "range": [0.0, 2000.0], "lag": 0.0, "noise": 0.01})
@@ -450,6 +459,8 @@ def invalid_cases() -> list[tuple[str, list[str], Callable]]:
         ("boron-ref-nonzero", ["E_REF_NONZERO"], boron_ref_nonzero),
         ("boron-ref-outside-range", ["E_REF_NONZERO"], boron_ref_outside_range),
         ("boron-instrument", ["E_SIGNAL_UNKNOWN"], boron_instrument),
+        ("boron-domain-beyond-table", ["E_SCHEMA"], boron_domain_beyond_table),
+        ("boron-without-base-capability", ["E_CAPABILITY_UNSUPPORTED"], boron_without_base_capability),
         ("schema-missing-field", ["E_SCHEMA"], delp(["kinetics", "genTime"])),
         ("schema-unknown-field", ["E_SCHEMA"], setp(["reactivity", "extra"], 1)),
         ("schema-bad-operator", ["E_SCHEMA"], setp(["plant", "trips", 0, "predicate"], {"op": "approx", "value": 1.0})),

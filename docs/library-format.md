@@ -62,7 +62,7 @@ Every table carries one `source` for the whole table. `Source` is one of:
 | `id` | Lowercase slug, also the folder name |
 | `name` | Human-readable name |
 | `status` | `"synthetic"`, `"experimental"` or `"validated-for-domain"` (see plan 07) |
-| `capabilities` | Required model capabilities. v0 defines `"point-kinetics/lumped-thermal-v1"` and `"point-kinetics/lumped-thermal-v2"` (v1 plus a temperature-dependent `hA`, section 8); an engine accepts either. A library may add `"point-kinetics/boron-v1"` (soluble boron, section 15) |
+| `capabilities` | Required model capabilities. v0 defines `"point-kinetics/lumped-thermal-v1"` and `"point-kinetics/lumped-thermal-v2"` (v1 plus a temperature-dependent `hA`, section 8); an engine accepts either. A library may add `"point-kinetics/boron-v1"` (soluble boron, section 15); every library needs one of the two thermal capabilities (`E_CAPABILITY_UNSUPPORTED` otherwise) |
 | `provenance` | Generator, codes, data, dates and a list of cited `sources` `{id, cite}` |
 | `reference` | The reference state (section 5) |
 | `kinetics`, `reactivity`, `thermal`, `poisons` | Physics inputs (sections 6–8) |
@@ -254,10 +254,10 @@ For a reactor whose operator changes a dissolved absorber (a PWR). Adds, **all r
 - `reference.boron`: a scalar, the reference concentration in ppm (≥ 0).
 - `reactivity.boron`: a table `{ "C": [ppm...], "rho": [...], "unc"?, "interp", "outOfRange", "source" }`, a delta from the reference like every table (zero at `reference.boron`, `E_REF_NONZERO`).
 - `plant.boron`: `{ "range": [lo, hi], "maxRatePpmPerS": number > 0 }`. The plant accepts a concentration only inside `range` (`0 <= lo < hi`, containing the reference), and moves toward a commanded value at `maxRatePpmPerS`.
-- `domain.boron`: `[lo, hi]`, where the table has data (`R_DOMAIN_BORON` outside it).
+- `domain.boron`: `[lo, hi]`, where the table has data (`R_DOMAIN_BORON` outside it); it must lie within the table's concentration axis (`E_SCHEMA` otherwise).
 
 The reactivity gains one term, `boron(C(t))`, in the sum of section 5. **The concentration is not an ODE state**: like a rod it is an actuator, evaluated from the last command as a linear ramp from the value at the command to the target and held there. The engine's checkpoint carries it (`boronMotion`) only when the library has the capability, so other libraries' checkpoints are unchanged.
 
-Command `boron.set { ppm }`: accepted inside the range (`REJ_OUT_OF_RANGE` outside, `REJ_BAD_ARGUMENT` for a non-number), blockable by an interlock (`"boron.set"` in `blocks`), allowed to an operator window, and never blocked by a trip (boration after a trip is allowed). A new target in mid-ramp starts from the current value. `init.boron` sets the starting concentration (default `reference.boron`; `E_INIT_INVALID` outside the range or without the capability). The snapshot's `truth` gains `boron` and `boronTarget` (null when still), and `reactivity.boron`; trips, interlocks and scenario goals may read `truth.boron`.
+Command `boron.set { ppm }`: accepted inside the range (`REJ_OUT_OF_RANGE` outside, `REJ_BAD_ARGUMENT` for a non-number), blockable by an interlock (`"boron.set"` in `blocks`), allowed to an operator window, and never blocked by a trip (boration after a trip is allowed). A new target in mid-ramp starts from the current value. `init.boron` sets the starting concentration (default `reference.boron` when absent; any present value must be a finite number, no boolean, string or null; `E_INIT_INVALID` otherwise, outside the range, or without the capability). The snapshot's `truth` gains `boron` and `boronTarget` (null when still), and `reactivity.boron`; trips, interlocks and scenario goals may read `truth.boron`.
 
 Not in this version: an instrument that measures boron (the schema refuses `truth.boron` as an instrument signal, `E_SIGNAL_UNKNOWN`: the operator view shows the plant's concentration ideally), a boron term in the power shapes, and a coupling of the moderator coefficient to the concentration (the coolant table is built at the reference boron; a library says so in its notes).

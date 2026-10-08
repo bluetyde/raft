@@ -317,7 +317,11 @@ export class Engine {
     }
     this.boronMotion = null;
     if (lib.hasBoron) {
-      const b0 = Number(init.boron ?? lib.refBoron);
+      const raw = Object.hasOwn(init, "boron") ? init.boron : lib.refBoron;
+      if (typeof raw !== "number" || !Number.isFinite(raw)) {
+        throw new InitError("E_INIT_INVALID", `boron must be a finite number of ppm, got ${JSON.stringify(raw)}`);
+      }
+      const b0 = raw;
       const [lo, hi] = lib.boronRange;
       if (!(lo <= b0 && b0 <= hi)) {
         throw new InitError("E_INIT_INVALID", `boron ${b0} is outside the library's range [${lo}, ${hi}]`);

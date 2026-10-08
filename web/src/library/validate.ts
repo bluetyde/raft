@@ -152,6 +152,9 @@ class Checker {
         this.add("E_CAPABILITY_UNSUPPORTED", "$.capabilities", `'${cap}' isn't implemented`);
       }
     }
+    if (!capabilities.includes("point-kinetics/lumped-thermal-v1") && !capabilities.includes("point-kinetics/lumped-thermal-v2")) {
+      this.add("E_CAPABILITY_UNSUPPORTED", "$.capabilities", "needs point-kinetics/lumped-thermal-v1 or point-kinetics/lumped-thermal-v2 (the engines run nothing else)");
+    }
     const hA = (m.thermal as { hA: Record<string, unknown> }).hA;
     if ((Object.hasOwn(hA, "exponent") || Object.hasOwn(hA, "dTRef")) && !capabilities.includes("point-kinetics/lumped-thermal-v2")) {
       this.add("E_CAPABILITY_UNSUPPORTED", "$.thermal.hA", "exponent and dTRef need the capability point-kinetics/lumped-thermal-v2");
@@ -352,8 +355,11 @@ class Checker {
         this.add("E_REF_NONZERO", "$.plant.boron.range", "the reference boron must lie inside the range");
       }
       const [dlo, dhi] = m.domain.boron as number[];
+      const axis = r.boron.C as number[];
       if (dlo! > dhi!) {
         this.add("E_SCHEMA", "$.domain.boron", "must be [lo, hi] with lo <= hi");
+      } else if (dlo! < axis[0]! || dhi! > axis[axis.length - 1]!) {
+        this.add("E_SCHEMA", "$.domain.boron", "must lie within the concentration axis of reactivity.boron (the domain is where the table has data)");
       }
     }
     this.table(m.thermal.fuel.cp, "T", "c", "$.thermal.fuel.cp", null);

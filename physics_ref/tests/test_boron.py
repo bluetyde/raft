@@ -75,6 +75,13 @@ class TestBoron(unittest.TestCase):
         with self.assertRaises(InitError):
             Engine(plain, init={"boron": 900.0})
 
+    def test_init_boron_must_be_a_finite_number_in_range(self):
+        lib = Library(FIXTURES / "synthetic-core-boron")
+        for bad in (True, "900", None, [], {}, float("nan"), float("inf"), 2500.0):
+            with self.assertRaises(InitError, msg=repr(bad)):
+                Engine(lib, init={"boron": bad}, seed=1)
+        self.assertEqual(Engine(lib, init={"boron": 900}, seed=1).boron_value(0.0), 900.0)
+
     def test_an_interlock_can_block_the_command(self):
         lib = Library(FIXTURES / "synthetic-core-boron")
         lib.interlocks.append({"id": "no-boron-change", "when": {"signal": "truth.mode", "op": "eq", "value": "steady"},

@@ -116,6 +116,8 @@ class _Checker:
         for cap in m["capabilities"]:
             if cap not in SUPPORTED_CAPABILITIES:
                 self.add("E_CAPABILITY_UNSUPPORTED", "$.capabilities", f"{cap!r} isn't implemented")
+        if not any(c in m["capabilities"] for c in ("point-kinetics/lumped-thermal-v1", "point-kinetics/lumped-thermal-v2")):
+            self.add("E_CAPABILITY_UNSUPPORTED", "$.capabilities", "needs point-kinetics/lumped-thermal-v1 or point-kinetics/lumped-thermal-v2 (the engines run nothing else)")
         hA = m["thermal"]["hA"]
         if ("exponent" in hA or "dTRef" in hA) and "point-kinetics/lumped-thermal-v2" not in m["capabilities"]:
             self.add("E_CAPABILITY_UNSUPPORTED", "$.thermal.hA", "exponent and dTRef need the capability point-kinetics/lumped-thermal-v2")
@@ -229,6 +231,8 @@ class _Checker:
             dlo, dhi = m["domain"]["boron"]
             if dlo > dhi:
                 self.add("E_SCHEMA", "$.domain.boron", "must be [lo, hi] with lo <= hi")
+            elif dlo < r["boron"]["C"][0] or dhi > r["boron"]["C"][-1]:
+                self.add("E_SCHEMA", "$.domain.boron", "must lie within the concentration axis of reactivity.boron (the domain is where the table has data)")
         self._table(m["thermal"]["fuel"]["cp"], "T", "c", "$.thermal.fuel.cp", None)
 
     def _signal_ok(self, sig: str, instruments: set[str], rods: set[str]) -> bool:

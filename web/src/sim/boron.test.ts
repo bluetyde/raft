@@ -63,6 +63,14 @@ describe("soluble boron", () => {
     expect(() => new Engine(plain.lib, { boron: 900 }, 1)).toThrow(InitError);
   });
 
+  it("init.boron must be a finite number in range", async () => {
+    const L = await loadBoronCore();
+    for (const bad of [true, "900", null, [], {}, NaN, Infinity, 2500]) {
+      expect(() => new Engine(L, { boron: bad }, 1), JSON.stringify(bad)).toThrow(InitError);
+    }
+    expect(new Engine(L, { boron: 900 }, 1).boronValue(0)).toBe(900);
+  });
+
   it("an interlock can block the command", async () => {
     const L = await loadBoronCore();
     L.interlocks.push({ id: "no-boron-change", when: { signal: "truth.mode", op: "eq", value: "steady" }, blocks: ["boron.set"], reason: "test" });

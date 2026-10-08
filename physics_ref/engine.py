@@ -207,7 +207,10 @@ class Engine:
                 raise InitError("E_INIT_INVALID", f"rod {rid} position must be in [0, 1]")
         self.boron_motion = None
         if lib.has_boron:
-            b0 = float(init.get("boron", lib.ref_boron))
+            raw = init["boron"] if "boron" in init else lib.ref_boron
+            if isinstance(raw, bool) or not isinstance(raw, (int, float)) or not math.isfinite(raw):
+                raise InitError("E_INIT_INVALID", f"boron must be a finite number of ppm, got {raw!r}")
+            b0 = float(raw)
             lo, hi = lib.boron_range
             if not lo <= b0 <= hi:
                 raise InitError("E_INIT_INVALID", f"boron {b0} is outside the library's range [{lo}, {hi}]")
