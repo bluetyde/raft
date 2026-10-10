@@ -1,0 +1,1837 @@
+{
+ "source": "mit-crpg/BEAVRS (MIT licence, BEAVRS-LICENSE), models/openmc/beavrs/core.py and constants.py",
+ "sourceHead": "1ccae04",
+ "orientation": "col = lattice x index (west to east); row = template row (north to south); y = 18 - row, the mesh tally's y index (y up)",
+ "latticePitchCm": 21.50364,
+ "latticeSize": 19,
+ "activeFuelBotCm": 36.748,
+ "activeFuelTopCm": 402.508,
+ "pelletRadiusCm": 0.39218,
+ "pinPitchCm": 1.25984,
+ "fuelPinsPerAssembly": 264,
+ "rcca": {
+  "stepWidthCm": 1.58193,
+  "stepsTotal": 228,
+  "stepsBite": 213,
+  "banks": {
+   "A": [
+    "F8",
+    "H10",
+    "H6",
+    "K8"
+   ],
+   "B": [
+    "B10",
+    "B6",
+    "F14",
+    "F2",
+    "K14",
+    "K2",
+    "P10",
+    "P6"
+   ],
+   "C": [
+    "B8",
+    "F10",
+    "F6",
+    "H14",
+    "H2",
+    "K10",
+    "K6",
+    "P8"
+   ],
+   "D": [
+    "D12",
+    "D4",
+    "H8",
+    "M12",
+    "M4"
+   ],
+   "SA": [
+    "B12",
+    "B4",
+    "D14",
+    "D2",
+    "M14",
+    "M2",
+    "P12",
+    "P4"
+   ],
+   "SB": [
+    "C7",
+    "C9",
+    "G13",
+    "G3",
+    "J13",
+    "J3",
+    "N7",
+    "N9"
+   ],
+   "SC": [
+    "C11",
+    "E3",
+    "L13",
+    "N5"
+   ],
+   "SD": [
+    "C5",
+    "E13",
+    "L3",
+    "N11"
+   ],
+   "SE": [
+    "D8",
+    "H12",
+    "H4",
+    "M8"
+   ]
+  }
+ },
+ "vesselCm": {
+  "barrelIR": 187.96,
+  "barrelOR": 193.675,
+  "baffleWidth": 2.2225,
+  "linerIR": 219.15,
+  "rpvIR": 219.71,
+  "rpvOR": 241.3
+ },
+ "assemblies": [
+  {
+   "label": "L1",
+   "col": 6,
+   "row": 2,
+   "x": 6,
+   "y": 16,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "K1",
+   "col": 7,
+   "row": 2,
+   "x": 7,
+   "y": 16,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "J1",
+   "col": 8,
+   "row": 2,
+   "x": 8,
+   "y": 16,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "H1",
+   "col": 9,
+   "row": 2,
+   "x": 9,
+   "y": 16,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "G1",
+   "col": 10,
+   "row": 2,
+   "x": 10,
+   "y": 16,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "F1",
+   "col": 11,
+   "row": 2,
+   "x": 11,
+   "y": 16,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "E1",
+   "col": 12,
+   "row": 2,
+   "x": 12,
+   "y": 16,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "N2",
+   "col": 4,
+   "row": 3,
+   "x": 4,
+   "y": 15,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "M2",
+   "col": 5,
+   "row": 3,
+   "x": 5,
+   "y": 15,
+   "enrichment": "3.1%",
+   "bank": "SA"
+  },
+  {
+   "label": "L2",
+   "col": 6,
+   "row": 3,
+   "x": 6,
+   "y": 15,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "K2",
+   "col": 7,
+   "row": 3,
+   "x": 7,
+   "y": 15,
+   "enrichment": "1.6%",
+   "bank": "B"
+  },
+  {
+   "label": "J2",
+   "col": 8,
+   "row": 3,
+   "x": 8,
+   "y": 15,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "H2",
+   "col": 9,
+   "row": 3,
+   "x": 9,
+   "y": 15,
+   "enrichment": "1.6%",
+   "bank": "C"
+  },
+  {
+   "label": "G2",
+   "col": 10,
+   "row": 3,
+   "x": 10,
+   "y": 15,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "F2",
+   "col": 11,
+   "row": 3,
+   "x": 11,
+   "y": 15,
+   "enrichment": "1.6%",
+   "bank": "B"
+  },
+  {
+   "label": "E2",
+   "col": 12,
+   "row": 3,
+   "x": 12,
+   "y": 15,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "D2",
+   "col": 13,
+   "row": 3,
+   "x": 13,
+   "y": 15,
+   "enrichment": "3.1%",
+   "bank": "SA"
+  },
+  {
+   "label": "C2",
+   "col": 14,
+   "row": 3,
+   "x": 14,
+   "y": 15,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "P3",
+   "col": 3,
+   "row": 4,
+   "x": 3,
+   "y": 14,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "N3",
+   "col": 4,
+   "row": 4,
+   "x": 4,
+   "y": 14,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "M3",
+   "col": 5,
+   "row": 4,
+   "x": 5,
+   "y": 14,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "L3",
+   "col": 6,
+   "row": 4,
+   "x": 6,
+   "y": 14,
+   "enrichment": "1.6%",
+   "bank": "SD"
+  },
+  {
+   "label": "K3",
+   "col": 7,
+   "row": 4,
+   "x": 7,
+   "y": 14,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "J3",
+   "col": 8,
+   "row": 4,
+   "x": 8,
+   "y": 14,
+   "enrichment": "1.6%",
+   "bank": "SB"
+  },
+  {
+   "label": "H3",
+   "col": 9,
+   "row": 4,
+   "x": 9,
+   "y": 14,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "G3",
+   "col": 10,
+   "row": 4,
+   "x": 10,
+   "y": 14,
+   "enrichment": "1.6%",
+   "bank": "SB"
+  },
+  {
+   "label": "F3",
+   "col": 11,
+   "row": 4,
+   "x": 11,
+   "y": 14,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "E3",
+   "col": 12,
+   "row": 4,
+   "x": 12,
+   "y": 14,
+   "enrichment": "1.6%",
+   "bank": "SC"
+  },
+  {
+   "label": "D3",
+   "col": 13,
+   "row": 4,
+   "x": 13,
+   "y": 14,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "C3",
+   "col": 14,
+   "row": 4,
+   "x": 14,
+   "y": 14,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "B3",
+   "col": 15,
+   "row": 4,
+   "x": 15,
+   "y": 14,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "P4",
+   "col": 3,
+   "row": 5,
+   "x": 3,
+   "y": 13,
+   "enrichment": "3.1%",
+   "bank": "SA"
+  },
+  {
+   "label": "N4",
+   "col": 4,
+   "row": 5,
+   "x": 4,
+   "y": 13,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "M4",
+   "col": 5,
+   "row": 5,
+   "x": 5,
+   "y": 13,
+   "enrichment": "2.4%",
+   "bank": "D"
+  },
+  {
+   "label": "L4",
+   "col": 6,
+   "row": 5,
+   "x": 6,
+   "y": 13,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "K4",
+   "col": 7,
+   "row": 5,
+   "x": 7,
+   "y": 13,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "J4",
+   "col": 8,
+   "row": 5,
+   "x": 8,
+   "y": 13,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "H4",
+   "col": 9,
+   "row": 5,
+   "x": 9,
+   "y": 13,
+   "enrichment": "1.6%",
+   "bank": "SE"
+  },
+  {
+   "label": "G4",
+   "col": 10,
+   "row": 5,
+   "x": 10,
+   "y": 13,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "F4",
+   "col": 11,
+   "row": 5,
+   "x": 11,
+   "y": 13,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "E4",
+   "col": 12,
+   "row": 5,
+   "x": 12,
+   "y": 13,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "D4",
+   "col": 13,
+   "row": 5,
+   "x": 13,
+   "y": 13,
+   "enrichment": "2.4%",
+   "bank": "D"
+  },
+  {
+   "label": "C4",
+   "col": 14,
+   "row": 5,
+   "x": 14,
+   "y": 13,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "B4",
+   "col": 15,
+   "row": 5,
+   "x": 15,
+   "y": 13,
+   "enrichment": "3.1%",
+   "bank": "SA"
+  },
+  {
+   "label": "R5",
+   "col": 2,
+   "row": 6,
+   "x": 2,
+   "y": 12,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "P5",
+   "col": 3,
+   "row": 6,
+   "x": 3,
+   "y": 12,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "N5",
+   "col": 4,
+   "row": 6,
+   "x": 4,
+   "y": 12,
+   "enrichment": "1.6%",
+   "bank": "SC"
+  },
+  {
+   "label": "M5",
+   "col": 5,
+   "row": 6,
+   "x": 5,
+   "y": 12,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "L5",
+   "col": 6,
+   "row": 6,
+   "x": 6,
+   "y": 12,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "K5",
+   "col": 7,
+   "row": 6,
+   "x": 7,
+   "y": 12,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "J5",
+   "col": 8,
+   "row": 6,
+   "x": 8,
+   "y": 12,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "H5",
+   "col": 9,
+   "row": 6,
+   "x": 9,
+   "y": 12,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "G5",
+   "col": 10,
+   "row": 6,
+   "x": 10,
+   "y": 12,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "F5",
+   "col": 11,
+   "row": 6,
+   "x": 11,
+   "y": 12,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "E5",
+   "col": 12,
+   "row": 6,
+   "x": 12,
+   "y": 12,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "D5",
+   "col": 13,
+   "row": 6,
+   "x": 13,
+   "y": 12,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "C5",
+   "col": 14,
+   "row": 6,
+   "x": 14,
+   "y": 12,
+   "enrichment": "1.6%",
+   "bank": "SD"
+  },
+  {
+   "label": "B5",
+   "col": 15,
+   "row": 6,
+   "x": 15,
+   "y": 12,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "A5",
+   "col": 16,
+   "row": 6,
+   "x": 16,
+   "y": 12,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "R6",
+   "col": 2,
+   "row": 7,
+   "x": 2,
+   "y": 11,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "P6",
+   "col": 3,
+   "row": 7,
+   "x": 3,
+   "y": 11,
+   "enrichment": "1.6%",
+   "bank": "B"
+  },
+  {
+   "label": "N6",
+   "col": 4,
+   "row": 7,
+   "x": 4,
+   "y": 11,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "M6",
+   "col": 5,
+   "row": 7,
+   "x": 5,
+   "y": 11,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "L6",
+   "col": 6,
+   "row": 7,
+   "x": 6,
+   "y": 11,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "K6",
+   "col": 7,
+   "row": 7,
+   "x": 7,
+   "y": 11,
+   "enrichment": "1.6%",
+   "bank": "C"
+  },
+  {
+   "label": "J6",
+   "col": 8,
+   "row": 7,
+   "x": 8,
+   "y": 11,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "H6",
+   "col": 9,
+   "row": 7,
+   "x": 9,
+   "y": 11,
+   "enrichment": "1.6%",
+   "bank": "A"
+  },
+  {
+   "label": "G6",
+   "col": 10,
+   "row": 7,
+   "x": 10,
+   "y": 11,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "F6",
+   "col": 11,
+   "row": 7,
+   "x": 11,
+   "y": 11,
+   "enrichment": "1.6%",
+   "bank": "C"
+  },
+  {
+   "label": "E6",
+   "col": 12,
+   "row": 7,
+   "x": 12,
+   "y": 11,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "D6",
+   "col": 13,
+   "row": 7,
+   "x": 13,
+   "y": 11,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "C6",
+   "col": 14,
+   "row": 7,
+   "x": 14,
+   "y": 11,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "B6",
+   "col": 15,
+   "row": 7,
+   "x": 15,
+   "y": 11,
+   "enrichment": "1.6%",
+   "bank": "B"
+  },
+  {
+   "label": "A6",
+   "col": 16,
+   "row": 7,
+   "x": 16,
+   "y": 11,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "R7",
+   "col": 2,
+   "row": 8,
+   "x": 2,
+   "y": 10,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "P7",
+   "col": 3,
+   "row": 8,
+   "x": 3,
+   "y": 10,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "N7",
+   "col": 4,
+   "row": 8,
+   "x": 4,
+   "y": 10,
+   "enrichment": "1.6%",
+   "bank": "SB"
+  },
+  {
+   "label": "M7",
+   "col": 5,
+   "row": 8,
+   "x": 5,
+   "y": 10,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "L7",
+   "col": 6,
+   "row": 8,
+   "x": 6,
+   "y": 10,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "K7",
+   "col": 7,
+   "row": 8,
+   "x": 7,
+   "y": 10,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "J7",
+   "col": 8,
+   "row": 8,
+   "x": 8,
+   "y": 10,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "H7",
+   "col": 9,
+   "row": 8,
+   "x": 9,
+   "y": 10,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "G7",
+   "col": 10,
+   "row": 8,
+   "x": 10,
+   "y": 10,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "F7",
+   "col": 11,
+   "row": 8,
+   "x": 11,
+   "y": 10,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "E7",
+   "col": 12,
+   "row": 8,
+   "x": 12,
+   "y": 10,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "D7",
+   "col": 13,
+   "row": 8,
+   "x": 13,
+   "y": 10,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "C7",
+   "col": 14,
+   "row": 8,
+   "x": 14,
+   "y": 10,
+   "enrichment": "1.6%",
+   "bank": "SB"
+  },
+  {
+   "label": "B7",
+   "col": 15,
+   "row": 8,
+   "x": 15,
+   "y": 10,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "A7",
+   "col": 16,
+   "row": 8,
+   "x": 16,
+   "y": 10,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "R8",
+   "col": 2,
+   "row": 9,
+   "x": 2,
+   "y": 9,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "P8",
+   "col": 3,
+   "row": 9,
+   "x": 3,
+   "y": 9,
+   "enrichment": "1.6%",
+   "bank": "C"
+  },
+  {
+   "label": "N8",
+   "col": 4,
+   "row": 9,
+   "x": 4,
+   "y": 9,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "M8",
+   "col": 5,
+   "row": 9,
+   "x": 5,
+   "y": 9,
+   "enrichment": "1.6%",
+   "bank": "SE"
+  },
+  {
+   "label": "L8",
+   "col": 6,
+   "row": 9,
+   "x": 6,
+   "y": 9,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "K8",
+   "col": 7,
+   "row": 9,
+   "x": 7,
+   "y": 9,
+   "enrichment": "1.6%",
+   "bank": "A"
+  },
+  {
+   "label": "J8",
+   "col": 8,
+   "row": 9,
+   "x": 8,
+   "y": 9,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "H8",
+   "col": 9,
+   "row": 9,
+   "x": 9,
+   "y": 9,
+   "enrichment": "1.6%",
+   "bank": "D"
+  },
+  {
+   "label": "G8",
+   "col": 10,
+   "row": 9,
+   "x": 10,
+   "y": 9,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "F8",
+   "col": 11,
+   "row": 9,
+   "x": 11,
+   "y": 9,
+   "enrichment": "1.6%",
+   "bank": "A"
+  },
+  {
+   "label": "E8",
+   "col": 12,
+   "row": 9,
+   "x": 12,
+   "y": 9,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "D8",
+   "col": 13,
+   "row": 9,
+   "x": 13,
+   "y": 9,
+   "enrichment": "1.6%",
+   "bank": "SE"
+  },
+  {
+   "label": "C8",
+   "col": 14,
+   "row": 9,
+   "x": 14,
+   "y": 9,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "B8",
+   "col": 15,
+   "row": 9,
+   "x": 15,
+   "y": 9,
+   "enrichment": "1.6%",
+   "bank": "C"
+  },
+  {
+   "label": "A8",
+   "col": 16,
+   "row": 9,
+   "x": 16,
+   "y": 9,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "R9",
+   "col": 2,
+   "row": 10,
+   "x": 2,
+   "y": 8,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "P9",
+   "col": 3,
+   "row": 10,
+   "x": 3,
+   "y": 8,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "N9",
+   "col": 4,
+   "row": 10,
+   "x": 4,
+   "y": 8,
+   "enrichment": "1.6%",
+   "bank": "SB"
+  },
+  {
+   "label": "M9",
+   "col": 5,
+   "row": 10,
+   "x": 5,
+   "y": 8,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "L9",
+   "col": 6,
+   "row": 10,
+   "x": 6,
+   "y": 8,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "K9",
+   "col": 7,
+   "row": 10,
+   "x": 7,
+   "y": 8,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "J9",
+   "col": 8,
+   "row": 10,
+   "x": 8,
+   "y": 8,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "H9",
+   "col": 9,
+   "row": 10,
+   "x": 9,
+   "y": 8,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "G9",
+   "col": 10,
+   "row": 10,
+   "x": 10,
+   "y": 8,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "F9",
+   "col": 11,
+   "row": 10,
+   "x": 11,
+   "y": 8,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "E9",
+   "col": 12,
+   "row": 10,
+   "x": 12,
+   "y": 8,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "D9",
+   "col": 13,
+   "row": 10,
+   "x": 13,
+   "y": 8,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "C9",
+   "col": 14,
+   "row": 10,
+   "x": 14,
+   "y": 8,
+   "enrichment": "1.6%",
+   "bank": "SB"
+  },
+  {
+   "label": "B9",
+   "col": 15,
+   "row": 10,
+   "x": 15,
+   "y": 8,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "A9",
+   "col": 16,
+   "row": 10,
+   "x": 16,
+   "y": 8,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "R10",
+   "col": 2,
+   "row": 11,
+   "x": 2,
+   "y": 7,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "P10",
+   "col": 3,
+   "row": 11,
+   "x": 3,
+   "y": 7,
+   "enrichment": "1.6%",
+   "bank": "B"
+  },
+  {
+   "label": "N10",
+   "col": 4,
+   "row": 11,
+   "x": 4,
+   "y": 7,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "M10",
+   "col": 5,
+   "row": 11,
+   "x": 5,
+   "y": 7,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "L10",
+   "col": 6,
+   "row": 11,
+   "x": 6,
+   "y": 7,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "K10",
+   "col": 7,
+   "row": 11,
+   "x": 7,
+   "y": 7,
+   "enrichment": "1.6%",
+   "bank": "C"
+  },
+  {
+   "label": "J10",
+   "col": 8,
+   "row": 11,
+   "x": 8,
+   "y": 7,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "H10",
+   "col": 9,
+   "row": 11,
+   "x": 9,
+   "y": 7,
+   "enrichment": "1.6%",
+   "bank": "A"
+  },
+  {
+   "label": "G10",
+   "col": 10,
+   "row": 11,
+   "x": 10,
+   "y": 7,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "F10",
+   "col": 11,
+   "row": 11,
+   "x": 11,
+   "y": 7,
+   "enrichment": "1.6%",
+   "bank": "C"
+  },
+  {
+   "label": "E10",
+   "col": 12,
+   "row": 11,
+   "x": 12,
+   "y": 7,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "D10",
+   "col": 13,
+   "row": 11,
+   "x": 13,
+   "y": 7,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "C10",
+   "col": 14,
+   "row": 11,
+   "x": 14,
+   "y": 7,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "B10",
+   "col": 15,
+   "row": 11,
+   "x": 15,
+   "y": 7,
+   "enrichment": "1.6%",
+   "bank": "B"
+  },
+  {
+   "label": "A10",
+   "col": 16,
+   "row": 11,
+   "x": 16,
+   "y": 7,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "R11",
+   "col": 2,
+   "row": 12,
+   "x": 2,
+   "y": 6,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "P11",
+   "col": 3,
+   "row": 12,
+   "x": 3,
+   "y": 6,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "N11",
+   "col": 4,
+   "row": 12,
+   "x": 4,
+   "y": 6,
+   "enrichment": "1.6%",
+   "bank": "SD"
+  },
+  {
+   "label": "M11",
+   "col": 5,
+   "row": 12,
+   "x": 5,
+   "y": 6,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "L11",
+   "col": 6,
+   "row": 12,
+   "x": 6,
+   "y": 6,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "K11",
+   "col": 7,
+   "row": 12,
+   "x": 7,
+   "y": 6,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "J11",
+   "col": 8,
+   "row": 12,
+   "x": 8,
+   "y": 6,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "H11",
+   "col": 9,
+   "row": 12,
+   "x": 9,
+   "y": 6,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "G11",
+   "col": 10,
+   "row": 12,
+   "x": 10,
+   "y": 6,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "F11",
+   "col": 11,
+   "row": 12,
+   "x": 11,
+   "y": 6,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "E11",
+   "col": 12,
+   "row": 12,
+   "x": 12,
+   "y": 6,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "D11",
+   "col": 13,
+   "row": 12,
+   "x": 13,
+   "y": 6,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "C11",
+   "col": 14,
+   "row": 12,
+   "x": 14,
+   "y": 6,
+   "enrichment": "1.6%",
+   "bank": "SC"
+  },
+  {
+   "label": "B11",
+   "col": 15,
+   "row": 12,
+   "x": 15,
+   "y": 6,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "A11",
+   "col": 16,
+   "row": 12,
+   "x": 16,
+   "y": 6,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "P12",
+   "col": 3,
+   "row": 13,
+   "x": 3,
+   "y": 5,
+   "enrichment": "3.1%",
+   "bank": "SA"
+  },
+  {
+   "label": "N12",
+   "col": 4,
+   "row": 13,
+   "x": 4,
+   "y": 5,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "M12",
+   "col": 5,
+   "row": 13,
+   "x": 5,
+   "y": 5,
+   "enrichment": "2.4%",
+   "bank": "D"
+  },
+  {
+   "label": "L12",
+   "col": 6,
+   "row": 13,
+   "x": 6,
+   "y": 5,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "K12",
+   "col": 7,
+   "row": 13,
+   "x": 7,
+   "y": 5,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "J12",
+   "col": 8,
+   "row": 13,
+   "x": 8,
+   "y": 5,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "H12",
+   "col": 9,
+   "row": 13,
+   "x": 9,
+   "y": 5,
+   "enrichment": "1.6%",
+   "bank": "SE"
+  },
+  {
+   "label": "G12",
+   "col": 10,
+   "row": 13,
+   "x": 10,
+   "y": 5,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "F12",
+   "col": 11,
+   "row": 13,
+   "x": 11,
+   "y": 5,
+   "enrichment": "1.6%",
+   "bank": null
+  },
+  {
+   "label": "E12",
+   "col": 12,
+   "row": 13,
+   "x": 12,
+   "y": 5,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "D12",
+   "col": 13,
+   "row": 13,
+   "x": 13,
+   "y": 5,
+   "enrichment": "2.4%",
+   "bank": "D"
+  },
+  {
+   "label": "C12",
+   "col": 14,
+   "row": 13,
+   "x": 14,
+   "y": 5,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "B12",
+   "col": 15,
+   "row": 13,
+   "x": 15,
+   "y": 5,
+   "enrichment": "3.1%",
+   "bank": "SA"
+  },
+  {
+   "label": "P13",
+   "col": 3,
+   "row": 14,
+   "x": 3,
+   "y": 4,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "N13",
+   "col": 4,
+   "row": 14,
+   "x": 4,
+   "y": 4,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "M13",
+   "col": 5,
+   "row": 14,
+   "x": 5,
+   "y": 4,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "L13",
+   "col": 6,
+   "row": 14,
+   "x": 6,
+   "y": 4,
+   "enrichment": "1.6%",
+   "bank": "SC"
+  },
+  {
+   "label": "K13",
+   "col": 7,
+   "row": 14,
+   "x": 7,
+   "y": 4,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "J13",
+   "col": 8,
+   "row": 14,
+   "x": 8,
+   "y": 4,
+   "enrichment": "1.6%",
+   "bank": "SB"
+  },
+  {
+   "label": "H13",
+   "col": 9,
+   "row": 14,
+   "x": 9,
+   "y": 4,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "G13",
+   "col": 10,
+   "row": 14,
+   "x": 10,
+   "y": 4,
+   "enrichment": "1.6%",
+   "bank": "SB"
+  },
+  {
+   "label": "F13",
+   "col": 11,
+   "row": 14,
+   "x": 11,
+   "y": 4,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "E13",
+   "col": 12,
+   "row": 14,
+   "x": 12,
+   "y": 4,
+   "enrichment": "1.6%",
+   "bank": "SD"
+  },
+  {
+   "label": "D13",
+   "col": 13,
+   "row": 14,
+   "x": 13,
+   "y": 4,
+   "enrichment": "2.4%",
+   "bank": null
+  },
+  {
+   "label": "C13",
+   "col": 14,
+   "row": 14,
+   "x": 14,
+   "y": 4,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "B13",
+   "col": 15,
+   "row": 14,
+   "x": 15,
+   "y": 4,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "N14",
+   "col": 4,
+   "row": 15,
+   "x": 4,
+   "y": 3,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "M14",
+   "col": 5,
+   "row": 15,
+   "x": 5,
+   "y": 3,
+   "enrichment": "3.1%",
+   "bank": "SA"
+  },
+  {
+   "label": "L14",
+   "col": 6,
+   "row": 15,
+   "x": 6,
+   "y": 3,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "K14",
+   "col": 7,
+   "row": 15,
+   "x": 7,
+   "y": 3,
+   "enrichment": "1.6%",
+   "bank": "B"
+  },
+  {
+   "label": "J14",
+   "col": 8,
+   "row": 15,
+   "x": 8,
+   "y": 3,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "H14",
+   "col": 9,
+   "row": 15,
+   "x": 9,
+   "y": 3,
+   "enrichment": "1.6%",
+   "bank": "C"
+  },
+  {
+   "label": "G14",
+   "col": 10,
+   "row": 15,
+   "x": 10,
+   "y": 3,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "F14",
+   "col": 11,
+   "row": 15,
+   "x": 11,
+   "y": 3,
+   "enrichment": "1.6%",
+   "bank": "B"
+  },
+  {
+   "label": "E14",
+   "col": 12,
+   "row": 15,
+   "x": 12,
+   "y": 3,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "D14",
+   "col": 13,
+   "row": 15,
+   "x": 13,
+   "y": 3,
+   "enrichment": "3.1%",
+   "bank": "SA"
+  },
+  {
+   "label": "C14",
+   "col": 14,
+   "row": 15,
+   "x": 14,
+   "y": 3,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "L15",
+   "col": 6,
+   "row": 16,
+   "x": 6,
+   "y": 2,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "K15",
+   "col": 7,
+   "row": 16,
+   "x": 7,
+   "y": 2,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "J15",
+   "col": 8,
+   "row": 16,
+   "x": 8,
+   "y": 2,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "H15",
+   "col": 9,
+   "row": 16,
+   "x": 9,
+   "y": 2,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "G15",
+   "col": 10,
+   "row": 16,
+   "x": 10,
+   "y": 2,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "F15",
+   "col": 11,
+   "row": 16,
+   "x": 11,
+   "y": 2,
+   "enrichment": "3.1%",
+   "bank": null
+  },
+  {
+   "label": "E15",
+   "col": 12,
+   "row": 16,
+   "x": 12,
+   "y": 2,
+   "enrichment": "3.1%",
+   "bank": null
+  }
+ ]
+}
