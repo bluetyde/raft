@@ -12,6 +12,7 @@ const FILES = import.meta.glob(
     "../../../libraries/triga-jsi-242/**/*",
     "../../../libraries/triga-jsi-242-openmc/**/*",
     "../../../libraries/triga-jsi-246-openmc/**/*",
+    "../../../libraries/pwr-beavrs-hzp-openmc/**/*",
   ],
   { query: "?url", import: "default", eager: true },
 ) as Record<string, string>;

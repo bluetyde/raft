@@ -246,7 +246,6 @@ def build(rows: list[dict], core: dict, created: str | None = None) -> tuple[dic
 
     geometry = [
         {"type": "annulus", "center": [0, 0, 0], "rInner": core["vesselCm"]["barrelIR"], "radius": core["vesselCm"]["barrelOR"], "height": 420.0, "material": "steel"},
-        {"type": "annulus", "center": [0, 0, 0], "rInner": core["vesselCm"]["rpvIR"], "radius": core["vesselCm"]["rpvOR"], "height": 520.0, "material": "steel"},
     ]
     box = 17 * core["pinPitchCm"]
     for a in core["assemblies"]:

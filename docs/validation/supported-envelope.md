@@ -51,6 +51,10 @@ A banner at the top of the operator and instructor windows follows the runtime's
 
 The AI operator never works toward a power above the envelope: the raise ceiling is the lower of 50 % of the setpoint and the lesson's limit, and an instructor goal above it is clamped (the instructor panel says "limited to … by the lesson envelope").
 
+## The PWR library (BEAVRS, hot zero power)
+
+`pwr-beavrs-hzp-openmc` (2026-10-10) has **no supported lesson yet**: its windows show the `caution` banner and the experimental status. It is meant for zero-power physics (banks and soluble boron). What the transport comparison supports (`m8-beavrs-hzp-results.md`): the critical boron concentration at the five benchmark rod configurations and the shutdown banks' total worth. What it does not: the temperature feedback (the isothermal coefficient is 1.6 to 2.0 pcm/°F too negative), the bank D and C worths (not computed), and any state with several banks in, where the summed bank tables are off by 420 to 1950 pcm against transport (listed in the library's README). No decay heat, no pressure, no xenon worth. A trip stops the run at 1.7 MW.
+
 ## A defect this work found and fixed
 
 The OpenMC libraries inherited a heat sink at 293.15 K from the M1 library, but their tables start at 294 K. The pool cooled below 294 K within seconds, and the runtime reported `outOfDomain` (fuel and coolant temperature) for a shift of under 1 K, on every run. The sink is an assumption either way; it is now 294 K (`export_openmc.py`, both shipped OpenMC manifests).

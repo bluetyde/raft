@@ -1349,18 +1349,6 @@
         "material": "steel"
       },
       {
-        "type": "annulus",
-        "center": [
-          0,
-          0,
-          0
-        ],
-        "rInner": 219.71,
-        "radius": 241.3,
-        "height": 520.0,
-        "material": "steel"
-      },
-      {
         "type": "box",
         "center": [
           -64.5109,
