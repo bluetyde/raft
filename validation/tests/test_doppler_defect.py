@@ -152,6 +152,28 @@ class Labels(unittest.TestCase):
         m2 = analyse(planted_rows(drop={("uo2-3.1", "hzp")}))
         self.assertFalse(m2["B"]["cases"]["uo2-3.1"]["computed"])
 
+    def test_z_uses_the_error_of_the_reference_and_of_the_model(self):
+        import math
+        m = analyse(planted_rows(dc_of=lambda cid, sub, dc: dc + 0.3 if cid == "uo2-0.711" else dc))
+        e = m["A"]["cases"]["uo2-0.711"]
+        want = 0.3 / math.hypot(e["refSigma"], e["sigmaDc"])
+        self.assertAlmostEqual(e["z"], want, places=9)
+        self.assertGreater(e["refSigma"], 0.0)
+        self.assertLess(abs(e["z"]), 0.3 / e["sigmaDc"])               # the reference error is part of the denominator
+
+    def test_the_drift_check_looks_only_at_the_active_batches(self):
+        # a large offset in the first 100 (inactive) batches is not a drift; the windows are batches 101-350 and 351-600
+        m = analyse(planted_rows(shape=lambda cid, state, i: 0.05 if i < 100 else 0.0))
+        self.assertEqual(m["D"]["unconverged"], [])
+        self.assertEqual(m["summary"]["computed"], 16)
+        m2 = analyse(planted_rows(shape=lambda cid, state, i: 0.01 if 100 <= i < 350 else 0.0))
+        self.assertEqual(len(m2["D"]["unconverged"]), 32)
+
+    def test_the_spread_is_the_range_of_the_three_reference_libraries(self):
+        m = analyse(planted_rows())
+        self.assertAlmostEqual(m["A"]["cases"]["uo2-0.711"]["spread"], 0.11, places=9)       # -4.07, -4.16, -4.18
+        self.assertAlmostEqual(m["A"]["cases"]["weapons-mox-6.0"]["spread"], 0.11, places=9)  # V -2.57, VI -2.46, VII.0 -2.49
+
     def test_labels_follow_z_at_the_bands(self):
         self.assertEqual(dd.label(0.99), "good")
         self.assertEqual(dd.label(1.01), "plausible")
