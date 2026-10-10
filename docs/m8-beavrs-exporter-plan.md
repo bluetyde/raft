@@ -47,7 +47,7 @@ Rough effort: steps 1 to 3 about a working day, step 4 a few hours if the viewer
 2. **Shape noise.** Each delta array is a difference of two tallies with a few percent of error per bin; the reconstructed shape may show jitter and the `E_SHAPE_NEGATIVE` check may fire in low-power outer assemblies. Mitigation: floor tiny negatives as the TRIGA exporter does (reported, never silent), and report the noise level.
 3. **The viewer at 250 primitives** is untested.
 4. **The temperature feedback is wrong at HZP** (isothermal coefficient 1.6 to 2.0 pcm/°F too negative, step 1). The library cannot carry a library-specific validity reason today (reasons are defined by the engine), so the warning lives in the notes, the README and the supported-envelope page, and the interface shows the library as `experimental`. A per-library reason is a possible small extension; not in this step.
-5. **Rod worth separability** (banks plus boron) is only checked at the joint states and `J-B4`, `J-B7`; the lesson should stay near those.
+5. **Rod worth separability** (banks plus boron): result 2026-10-10: the summed tables miss transport by 420 to 1950 pcm with several banks in (not negative enough), 1200 and 2240 pcm at `J-B4` and `J-B7`; no joint state meets the acceptance limit, so `jointChecked` is empty and a lesson must stay near the reference configuration (all banks out, boron changed) unless the format gains an interaction term.
 
 ## 6. Decisions I need from you
 

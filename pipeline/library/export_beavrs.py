@@ -26,6 +26,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SWEEP = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_sweep.jsonl"
 CORE = REPO_ROOT / "pipeline" / "openmc" / "data" / "beavrs_core.json"
 OUT = REPO_ROOT / "libraries" / "pwr-beavrs-hzp-openmc"
+README = Path(__file__).with_name("beavrs_library_README.md")
 REPORT = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_export_report.json"
 
 LIB_ID = "pwr-beavrs-hzp-openmc"
@@ -415,6 +416,7 @@ def main(argv: list[str] | None = None) -> int:
     rows = [json.loads(line) for line in args.sweep.read_text(encoding="utf-8").splitlines() if line.strip()]
     core = json.loads(args.core.read_text(encoding="utf-8"))
     m, blobs, report = build(rows, core)
+    blobs["README.md"] = README.read_bytes()          # the library folder is rebuilt from scratch, so its README is part of the export
     write_library(args.out, m, blobs, validate=True)
     args.report.write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8", newline="\n")
     print(f"wrote {args.out} ({len(m['shapes']['bins']['elements'])} assemblies, {len(m['reactivity']['rods'])} rods); report {args.report}")
