@@ -68,3 +68,9 @@ Total wall time of the 20 cases: 4.07 hours, with the machine's load average bet
 ## Limits, repeated
 
 Seven worths treated as independent; the ITC omits thermal expansion; one boron worth converts every error; the drift check assumes independent batches; the seed is the same (1) in every case, so statistical errors of cases that share a source start are not fully independent (this also applies to all differences above; the protocol took them as independent). The shipped model has the benchmark's instrument tubes, not the tilt.
+
+## Errata (2026-10-10, from the Codex review of the milestone)
+
+- The runner did not check that the BEAVRS clone was at the commit the protocol fixes (`1ccae04`); it now does (`pipeline/openmc/beavrs_cases.py`, `check_beavrs_head`) and records the head in each new result row. The 20 rows of this note and the 45 of the sweep were run from the clone at `1ccae04` (the core file generator checks it too), but they do not carry the field.
+- The analysis marked no state as sensitive to the boron worth conversion, because the S0/S7 boron worth differs by 1.8 % (under 5 %); the code now sets the flag only on S4 and S7, as the protocol says, and only above 5 %. No result here changes.
+

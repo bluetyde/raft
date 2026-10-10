@@ -72,7 +72,12 @@
         "relative": -0.03517371386864851,
         "sigmaModelPcm": 34.79161598460892,
         "z": -0.6119462575110557,
-        "label": "good"
+        "label": "good",
+        "erratum": {
+          "sigmaModelSharedPcm": 34.79161598460892,
+          "z": -0.6119462575110557,
+          "label": "good"
+        }
       },
       "C": {
         "computed": true,
@@ -82,7 +87,12 @@
         "relative": -0.3215315766590613,
         "sigmaModelPcm": 60.813474890877956,
         "z": -5.628769296138825,
-        "label": "fails"
+        "label": "fails",
+        "erratum": {
+          "sigmaModelSharedPcm": 35.740252414643834,
+          "z": -8.062996009761044,
+          "label": "fails"
+        }
       },
       "B": {
         "computed": true,
@@ -92,7 +102,12 @@
         "relative": -0.29419020053036143,
         "sigmaModelPcm": 78.79607586047179,
         "z": -4.068468177571405,
-        "label": "fails"
+        "label": "fails",
+        "erratum": {
+          "sigmaModelSharedPcm": 35.1166228450762,
+          "z": -7.354433890119243,
+          "label": "fails"
+        }
       },
       "A": {
         "computed": true,
@@ -102,7 +117,12 @@
         "relative": -0.580513542186971,
         "sigmaModelPcm": 92.74831863491612,
         "z": -3.302629565719815,
-        "label": "fails"
+        "label": "fails",
+        "erratum": {
+          "sigmaModelSharedPcm": 34.06246964844704,
+          "z": -7.423809038354971,
+          "label": "fails"
+        }
       },
       "SE": {
         "computed": true,
@@ -112,7 +132,12 @@
         "relative": -0.08372797179298412,
         "sigmaModelPcm": 105.08427334496534,
         "z": -0.3573376571249695,
-        "label": "good"
+        "label": "good",
+        "erratum": {
+          "sigmaModelSharedPcm": 35.77991135098143,
+          "z": -0.8843027502149066,
+          "label": "good"
+        }
       },
       "SD": {
         "computed": true,
@@ -122,7 +147,12 @@
         "relative": -0.3196357970677907,
         "sigmaModelPcm": 116.7727554739328,
         "z": -2.0549059163305508,
-        "label": "fails"
+        "label": "fails",
+        "erratum": {
+          "sigmaModelSharedPcm": 36.23492597276031,
+          "z": -5.388608323138202,
+          "label": "fails"
+        }
       },
       "SC": {
         "computed": true,
@@ -132,7 +162,12 @@
         "relative": -0.5497455926840317,
         "sigmaModelPcm": 127.20774921247634,
         "z": -4.614433848052109,
-        "label": "fails"
+        "label": "fails",
+        "erratum": {
+          "sigmaModelSharedPcm": 35.113603894757816,
+          "z": -12.898659653613253,
+          "label": "fails"
+        }
       }
     },
     "total": {
@@ -143,7 +178,12 @@
       "relative": -0.3254990658526167,
       "sigmaModelPcm": 93.31338767342612,
       "z": -16.287739536223118,
-      "label": "fails"
+      "label": "fails",
+      "erratum": {
+        "sigmaModelSharedPcm": 93.31338767342612,
+        "z": -16.287739536223118,
+        "label": "fails"
+      }
     }
   },
   "C": {
@@ -153,7 +193,12 @@
       "measuredPcmPerF": -1.75,
       "sigmaModelPcmPerF": 0.4714572933463694,
       "z": -2.542905456285532,
-      "label": "fails"
+      "label": "fails",
+      "erratum": {
+        "sigmaModelSharedPcmPerF": 0.4714572933463695,
+        "z": -2.5429054562855318,
+        "label": "fails"
+      }
     },
     "2": {
       "computed": true,
@@ -161,7 +206,12 @@
       "measuredPcmPerF": -8.01,
       "sigmaModelPcmPerF": 0.805514299670711,
       "z": 4.575438511220723,
-      "label": "fails"
+      "label": "fails",
+      "erratum": {
+        "sigmaModelSharedPcmPerF": 0.4714572933463695,
+        "z": 6.189760840891465,
+        "label": "fails"
+      }
     }
   },
   "F": {
@@ -233,6 +283,7 @@
       "2. the total fails: the library's rod worth model is not validated for combined insertion",
       "3. the temperature coefficient fails at S0, S2: the temperature feedback stays not validated; a failure at S2 comes with the library having no rod dependence of its temperature tables",
       "4. the summed tables differ from their transport source by more than the limit at J-W2, J-W4, J-W7, J-B4, J-B7: the results note names the smallest format change that would remove it (not built here; a separate decision)",
+      "erratum (shared-table errors cancelled in the differences, the as-run rule treated the two states as independent): no label changes",
       "6. the library status stays experimental; nothing is refitted"
     ],
     "libraryChanged": false

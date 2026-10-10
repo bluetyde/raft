@@ -235,6 +235,26 @@ class PlantedExport(unittest.TestCase):
             self.assertEqual((folder / "manifest.json").read_bytes(), before)
             self.assertFalse((Path(d) / "lib.new").exists())
 
+    def test_a_failed_replacement_restores_the_old_library(self):
+        from unittest import mock
+        blobs = {f"arrays/{n}.f32": (self.folder / f"arrays/{n}.f32").read_bytes() for n in self.m["arrays"]}
+        with tempfile.TemporaryDirectory() as d:
+            folder = Path(d) / "lib"
+            xb.write_library(folder, self.m, blobs, validate=True)
+            before = (folder / "manifest.json").read_bytes()
+            real = Path.rename
+
+            def fail_on_stage(self_, target):
+                if self_.name.endswith(".new"):
+                    raise OSError("simulated failure of the final rename")
+                return real(self_, target)
+
+            with mock.patch.object(Path, "rename", fail_on_stage):
+                with self.assertRaises(OSError):
+                    xb.write_library(folder, self.m, blobs, validate=True)
+            self.assertEqual((folder / "manifest.json").read_bytes(), before)
+            self.assertFalse((Path(d) / "lib.old").exists())
+
     def test_a_missing_case_is_an_error_not_a_default(self):
         with self.assertRaises(ValueError):
             xb.build([r for r in self.rows if r["case"] != "TC-600"], CORE)

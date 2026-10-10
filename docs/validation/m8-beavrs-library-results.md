@@ -76,3 +76,8 @@ The limit is the larger of 100 pcm and three times the transport error (about 80
 ## Limits
 
 Seven worths treated as independent; the same measured table as the eleventh protocol; the library's statistical error excludes the reference reactivity's; the temperature coefficient of the library is a ±30 K secant of piecewise-linear tables; the S2 library coefficient is evaluated at 975 ppm (the library has no boron or rod dependence in it).
+
+## Erratum (2026-10-10, from the Codex review of the milestone)
+
+The as-run model error of a **difference** (the sequential worths, the total, the ITC) was the quadrature of the two states' errors, which counts the tables the two states share twice (the protocol said "treated as independent", which is right for different tables and wrong for one table at two states). With the shared tables cancelled (`Model.sigma_between`; reported in the report file as `erratum`), the model errors are smaller and the z values grow in magnitude, **no label changes, no decision changes**: C −5.63 → −8.06, B −4.07 → −7.35, A −3.30 → −7.42, SD −2.05 → −5.39, SC −4.61 → −12.90, SE −0.36 → −0.88 (still good), D −0.61 (same), total −16.29 (same), ITC at S0 −2.54 (same) and at S2 +4.58 → +6.19. The tables above are the as-run numbers; the errata are not refits. (The same independent-treatment is in the eleventh protocol's worths, where the two states also share tables; its labels were not recomputed.)
+

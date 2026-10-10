@@ -15,7 +15,7 @@ What the learner should see: the log channel rises slowly while the reactor is f
 | 1100 ppm (ρ −1435 pcm) | 4.1 mW | 983.2 ppm, after 1170 s (19.5 min) | 0.09 W | `period-short` at about 965 ppm, about 200 W (10 s period), at 1356 s (the 2026-10-10 TypeScript run; the first estimate from the Python run, 22 W, was a sample taken before the trip) |
 | 1500 ppm (ρ −6295 pcm) | 0.9 mW | same 983.2 ppm, after 5200 s (87 min) | 0.15 W | same |
 
-So from 1100 ppm the whole lesson is about 20 minutes at 1×, and the student has about 190 s between critical and the trip at full dilution rate. The 1.7 MW `zero-power-limit` trip is never the one that acts in a dilution. Power thresholds relate to reactivity like this (from the same run): above 0.05 W means within about 100 pcm (8 ppm) of critical; above 0.3 W means about +50 pcm; above 2 W means about +150 pcm (a 21 s period).
+So from 1100 ppm the whole lesson is about 20 minutes at 1×, and the student has about 190 s between critical and the trip at full dilution rate. The 1.7 MW `zero-power-limit` trip is never the one that acts in a dilution. Power thresholds relate to reactivity like this (from the same run): above 0.05 W means within about 100 pcm (8 ppm) of critical while the dilution is running; during a continuous dilution 0.3 W is reached at about +50 pcm and 2 W at about +150 pcm (a 21 s period). **A power alone does not show criticality:** a subcritical reactor sits above 0.3 W by source multiplication (0.59 W at 984 ppm, about −10 pcm), which is why the critical goal also needs the boron below 983 ppm (section 7).
 
 ## 3. The scenario file `web/src/app/scenarios/pwr-beavrs-hzp-dilution.json`
 

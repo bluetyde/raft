@@ -1,6 +1,6 @@
 # Milestone 8: a second reactor of a different type (plan, 2026-10-07)
 
-Status: plan only. The choice of reactor is **proposed, not decided** (section 3). Nothing here is built.
+Status: the plan as written on 2026-10-07 (the choice of reactor was proposed here and then decided: the PWR from BEAVRS). Steps 0 to 6 are done (2026-10-10); this text is kept as the plan, see `TODO.md` for the state and `docs/validation/m8-beavrs-library-results.md` for the last result.
 
 ## 1. What M8 must show
 
