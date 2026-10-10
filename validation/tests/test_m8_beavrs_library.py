@@ -83,6 +83,16 @@ class PlantedAnalysis(unittest.TestCase):
         self.assertTrue(m["F"]["J-W7"]["exceeds"])
         self.assertTrue(any(i.startswith("4. the summed tables differ") for i in m["decision"]["items"]))
 
+    def test_the_error_of_a_state_includes_every_table_it_uses(self):
+        rods = self.model.rods(0)
+        base = self.model.sigma(rods, 975.0)
+        at = self.model.sigma(rods, 1300.0)
+        unc = lb._interp(*self.model.unc_boron, 1300.0) * lb.PCM
+        self.assertGreater(unc, 0.0)
+        self.assertAlmostEqual(at ** 2 - base ** 2, unc ** 2, places=6)               # the boron table's error enters in quadrature
+        both = self.model.sigma(self.model.rods(2), 975.0)
+        self.assertGreater(both, base)                                                  # two banks in: two more rod tables with an error
+
     def test_another_manifest_is_refused(self):
         with self.assertRaises(lb.DigestError):
             lb.Model(self.folder)                                                         # the protocol's digest is the real library's
