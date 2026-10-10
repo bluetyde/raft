@@ -5,6 +5,7 @@ Verifies data integrity, consistency of units, prompt-critical trends,
 and loader utilities.
 """
 
+from validation.tests._data import needs_data
 import json
 import unittest
 from pathlib import Path
@@ -23,10 +24,12 @@ class TestJsiPulseDatabase(unittest.TestCase):
         self.pulses = load_pulse_summary(DEFAULT_CSV_PATH)
         self.params_path = Path(__file__).parents[1] / "data" / "triga-jsi" / "parameters.json"
 
+    @needs_data("jsi-pulses")
     def test_pulse_summary_count(self):
         """Database must contain all 757 recorded pulse experiments."""
         self.assertEqual(len(self.pulses), 757)
 
+    @needs_data("jsi-pulses")
     def test_pulse_id_sequence(self):
         """Pulse sequence must start at 1 and end at 760 with monotonically increasing IDs."""
         self.assertEqual(self.pulses[0].pulse_id, 1)
@@ -34,6 +37,7 @@ class TestJsiPulseDatabase(unittest.TestCase):
         ids = [p.pulse_id for p in self.pulses]
         self.assertEqual(ids, sorted(ids))
 
+    @needs_data("jsi-pulses")
     def test_reactivity_unit_conversion(self):
         """Reactivity in pcm must match 1 $ = 700 pcm."""
         checked = 0
@@ -44,6 +48,7 @@ class TestJsiPulseDatabase(unittest.TestCase):
                 checked += 1
         self.assertGreater(checked, 700)
 
+    @needs_data("jsi-pulses")
     def test_filter_by_core_configuration(self):
         """Filtering by core loading must return only matching records."""
         core_253 = filter_pulses(self.pulses, core="253")
@@ -51,6 +56,7 @@ class TestJsiPulseDatabase(unittest.TestCase):
         for p in core_253:
             self.assertEqual(p.core_config, "253")
 
+    @needs_data("jsi-pulses")
     def test_filter_by_reactivity_range(self):
         """Reactivity bounds filtering must enforce strict bounds."""
         pulses_2dollar = filter_pulses(self.pulses, min_rho=1.95, max_rho=2.05)
@@ -60,6 +66,7 @@ class TestJsiPulseDatabase(unittest.TestCase):
             self.assertGreaterEqual(p.rho_dollars, 1.95)
             self.assertLessEqual(p.rho_dollars, 2.05)
 
+    @needs_data("jsi-pulses")
     def test_nordheim_fuchs_scaling_trends(self):
         """
         In the Nordheim-Fuchs regime:
@@ -86,6 +93,7 @@ class TestJsiPulseDatabase(unittest.TestCase):
         avg_high_p = sum(high_prompt_powers) / len(high_prompt_powers)
         self.assertGreater(avg_high_p, avg_low_p * 5.0)
 
+    @needs_data("jsi-pulses")
     def test_json_summary_structure(self):
         """JSON summary file must be valid and conform to schema expectations."""
         self.assertTrue(DEFAULT_JSON_PATH.exists())
@@ -97,6 +105,7 @@ class TestJsiPulseDatabase(unittest.TestCase):
         self.assertIn("units", data)
         self.assertEqual(len(data["pulses"]), 757)
 
+    @needs_data("jsi-pulses")
     def test_triga_benchmark_parameters(self):
         """TRIGA parameter file must define kinetics, geometry and thermal constants."""
         self.assertTrue(self.params_path.exists())

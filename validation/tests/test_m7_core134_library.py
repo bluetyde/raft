@@ -1,5 +1,6 @@
 """Tests for validation/m7_core134_library.py on a synthetic library built from the measured curves themselves (the real library is read once, by the script)."""
 from __future__ import annotations
+from validation.tests._data import needs_data
 
 import unittest
 from types import SimpleNamespace
@@ -31,6 +32,7 @@ def library_from(rod_data, scale=1.0, shape_power=1.0):
 
 
 class Data(unittest.TestCase):
+    @needs_data("jsi-core134")
     def test_table_vi_is_loaded_with_the_misprint_noted(self):
         d = cl.load_rods()
         self.assertEqual(len(d["rows"]["regulating"]), 39)
@@ -42,6 +44,7 @@ class Data(unittest.TestCase):
 
 
 class Rods(unittest.TestCase):
+    @needs_data("jsi-core134")
     def test_a_library_built_from_the_measured_curves_scores_good_everywhere(self):
         d = cl.load_rods()
         m = cl.rod_metrics(library_from(d), d)
@@ -51,6 +54,7 @@ class Rods(unittest.TestCase):
         self.assertEqual(m["regulating"]["R3"]["label"], "good")
         self.assertLess(abs(m["regulating"]["R3"]["differencePcm"]), 5.0)
 
+    @needs_data("jsi-core134")
     def test_scale_and_shape_errors_are_caught_separately(self):
         d = cl.load_rods()
         big = cl.rod_metrics(library_from(d, scale=1.5), d)
@@ -79,6 +83,7 @@ class Decision(unittest.TestCase):
         self.assertIn("fresh-fuel feedback fails", cl.decide(self.rods(), "fails")["next"])
         self.assertEqual(cl.decide(self.rods(other="fails"), "good")["regulatingRod"], "supported")
 
+    @needs_data("jsi-core134")
     def test_the_full_run_has_the_documented_shape(self):
         d = cl.load_rods()
         lib = library_from(d)

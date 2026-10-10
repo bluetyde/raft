@@ -72,6 +72,6 @@ Build the headless runner: `cd web && npm run build:headless`.
 
 ## Licence and sources
 
-MIT (`LICENSE`). Third-party code and data, and anything installed separately, are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The measured data used for comparisons come from published papers and the JSI TRIGA pulse database, with their citations in `validation/data/`; the BEAVRS benchmark (MIT licence) is used for the PWR work.
+MIT (`LICENSE`). Third-party code and data, and anything installed separately, are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The measured data used for the TRIGA comparisons (the JSI pulse database, IAEA steady-power numbers and the core 134 tables) are not distributed here, because redistribution permission is not confirmed; tests that need them skip, and the validation notes quote the numbers they used. The BEAVRS benchmark (MIT licence) is used for the PWR work.
 
 More: [PLAN.md](PLAN.md) for the design, [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the parts fit together.

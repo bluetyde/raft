@@ -3,6 +3,7 @@
 The real libraries are only loaded (a smoke test), never evaluated: the comparison is run once, as the protocol says.
 """
 from __future__ import annotations
+from validation.tests._data import needs_data
 
 import unittest
 from types import SimpleNamespace
@@ -27,6 +28,7 @@ def synthetic_lib(alpha_fuel_pcm_per_k=-10.0, alpha_cool_pcm_per_k=4.0, hA=3000.
 
 
 class MeasuredData(unittest.TestCase):
+    @needs_data("jsi-steady-power")
     def test_the_data_files_load_as_documented(self):
         meas = m7.load_measured()
         self.assertEqual(len(meas["states"]), 11)
@@ -65,6 +67,7 @@ class ModelArithmetic(unittest.TestCase):
         flat = synthetic_lib(alpha_fuel_pcm_per_k=0.0, alpha_cool_pcm_per_k=0.0)
         self.assertIsNone(m7.calibrate_hA(flat, self.P, 299.0, False, 1426.8))
 
+    @needs_data("jsi-steady-power")
     def test_metrics_and_labels_on_a_known_model(self):
         meas = m7.load_measured()
         lib = synthetic_lib()
@@ -85,6 +88,7 @@ class ModelArithmetic(unittest.TestCase):
                          ["good", "good", "plausible", "plausible", "plausible", "plausible", "fails", "fails"])
         self.assertEqual([m7.label_diff("B", d) for d in (0.05, 0.051, 0.10, 0.101)], ["good", "plausible", "plausible", "fails"])
 
+    @needs_data("jsi-steady-power")
     def test_rod_curve_metric_is_zero_for_the_measured_curve_itself(self):
         meas = m7.load_measured()
         steps = sorted(meas["rodCurve"])
@@ -96,6 +100,7 @@ class ModelArithmetic(unittest.TestCase):
         self.assertEqual(d["label"], "good")
         self.assertAlmostEqual(d["reported"]["modelTotalWorthPcm"], 3292.5, places=3)
 
+    @needs_data("jsi-steady-power")
     def test_the_full_run_has_the_documented_shape(self):
         report = m7.run({"syn": synthetic_lib()})
         entry = report["libraries"]["syn"]

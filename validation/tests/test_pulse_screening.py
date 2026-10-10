@@ -10,6 +10,7 @@ Verifies:
 """
 
 from __future__ import annotations
+from validation.tests._data import needs_data
 
 import dataclasses
 import json
@@ -37,6 +38,7 @@ DOCUMENTED_REASONS = {
 }
 
 
+@needs_data("jsi-pulses")
 class TestPulseScreening(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

@@ -1,5 +1,6 @@
 """Tests for the C1 comparison helpers (fast; the full run is `python -m validation.c1_comparison`)."""
 from __future__ import annotations
+from validation.tests._data import needs_data
 
 import math
 import unittest
@@ -43,6 +44,7 @@ class TestC1Helpers(unittest.TestCase):
         # 1 W for 0.2 s heats the fuel ~7e-6 K; that feedback (~ -7.5e-10) lowers power by ~1e-7. Anything much larger is wrong.
         self.assertLess(abs(e.y[0] / P0_DEFAULT - 1.0), 1e-6)
 
+    @needs_data("jsi-pulses")
     def test_split_and_selection(self):
         p = core_pulses("246")
         self.assertEqual(len(p), 148)

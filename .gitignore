@@ -25,3 +25,8 @@ run-viewer.cmd
 run-virtual-reactor.cmd
 virtual-reactor.bat
 web/dist-headless/
+
+# Measured data sets whose redistribution permission is not confirmed (kept locally, see THIRD_PARTY_NOTICES.md)
+validation/data/jsi-pulses/
+validation/data/jsi-steady-power/
+validation/data/jsi-core134/

@@ -9,6 +9,7 @@ Verifies:
 """
 
 from __future__ import annotations
+from validation.tests._data import needs_data
 
 import unittest
 from pathlib import Path
@@ -67,6 +68,7 @@ class TestPulseComparison(unittest.TestCase):
         self.assertGreater(p_140.fwhm_s, p_170.fwhm_s)
         self.assertGreater(p_170.fwhm_s, p_200.fwhm_s)
 
+    @needs_data("jsi-pulses")
     def test_comparison_summary_has_no_automatic_verdict(self):
         """The comparison reports numbers and the full sim/exp ratio range, never a GO/NO-GO (review 2026-09-26)."""
         summary = run_pulse_comparison(

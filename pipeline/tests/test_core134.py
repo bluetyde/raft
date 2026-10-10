@@ -21,8 +21,10 @@ class Occupancy(unittest.TestCase):
         self.assertEqual(c133["other"]["E12"], "NI")
         inner = {p: e for p, e in c134["fuel"].items() if p[0] in "ABCD"}
         self.assertEqual(inner, {p: e for p, e in c133["fuel"].items() if p[0] in "ABCD"})   # rings A to D are the same in both cores
-        uranium = {row.split(",")[0] for row in (cm.REPO_ROOT / "validation/data/jsi-core134/fuel_content.csv").read_text(encoding="utf-8").splitlines()[1:]}
-        self.assertTrue(set(c134["fuel"].values()) <= uranium)                                   # every element has a Table III entry
+        table = cm.REPO_ROOT / "validation/data/jsi-core134/fuel_content.csv"   # not distributed (THIRD_PARTY_NOTICES.md)
+        if table.exists():
+            uranium = {row.split(",")[0] for row in table.read_text(encoding="utf-8").splitlines()[1:]}
+            self.assertTrue(set(c134["fuel"].values()) <= uranium)                                   # every element has a Table III entry
         # positions that are labelled in the rings of the model
         for pos in c134["fuel"]:
             self.assertIn(pos[0], cm.RINGS)

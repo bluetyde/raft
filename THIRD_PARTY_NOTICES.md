@@ -26,10 +26,10 @@ Development-only dependencies (types, test runners, build tools) are not distrib
 
 ## Measured data and benchmark values
 
-These are in `validation/data/` or quoted in `docs/validation/`, with their citations beside them. Facts such as measured values are reproduced for comparison; documents are not.
+Three measured data sets are **not distributed with this repository** (they are in `.gitignore`; permission to redistribute them has not been confirmed and is not expected soon). The validation code and tests that read them skip when the folders are absent; the results in `docs/validation/` were produced from them and quote the numbers they used. Facts such as measured values are quoted for comparison; documents are not reproduced.
 
 - **BEAVRS** (Benchmark for Evaluation And Validation of Reactor Simulations, MIT Computational Reactor Physics Group, `mit-crpg/BEAVRS`, MIT License): the cycle 1 hot zero power values quoted in `docs/validation/m8-beavrs-hzp-*.md` and the model generator used to run the transport cases. The generator is not copied into this repository; when a data file derived from it is added, its MIT notice goes beside it.
-- **JSI TRIGA pulse database** (trigapulse.ijs.si; I. Švajger and L. Snoj): `validation/data/jsi-pulses/`. The dataset's own README names the authors as the contact for redistribution and licensing. **Permission to redistribute has not been confirmed.**
-- **JSI steady-state power ascension** (IAEA research reactor database, Slovenia protocols, "typical real data" of 2013): `validation/data/jsi-steady-power/`. The source carries no licence statement; the numbers are measured facts; the PDF is not in this repository. **Redistribution terms not confirmed.**
-- **TRIGA Mark II core 134 benchmark** (I. Mele, M. Ravnik, A. Trkov, *Nuclear Technology* 105 (1994) 37-51): tables transcribed into `validation/data/jsi-core134/`; the paper itself is not in this repository. **Redistribution terms of the transcribed tables not confirmed.**
+- **JSI TRIGA pulse database** (trigapulse.ijs.si; I. Švajger and L. Snoj): kept locally in `validation/data/jsi-pulses/`, **not in the repository**. The dataset's own README names the authors as the contact for redistribution and licensing; permission has not been requested or confirmed.
+- **JSI steady-state power ascension** (IAEA research reactor database, Slovenia protocols, "typical real data" of 2013): kept locally in `validation/data/jsi-steady-power/`, **not in the repository**. The source carries no licence statement.
+- **TRIGA Mark II core 134 benchmark** (I. Mele, M. Ravnik, A. Trkov, *Nuclear Technology* 105 (1994) 37-51): tables transcribed into `validation/data/jsi-core134/`, kept locally, **not in the repository**; the paper itself is not here either.
 

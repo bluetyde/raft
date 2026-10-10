@@ -1,5 +1,6 @@
 """Tests for validation/m7_core134_conversion.py on synthetic ring temperatures, power shapes and planted measurements (the real data is read once, by the script)."""
 from __future__ import annotations
+from validation.tests._data import needs_data
 
 import unittest
 
@@ -33,6 +34,7 @@ def shapes_lib():
 
 
 class RadialFactor(unittest.TestCase):
+    @needs_data("jsi-core134")
     def test_ring_values_and_the_weighted_means(self):
         r = cv.load_rings()
         self.assertEqual(r["A-1"], {"250": 244.0, "125": 176.0})
@@ -126,6 +128,7 @@ class Implied(unittest.TestCase):
 
 
 class RealData(unittest.TestCase):
+    @needs_data("jsi-core134")
     def test_the_data_files_and_the_library_have_what_the_protocol_reads(self):
         import json
         from physics_ref.library import Library

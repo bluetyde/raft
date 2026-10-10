@@ -1,5 +1,6 @@
 """Tests for validation/m7_fuel_coefficient.py on a synthetic library and planted core 134 data (the real Table IX is read once, by the script)."""
 from __future__ import annotations
+from validation.tests._data import needs_data
 
 import unittest
 
@@ -40,6 +41,7 @@ def planted(lib, name="core242", n_true=None, ratio=1.0):
 
 
 class Measured(unittest.TestCase):
+    @needs_data("jsi-core134")
     def test_the_data_file_is_the_paper_table(self):
         d = fc.load_steps()
         self.assertEqual(len(d["steps"]), 15)
