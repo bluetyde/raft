@@ -55,7 +55,7 @@ describe("the dilution lesson", () => {
 
   it("a reckless operator, who dilutes to the end, trips the startup-rate trip and fails the hold", async () => {
     let sent = false;
-    const { view, e } = await play(async (_e, op) => {
+    const { view, e, peak } = await play(async (_e, op) => {
       if (!sent) {
         sent = true;
         await op({ type: "boron.set", ppm: 900 });
@@ -63,8 +63,36 @@ describe("the dilution lesson", () => {
     });
     expect(view.goals.find((g) => g.id === "approach")!.status).toBe("met");
     expect(view.goals.find((g) => g.id === "hold")!.status).toBe("failed");
-    expect(view.score.trips).toBeGreaterThanOrEqual(1);
+    expect(view.score.trips).toBe(1);
+    expect(e.latched).toEqual(["period-short"]);                       // the startup-rate trip, not the 1.7 MW limit
+    expect(peak).toBeGreaterThan(50);
+    expect(peak).toBeLessThan(1000);                                   // it acts at about 200 W (period 10 s), far below the 1.7 MW limit
     expect(e.snapshot().truth.reactivity.total).toBeLessThan(-0.02); // scrammed
+  }, 120_000);
+
+  it("stopping just above the critical concentration is not criticality: the power sits above 0.3 W by source multiplication and the critical goal fails", async () => {
+    let sent = false;
+    const { view } = await play(async (_e, op) => {
+      if (!sent) {
+        sent = true;
+        await op({ type: "boron.set", ppm: 984.5 });                      // the library is critical at 983.2: about -15 pcm
+      }
+    });
+    expect(view.goals.find((g) => g.id === "approach")!.status).toBe("met");
+    expect(view.goals.find((g) => g.id === "critical")!.status).toBe("failed");
+    expect(view.score.trips).toBe(0);
+  }, 120_000);
+
+  it("a power that keeps rising does not count as a hold", async () => {
+    let sent = false;
+    const { view } = await play(async (_e, op) => {
+      if (!sent) {
+        sent = true;
+        await op({ type: "boron.set", ppm: 981 });                        // a few tens of pcm: the period settles near 230 s, a rise of 3.7 times in 5 minutes
+      }
+    });
+    expect(view.goals.find((g) => g.id === "critical")!.status).toBe("met");
+    expect(view.goals.find((g) => g.id === "hold")!.status).toBe("failed");
   }, 120_000);
 
   it("an operator who does nothing fails the first goal on time", async () => {

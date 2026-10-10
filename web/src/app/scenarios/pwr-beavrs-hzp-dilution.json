@@ -18,7 +18,7 @@
     ]
   },
   "envelope": {
-    "summary": "Approach to criticality by dilution and a hold at zero power; the rods stay at the benchmark configuration; boron 900 to 1300 ppm; no power operation.",
+    "summary": "Approach to criticality by dilution and a hold at zero power; the rods stay at the benchmark configuration (only a scram moves them); no power operation.",
     "power": {
       "fromTrip": "zero-power-limit",
       "times": 6e-05,
@@ -60,31 +60,54 @@
     },
     {
       "id": "critical",
-      "text": "Bring the reactor critical: the log channel above 0.3 W and rising",
+      "text": "Bring the reactor critical: dilute below the critical boron concentration, so the power rises on its own",
       "check": {
-        "signal": "indicated.log",
-        "op": "gt",
-        "value": 0.3
+        "all": [
+          {
+            "signal": "indicated.log",
+            "op": "gt",
+            "value": 0.3
+          },
+          {
+            "signal": "truth.boron",
+            "op": "lt",
+            "value": 983
+          }
+        ]
       },
       "after": "approach",
       "within": 600,
-      "source": "this lesson, from a run of the library: 0.3 W is about 50 pcm above critical (docs/m8-dilution-lesson-plan.md)"
+      "source": "the library's critical boron is 983.2 ppm (docs/m8-dilution-lesson-plan.md); below it the reactor is supercritical, and a power above 0.3 W alone can be source multiplication in a subcritical reactor"
     },
     {
       "id": "hold",
-      "text": "Hold the log channel between 0.3 W and 30 W for 5 minutes",
+      "text": "Hold the log channel steady between 0.3 W and 30 W for 5 minutes: not rising with a period under 10 minutes",
       "check": {
-        "signal": "indicated.log",
-        "op": "between",
-        "value": [
-          0.3,
-          30
+        "all": [
+          {
+            "signal": "indicated.log",
+            "op": "between",
+            "value": [
+              0.3,
+              30
+            ]
+          },
+          {
+            "not": {
+              "signal": "truth.period",
+              "op": "between",
+              "value": [
+                0,
+                600
+              ]
+            }
+          }
         ]
       },
       "for": 300,
       "after": "critical",
       "within": 900,
-      "source": "this lesson: 30 W is below the 13 s period seen at 22 W in a run of the library (docs/m8-dilution-lesson-plan.md)"
+      "source": "this lesson: 30 W is where the period is about 13 s in a run of the library; a period under 600 s is a rise of more than 1.6 times in 5 minutes (docs/m8-dilution-lesson-plan.md)"
     },
     {
       "id": "boron-band",

@@ -12,10 +12,10 @@ What the learner should see: the log channel rises slowly while the reactor is f
 
 | Start boron | Source-level power | Critical (ρ = 0) | Power at critical | Trip |
 |---|---|---|---|---|
-| 1100 ppm (ρ −1435 pcm) | 4.1 mW | 983.2 ppm, after 1170 s (19.5 min) | 0.09 W | `period-short` at about 967 ppm, 22 W and a 13 s period at 1330 s, scram by about 1350 s |
+| 1100 ppm (ρ −1435 pcm) | 4.1 mW | 983.2 ppm, after 1170 s (19.5 min) | 0.09 W | `period-short` at about 965 ppm, about 200 W (10 s period), at 1356 s (the 2026-10-10 TypeScript run; the first estimate from the Python run, 22 W, was a sample taken before the trip) |
 | 1500 ppm (ρ −6295 pcm) | 0.9 mW | same 983.2 ppm, after 5200 s (87 min) | 0.15 W | same |
 
-So from 1100 ppm the whole lesson is about 20 minutes at 1×, and the student has about 160 s between critical and the trip at full dilution rate. The 1.7 MW `zero-power-limit` trip is never the one that acts in a dilution. Power thresholds relate to reactivity like this (from the same run): above 0.05 W means within about 100 pcm (8 ppm) of critical; above 0.3 W means about +50 pcm; above 2 W means about +150 pcm (a 21 s period).
+So from 1100 ppm the whole lesson is about 20 minutes at 1×, and the student has about 190 s between critical and the trip at full dilution rate. The 1.7 MW `zero-power-limit` trip is never the one that acts in a dilution. Power thresholds relate to reactivity like this (from the same run): above 0.05 W means within about 100 pcm (8 ppm) of critical; above 0.3 W means about +50 pcm; above 2 W means about +150 pcm (a 21 s period).
 
 ## 3. The scenario file `web/src/app/scenarios/pwr-beavrs-hzp-dilution.json`
 
@@ -51,3 +51,10 @@ About half a day for 1 to 4.
 1. **Start boron**: 1100 ppm (20 minutes, recommended) or 1200 (30 minutes, a deeper start).
 2. **Goal 4** (the scored boron band 970 to 990 ppm): keep (recommended; it makes the learner estimate the critical concentration) or drop (goals 1 to 3 only, which test the handling but not the estimate).
 3. **Hold length**: 5 minutes (recommended) or 2 minutes as in the TRIGA lesson.
+
+## 7. Changes after the Codex review (2026-10-10)
+
+- Goal 2 (critical) now also needs `truth.boron` below 983 ppm: a power above 0.3 W alone is reached by source multiplication in a subcritical reactor (about 0.59 W at 984 ppm), so it did not show criticality. (This is an answer-key check, like goal 4.)
+- Goal 3 (hold) also needs the period not between 0 and 600 s: a power that keeps rising (a period of 230 s at 981 ppm) is not a hold.
+- The envelope summary no longer states a boron range (the envelope has no boron limit; the engine's own domain check, 300 to 1600 ppm, still warns); the supported-envelope text says only a scram moves the rods.
+- Tests added: stopping at 984.5 ppm fails the critical goal; a slow rise at 981 ppm fails the hold; the reckless run must latch exactly `period-short`.
