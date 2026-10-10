@@ -19,6 +19,8 @@ from pathlib import Path
 
 from pipeline.library.export_openmc import _pack_f32_slice_normalized, interp, isotonic
 from pipeline.library.synthetic import descriptor, pack
+from pipeline.library.validate import validate_library
+from pipeline.openmc.beavrs_cases import sweep_cases
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SWEEP = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_sweep.jsonl"
@@ -38,6 +40,9 @@ TC_CASES = {"TC-500": 500.0, "TC-540": 540.0, "TC-600": 600.0, "TC-620": 620.0}
 B_CASES = {"B-300": 300.0, "B-600": 600.0, "B-1300": 1300.0, "B-1600": 1600.0}
 JOINT_RHO = ("J-W2", "J-W4", "J-W7")
 JOINT_BORON = ("J-B4", "J-B7")
+# A joint state goes into domain.jointChecked (where the summed tables count as checked) only if the summed model reproduces transport there
+RHO_ERR_LIMIT = 1.0e-3        # 100 pcm, about four times a case's statistical error
+SHAPE_ERR_LIMIT = 1.0         # in mean bins
 FUEL_DENSITY = 10.3             # g/cm3: BEAVRS fuel densities by enrichment run from 10.29 to 10.36
 # U-235 delayed-neutron decay constants of ENDF/B-VIII.0 (read from neutron/U235.h5, reaction 18, 2026-10-10); the TRIGA libraries use Keepin's
 LAMBDA_ENDF = [0.01334, 0.03274, 0.12078, 0.30278, 0.84949, 2.853]
@@ -110,10 +115,7 @@ def normalized(v: list[float]) -> list[float]:
 # ---------------------------------------------------------------- build
 
 def build(rows: list[dict], core: dict, created: str | None = None) -> tuple[dict, dict[str, bytes], dict]:
-    by = {r["case"]: r for r in rows}
-    for need in ["REF", "R-D-228", *TF_CASES, *TC_CASES, *B_CASES, *JOINT_RHO, *JOINT_BORON] + [f"R-{b}-{n}" for b in BANKS for n in (0, 76, 152)]:
-        if need not in by:
-            raise ValueError(f"the sweep has no case {need}")
+    by = check_sweep(rows)
     ref = by["REF"]
     rho_ref, sig_ref = rho_of(ref)
     for b in BANKS:
@@ -220,11 +222,14 @@ def build(rows: list[dict], core: dict, created: str | None = None) -> tuple[dic
         rho_p, shape_p = predict(r)
         rho_c, sig_c = rho_of(r)
         err = shape_err(shape_p, shape_of(r["case"]))
-        check[r["case"]] = {"rhoCase": rho_c, "rhoPred": rho_p, "rhoErr": abs(rho_p - rho_c), "rhoSigma": sig_c, "maxShapeErr": err}
+        check[r["case"]] = {"rhoCase": rho_c, "rhoPred": rho_p, "rhoErr": abs(rho_p - rho_c), "rhoSigma": sig_c, "maxShapeErr": err,
+                            "negativeBins": sum(1 for v in shape_p if v < -1e-6), "minBin": min(shape_p)}
     joint = []
     for c in JOINT_RHO:
-        r = by[c]
-        joint.append({"rods": {rid(b): x_of(r["steps"][b]) for b in BANKS}, "maxShapeErr": check[c]["maxShapeErr"], "rhoErr": check[c]["rhoErr"]})
+        r, ck = by[c], check[c]
+        ck["inJointChecked"] = ck["rhoErr"] <= RHO_ERR_LIMIT and ck["maxShapeErr"] <= SHAPE_ERR_LIMIT and ck["negativeBins"] == 0
+        if ck["inJointChecked"]:
+            joint.append({"rods": {rid(b): x_of(r["steps"][b]) for b in BANKS}, "maxShapeErr": ck["maxShapeErr"], "rhoErr": ck["rhoErr"]})
 
     # manifest
     thermal_mass_kg = core["fuelPinsPerAssembly"] * len(core["assemblies"]) * pin_area * (core["activeFuelTopCm"] - core["activeFuelBotCm"]) * FUEL_DENSITY / 1000.0
@@ -338,8 +343,26 @@ def build(rows: list[dict], core: dict, created: str | None = None) -> tuple[dic
         "rodTables": {b: rod_tables[b] for b in BANKS}, "cases": check,
         "boronSeparability": {c: check[c] for c in JOINT_BORON},
         "negativeShapeBins": sum(1 for v in base_f32 if v <= 0),
+        "limits": {"rhoErr": RHO_ERR_LIMIT, "maxShapeErr": SHAPE_ERR_LIMIT},
     }
     return m, blobs, report
+
+
+def check_sweep(rows: list[dict]) -> dict[str, dict]:
+    """The rows must be exactly the plan of pipeline/openmc/beavrs_cases.py: unique case ids, and each case's recorded settings equal to the plan's."""
+    ids = [r["case"] for r in rows]
+    dup = sorted({c for c in ids if ids.count(c) > 1})
+    if dup:
+        raise ValueError(f"duplicate sweep cases {dup}")
+    plan = sweep_cases()
+    if set(ids) != set(plan):
+        raise ValueError(f"the sweep does not match the plan: missing {sorted(set(plan) - set(ids))}, unexpected {sorted(set(ids) - set(plan))}")
+    for r in rows:
+        want = plan[r["case"]]
+        for key in ("steps", "boron", "tFuel", "tWater"):
+            if r.get(key) != want[key]:
+                raise ValueError(f"case {r['case']}: {key} is {r.get(key)!r} in the sweep, the plan says {want[key]!r}")
+    return {r["case"]: r for r in rows}
 
 
 def interp_slice(xs: list[float], slices: list[list[float]], x: float) -> list[float]:
@@ -360,13 +383,26 @@ def shape_err(pred: list[float], case: list[float]) -> float:
     return max(abs(a - b) for a, b in zip(pred, case)) * len(pred)
 
 
-def write_library(folder: Path, m: dict, blobs: dict[str, bytes]) -> None:
+def write_library(folder: Path, m: dict, blobs: dict[str, bytes], validate: bool = False) -> None:
+    """Write next to the target, validate if asked, then replace the target: a failed write or an invalid library leaves the old one in place."""
+    stage = folder.with_name(folder.name + ".new")
+    if stage.exists():
+        shutil.rmtree(stage)
+    (stage / "arrays").mkdir(parents=True)
+    try:
+        for name, data in blobs.items():
+            (stage / name).write_bytes(data)
+        (stage / "manifest.json").write_bytes((json.dumps(m, indent=2, ensure_ascii=False) + "\n").encode("utf-8"))
+        if validate:
+            issues = validate_library(stage)
+            if issues:
+                raise ValueError("the new library does not validate: " + "; ".join(f"{i.code} {i.path}" for i in issues[:5]))
+    except BaseException:
+        shutil.rmtree(stage, ignore_errors=True)
+        raise
     if folder.exists():
         shutil.rmtree(folder)
-    (folder / "arrays").mkdir(parents=True)
-    for name, data in blobs.items():
-        (folder / name).write_bytes(data)
-    (folder / "manifest.json").write_bytes((json.dumps(m, indent=2, ensure_ascii=False) + "\n").encode("utf-8"))
+    stage.rename(folder)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -379,7 +415,7 @@ def main(argv: list[str] | None = None) -> int:
     rows = [json.loads(line) for line in args.sweep.read_text(encoding="utf-8").splitlines() if line.strip()]
     core = json.loads(args.core.read_text(encoding="utf-8"))
     m, blobs, report = build(rows, core)
-    write_library(args.out, m, blobs)
+    write_library(args.out, m, blobs, validate=True)
     args.report.write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8", newline="\n")
     print(f"wrote {args.out} ({len(m['shapes']['bins']['elements'])} assemblies, {len(m['reactivity']['rods'])} rods); report {args.report}")
     return 0

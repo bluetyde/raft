@@ -11,11 +11,14 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
 OUT = Path(__file__).resolve().parent / "beavrs_core.json"
 LABEL = re.compile(r"^([A-Z])_+(\d+)$")
+SOURCE_HEAD = "1ccae04"
+COUNTS = {"A": 4, "B": 8, "C": 8, "D": 5, "SA": 8, "SB": 8, "SC": 4, "SD": 4, "SE": 4}
 BANK_ORDER = ["A", "B", "C", "D", "SA", "SB", "SC", "SD", "SE"]
 
 
@@ -25,6 +28,9 @@ def label(name: str) -> str:
 
 
 def build(clone: Path) -> dict:
+    head = subprocess.run(["git", "-C", str(clone), "rev-parse", "--short=7", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
+    if head != SOURCE_HEAD:
+        raise SystemExit(f"the clone is at {head}, this file records {SOURCE_HEAD}: check the layout by hand and update SOURCE_HEAD")
     sys.path.insert(0, str(clone / "models" / "openmc"))
     import beavrs.constants as c
     from beavrs.core import Core
@@ -45,9 +51,13 @@ def build(clone: Path) -> dict:
                 "bank": core.rcca_positions.get(name),
             })
     banks = {b: sorted(a["label"] for a in assemblies if a["bank"] == b) for b in BANK_ORDER}
+    if len(assemblies) != 193 or len({a["label"] for a in assemblies}) != 193 or len({(a["x"], a["y"]) for a in assemblies}) != 193:
+        raise SystemExit(f"expected 193 distinct fuel assemblies, found {len(assemblies)}")
+    if {b: len(v) for b, v in banks.items()} != COUNTS or sum(1 for a in assemblies if a["bank"]) != 53:
+        raise SystemExit(f"RCCA counts differ from the benchmark: {({b: len(v) for b, v in banks.items()})}")
     return {
         "source": "mit-crpg/BEAVRS (MIT licence, BEAVRS-LICENSE), models/openmc/beavrs/core.py and constants.py",
-        "sourceHead": "1ccae04",
+        "sourceHead": SOURCE_HEAD,
         "orientation": "col = lattice x index (west to east); row = template row (north to south); y = 18 - row, the mesh tally's y index (y up)",
         "latticePitchCm": c.latticePitch,
         "latticeSize": 19,

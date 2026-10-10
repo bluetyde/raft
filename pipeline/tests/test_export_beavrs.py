@@ -17,6 +17,7 @@ from physics_ref.engine import Engine
 from physics_ref.library import Library
 from pipeline.library import export_beavrs as xb
 from pipeline.library.validate import validate_library
+from pipeline.openmc.beavrs_cases import sweep_cases
 
 CORE = json.loads(xb.CORE.read_text(encoding="utf-8"))
 NXY = 19 * 19
@@ -75,26 +76,12 @@ def mesh(units: list[float], core: dict, scale: float) -> list[float]:
 
 
 def make_rows(interaction=0.0) -> list[dict]:
-    cases = {"REF": (dict(REF_STEPS), B_REF, None, None)}
-    for b in xb.BANKS:
-        for n in (0, 76, 152):
-            cases[f"R-{b}-{n}"] = (dict(REF_STEPS, **{b: n}), B_REF, None, None)
-    cases["R-D-228"] = (dict(REF_STEPS, D=228), B_REF, None, None)
-    for c, t in xb.TF_CASES.items():
-        cases[c] = (dict(REF_STEPS), B_REF, t, None)
-    for c, t in xb.TC_CASES.items():
-        cases[c] = (dict(REF_STEPS), B_REF, None, t)
-    for c, bb in xb.B_CASES.items():
-        cases[c] = (dict(REF_STEPS), bb, None, None)
-    order = xb.BANKS[:]
-    for c, nb, bb in (("J-W2", ["C", "D"], B_REF), ("J-W4", ["A", "B", "C", "D"], B_REF), ("J-W7", ["A", "B", "C", "D", "SC", "SD", "SE"], B_REF),
-                      ("J-B4", ["A", "B", "C", "D"], 686.0), ("J-B7", ["A", "B", "C", "D", "SC", "SD", "SE"], 508.0)):
-        cases[c] = ({b: (0 if b in nb else REF_STEPS[b]) for b in order}, bb, None, None)
     rows = []
-    for name, (steps, boron, tf, tw) in cases.items():
+    for name, c in sweep_cases().items():                  # exactly the plan the real sweep ran
+        steps, boron, tf, tw = c["steps"], c["boron"], c["tFuel"], c["tWater"]
         rho = planted_rho(steps, boron, tf, tw, interaction)
         units = planted_units(steps, tf)
-        rows.append({"case": name, "role": "x", "steps": steps, "boron": boron, "tFuel": tf, "tWater": tw, "k": 1.0 / (1.0 - rho), "kStd": 2.5e-4,
+        rows.append({"case": name, "role": c["role"], "steps": steps, "boron": boron, "tFuel": tf, "tWater": tw, "k": 1.0 / (1.0 - rho), "kStd": 2.5e-4,
                      "fission": mesh(units, CORE, 1e-3), "fissionStd": mesh([0.01 * u for u in BASE_RAW], CORE, 1e-3), "betaGroups": BETA,
                      "betaGroupsStd": [1e-5] * 6, "lambdaS": 2.9e-5, "lambdaStdS": 4e-8, "openmc": "0.15.3"})
     return rows
@@ -210,6 +197,36 @@ class PlantedExport(unittest.TestCase):
             folder = Path(d) / "lib"
             xb.write_library(folder, self.m, {f"arrays/{n}.f32": (self.folder / f"arrays/{n}.f32").read_bytes() for n in self.m["arrays"]})
             self.assertGreater(evaluate(folder, ids={b.upper(): swapped.get(b, b) for b in ("a", "b")} | {b.upper(): b for b in ("c", "d", "sa", "sb", "sc", "sd", "se")}), 1e-4)
+
+    def test_the_joint_states_are_listed_only_if_the_summed_model_reproduces_them(self):
+        self.assertEqual(len(self.m["domain"]["jointChecked"]), 3)
+        m, _, report = xb.build(make_rows(interaction=-4.0e-4), CORE, created="2026-10-10")
+        self.assertEqual([j["rods"]["c"] for j in m["domain"]["jointChecked"]], [0.0])        # only J-W2 (error 4e-4, under 1e-3) is kept
+        self.assertTrue(report["cases"]["J-W2"]["inJointChecked"])
+        self.assertFalse(report["cases"]["J-W4"]["inJointChecked"])                            # 1.2e-3
+        self.assertFalse(report["cases"]["J-W7"]["inJointChecked"])                            # 2.4e-3
+
+    def test_a_duplicate_case_is_refused(self):
+        with self.assertRaises(ValueError):
+            xb.build(self.rows + [copy.deepcopy(self.rows[0])], CORE)
+
+    def test_a_case_recorded_with_other_settings_than_planned_is_refused(self):
+        rows = copy.deepcopy(self.rows)
+        next(r for r in rows if r["case"] == "B-300")["boron"] = 600.0
+        with self.assertRaises(ValueError):
+            xb.build(rows, CORE)
+
+    def test_an_invalid_new_library_leaves_the_old_one_in_place(self):
+        with tempfile.TemporaryDirectory() as d:
+            folder = Path(d) / "lib"
+            xb.write_library(folder, self.m, {f"arrays/{n}.f32": (self.folder / f"arrays/{n}.f32").read_bytes() for n in self.m["arrays"]}, validate=True)
+            before = (folder / "manifest.json").read_bytes()
+            bad = copy.deepcopy(self.m)
+            bad["reactivity"]["boron"]["rho"][2] = 1.0e-3                         # not zero at the reference
+            with self.assertRaises(ValueError):
+                xb.write_library(folder, bad, {f"arrays/{n}.f32": (self.folder / f"arrays/{n}.f32").read_bytes() for n in self.m["arrays"]}, validate=True)
+            self.assertEqual((folder / "manifest.json").read_bytes(), before)
+            self.assertFalse((Path(d) / "lib.new").exists())
 
     def test_a_missing_case_is_an_error_not_a_default(self):
         with self.assertRaises(ValueError):
