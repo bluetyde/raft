@@ -1,0 +1,350 @@
+{
+ "source": "R. D. Mosteller, ENDF/B-V, ENDF/B-VI, and ENDF/B-VII.0 Results for the Doppler-Defect Benchmark, LA-UR-07-0922, M&C+SNA 2007, Tables II to IV (approved for public release, distribution unlimited). MCNP5, 550 generations of 10000 neutrons, 50 inactive.",
+ "benchmark": "R. D. Mosteller, Computational Benchmarks for the Doppler Reactivity Defect, LA-UR-06-2968 (2006)",
+ "temperatures": {
+  "hzpK": 600,
+  "hfpK": 900,
+  "deltaTK": 300
+ },
+ "definition": "drho = (kHFP - kHZP)/(kHFP*kHZP); dc = drho * 1e5 / deltaT in pcm/K",
+ "transcription": "from an OCR of the paper; every endfb7 dc was recomputed from its two k values and agrees to 0.005 pcm/K (2026-10-10); endfb6 and endfb5 carry only the Doppler coefficients",
+ "referenceColumn": "endfb7",
+ "cases": [
+  {
+   "id": "uo2-0.711",
+   "subset": "uo2",
+   "content": 0.711,
+   "endfb7": {
+    "kHFP": 0.66108,
+    "kHFPStd": 0.00018,
+    "kHZP": 0.66661,
+    "kHZPStd": 0.00019,
+    "dc": -4.18,
+    "dcStd": 0.2
+   },
+   "endfb6": {
+    "dc": -4.16,
+    "dcStd": 0.21
+   },
+   "endfb5": {
+    "dc": -4.07,
+    "dcStd": 0.2
+   }
+  },
+  {
+   "id": "uo2-1.6",
+   "subset": "uo2",
+   "content": 1.6,
+   "endfb7": {
+    "kHFP": 0.95411,
+    "kHFPStd": 0.00026,
+    "kHZP": 0.96176,
+    "kHZPStd": 0.00027,
+    "dc": -2.78,
+    "dcStd": 0.14
+   },
+   "endfb6": {
+    "dc": -2.92,
+    "dcStd": 0.13
+   },
+   "endfb5": {
+    "dc": -2.82,
+    "dcStd": 0.13
+   }
+  },
+  {
+   "id": "uo2-2.4",
+   "subset": "uo2",
+   "content": 2.4,
+   "endfb7": {
+    "kHFP": 1.09077,
+    "kHFPStd": 0.00028,
+    "kHZP": 1.09955,
+    "kHZPStd": 0.00027,
+    "dc": -2.44,
+    "dcStd": 0.11
+   },
+   "endfb6": {
+    "dc": -2.41,
+    "dcStd": 0.11
+   },
+   "endfb5": {
+    "dc": -2.37,
+    "dcStd": 0.1
+   }
+  },
+  {
+   "id": "uo2-3.1",
+   "subset": "uo2",
+   "content": 3.1,
+   "endfb7": {
+    "kHFP": 1.16794,
+    "kHFPStd": 0.00028,
+    "kHZP": 1.17741,
+    "kHZPStd": 0.00029,
+    "dc": -2.3,
+    "dcStd": 0.1
+   },
+   "endfb6": {
+    "dc": -2.3,
+    "dcStd": 0.1
+   },
+   "endfb5": {
+    "dc": -2.25,
+    "dcStd": 0.09
+   }
+  },
+  {
+   "id": "uo2-3.9",
+   "subset": "uo2",
+   "content": 3.9,
+   "endfb7": {
+    "kHFP": 1.23048,
+    "kHFPStd": 0.00029,
+    "kHZP": 1.24054,
+    "kHZPStd": 0.00032,
+    "dc": -2.2,
+    "dcStd": 0.09
+   },
+   "endfb6": {
+    "dc": -2.12,
+    "dcStd": 0.09
+   },
+   "endfb5": {
+    "dc": -2.19,
+    "dcStd": 0.09
+   }
+  },
+  {
+   "id": "uo2-4.5",
+   "subset": "uo2",
+   "content": 4.5,
+   "endfb7": {
+    "kHFP": 1.26598,
+    "kHFPStd": 0.00029,
+    "kHZP": 1.27621,
+    "kHZPStd": 0.00028,
+    "dc": -2.11,
+    "dcStd": 0.08
+   },
+   "endfb6": {
+    "dc": -2.12,
+    "dcStd": 0.08
+   },
+   "endfb5": {
+    "dc": -2.07,
+    "dcStd": 0.08
+   }
+  },
+  {
+   "id": "uo2-5.0",
+   "subset": "uo2",
+   "content": 5.0,
+   "endfb7": {
+    "kHFP": 1.28959,
+    "kHFPStd": 0.00031,
+    "kHZP": 1.30027,
+    "kHZPStd": 0.00029,
+    "dc": -2.12,
+    "dcStd": 0.08
+   },
+   "endfb6": {
+    "dc": -2.04,
+    "dcStd": 0.08
+   },
+   "endfb5": {
+    "dc": -1.99,
+    "dcStd": 0.08
+   }
+  },
+  {
+   "id": "reactor-mox-1.0",
+   "subset": "reactor-mox",
+   "content": 1.0,
+   "endfb7": {
+    "kHFP": 0.93451,
+    "kHFPStd": 0.00027,
+    "kHZP": 0.94448,
+    "kHZPStd": 0.00028,
+    "dc": -3.77,
+    "dcStd": 0.15
+   },
+   "endfb6": {
+    "dc": -3.9,
+    "dcStd": 0.15
+   },
+   "endfb5": {
+    "dc": -3.83,
+    "dcStd": 0.14
+   }
+  },
+  {
+   "id": "reactor-mox-2.0",
+   "subset": "reactor-mox",
+   "content": 2.0,
+   "endfb7": {
+    "kHFP": 1.00974,
+    "kHFPStd": 0.00029,
+    "kHZP": 1.02106,
+    "kHZPStd": 0.00032,
+    "dc": -3.66,
+    "dcStd": 0.14
+   },
+   "endfb6": {
+    "dc": -3.76,
+    "dcStd": 0.14
+   },
+   "endfb5": {
+    "dc": -3.7,
+    "dcStd": 0.14
+   }
+  },
+  {
+   "id": "reactor-mox-4.0",
+   "subset": "reactor-mox",
+   "content": 4.0,
+   "endfb7": {
+    "kHFP": 1.06468,
+    "kHFPStd": 0.00033,
+    "kHZP": 1.07643,
+    "kHZPStd": 0.00032,
+    "dc": -3.42,
+    "dcStd": 0.13
+   },
+   "endfb6": {
+    "dc": -3.49,
+    "dcStd": 0.13
+   },
+   "endfb5": {
+    "dc": -3.43,
+    "dcStd": 0.12
+   }
+  },
+  {
+   "id": "reactor-mox-6.0",
+   "subset": "reactor-mox",
+   "content": 6.0,
+   "endfb7": {
+    "kHFP": 1.09385,
+    "kHFPStd": 0.00032,
+    "kHZP": 1.10568,
+    "kHZPStd": 0.00032,
+    "dc": -3.26,
+    "dcStd": 0.12
+   },
+   "endfb6": {
+    "dc": -3.37,
+    "dcStd": 0.12
+   },
+   "endfb5": {
+    "dc": -3.31,
+    "dcStd": 0.12
+   }
+  },
+  {
+   "id": "reactor-mox-8.0",
+   "subset": "reactor-mox",
+   "content": 8.0,
+   "endfb7": {
+    "kHFP": 1.11694,
+    "kHFPStd": 0.00032,
+    "kHZP": 1.1288,
+    "kHZPStd": 0.00031,
+    "dc": -3.14,
+    "dcStd": 0.12
+   },
+   "endfb6": {
+    "dc": -3.23,
+    "dcStd": 0.12
+   },
+   "endfb5": {
+    "dc": -3.25,
+    "dcStd": 0.11
+   }
+  },
+  {
+   "id": "weapons-mox-1.0",
+   "subset": "weapons-mox",
+   "content": 1.0,
+   "endfb7": {
+    "kHFP": 1.08002,
+    "kHFPStd": 0.00027,
+    "kHZP": 1.09,
+    "kHZPStd": 0.00027,
+    "dc": -2.83,
+    "dcStd": 0.11
+   },
+   "endfb6": {
+    "dc": -2.87,
+    "dcStd": 0.11
+   },
+   "endfb5": {
+    "dc": -2.74,
+    "dcStd": 0.11
+   }
+  },
+  {
+   "id": "weapons-mox-2.0",
+   "subset": "weapons-mox",
+   "content": 2.0,
+   "endfb7": {
+    "kHFP": 1.17055,
+    "kHFPStd": 0.00029,
+    "kHZP": 1.1818,
+    "kHZPStd": 0.00029,
+    "dc": -2.71,
+    "dcStd": 0.1
+   },
+   "endfb6": {
+    "dc": -2.68,
+    "dcStd": 0.1
+   },
+   "endfb5": {
+    "dc": -2.57,
+    "dcStd": 0.1
+   }
+  },
+  {
+   "id": "weapons-mox-4.0",
+   "subset": "weapons-mox",
+   "content": 4.0,
+   "endfb7": {
+    "kHFP": 1.23823,
+    "kHFPStd": 0.0003,
+    "kHZP": 1.25067,
+    "kHZPStd": 0.00029,
+    "dc": -2.68,
+    "dcStd": 0.09
+   },
+   "endfb6": {
+    "dc": -2.63,
+    "dcStd": 0.09
+   },
+   "endfb5": {
+    "dc": -2.52,
+    "dcStd": 0.09
+   }
+  },
+  {
+   "id": "weapons-mox-6.0",
+   "subset": "weapons-mox",
+   "content": 6.0,
+   "endfb7": {
+    "kHFP": 1.27495,
+    "kHFPStd": 0.0003,
+    "kHZP": 1.28722,
+    "kHZPStd": 0.00031,
+    "dc": -2.49,
+    "dcStd": 0.09
+   },
+   "endfb6": {
+    "dc": -2.46,
+    "dcStd": 0.09
+   },
+   "endfb5": {
+    "dc": -2.57,
+    "dcStd": 0.08
+   }
+  }
+ ]
+}
