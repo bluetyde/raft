@@ -1,0 +1,240 @@
+{
+  "protocol": "docs/validation/m8-beavrs-library-protocol.md",
+  "library": {
+    "digest": "e9103694b658ebf986c9c6b6d66fec625d64efcce4dd823ba87d290a1123ae35",
+    "id": "pwr-beavrs-hzp-openmc",
+    "engineVersion": "0.4.0"
+  },
+  "A": {
+    "0": {
+      "computed": true,
+      "criticalPpm": 983.1838607788086,
+      "measuredPpm": 975.0,
+      "errorPpm": 8.183860778808594,
+      "sigmaModelPpm": 0.07417312893911956,
+      "z": 0.3719915575463888,
+      "label": "good",
+      "within50ppm": true,
+      "boronWorthPcmPerPpm": 12.389436079750428
+    },
+    "1": {
+      "computed": true,
+      "criticalPpm": 923.6051559448242,
+      "measuredPpm": 902.0,
+      "errorPpm": 21.60515594482422,
+      "sigmaModelPpm": 2.7367660571478223,
+      "z": 0.9745409923461779,
+      "label": "good",
+      "within50ppm": true,
+      "boronWorthPcmPerPpm": 12.820424125685603
+    },
+    "2": {
+      "computed": true,
+      "criticalPpm": 859.9401473999023,
+      "measuredPpm": 810.0,
+      "errorPpm": 49.940147399902344,
+      "sigmaModelPpm": 3.970448978532766,
+      "z": 2.2339175153890043,
+      "label": "fails",
+      "within50ppm": true,
+      "boronWorthPcmPerPpm": 12.820424125685603
+    },
+    "4": {
+      "computed": true,
+      "criticalPpm": 777.5445938110352,
+      "measuredPpm": 686.0,
+      "errorPpm": 91.54459381103516,
+      "sigmaModelPpm": 5.616800039340756,
+      "z": 4.0317905479221645,
+      "label": "fails",
+      "within50ppm": false,
+      "boronWorthPcmPerPpm": 12.820424125685603
+    },
+    "7": {
+      "computed": true,
+      "criticalPpm": 665.0274276733398,
+      "measuredPpm": 508.0,
+      "errorPpm": 157.02742767333984,
+      "sigmaModelPpm": 7.585303255078716,
+      "z": 6.747789389387523,
+      "label": "fails",
+      "within50ppm": false,
+      "boronWorthPcmPerPpm": 12.820424125685603
+    }
+  },
+  "B": {
+    "banks": {
+      "D": {
+        "computed": true,
+        "worthPcm": 760.283113471505,
+        "measuredPcm": 788.0,
+        "difference": -27.716886528495024,
+        "relative": -0.03517371386864851,
+        "sigmaModelPcm": 34.79161598460892,
+        "z": -0.6119462575110557,
+        "label": "good"
+      },
+      "C": {
+        "computed": true,
+        "worthPcm": 816.1975132791492,
+        "measuredPcm": 1203.0,
+        "difference": -386.80248672085077,
+        "relative": -0.3215315766590613,
+        "sigmaModelPcm": 60.813474890877956,
+        "z": -5.628769296138825,
+        "label": "fails"
+      },
+      "B": {
+        "computed": true,
+        "worthPcm": 826.5032751789468,
+        "measuredPcm": 1171.0,
+        "difference": -344.49672482105325,
+        "relative": -0.29419020053036143,
+        "sigmaModelPcm": 78.79607586047179,
+        "z": -4.068468177571405,
+        "label": "fails"
+      },
+      "A": {
+        "computed": true,
+        "worthPcm": 229.87857888153985,
+        "measuredPcm": 548.0,
+        "difference": -318.12142111846015,
+        "relative": -0.580513542186971,
+        "sigmaModelPcm": 92.74831863491612,
+        "z": -3.302629565719815,
+        "label": "fails"
+      },
+      "SE": {
+        "computed": true,
+        "worthPcm": 422.4014050034343,
+        "measuredPcm": 461.0,
+        "difference": -38.59859499656568,
+        "relative": -0.08372797179298412,
+        "sigmaModelPcm": 105.08427334496534,
+        "z": -0.3573376571249695,
+        "label": "good"
+      },
+      "SD": {
+        "computed": true,
+        "worthPcm": 525.2411646636656,
+        "measuredPcm": 772.0,
+        "difference": -246.7588353363344,
+        "relative": -0.3196357970677907,
+        "sigmaModelPcm": 116.7727554739328,
+        "z": -2.0549059163305508,
+        "label": "fails"
+      },
+      "SC": {
+        "computed": true,
+        "worthPcm": 494.8295936402492,
+        "measuredPcm": 1099.0,
+        "difference": -604.1704063597508,
+        "relative": -0.5497455926840317,
+        "sigmaModelPcm": 127.20774921247634,
+        "z": -4.614433848052109,
+        "label": "fails"
+      }
+    },
+    "total": {
+      "computed": true,
+      "worthPcm": 4075.33464411849,
+      "measuredPcm": 6042.0,
+      "difference": -1966.66535588151,
+      "relative": -0.3254990658526167,
+      "sigmaModelPcm": 93.31338767342612,
+      "z": -16.287739536223118,
+      "label": "fails"
+    }
+  },
+  "C": {
+    "0": {
+      "computed": true,
+      "itcPcmPerF": -3.5728783300116964,
+      "measuredPcmPerF": -1.75,
+      "sigmaModelPcmPerF": 0.4714572933463694,
+      "z": -2.542905456285532,
+      "label": "fails"
+    },
+    "2": {
+      "computed": true,
+      "itcPcmPerF": -3.5728783300116964,
+      "measuredPcmPerF": -8.01,
+      "sigmaModelPcmPerF": 0.805514299670711,
+      "z": 4.575438511220723,
+      "label": "fails"
+    }
+  },
+  "F": {
+    "R-D-0": {
+      "computed": true,
+      "state": 1,
+      "boronPpm": 975.0,
+      "libraryPcm": -658.8981173697828,
+      "transportPcm": -658.8981173697828,
+      "transportSigmaPcm": 24.597484330933295,
+      "differencePcm": 0.0,
+      "exceeds": false
+    },
+    "J-W2": {
+      "computed": true,
+      "state": 2,
+      "boronPpm": 975.0,
+      "libraryPcm": -1475.095630648932,
+      "transportPcm": -1895.4359697216921,
+      "transportSigmaPcm": 26.60344043250467,
+      "differencePcm": 420.3403390727601,
+      "exceeds": true
+    },
+    "J-W4": {
+      "computed": true,
+      "state": 4,
+      "boronPpm": 975.0,
+      "libraryPcm": -2531.4774847094186,
+      "transportPcm": -3637.933507370982,
+      "transportSigmaPcm": 27.241871844767175,
+      "differencePcm": 1106.4560226615636,
+      "exceeds": true
+    },
+    "J-W7": {
+      "computed": true,
+      "state": 7,
+      "boronPpm": 975.0,
+      "libraryPcm": -3973.9496480167677,
+      "transportPcm": -5926.77251600634,
+      "transportSigmaPcm": 26.086251487189458,
+      "differencePcm": 1952.8228679895724,
+      "exceeds": true
+    },
+    "J-B4": {
+      "computed": true,
+      "state": 4,
+      "boronPpm": 686.0,
+      "libraryPcm": 1173.6250876137208,
+      "transportPcm": -29.28088194072463,
+      "transportSigmaPcm": 25.39901964853129,
+      "differencePcm": 1202.9059695544454,
+      "exceeds": true
+    },
+    "J-B7": {
+      "computed": true,
+      "state": 7,
+      "boronPpm": 508.0,
+      "libraryPcm": 2055.0286118552885,
+      "transportPcm": -187.7146142174949,
+      "transportSigmaPcm": 25.579642875469037,
+      "differencePcm": 2242.7432260727833,
+      "exceeds": true
+    }
+  },
+  "decision": {
+    "items": [
+      "1. the library reproduces the critical boron at 2 of 5 computed states (S0, S1); its claim stays at the reference configuration plus those states, and the README and supported-envelope get the measured differences",
+      "2. bank worths that fail: C, B, A, SD, SC (sign and size in the table); nothing is refitted",
+      "2. the total fails: the library's rod worth model is not validated for combined insertion",
+      "3. the temperature coefficient fails at S0, S2: the temperature feedback stays not validated; a failure at S2 comes with the library having no rod dependence of its temperature tables",
+      "4. the summed tables differ from their transport source by more than the limit at J-W2, J-W4, J-W7, J-B4, J-B7: the results note names the smallest format change that would remove it (not built here; a separate decision)",
+      "6. the library status stays experimental; nothing is refitted"
+    ],
+    "libraryChanged": false
+  }
+}
