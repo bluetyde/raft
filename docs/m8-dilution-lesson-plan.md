@@ -1,6 +1,6 @@
 # M8 step 5, the dilution-to-critical lesson: plan (2026-10-10)
 
-The supported lesson of the PWR library `pwr-beavrs-hzp-openmc`: **approach to criticality by dilution at hot zero power**. Status: plan only; nothing built. The lesson is one scenario file plus tests and notes; it needs no engine change and no new envelope kind.
+The supported lesson of the PWR library `pwr-beavrs-hzp-openmc`: **approach to criticality by dilution at hot zero power**. Status: built 2026-10-10 with the recommended choices (1100 ppm, scored boron goal, 5-minute hold); the three scripted runs passed on the first run (careful, reckless, idle), `web/src/runtime/dilution-lesson.test.ts`. The lesson is one scenario file plus tests and notes; it needs no engine change and no new envelope kind.
 
 ## 1. What the lesson is
 

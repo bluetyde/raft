@@ -1,0 +1,112 @@
+{
+  "format": "virtual-reactor-scenario",
+  "version": 1,
+  "id": "pwr-beavrs-hzp-dilution",
+  "library": "pwr-beavrs-hzp-openmc",
+  "title": "Approach to criticality by dilution (PWR, hot zero power)",
+  "brief": "The reactor is shut down by boron alone: the rods stay where they are for the whole lesson, the water is at 566 K and 1100 ppm of boron, and the source is in the core. Lower the boron concentration with the boron control (it moves at most 0.1 ppm per second) and watch the log channel and the period. The power rises slowly while the reactor is far from critical and faster as it comes close. Stop the rise soon after it becomes critical, then hold the power steady for five minutes. Do not trip the reactor: the startup-rate trip scrams it if the period gets short. This is the supported lesson of the PWR library: zero-power physics at one rod configuration. The banner at the top of each window says when the state leaves what the model is meant for.",
+  "outerDt": 1,
+  "seed": 1,
+  "init": {
+    "rods": "reference",
+    "boron": 1100
+  },
+  "controls": {
+    "allow": [
+      "boron.set",
+      "scram"
+    ]
+  },
+  "envelope": {
+    "summary": "Approach to criticality by dilution and a hold at zero power; the rods stay at the benchmark configuration; boron 900 to 1300 ppm; no power operation.",
+    "power": {
+      "fromTrip": "zero-power-limit",
+      "times": 6e-05,
+      "source": "this lesson: the goals end below 30 W; this limit is about 100 W (docs/m8-dilution-lesson-plan.md)"
+    },
+    "fuelTemp": {
+      "max": 575,
+      "source": "hot zero power: the fuel stays within a few K of the reference 566.5 K (libraries/pwr-beavrs-hzp-openmc/manifest.json)"
+    },
+    "modes": [
+      "steady"
+    ],
+    "knownLimits": [
+      {
+        "text": "The model's temperature feedback is not validated: its isothermal temperature coefficient is 1.6 to 2.0 pcm/F too negative against the benchmark measurement. At zero power the temperatures hardly move, so this lesson does not depend on it.",
+        "source": "docs/validation/m8-beavrs-hzp-results.md"
+      },
+      {
+        "text": "The model's critical boron at this rod configuration is 983 ppm; the benchmark's measured value is 975 ppm. The dilution rate (0.1 ppm/s), the neutron source strength (it sets the starting power) and the trip setpoints are assumed: they set the pace of the lesson, not the critical concentration.",
+        "source": "docs/validation/m8-beavrs-hzp-results.md; libraries/pwr-beavrs-hzp-openmc/README.md"
+      },
+      {
+        "text": "Only the rods' benchmark configuration is supported: the library adds single-bank worths as if each bank acted alone, which is not reliable with several banks inserted. The rods do not move in this lesson.",
+        "source": "libraries/pwr-beavrs-hzp-openmc/README.md"
+      }
+    ]
+  },
+  "goals": [
+    {
+      "id": "approach",
+      "text": "Raise the log channel above 0.05 W, about ten times its starting level",
+      "check": {
+        "signal": "indicated.log",
+        "op": "gt",
+        "value": 0.05
+      },
+      "within": 2400,
+      "source": "this lesson, from a run of the library: 0.05 W is about 100 pcm below critical (docs/m8-dilution-lesson-plan.md)"
+    },
+    {
+      "id": "critical",
+      "text": "Bring the reactor critical: the log channel above 0.3 W and rising",
+      "check": {
+        "signal": "indicated.log",
+        "op": "gt",
+        "value": 0.3
+      },
+      "after": "approach",
+      "within": 600,
+      "source": "this lesson, from a run of the library: 0.3 W is about 50 pcm above critical (docs/m8-dilution-lesson-plan.md)"
+    },
+    {
+      "id": "hold",
+      "text": "Hold the log channel between 0.3 W and 30 W for 5 minutes",
+      "check": {
+        "signal": "indicated.log",
+        "op": "between",
+        "value": [
+          0.3,
+          30
+        ]
+      },
+      "for": 300,
+      "after": "critical",
+      "within": 900,
+      "source": "this lesson: 30 W is below the 13 s period seen at 22 W in a run of the library (docs/m8-dilution-lesson-plan.md)"
+    },
+    {
+      "id": "boron-band",
+      "text": "End the hold with the boron concentration between 970 and 990 ppm, close to the critical concentration",
+      "check": {
+        "signal": "truth.boron",
+        "op": "between",
+        "value": [
+          970,
+          990
+        ]
+      },
+      "after": "hold",
+      "within": 60,
+      "source": "the library's critical boron is 983 ppm, the benchmark's measured value 975 ppm (docs/validation/m8-beavrs-hzp-results.md)"
+    }
+  ],
+  "hints": [
+    "The log channel is the one to watch: the linear channel reads nothing at this power.",
+    "The rise is slow at first. Do not wait for it to speed up before you stop the dilution: the boron keeps moving until it reaches the value you set.",
+    "To hold, put some boron back: a few ppm more than the critical concentration balances the neutron source.",
+    "A short period means the power rises fast. The period-short trip acts below 10 s.",
+    "The instructor can run the clock faster to save time, but at 100 times real time the reactor passes critical in seconds and you cannot react: 1 to 10 times is workable."
+  ]
+}

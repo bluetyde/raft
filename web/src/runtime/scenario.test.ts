@@ -18,9 +18,11 @@ describe("scenario validator (docs/m5-scenarios-design.md §3)", () => {
       "synthetic-core": await loadSyntheticCore(),
       "triga-jsi-242": await loadLibrary(nodeReader(join(repoRoot, "libraries", "triga-jsi-242"))),
       "triga-jsi-242-openmc": await loadLibrary(nodeReader(join(repoRoot, "libraries", "triga-jsi-242-openmc"))),
+      "pwr-beavrs-hzp-openmc": await loadLibrary(nodeReader(join(repoRoot, "libraries", "pwr-beavrs-hzp-openmc"))),
     };
     const all = shipped();
     expect(all.map((s) => s.id).sort()).toEqual([
+      "pwr-beavrs-hzp-dilution",
       "synthetic-power-ascension",
       "synthetic-scram-and-restart",
       "triga-242-openmc-low-power-ascension",
