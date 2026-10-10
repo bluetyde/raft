@@ -90,6 +90,24 @@ class Model:
         parts.append(_interp(*self.unc_boron, boron))
         return math.sqrt(sum((p * PCM) ** 2 for p in parts))
 
+    def sigma_between(self, a: tuple, b: tuple) -> float:
+        """pcm: the error of the difference ρ(a) − ρ(b), where a and b are (rods, boron, Tfuel, Tcool). A table whose argument is the same in both states
+        cancels; one whose argument differs counts at both points (erratum of 2026-10-10: the as-run rule treated the two states as independent)."""
+        (ra, ba, fa, ca), (rb, bb, fb, cb) = a, b
+        t = self.t_ref
+        fa, fb, ca, cb = (v if v is not None else t for v in (fa, fb, ca, cb))
+        parts = []
+        for rid in ra:
+            if ra[rid] != rb[rid]:
+                parts += [_interp(*self.unc_rods[rid], ra[rid]), _interp(*self.unc_rods[rid], rb[rid])]
+        if fa != fb:
+            parts += [_interp(*self.unc_fuel, fa), _interp(*self.unc_fuel, fb)]
+        if ca != cb:
+            parts += [_interp(*self.unc_cool, ca), _interp(*self.unc_cool, cb)]
+        if ba != bb:
+            parts += [_interp(*self.unc_boron, ba), _interp(*self.unc_boron, bb)]
+        return math.sqrt(sum((p * PCM) ** 2 for p in parts))
+
     def boron_worth(self, boron: float) -> float:
         """pcm/ppm, positive: minus the slope of the boron table at `boron`."""
         ax, rho = self.boron_axis, self.boron_rho
@@ -119,6 +137,9 @@ def critical_boron(model: Model, state: int, bounds: tuple[float, float]) -> flo
 
 
 def analyse(model: Model, sweep_rows: list[dict], bounds: tuple[float, float] = BORON_BOUNDS) -> dict:
+    ids = [r["case"] for r in sweep_rows]
+    if len(ids) != len(set(ids)):
+        raise ValueError(f"duplicate sweep cases {sorted({c for c in ids if ids.count(c) > 1})}")
     out: dict = {"library": {"digest": model.digest, "id": model.m["id"], "engineVersion": ENGINE_VERSION}}
 
     # A: critical boron
@@ -145,11 +166,17 @@ def analyse(model: Model, sweep_rows: list[dict], bounds: tuple[float, float] = 
         meas, sig_meas = t11.WORTH[b]
         w, sig = rho_s[i] - rho_s[i + 1], math.hypot(sig_s[i], sig_s[i + 1])
         z = (w - meas) / math.hypot(sig_meas, sig)
-        banks[b] = {"computed": True, "worthPcm": w, "measuredPcm": meas, "difference": w - meas, "relative": (w - meas) / meas, "sigmaModelPcm": sig, "z": z, "label": label(z)}
+        sh = model.sigma_between((model.rods(i), BORON_REF, None, None), (model.rods(i + 1), BORON_REF, None, None))
+        zs = (w - meas) / math.hypot(sig_meas, sh)
+        banks[b] = {"computed": True, "worthPcm": w, "measuredPcm": meas, "difference": w - meas, "relative": (w - meas) / meas, "sigmaModelPcm": sig, "z": z, "label": label(z),
+                    "erratum": {"sigmaModelSharedPcm": sh, "z": zs, "label": label(zs)}}
     tw, tsig = rho_s[0] - rho_s[7], math.hypot(sig_s[0], sig_s[7])
     tm, tsm = t11.total_worth()
     z = (tw - tm) / math.hypot(tsm, tsig)
-    out["B"] = {"banks": banks, "total": {"computed": True, "worthPcm": tw, "measuredPcm": tm, "difference": tw - tm, "relative": (tw - tm) / tm, "sigmaModelPcm": tsig, "z": z, "label": label(z)}}
+    tsh = model.sigma_between((model.rods(0), BORON_REF, None, None), (model.rods(7), BORON_REF, None, None))
+    zts = (tw - tm) / math.hypot(tsm, tsh)
+    out["B"] = {"banks": banks, "total": {"computed": True, "worthPcm": tw, "measuredPcm": tm, "difference": tw - tm, "relative": (tw - tm) / tm, "sigmaModelPcm": tsig, "z": z, "label": label(z),
+                                          "erratum": {"sigmaModelSharedPcm": tsh, "z": zts, "label": label(zts)}}}
 
     # C: ITC with fuel and coolant shifted together
     C = {}
@@ -159,7 +186,10 @@ def analyse(model: Model, sweep_rows: list[dict], bounds: tuple[float, float] = 
         itc = (model.rho(rods, BORON_REF, tp, tp) - model.rho(rods, BORON_REF, tm_, tm_)) / t11.DELTA_F
         sig = math.hypot(model.sigma(rods, BORON_REF, tp, tp), model.sigma(rods, BORON_REF, tm_, tm_)) / t11.DELTA_F
         z = (itc - meas) / math.hypot(sig_meas, sig)
-        C[s] = {"computed": True, "itcPcmPerF": itc, "measuredPcmPerF": meas, "sigmaModelPcmPerF": sig, "z": z, "label": label(z)}
+        sh = model.sigma_between((rods, BORON_REF, tp, tp), (rods, BORON_REF, tm_, tm_)) / t11.DELTA_F
+        zs = (itc - meas) / math.hypot(sig_meas, sh)
+        C[s] = {"computed": True, "itcPcmPerF": itc, "measuredPcmPerF": meas, "sigmaModelPcmPerF": sig, "z": z, "label": label(z),
+                "erratum": {"sigmaModelSharedPcmPerF": sh, "z": zs, "label": label(zs)}}
     out["C"] = C
 
     # F: the library minus its transport source
@@ -197,13 +227,22 @@ def decide(m: dict) -> dict:
     if fc:
         items.append(f"3. the temperature coefficient fails at {', '.join('S' + str(s) for s in fc)}: the temperature feedback stays not validated" + ("; a failure at S2 comes with the library having no rod dependence of its temperature tables" if 2 in fc else ""))
     ex = [c for c, e in m["F"].items() if e["computed"] and e["exceeds"]]
-    if ex:
+    missing = [c for c, e in m["F"].items() if not e["computed"]]
+    if missing:
+        items.append(f"4. not determined: the transport cases {missing} are missing, so the difference from the transport source is unknown there" + (f"; at the others it exceeds the limit at {', '.join(ex)}" if ex else ""))
+    elif ex:
         items.append(f"4. the summed tables differ from their transport source by more than the limit at {', '.join(ex)}: the results note names the smallest format change that would remove it (not built here; a separate decision)")
     else:
         items.append("4. no difference from the transport source exceeds the limit")
     nc_ = [f"A:S{s}" for s, e in m["A"].items() if not e["computed"]] + [f"F:{c}" for c, e in m["F"].items() if not e["computed"]]
     if nc_:
         items.append(f"5. not computed: {nc_} (they enter no decision item)")
+    changed = []
+    for name, entries in (("B", m["B"]["banks"]), ("C", m["C"])):
+        changed += [f"{name}:{k} {e['label']} -> {e['erratum']['label']}" for k, e in entries.items() if e["label"] != e["erratum"]["label"]]
+    if m["B"]["total"]["label"] != m["B"]["total"]["erratum"]["label"]:
+        changed.append(f"B:total {m['B']['total']['label']} -> {m['B']['total']['erratum']['label']}")
+    items.append("erratum (shared-table errors cancelled in the differences, the as-run rule treated the two states as independent): " + (", ".join(changed) if changed else "no label changes"))
     items.append("6. the library status stays experimental; nothing is refitted")
     return {"items": items, "libraryChanged": False}
 

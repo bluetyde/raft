@@ -29,6 +29,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
+from pipeline.openmc import beavrs_cases as bc  # noqa: E402
 from validation import m8_beavrs_hzp as bv  # noqa: E402
 
 RESULTS = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_hzp.jsonl"
@@ -43,6 +44,7 @@ STAGES = {1: ["W0", "W7", "K0a", "K0b"],
 
 def build(beavrs_dir: Path, spec: dict):
     """The openmc.Model for one case, and what was changed from the published model (for the record)."""
+    head = bc.check_beavrs_head(beavrs_dir)
     sys.path.insert(0, str(beavrs_dir / "models" / "openmc"))
     import openmc.data
     from beavrs.builder import BEAVRS
@@ -53,7 +55,7 @@ def build(beavrs_dir: Path, spec: dict):
         rcca[bank] = 0
     b = BEAVRS(boron_ppm=spec["boron"], rcca_z=rcca)
     b.set_params(particles=spec["particles"], batches=spec["batches"], inactive=spec["inactive"])
-    note = {"banksIn": bv.banks_in(spec["state"]), "rccaSteps": rcca}
+    note = {"banksIn": bv.banks_in(spec["state"]), "rccaSteps": rcca, "beavrsHead": head}
     t = spec["temperature"]
     if abs(t - c.operating_temperature) > 1e-9:
         ratio = openmc.data.water_density(t, PRESSURE_MPA) / openmc.data.water_density(c.operating_temperature, PRESSURE_MPA)
@@ -88,7 +90,7 @@ def run_case(cid: str, spec: dict, beavrs_dir: Path, out: Path, dry: bool) -> No
     k = sp.keff
     line = {"case": cid, **spec, "k": float(k.nominal_value), "kStd": float(k.std_dev), "kBatches": [float(x) for x in sp.k_generation],
             "wallS": wall, "cpuS": (r1.ru_utime - r0.ru_utime), "loadBefore": load_before[0], "loadAfter": os.getloadavg()[0],
-            "openmc": openmc.__version__, "seed": int(sp.seed), "waterDensity": note.get("waterDensity"), "crossSections": os.environ.get("OPENMC_CROSS_SECTIONS", "")}
+            "openmc": openmc.__version__, "seed": int(sp.seed), "waterDensity": note.get("waterDensity"), "beavrsHead": note["beavrsHead"], "crossSections": os.environ.get("OPENMC_CROSS_SECTIONS", "")}
     sp.close()
     with out.open("a", encoding="utf-8", newline="\n") as f:
         f.write(json.dumps(line) + "\n")

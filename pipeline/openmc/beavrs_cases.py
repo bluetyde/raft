@@ -16,8 +16,11 @@ points can be added later; finished cases are reused.
 """
 from __future__ import annotations
 
+import subprocess
 from collections import OrderedDict
+from pathlib import Path
 
+BEAVRS_HEAD = "1ccae04"                  # the mit-crpg/BEAVRS commit every protocol and the sweep fix (docs/validation/m8-beavrs-hzp-protocol.md)
 T_REF = 566.483                       # K, 560 F
 BORON_REF = 975.0                     # ppm
 STEPS_FULL = 228
@@ -56,6 +59,15 @@ def sweep_cases() -> "OrderedDict[str, dict]":
     out["J-B4"] = _case("joint", {b: 0 for b in INSERT_ORDER[:4]}, boron=686.0)
     out["J-B7"] = _case("joint", {b: 0 for b in INSERT_ORDER[:7]}, boron=508.0)
     return out
+
+
+def check_beavrs_head(beavrs_dir: Path, expected: str | None = None) -> str:
+    """The clone the runners import the model from must be at the commit the protocols fix; returns it, else raises."""
+    want = expected or BEAVRS_HEAD
+    head = subprocess.run(["git", "-C", str(beavrs_dir), "rev-parse", f"--short={len(want)}", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
+    if head != want:
+        raise RuntimeError(f"the BEAVRS clone {beavrs_dir} is at {head}, the protocols fix {want}")
+    return head
 
 
 def rod_fraction(steps: int) -> float:

@@ -103,6 +103,25 @@ class Analysis(unittest.TestCase):
         self.assertTrue(any(i.startswith("1.") for i in m["decision"]["items"]))
         self.assertFalse(m["decision"]["libraryChanged"])
 
+    def test_only_s4_and_s7_are_marked_sensitive_and_only_above_five_percent(self):
+        cum = cum_from_boron()
+        runs = planted_runs(cum, r0=0.0)
+        m = bv.analyse(load(runs))
+        self.assertFalse(m["D"]["sensitive"])
+        self.assertFalse(m["A"]["states"][4]["sensitiveToConversion"])
+        # a boron worth 10 % larger at S7 than at S0: the S7 pair of cases
+        for r in runs:
+            if r["case"] in ("K7a", "K7b"):
+                rho = (1 - 1 / r["k"]) * bv.PCM
+                spec = {k: r[k] for k in ("series", "state", "boron", "temperature", "particles", "batches", "inactive")}
+                new = line(r["case"], spec, rho - (BW * 0.1) * (r["boron"] - 508.0))
+                r.update(k=new["k"], kStd=new["kStd"], kBatches=new["kBatches"])
+        m2 = bv.analyse(load(runs))
+        self.assertTrue(m2["D"]["sensitive"])
+        self.assertTrue(m2["A"]["states"][4]["sensitiveToConversion"])
+        self.assertTrue(m2["A"]["states"][7]["sensitiveToConversion"])
+        self.assertNotIn("sensitiveToConversion", m2["A"]["states"][0])
+
     def test_itc_failure_is_item_four(self):
         m = bv.analyse(load(planted_runs(cum_from_boron(), itc=-6.0)))
         self.assertEqual(m["C"][0]["label"], "fails")

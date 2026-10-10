@@ -360,7 +360,7 @@ def check_sweep(rows: list[dict]) -> dict[str, dict]:
         raise ValueError(f"the sweep does not match the plan: missing {sorted(set(plan) - set(ids))}, unexpected {sorted(set(ids) - set(plan))}")
     for r in rows:
         want = plan[r["case"]]
-        for key in ("steps", "boron", "tFuel", "tWater"):
+        for key in ("steps", "boron", "tFuel", "tWater", "particles", "batches", "inactive", "ifp"):
             if r.get(key) != want[key]:
                 raise ValueError(f"case {r['case']}: {key} is {r.get(key)!r} in the sweep, the plan says {want[key]!r}")
     return {r["case"]: r for r in rows}
@@ -401,9 +401,18 @@ def write_library(folder: Path, m: dict, blobs: dict[str, bytes], validate: bool
     except BaseException:
         shutil.rmtree(stage, ignore_errors=True)
         raise
+    backup = folder.with_name(folder.name + ".old")
+    if backup.exists():
+        shutil.rmtree(backup)
     if folder.exists():
-        shutil.rmtree(folder)
-    stage.rename(folder)
+        folder.rename(backup)
+    try:
+        stage.rename(folder)
+    except BaseException:
+        if backup.exists():
+            backup.rename(folder)
+        raise
+    shutil.rmtree(backup, ignore_errors=True)
 
 
 def main(argv: list[str] | None = None) -> int:

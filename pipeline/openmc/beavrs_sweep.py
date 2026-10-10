@@ -35,6 +35,7 @@ IFP_GENERATIONS = 10
 
 
 def build(beavrs_dir: Path, spec: dict):
+    head = bc.check_beavrs_head(beavrs_dir)
     sys.path.insert(0, str(beavrs_dir / "models" / "openmc"))
     import openmc
     import openmc.data
@@ -43,7 +44,7 @@ def build(beavrs_dir: Path, spec: dict):
 
     b = BEAVRS(boron_ppm=spec["boron"], rcca_z=dict(spec["steps"]))
     b.set_params(particles=spec["particles"], batches=spec["batches"], inactive=spec["inactive"])
-    note = {}
+    note = {"beavrsHead": head}
     if spec["tFuel"] is not None:
         for name, mat in b.mats.items():
             if name.startswith("Fuel"):
@@ -93,7 +94,7 @@ def run_case(cid: str, spec: dict, beavrs_dir: Path, out: Path, dry: bool) -> No
         line = {"case": cid, **spec, "k": float(k.nominal_value), "kStd": float(k.std_dev),
                 "fission": [float(x) for x in tl.mean.flatten()], "fissionStd": [float(x) for x in tl.std_dev.flatten()],
                 "wallS": wall, "cpuS": r1.ru_utime - r0.ru_utime, "loadBefore": load_before, "loadAfter": os.getloadavg()[0],
-                "openmc": openmc.__version__, "seed": int(sp.seed), "waterDensity": note.get("waterDensity")}
+                "openmc": openmc.__version__, "seed": int(sp.seed), "waterDensity": note.get("waterDensity"), "beavrsHead": note["beavrsHead"]}
         if spec["ifp"]:
             kin = sp.get_kinetics_parameters()
             groups, lam = kin.beta_effective, kin.generation_time

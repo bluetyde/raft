@@ -173,6 +173,8 @@ def analyse(runs: dict) -> dict:
                  "within50ppm": abs(err) <= CB_CRITERION_PPM, "rhoPcm": r_}
         if bw["S7"]["computed"]:
             entry["errorPpmWithBwS7"] = r_ / bw["S7"]["bw"]
+            if s in (4, 7):
+                entry["sensitiveToConversion"] = bool(d.get("sensitive"))
         a[s] = entry
     errs = [v["errorPpm"] for v in a.values() if v["computed"]]
     agg = {"count": len(errs)}

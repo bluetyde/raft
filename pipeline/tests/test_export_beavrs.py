@@ -81,7 +81,7 @@ def make_rows(interaction=0.0) -> list[dict]:
         steps, boron, tf, tw = c["steps"], c["boron"], c["tFuel"], c["tWater"]
         rho = planted_rho(steps, boron, tf, tw, interaction)
         units = planted_units(steps, tf)
-        rows.append({"case": name, "role": c["role"], "steps": steps, "boron": boron, "tFuel": tf, "tWater": tw, "k": 1.0 / (1.0 - rho), "kStd": 2.5e-4,
+        rows.append({"case": name, "role": c["role"], **{k: c[k] for k in ("particles", "batches", "inactive", "ifp")}, "steps": steps, "boron": boron, "tFuel": tf, "tWater": tw, "k": 1.0 / (1.0 - rho), "kStd": 2.5e-4,
                      "fission": mesh(units, CORE, 1e-3), "fissionStd": mesh([0.01 * u for u in BASE_RAW], CORE, 1e-3), "betaGroups": BETA,
                      "betaGroupsStd": [1e-5] * 6, "lambdaS": 2.9e-5, "lambdaStdS": 4e-8, "openmc": "0.15.3"})
     return rows
@@ -215,6 +215,13 @@ class PlantedExport(unittest.TestCase):
         next(r for r in rows if r["case"] == "B-300")["boron"] = 600.0
         with self.assertRaises(ValueError):
             xb.build(rows, CORE)
+
+    def test_a_sweep_run_at_other_settings_than_planned_is_refused(self):
+        for key, bad in (("particles", 4000), ("batches", 30), ("inactive", 5), ("ifp", False)):
+            rows = copy.deepcopy(self.rows)
+            next(r for r in rows if r["case"] == "REF")[key] = bad
+            with self.assertRaises(ValueError, msg=key):
+                xb.build(rows, CORE)
 
     def test_an_invalid_new_library_leaves_the_old_one_in_place(self):
         with tempfile.TemporaryDirectory() as d:

@@ -93,6 +93,32 @@ class PlantedAnalysis(unittest.TestCase):
         both = self.model.sigma(self.model.rods(2), 975.0)
         self.assertGreater(both, base)                                                  # two banks in: two more rod tables with an error
 
+    def test_a_duplicate_sweep_case_is_refused(self):
+        with self.assertRaises(ValueError):
+            lb.analyse(self.model, self.rows + [self.rows[0]])
+
+    def test_missing_transport_cases_make_the_comparison_not_determined_rather_than_clean(self):
+        m = lb.analyse(self.model, [r for r in self.rows if r["case"] not in ("J-W4", "J-B4")])
+        self.assertFalse(m["F"]["J-W4"]["computed"])
+        self.assertTrue(any(i.startswith("4. not determined") and "J-W4" in i for i in m["decision"]["items"]))
+        self.assertFalse(any(i.startswith("4. no difference") for i in m["decision"]["items"]))
+
+    def test_the_error_of_a_difference_cancels_the_tables_the_two_states_share(self):
+        # bank C's worth: the two states differ only in the C table (at 0 against its reference point, whose error is zero)
+        c_unc = lb._interp(*self.model.unc_rods["c"], 0.0) * lb.PCM
+        self.assertGreater(c_unc, 0.0)
+        e = self.m["B"]["banks"]["C"]
+        self.assertAlmostEqual(e["erratum"]["sigmaModelSharedPcm"], c_unc, places=6)
+        self.assertLess(e["erratum"]["sigmaModelSharedPcm"], e["sigmaModelPcm"])           # the as-run rule counted the shared tables twice
+        # the temperature coefficient: only the fuel and coolant tables differ
+        fuel_hi = lb._interp(*self.model.unc_fuel, self.model.t_ref + t11.T_STEP) * lb.PCM
+        fuel_lo = lb._interp(*self.model.unc_fuel, self.model.t_ref - t11.T_STEP) * lb.PCM
+        cool_hi = lb._interp(*self.model.unc_cool, self.model.t_ref + t11.T_STEP) * lb.PCM
+        cool_lo = lb._interp(*self.model.unc_cool, self.model.t_ref - t11.T_STEP) * lb.PCM
+        want = (fuel_hi ** 2 + fuel_lo ** 2 + cool_hi ** 2 + cool_lo ** 2) ** 0.5 / t11.DELTA_F
+        self.assertAlmostEqual(self.m["C"][0]["erratum"]["sigmaModelSharedPcmPerF"], want, places=9)
+        self.assertTrue(any(i.startswith("erratum") for i in self.m["decision"]["items"]))
+
     def test_another_manifest_is_refused(self):
         with self.assertRaises(lb.DigestError):
             lb.Model(self.folder)                                                         # the protocol's digest is the real library's
