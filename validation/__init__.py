@@ -1,1 +1,1 @@
-"""Validation package for Virtual Reactor."""
+"""Validation package for RAFT."""

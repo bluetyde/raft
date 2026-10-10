@@ -47,7 +47,7 @@ app.dataset["shared"] = String(conn.shared);
 const bar = document.createElement("header");
 bar.className = "vr-bar";
 const title = document.createElement("strong");
-title.textContent = "Virtual Reactor";
+title.textContent = "RAFT";
 const select = document.createElement("select");
 for (const entry of CATALOG) select.append(new Option(entry.name, entry.name));
 select.disabled = role === "operator"; // an operator window cannot load (the worker refuses it too)

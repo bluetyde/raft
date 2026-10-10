@@ -1,5 +1,5 @@
 """
-Pulse database loading and querying utilities for Virtual Reactor validation.
+Pulse database loading and querying utilities for RAFT validation.
 
 Provides a clean Python API for accessing, filtering, and analyzing experimental
 pulse data from the JSI TRIGA Mark II research reactor database.

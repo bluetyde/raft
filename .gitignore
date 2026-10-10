@@ -30,3 +30,6 @@ web/dist-headless/
 validation/data/jsi-pulses/
 validation/data/jsi-steady-power/
 validation/data/jsi-core134/
+
+# The suite-level message log lives in Claude Code Test/messages, not in this repository
+messages/virtual-reactor.md
