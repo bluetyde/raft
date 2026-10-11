@@ -7,10 +7,11 @@
 import { Library, Table } from "./library";
 import { MASK64, SplitMix64, luFactor, luSolve, type LUFactored } from "./numerics";
 
-export const ENGINE_VERSION = "0.4.0";
+export const ENGINE_VERSION = "0.5.0";
 export const CAPABILITY = "point-kinetics/lumped-thermal-v1";
 export const CAPABILITY_V2 = "point-kinetics/lumped-thermal-v2"; // adds thermal.hA.exponent
 export const CAPABILITY_BORON = "point-kinetics/boron-v1"; // adds soluble boron: a concentration the operator changes at a limited rate (ppm), and its reactivity table
+export const CAPABILITY_ROD_INTERACTION = "point-kinetics/rod-interaction-v1"; // adds reactivity.rodInteraction: a correction on the summed single-rod reactivities (rods shadow or boost each other)
 
 export interface EngineConfig {
   outerDt: number;
@@ -531,6 +532,10 @@ export class Engine {
       out.boron = lib.boron!.at(this.boronValue(t));
       out.total += out.boron;
     }
+    if (lib.hasRodInteraction) {
+      out.rodInteraction = lib.rodInteraction!.at(rods);
+      out.total += out.rodInteraction;
+    }
     return out;
   }
 
@@ -550,6 +555,14 @@ export class Engine {
     rho += lib.fuelTemp.at(tf) + lib.coolTemp.at(tc) + lib.xenon.at(x_);
     if (lib.hasBoron) {
       rho += lib.boron!.at(this.boronValue(t));
+    }
+    if (lib.hasRodInteraction) {
+      let s = 0.0;
+      for (const r of lib.rods) {
+        // the same explicit sum as reactivity()
+        s += r.worth.at(this.rodPosition(r.id, t));
+      }
+      rho += lib.rodInteraction!.at(s);
     }
 
     const L = lib.genTime;
@@ -1014,6 +1027,13 @@ export class Engine {
     }
     if (lib.hasBoron) {
       checks.push([lib.boron!, this.boronValue(this.t), "boron"]);
+    }
+    if (lib.hasRodInteraction) {
+      let s = 0.0;
+      for (const r of lib.rods) {
+        s += r.worth.at(this.rodPosition(r.id, this.t));
+      }
+      checks.push([lib.rodInteraction!, s, "rodInteraction"]);
     }
     for (const [table, x, name] of checks) {
       if (table.outOfRange === "reject" && table.value(x)[1]) {

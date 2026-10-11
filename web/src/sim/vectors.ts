@@ -69,6 +69,9 @@ export function sampleFromEngine(e: Engine): Record<string, any> {
   if (truth.boron !== undefined) {
     out.boron = truth.boron;
   }
+  if (truth.reactivity.rodInteraction !== undefined) {
+    out.rodInteraction = truth.reactivity.rodInteraction;
+  }
   return out;
 }
 

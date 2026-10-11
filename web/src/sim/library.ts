@@ -143,6 +143,7 @@ export class Rod {
 }
 
 export const BORON_CAPABILITY = "point-kinetics/boron-v1";
+export const ROD_INTERACTION_CAPABILITY = "point-kinetics/rod-interaction-v1";
 
 export class Library {
   manifest: any;
@@ -174,6 +175,9 @@ export class Library {
   refBoron = 0;
   boronRange: [number, number] = [0, 0];
   boronMaxRate = 0;
+  /** Rod interaction (capability point-kinetics/rod-interaction-v1): a correction added to the sum of the single-rod reactivities, a function of that sum; null and false without it. */
+  hasRodInteraction = false;
+  rodInteraction: Table | null = null;
 
   fuelMass: number;
   fuelCp: Table;
@@ -239,6 +243,8 @@ export class Library {
     this.fuelTemp = new Table(r.fuelTemp.T, r.fuelTemp.rho, r.fuelTemp.outOfRange);
     this.coolTemp = new Table(r.coolantTemp.T, r.coolantTemp.rho, r.coolantTemp.outOfRange);
     this.xenon = new Table(r.xenon.N, r.xenon.rho, r.xenon.outOfRange);
+    this.hasRodInteraction = m.capabilities.includes(ROD_INTERACTION_CAPABILITY);
+    this.rodInteraction = this.hasRodInteraction ? new Table(r.rodInteraction.S, r.rodInteraction.rho, r.rodInteraction.outOfRange) : null;
     if (m.capabilities.includes(BORON_CAPABILITY)) {
       this.installBoron(ref.boron.value, m.plant.boron.range, m.plant.boron.maxRatePpmPerS, r.boron.C, r.boron.rho, r.boron.outOfRange);
     }

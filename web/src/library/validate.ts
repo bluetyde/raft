@@ -12,7 +12,14 @@ import { sha256Hex } from "./platform";
 export const SUPPORTED_VERSIONS = ["0.1.0"];
 // soluble boron: reference.boron, reactivity.boron, plant.boron, domain.boron, truth.boron, boron.set
 export const BORON_CAPABILITY = "point-kinetics/boron-v1";
-export const SUPPORTED_CAPABILITIES = ["point-kinetics/lumped-thermal-v1", "point-kinetics/lumped-thermal-v2", BORON_CAPABILITY];
+// reactivity.rodInteraction: a correction on the summed single-rod reactivities
+export const ROD_INTERACTION_CAPABILITY = "point-kinetics/rod-interaction-v1";
+export const SUPPORTED_CAPABILITIES = [
+  "point-kinetics/lumped-thermal-v1",
+  "point-kinetics/lumped-thermal-v2",
+  BORON_CAPABILITY,
+  ROD_INTERACTION_CAPABILITY,
+];
 export const TRUTH_SIGNALS = ["power", "period", "fuelTemp", "coolantTemp", "xenon", "mode"];
 
 export const TABLE_REF_TOL = 1e-9; // reactivity tables (JSON doubles)
@@ -87,6 +94,7 @@ class Checker {
   private issues: Issue[] = [];
   private arrays = new Map<string, number[]>();
   private hasBoron = false;
+  private hasRodInteraction = false;
 
   constructor(private reader: LibraryReader) {}
 
@@ -174,6 +182,14 @@ class Checker {
       if (this.hasBoron && !present) {
         this.add("E_SCHEMA", fieldPath, `required by the capability ${BORON_CAPABILITY}`);
       }
+    }
+    this.hasRodInteraction = capabilities.includes(ROD_INTERACTION_CAPABILITY);
+    const hasRodField = Object.hasOwn(mm.reactivity!, "rodInteraction");
+    if (hasRodField && !this.hasRodInteraction) {
+      this.add("E_CAPABILITY_UNSUPPORTED", "$.reactivity.rodInteraction", `rodInteraction needs the capability ${ROD_INTERACTION_CAPABILITY}`);
+    }
+    if (this.hasRodInteraction && !hasRodField) {
+      this.add("E_SCHEMA", "$.reactivity.rodInteraction", `required by the capability ${ROD_INTERACTION_CAPABILITY}`);
     }
     if (this.issues.length > 0) {
       return this.issues;
@@ -346,6 +362,9 @@ class Checker {
     this.table(r.fuelTemp, "T", "rho", "$.reactivity.fuelTemp", ref.Tfuel.value);
     this.table(r.coolantTemp, "T", "rho", "$.reactivity.coolantTemp", ref.Tcoolant.value);
     this.table(r.xenon, "N", "rho", "$.reactivity.xenon", ref.xenon.value);
+    if (this.hasRodInteraction) {
+      this.table(r.rodInteraction, "S", "rho", "$.reactivity.rodInteraction", 0.0); // zero where every rod is at its reference position
+    }
     if (this.hasBoron) {
       this.table(r.boron, "C", "rho", "$.reactivity.boron", ref.boron.value);
       const [lo, hi] = m.plant.boron.range as number[];
