@@ -105,6 +105,23 @@ class PlantedAnalysis(unittest.TestCase):
         self.assertAlmostEqual(e["differencePcm"], -150.0, places=3)     # library minus transport
         self.assertGreaterEqual(e["limitPcm"], 100.0)
 
+    def test_the_limit_is_three_sigma_when_that_is_larger_than_100_pcm(self):
+        path = copy.deepcopy(self.path)
+        r_ = next(x for x in path if x["case"] == "P-B-76")
+        r_["kStd"] = 6.0e-4 * r_["k"] ** 2                             # sigma = 60 pcm: three sigma is 180 pcm
+        shift(path, "P-B-76", 1.5e-3)                                 # 150 pcm off: beyond 100 but within 180
+        e = ri.analyse(self.model, self.sweep, path, pin=None)["P"]["P-B-76"]
+        self.assertAlmostEqual(e["transportSigmaPcm"], 60.0, places=6)
+        self.assertAlmostEqual(e["limitPcm"], 180.0, places=6)
+        self.assertEqual(e["label"], "good")
+
+    def test_a_table_that_makes_a_case_worse_is_seen(self):
+        flat = with_batches(planted.make_rows(plan=path_cases()))      # a path with no combined effect: the table over-corrects the deep states
+        r = ri.analyse(self.model, self.sweep, flat, pin=None)
+        self.assertFalse(r["P"]["P-S6"]["improvesOnTheSum"])
+        self.assertLess(r["P"]["P-S6"]["differenceWithoutTablePcm"], 1.0)           # the summed model was right there
+        self.assertTrue(any(i.startswith("P2b.") or i.startswith("P2.") for i in r["decision"]["items"]))
+
     def test_an_unconverged_case_is_not_computed_and_enters_nothing(self):
         path = copy.deepcopy(self.path)
         r_ = next(x for x in path if x["case"] == "P-S5")
