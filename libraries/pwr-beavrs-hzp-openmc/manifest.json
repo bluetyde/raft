@@ -5,15 +5,16 @@
   "status": "experimental",
   "capabilities": [
     "point-kinetics/lumped-thermal-v1",
-    "point-kinetics/boron-v1"
+    "point-kinetics/boron-v1",
+    "point-kinetics/rod-interaction-v1"
   ],
   "provenance": {
     "generator": "pipeline.library.export_beavrs",
     "transportCode": "OpenMC 0.15.3",
     "nuclearData": "ENDF/B-VIII.0",
     "model": "BEAVRS 3D full core, hot zero power (mit-crpg/BEAVRS, MIT licence), 45 cases of pipeline/openmc/beavrs_cases.py",
-    "created": "2026-10-10",
-    "notes": "Zero-power physics only. Reactivity tables, kinetics, shapes and boron worth come from the transport sweep; the plant (rod speed, scram, thermal masses, heat transfer, instruments, trips) is assumed and labelled so. Isothermal temperature coefficient: the transport model is 1.6 to 2.0 pcm/F too negative against the benchmark measurement (docs/validation/m8-beavrs-hzp-results.md), so temperature feedback is NOT validated. Xenon worth is zero (not computed); no decay heat; no pressure. The shape of the power does not depend on coolant temperature or boron.",
+    "created": "2026-10-11",
+    "notes": "Zero-power physics only. Reactivity tables, kinetics, shapes and boron worth come from the transport sweep; the plant (rod speed, scram, thermal masses, heat transfer, instruments, trips) is assumed and labelled so. Isothermal temperature coefficient: the transport model is 1.6 to 2.0 pcm/F too negative against the benchmark measurement (docs/validation/m8-beavrs-hzp-results.md), so temperature feedback is NOT validated. Xenon worth is zero (not computed); no decay heat; no pressure. The shape of the power does not depend on coolant temperature or boron. Several banks in: the single-bank worths are summed and a correction table on that sum (reactivity.rodInteraction, fitted to the transport cases with banks C and D, A to D, and D to SC in, and to nothing else) accounts for the banks being worth more together; it is valid along the benchmark insertion order (D, C, B, A, SE, SD, SC) and nowhere else claimed (docs/validation/m8-rod-interaction-protocol.md). NOT checked against held-out transport cases: no path case was given to the exporter, domain.jointChecked is empty.",
     "sources": [
       {
         "id": "beavrs",
@@ -635,6 +636,35 @@
         0.0,
         0.0003649415123445314,
         0.00036664552447858363
+      ],
+      "interp": "linear",
+      "outOfRange": "clamp-and-flag",
+      "source": "transport"
+    },
+    "rodInteraction": {
+      "S": [
+        -0.0407533464411849,
+        -0.026328624808111406,
+        -0.01576480626750654,
+        -0.00826503275178947,
+        0.0,
+        0.001
+      ],
+      "rho": [
+        -0.019528228679895725,
+        -0.011064560226615637,
+        -0.004203403390727601,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "unc": [
+        0.0003585962665816364,
+        0.0003670885300600803,
+        0.0003623759581230259,
+        0.0,
+        0.0,
+        0.0
       ],
       "interp": "linear",
       "outOfRange": "clamp-and-flag",
