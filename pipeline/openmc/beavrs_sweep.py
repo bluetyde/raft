@@ -29,6 +29,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from pipeline.openmc import beavrs_cases as bc  # noqa: E402
 
 RESULTS = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_sweep.jsonl"
+PATH_RESULTS = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_path.jsonl"
 PRESSURE_MPA = 15.5
 WATER = ("Borated Water", "Water SPN")
 IFP_GENERATIONS = 10
@@ -112,24 +113,28 @@ def main(argv: list[str] | None = None) -> int:
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--all", action="store_true")
     g.add_argument("--case", action="append")
-    ap.add_argument("--out", type=Path, default=RESULTS)
+    ap.add_argument("--family", choices=("sweep", "path"), default="sweep", help="the 45 library cases or the nine held-out path cases of the fourteenth protocol")
+    ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--smoke", default=None, help="particles,batches,inactive for a test run; only with an --out other than the sweep's file")
     args = ap.parse_args(argv)
-    plan = bc.sweep_cases()
+    plan = bc.sweep_cases() if args.family == "sweep" else bc.path_cases()
+    default_out = RESULTS if args.family == "sweep" else PATH_RESULTS
+    if args.out is None:
+        args.out = default_out
     ids = list(plan) if args.all else args.case
     for cid in ids:
         if cid not in plan:
             raise SystemExit(f"{cid} is not a sweep case")
     done = {json.loads(x).get("case") for x in args.out.read_text(encoding="utf-8").splitlines() if x.strip()} if args.out.exists() else set()
-    if args.smoke and args.out.resolve() == RESULTS.resolve():
-        raise SystemExit("--smoke cannot write to the sweep's results file")
+    if args.smoke and args.out.resolve() == default_out.resolve():
+        raise SystemExit("--smoke cannot write to the results file of the family")
     for cid in ids:
         if cid in done:
             print(f"{cid}: already in {args.out.name}, skipped", flush=True)
             continue
         if args.all:
-            cmd = [sys.executable, "-m", "pipeline.openmc.beavrs_sweep", "--beavrs", str(args.beavrs), "--case", cid, "--out", str(args.out)]
+            cmd = [sys.executable, "-m", "pipeline.openmc.beavrs_sweep", "--beavrs", str(args.beavrs), "--family", args.family, "--case", cid, "--out", str(args.out)]
             cmd += (["--dry"] if args.dry else []) + (["--smoke", args.smoke] if args.smoke else [])
             subprocess.run(cmd, check=True, cwd=REPO_ROOT)
             continue

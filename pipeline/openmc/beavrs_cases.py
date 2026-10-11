@@ -61,6 +61,25 @@ def sweep_cases() -> "OrderedDict[str, dict]":
     return out
 
 
+PATH_PART_WAY = 76                    # steps withdrawn of the bank that is part-way (x = 1/3)
+
+
+def path_cases() -> "OrderedDict[str, dict]":
+    """The nine held-out cases of docs/validation/m8-rod-interaction-protocol.md (fourteenth protocol): states along the benchmark insertion order
+    (D, C, B, A, SE, SD, SC), not used to fit the rod interaction table. P-S<n>: the first n banks fully in; P-<bank>-76: the earlier banks of
+    the order in, that bank at 76 steps withdrawn, the later ones at their reference positions. 975 ppm, 566.483 K, the sweep's settings."""
+    out: "OrderedDict[str, dict]" = OrderedDict()
+    for n in (3, 5, 6):
+        out[f"P-S{n}"] = _case("path", {b: 0 for b in INSERT_ORDER[:n]})
+    for i, bank in enumerate(INSERT_ORDER):
+        if bank in ("D",):
+            continue
+        steps = {b: 0 for b in INSERT_ORDER[:i]}
+        steps[bank] = PATH_PART_WAY
+        out[f"P-{bank}-{PATH_PART_WAY}"] = _case("path", steps)
+    return out
+
+
 def check_beavrs_head(beavrs_dir: Path, expected: str | None = None) -> str:
     """The clone the runners import the model from must be at the commit the protocols fix; returns it, else raises."""
     want = expected or BEAVRS_HEAD
