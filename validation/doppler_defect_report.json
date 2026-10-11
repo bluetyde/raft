@@ -1,0 +1,908 @@
+{
+  "protocol": "docs/validation/doppler-defect-protocol.md",
+  "summary": {
+    "computed": 15,
+    "goodOrPlausible": 15
+  },
+  "A": {
+    "cases": {
+      "uo2-0.711": {
+        "computed": true,
+        "subset": "uo2",
+        "content": 0.711,
+        "dc": -3.860443480269667,
+        "sigmaDc": 0.20469512701914258,
+        "refDc": -4.18,
+        "refSigma": 0.2,
+        "z": 1.1166201992444924,
+        "label": "plausible",
+        "relative": 0.07644892816515132,
+        "within10": true,
+        "spread": 0.10999999999999943
+      },
+      "uo2-1.6": {
+        "computed": false,
+        "reason": "unconverged row: hfp"
+      },
+      "uo2-2.4": {
+        "computed": true,
+        "subset": "uo2",
+        "content": 2.4,
+        "dc": -2.4317392096569654,
+        "sigmaDc": 0.11035824426935543,
+        "refDc": -2.44,
+        "refSigma": 0.11,
+        "z": 0.05301597105775127,
+        "label": "good",
+        "relative": 0.0033855698127190606,
+        "within10": true,
+        "spread": 0.06999999999999984
+      },
+      "uo2-3.1": {
+        "computed": true,
+        "subset": "uo2",
+        "content": 3.1,
+        "dc": -2.169676913393981,
+        "sigmaDc": 0.09988040150749064,
+        "refDc": -2.3,
+        "refSigma": 0.1,
+        "z": 0.9220746115471279,
+        "label": "good",
+        "relative": 0.056662211567834346,
+        "within10": true,
+        "spread": 0.04999999999999982
+      },
+      "uo2-3.9": {
+        "computed": true,
+        "subset": "uo2",
+        "content": 3.9,
+        "dc": -2.1078162540209373,
+        "sigmaDc": 0.08933736173868358,
+        "refDc": -2.2,
+        "refSigma": 0.09,
+        "z": 0.7269350492248396,
+        "label": "good",
+        "relative": 0.04190170271775585,
+        "within10": true,
+        "spread": 0.08000000000000007
+      },
+      "uo2-4.5": {
+        "computed": true,
+        "subset": "uo2",
+        "content": 4.5,
+        "dc": -1.9361555242159618,
+        "sigmaDc": 0.0861476044206227,
+        "refDc": -2.11,
+        "refSigma": 0.08,
+        "z": 1.4787158352546141,
+        "label": "plausible",
+        "relative": 0.08239074681707965,
+        "within10": true,
+        "spread": 0.050000000000000266
+      },
+      "uo2-5.0": {
+        "computed": true,
+        "subset": "uo2",
+        "content": 5.0,
+        "dc": -1.9337465554973843,
+        "sigmaDc": 0.08364363809367768,
+        "refDc": -2.12,
+        "refSigma": 0.08,
+        "z": 1.6092093915447172,
+        "label": "plausible",
+        "relative": 0.08785539835029048,
+        "within10": true,
+        "spread": 0.13000000000000012
+      },
+      "reactor-mox-1.0": {
+        "computed": true,
+        "subset": "reactor-mox",
+        "content": 1.0,
+        "dc": -3.644370908013691,
+        "sigmaDc": 0.14068275064684374,
+        "refDc": -3.77,
+        "refSigma": 0.15,
+        "z": 0.6108899442075211,
+        "label": "good",
+        "relative": 0.03332336657461783,
+        "within10": true,
+        "spread": 0.1299999999999999
+      },
+      "reactor-mox-2.0": {
+        "computed": true,
+        "subset": "reactor-mox",
+        "content": 2.0,
+        "dc": -3.4738036650700708,
+        "sigmaDc": 0.1285627634309695,
+        "refDc": -3.66,
+        "refSigma": 0.14,
+        "z": 0.979595675276514,
+        "label": "good",
+        "relative": 0.05087331555462551,
+        "within10": true,
+        "spread": 0.09999999999999964
+      },
+      "reactor-mox-4.0": {
+        "computed": true,
+        "subset": "reactor-mox",
+        "content": 4.0,
+        "dc": -3.3410834387529085,
+        "sigmaDc": 0.11352402991169139,
+        "refDc": -3.42,
+        "refSigma": 0.13,
+        "z": 0.4572456979264837,
+        "label": "good",
+        "relative": 0.023075017908506273,
+        "within10": true,
+        "spread": 0.07000000000000028
+      },
+      "reactor-mox-6.0": {
+        "computed": true,
+        "subset": "reactor-mox",
+        "content": 6.0,
+        "dc": -3.1217845732682084,
+        "sigmaDc": 0.10699469913184192,
+        "refDc": -3.26,
+        "refSigma": 0.12,
+        "z": 0.8596945532077832,
+        "label": "good",
+        "relative": 0.04239737016312621,
+        "within10": true,
+        "spread": 0.11000000000000032
+      },
+      "reactor-mox-8.0": {
+        "computed": true,
+        "subset": "reactor-mox",
+        "content": 8.0,
+        "dc": -3.2360147572005893,
+        "sigmaDc": 0.10178456221477779,
+        "refDc": -3.14,
+        "refSigma": 0.12,
+        "z": -0.6101854059403394,
+        "label": "good",
+        "relative": -0.030577948153053872,
+        "within10": true,
+        "spread": 0.10999999999999988
+      },
+      "weapons-mox-1.0": {
+        "computed": true,
+        "subset": "weapons-mox",
+        "content": 1.0,
+        "dc": -2.6532483954017083,
+        "sigmaDc": 0.10709714062948625,
+        "refDc": -2.83,
+        "refSigma": 0.11,
+        "z": 1.1512918735752977,
+        "label": "plausible",
+        "relative": 0.06245639738455539,
+        "within10": true,
+        "spread": 0.1299999999999999
+      },
+      "weapons-mox-2.0": {
+        "computed": true,
+        "subset": "weapons-mox",
+        "content": 2.0,
+        "dc": -2.7894995133456537,
+        "sigmaDc": 0.09682862039881951,
+        "refDc": -2.71,
+        "refSigma": 0.1,
+        "z": -0.5711298425686033,
+        "label": "good",
+        "relative": -0.02933561378068404,
+        "within10": true,
+        "spread": 0.14000000000000012
+      },
+      "weapons-mox-4.0": {
+        "computed": true,
+        "subset": "weapons-mox",
+        "content": 4.0,
+        "dc": -2.858970433375463,
+        "sigmaDc": 0.08169039291205174,
+        "refDc": -2.68,
+        "refSigma": 0.09,
+        "z": -1.4724556841790397,
+        "label": "plausible",
+        "relative": -0.06678001245353085,
+        "within10": true,
+        "spread": 0.16000000000000014
+      },
+      "weapons-mox-6.0": {
+        "computed": true,
+        "subset": "weapons-mox",
+        "content": 6.0,
+        "dc": -2.5421129091294974,
+        "sigmaDc": 0.08005704653382238,
+        "refDc": -2.49,
+        "refSigma": 0.09,
+        "z": -0.4326379591574717,
+        "label": "good",
+        "relative": -0.02092887916847276,
+        "within10": true,
+        "spread": 0.10999999999999988
+      }
+    }
+  },
+  "B": {
+    "cases": {
+      "uo2-0.711": {
+        "computed": true,
+        "offsetPcm": 216.34073080367688,
+        "sigmaPcm": 19.958996713702923,
+        "converged": true
+      },
+      "uo2-1.6": {
+        "computed": true,
+        "offsetPcm": 184.51771746804678,
+        "sigmaPcm": 27.43718063612775,
+        "converged": true
+      },
+      "uo2-2.4": {
+        "computed": true,
+        "offsetPcm": 61.03606515091009,
+        "sigmaPcm": 28.339685922920975,
+        "converged": true
+      },
+      "uo2-3.1": {
+        "computed": true,
+        "offsetPcm": -133.8090890874666,
+        "sigmaPcm": 30.4318283987063,
+        "converged": true
+      },
+      "uo2-3.9": {
+        "computed": true,
+        "offsetPcm": -283.4674714121244,
+        "sigmaPcm": 28.687816718631478,
+        "converged": true
+      },
+      "uo2-4.5": {
+        "computed": true,
+        "offsetPcm": -356.13561098364335,
+        "sigmaPcm": 30.03213044156712,
+        "converged": true
+      },
+      "uo2-5.0": {
+        "computed": true,
+        "offsetPcm": -399.16055046946843,
+        "sigmaPcm": 27.947444584884074,
+        "converged": true
+      },
+      "reactor-mox-1.0": {
+        "computed": true,
+        "offsetPcm": 205.50747910230706,
+        "sigmaPcm": 27.054308008062307,
+        "converged": true
+      },
+      "reactor-mox-2.0": {
+        "computed": true,
+        "offsetPcm": 208.79240513480556,
+        "sigmaPcm": 29.236010001828838,
+        "converged": true
+      },
+      "reactor-mox-4.0": {
+        "computed": true,
+        "offsetPcm": 301.7327541334325,
+        "sigmaPcm": 27.763786877686258,
+        "converged": true
+      },
+      "reactor-mox-6.0": {
+        "computed": true,
+        "offsetPcm": 304.3782673556983,
+        "sigmaPcm": 27.89230757599649,
+        "converged": true
+      },
+      "reactor-mox-8.0": {
+        "computed": true,
+        "offsetPcm": 446.8221331178635,
+        "sigmaPcm": 27.348021833149595,
+        "converged": true
+      },
+      "weapons-mox-1.0": {
+        "computed": true,
+        "offsetPcm": -69.31725776795349,
+        "sigmaPcm": 27.379717290303454,
+        "converged": true
+      },
+      "weapons-mox-2.0": {
+        "computed": true,
+        "offsetPcm": -64.84692404662428,
+        "sigmaPcm": 28.275773136409214,
+        "converged": true
+      },
+      "weapons-mox-4.0": {
+        "computed": true,
+        "offsetPcm": 113.05078600460928,
+        "sigmaPcm": 26.180414991384396,
+        "converged": true
+      },
+      "weapons-mox-6.0": {
+        "computed": true,
+        "offsetPcm": 224.04910656630418,
+        "sigmaPcm": 27.6132068353474,
+        "converged": true
+      }
+    }
+  },
+  "C": {
+    "uo2": {
+      "computed": true,
+      "n": 6,
+      "cases": [
+        "uo2-0.711",
+        "uo2-2.4",
+        "uo2-3.1",
+        "uo2-3.9",
+        "uo2-4.5",
+        "uo2-5.0"
+      ],
+      "meanZ": 0.9844285096455905,
+      "meanRelative": 0.05810742623847179,
+      "standardError": 0.013000292159499311,
+      "countPositive": 6,
+      "countNegative": 0,
+      "systematicDeficit": true,
+      "systematicExcess": false
+    },
+    "reactor-mox": {
+      "computed": true,
+      "n": 5,
+      "cases": [
+        "reactor-mox-1.0",
+        "reactor-mox-2.0",
+        "reactor-mox-4.0",
+        "reactor-mox-6.0",
+        "reactor-mox-8.0"
+      ],
+      "meanZ": 0.4594480929355925,
+      "meanRelative": 0.02381822440956439,
+      "standardError": 0.014364898688718439,
+      "countPositive": 4,
+      "countNegative": 1,
+      "systematicDeficit": false,
+      "systematicExcess": false
+    },
+    "weapons-mox": {
+      "computed": true,
+      "n": 4,
+      "cases": [
+        "weapons-mox-1.0",
+        "weapons-mox-2.0",
+        "weapons-mox-4.0",
+        "weapons-mox-6.0"
+      ],
+      "meanZ": -0.33123290308245423,
+      "meanRelative": -0.013647027004533066,
+      "standardError": 0.027254972745720193,
+      "countPositive": 1,
+      "countNegative": 3,
+      "systematicDeficit": false,
+      "systematicExcess": false
+    }
+  },
+  "D": {
+    "rows": {
+      "reactor-mox-1.0/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 0.9372423549011387,
+        "mean2": 0.937007250650767,
+        "z": 0.3201873763891985,
+        "converged": true
+      },
+      "reactor-mox-1.0/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 0.9464096264817909,
+        "mean2": 0.9474201968079844,
+        "z": 1.3412509829934467,
+        "converged": true
+      },
+      "reactor-mox-2.0/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.0124919029051171,
+        "mean2": 1.0123568821000353,
+        "z": 0.16440836062699277,
+        "converged": true
+      },
+      "reactor-mox-2.0/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.0227940771410546,
+        "mean2": 1.022957813733034,
+        "z": 0.1894639222486741,
+        "converged": true
+      },
+      "reactor-mox-4.0/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.0677788090204796,
+        "mean2": 1.0682852667927787,
+        "z": 0.5816667463360082,
+        "converged": true
+      },
+      "reactor-mox-4.0/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.0798069922957343,
+        "mean2": 1.0795841012533438,
+        "z": 0.2658464192459661,
+        "converged": true
+      },
+      "reactor-mox-6.0/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.0970363565327037,
+        "mean2": 1.0968933950873745,
+        "z": 0.15660126350923023,
+        "converged": true
+      },
+      "reactor-mox-6.0/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.1079195360013427,
+        "mean2": 1.1084835013635292,
+        "z": 0.6048652910953015,
+        "converged": true
+      },
+      "reactor-mox-8.0/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.1207939127235056,
+        "mean2": 1.1198659748468995,
+        "z": 1.010655806779599,
+        "converged": true
+      },
+      "reactor-mox-8.0/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.1331116840185935,
+        "mean2": 1.1332862261950005,
+        "z": 0.2022196416740422,
+        "converged": true
+      },
+      "uo2-0.711/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 0.6637467110880603,
+        "mean2": 0.6639889526630333,
+        "z": 0.5201683193288233,
+        "converged": true
+      },
+      "uo2-0.711/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 0.6690860231044983,
+        "mean2": 0.6692853702486974,
+        "z": 0.409719266105519,
+        "converged": true
+      },
+      "uo2-1.6/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 0.9564997251304834,
+        "mean2": 0.9541130076431014,
+        "z": 3.316494742780671,
+        "converged": false
+      },
+      "uo2-1.6/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 0.9634944577263245,
+        "mean2": 0.9635956628107704,
+        "z": 0.13678357860989954,
+        "converged": true
+      },
+      "uo2-2.4/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.0913454380220857,
+        "mean2": 1.0922885261800501,
+        "z": 1.1412898498188324,
+        "converged": true
+      },
+      "uo2-2.4/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.1008245786652884,
+        "mean2": 1.0993739524930712,
+        "z": 1.662826344808506,
+        "converged": true
+      },
+      "uo2-3.1/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.1676683182460994,
+        "mean2": 1.1671723503344873,
+        "z": 0.5410944069730437,
+        "converged": true
+      },
+      "uo2-3.1/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.1760143669919647,
+        "mean2": 1.176660350529807,
+        "z": 0.6849077211218745,
+        "converged": true
+      },
+      "uo2-3.9/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.2285992031605344,
+        "mean2": 1.2270844312767681,
+        "z": 1.5485781296049856,
+        "converged": true
+      },
+      "uo2-3.9/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.2381379471602376,
+        "mean2": 1.2384091591672173,
+        "z": 0.26831023978416413,
+        "converged": true
+      },
+      "uo2-4.5/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.2628579155559576,
+        "mean2": 1.2626781110310383,
+        "z": 0.17781784324586106,
+        "converged": true
+      },
+      "uo2-4.5/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.272767137444655,
+        "mean2": 1.273570683570331,
+        "z": 0.7811466229619537,
+        "converged": true
+      },
+      "uo2-5.0/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.287036995968139,
+        "mean2": 1.2866101663987446,
+        "z": 0.41439942522272705,
+        "converged": true
+      },
+      "uo2-5.0/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.2970748185237764,
+        "mean2": 1.2958281836920735,
+        "z": 1.3157265178704556,
+        "converged": true
+      },
+      "weapons-mox-1.0/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.0798706442440047,
+        "mean2": 1.079407173837505,
+        "z": 0.5587328546585153,
+        "converged": true
+      },
+      "weapons-mox-1.0/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.0889531238286616,
+        "mean2": 1.0902438043626559,
+        "z": 1.4315342674614202,
+        "converged": true
+      },
+      "weapons-mox-2.0/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.1695146190399106,
+        "mean2": 1.1703082934437885,
+        "z": 0.8207617696804027,
+        "converged": true
+      },
+      "weapons-mox-2.0/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.1813439975637132,
+        "mean2": 1.181376497151579,
+        "z": 0.03589015418937354,
+        "converged": true
+      },
+      "weapons-mox-4.0/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.2387409664387992,
+        "mean2": 1.2387951308305694,
+        "z": 0.053290201415323826,
+        "converged": true
+      },
+      "weapons-mox-4.0/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.2529745963908754,
+        "mean2": 1.2527817264659056,
+        "z": 0.19519753923512545,
+        "converged": true
+      },
+      "weapons-mox-6.0/hfp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.2772720540246905,
+        "mean2": 1.2773050823108054,
+        "z": 0.0341991301835745,
+        "converged": true
+      },
+      "weapons-mox-6.0/hzp": {
+        "windows": [
+          [
+            101,
+            350
+          ],
+          [
+            351,
+            600
+          ]
+        ],
+        "mean1": 1.2891355682784154,
+        "mean2": 1.2897699192046137,
+        "z": 0.6004415555576148,
+        "converged": true
+      }
+    },
+    "unconverged": [
+      "uo2-1.6/hfp"
+    ],
+    "missing": []
+  },
+  "decision": {
+    "items": [
+      "2. systematic deficit in uo2: mean relative difference +5.8 % (n=6); recorded, nothing refitted",
+      "5. unconverged rows: uo2-1.6/hfp; missing rows: none; the cases they belong to are not computed and enter no decision item",
+      "6. this changes what is known about the tool chain, not what any library claims"
+    ]
+  }
+}
