@@ -21,9 +21,10 @@ import math
 from .library import Library
 from .numerics import SplitMix64, lu_factor, lu_solve
 
-ENGINE_VERSION = "0.4.0"
+ENGINE_VERSION = "0.5.0"
 CAPABILITY = "point-kinetics/lumped-thermal-v1"
 CAPABILITY_V2 = "point-kinetics/lumped-thermal-v2"      # adds thermal.hA.exponent: hA depends on the fuel-to-coolant temperature difference
+CAPABILITY_ROD_INTERACTION = "point-kinetics/rod-interaction-v1"   # adds reactivity.rodInteraction: a correction on the summed single-rod reactivities (rods shadow or boost each other)
 CAPABILITY_BORON = "point-kinetics/boron-v1"             # adds soluble boron: a concentration the operator changes at a limited rate (ppm), and its reactivity table
 
 DEFAULT_CONFIG = {
@@ -352,6 +353,9 @@ class Engine:
         if lib.has_boron:
             out["boron"] = lib.boron(self.boron_value(t))
             out["total"] += out["boron"]
+        if lib.has_rod_interaction:
+            out["rodInteraction"] = lib.rod_interaction(rods)
+            out["total"] += out["rodInteraction"]
         return out
 
     def rhs(self, t, y) -> list[float]:
@@ -364,6 +368,11 @@ class Engine:
         rho += lib.fuel_temp(tf) + lib.cool_temp(tc) + lib.xenon(x_)
         if lib.has_boron:
             rho += lib.boron(self.boron_value(t))
+        if lib.has_rod_interaction:
+            s = 0.0
+            for r in lib.rods:      # the same explicit sum as reactivity()
+                s += r.worth(self.rod_position(r.id, t))
+            rho += lib.rod_interaction(s)
         L = lib.gen_time
         d = [0.0] * len(y)
         d[IP] = (rho - lib.beta_total) / L * P + lib.ext_source
@@ -630,6 +639,11 @@ class Engine:
         checks += [(r.worth, self.rod_position(r.id, self.t), f"rod.{r.id}") for r in lib.rods]
         if lib.has_boron:
             checks.append((lib.boron, self.boron_value(self.t), "boron"))
+        if lib.has_rod_interaction:
+            s = 0.0
+            for r in lib.rods:
+                s += r.worth(self.rod_position(r.id, self.t))
+            checks.append((lib.rod_interaction, s, "rodInteraction"))
         for table, x, name in checks:
             if table.out_of_range == "reject" and table.value(x)[1]:
                 self.halted = f"R_TABLE_REJECT_{name}"

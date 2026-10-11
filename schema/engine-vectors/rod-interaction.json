@@ -1,0 +1,1240 @@
+{
+ "config": {
+  "outerDt": 0.01
+ },
+ "description": "Rod interaction table (synthetic-core-rod-interaction: a correction of -10 % of the summed single-rod reactivities, clamped beyond +0.03): the rods start half out, the safety rod is withdrawn to near critical (the sum passes the end of the table, so the correction clamps), then the regulating rod moves out and the safety rod back in.",
+ "events": [
+  {
+   "clientId": "local",
+   "reason": null,
+   "seq": 1,
+   "status": "accepted",
+   "t": 0.0,
+   "type": "command"
+  },
+  {
+   "clientId": "local",
+   "reason": null,
+   "seq": 2,
+   "status": "accepted",
+   "t": 14.0,
+   "type": "command"
+  },
+  {
+   "clientId": "local",
+   "reason": null,
+   "seq": 3,
+   "status": "accepted",
+   "t": 20.0,
+   "type": "command"
+  },
+  {
+   "clientId": "local",
+   "reason": null,
+   "seq": 4,
+   "status": "accepted",
+   "t": 25.0,
+   "type": "command"
+  },
+  {
+   "clientId": "local",
+   "reason": null,
+   "seq": 5,
+   "status": "accepted",
+   "t": 35.0,
+   "type": "command"
+  },
+  {
+   "clientId": "local",
+   "reason": null,
+   "seq": 6,
+   "status": "accepted",
+   "t": 45.0,
+   "type": "command"
+  }
+ ],
+ "final": {
+  "peakPower": 0.06848732557721011,
+  "peakTime": 35.035074335571586
+ },
+ "init": {
+  "rods": {
+   "regulating": 0.5,
+   "safety": 0.5,
+   "transient": 0.5
+  }
+ },
+ "libraryFixture": "synthetic-core-rod-interaction",
+ "libraryId": "synthetic-core-rod-interaction",
+ "name": "rod-interaction",
+ "pins": {
+  "config": {
+   "eventTol": 1e-07,
+   "hInit": 1e-05,
+   "hMin": 1e-12,
+   "method": "ros2",
+   "outerDt": 0.01,
+   "rtol": 1e-06
+  },
+  "engineVersion": "0.5.0",
+  "libraryDigest": "0cf96c64d4efc6a2706b2617a307f63c37c2cc127579c108f892742d179c64d2"
+ },
+ "sampleEvery": 200,
+ "samples": [
+  {
+   "coolantTemp": 293.15,
+   "energy": 0.0,
+   "fuelTemp": 293.15,
+   "indicated": {
+    "fuel-tc": 293.2104422249733,
+    "linear": 0.0022528845127640375,
+    "log": 0.002243248697560896,
+    "pool-temp": 293.001606275557
+   },
+   "iodine": 0.0,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.002253521126760564,
+   "precursors": [
+    1.0495229441163112,
+    2.8316785961671673,
+    0.6963583301611471,
+    0.5175237471339668,
+    0.039782554978996805,
+    0.005502784146740912
+   ],
+   "reactivityTotal": -0.008875,
+   "rodInteraction": -0.0026250000000000006,
+   "rods": {
+    "regulating": 0.5,
+    "safety": 0.5,
+    "transient": 0.5
+   },
+   "step": 0,
+   "t": 0.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 0.0
+  },
+  {
+   "coolantTemp": 293.1500000000057,
+   "energy": 0.004746704960601043,
+   "fuelTemp": 293.1500003437985,
+   "indicated": {
+    "fuel-tc": 292.68419456630465,
+    "linear": 0.0024723354495751393,
+    "log": 0.0024265639206618624,
+    "pool-temp": 293.7877098560453
+   },
+   "iodine": 60661143.95778568,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.002509112250644455,
+   "precursors": [
+    1.0508960107896028,
+    2.840685920287315,
+    0.7040216984197807,
+    0.5313009215545587,
+    0.0424022918561209,
+    0.006010581839823101
+   ],
+   "reactivityTotal": -0.0074117701329332025,
+   "rodInteraction": -0.0027875810998399825,
+   "rods": {
+    "regulating": 0.5,
+    "safety": 0.5399999999999956,
+    "transient": 0.5
+   },
+   "step": 200,
+   "t": 2.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 2251637.388126725
+  },
+  {
+   "coolantTemp": 293.1500000000169,
+   "energy": 0.01010416879204921,
+   "fuelTemp": 293.15000068223367,
+   "indicated": {
+    "fuel-tc": 292.99690363313204,
+    "linear": 0.0028469607231059115,
+    "log": 0.0029183305793557836,
+    "pool-temp": 293.31155473156815
+   },
+   "iodine": 129124015.71614867,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.0028679035578093345,
+   "precursors": [
+    1.0557216111960444,
+    2.871906594574679,
+    0.729062414674574,
+    0.5710967124766362,
+    0.04779635862029941,
+    0.006841134838992966
+   ],
+   "reactivityTotal": -0.0059485402653752135,
+   "rodInteraction": -0.0029501621996799645,
+   "rods": {
+    "regulating": 0.5,
+    "safety": 0.5799999999999912,
+    "transient": 0.5
+   },
+   "step": 400,
+   "t": 4.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 4796445.143496747
+  },
+  {
+   "coolantTemp": 293.15000000003516,
+   "energy": 0.016314357613842312,
+   "fuelTemp": 293.1500010336482,
+   "indicated": {
+    "fuel-tc": 292.50470549078494,
+    "linear": 0.0033797623601195437,
+    "log": 0.003518799846596881,
+    "pool-temp": 292.6975851881382
+   },
+   "iodine": 208480398.84384403,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.0033595701350447216,
+   "precursors": [
+    1.0652961628467679,
+    2.9330353814882546,
+    0.7755028906887155,
+    0.6378862076089706,
+    0.05548134041822755,
+    0.007990890633936966
+   ],
+   "reactivityTotal": -0.004522643645886277,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.5,
+    "safety": 0.6199999999999868,
+    "transient": 0.5
+   },
+   "step": 600,
+   "t": 6.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 7749644.097792961
+  },
+  {
+   "coolantTemp": 293.150000000067,
+   "energy": 0.023651654414458528,
+   "fuelTemp": 293.1500014160556,
+   "indicated": {
+    "fuel-tc": 293.6574592167373,
+    "linear": 0.004042277083693015,
+    "log": 0.003916885263981647,
+    "pool-temp": 293.27840654798644
+   },
+   "iodine": 302236169.7393045,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.004016642771395142,
+   "precursors": [
+    1.0810689621521665,
+    3.0325126546248433,
+    0.8475497354404145,
+    0.7338400372499875,
+    0.06565949641725909,
+    0.00950860325299613
+   ],
+   "reactivityTotal": -0.0031969857753166822,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.5,
+    "safety": 0.6599999999999824,
+    "transient": 0.5
+   },
+   "step": 800,
+   "t": 8.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 11242010.255005762
+  },
+  {
+   "coolantTemp": 293.15000000011145,
+   "energy": 0.03258440734296706,
+   "fuelTemp": 293.1500018591255,
+   "indicated": {
+    "fuel-tc": 291.9663892681291,
+    "linear": 0.005016788955494528,
+    "log": 0.004894078674476199,
+    "pool-temp": 293.54146555465223
+   },
+   "iodine": 416375816.9344739,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.004982731694477902,
+   "precursors": [
+    1.1055630947958777,
+    3.185537566210164,
+    0.9546784419182954,
+    0.8708527992490378,
+    0.08021324146808678,
+    0.01171846247555058
+   ],
+   "reactivityTotal": -0.0018713279103042026,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.5,
+    "safety": 0.699999999999978,
+    "transient": 0.5
+   },
+   "step": 1000,
+   "t": 10.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 15496514.740009854
+  },
+  {
+   "coolantTemp": 293.15000000016397,
+   "energy": 0.043549086236007256,
+   "fuelTemp": 293.1500023852298,
+   "indicated": {
+    "fuel-tc": 292.15604508990606,
+    "linear": 0.005930739687319939,
+    "log": 0.00592567074176533,
+    "pool-temp": 293.17121774147944
+   },
+   "iodine": 556476039.0953853,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.0060319422818204205,
+   "precursors": [
+    1.141049263466204,
+    3.4050843109378905,
+    1.1030744500432759,
+    1.0518473560964228,
+    0.09802348470666027,
+    0.01426020696737531
+   ],
+   "reactivityTotal": -0.0010313279584977597,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.5,
+    "safety": 0.7399999999999736,
+    "transient": 0.5
+   },
+   "step": 1200,
+   "t": 12.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 20721393.153714344
+  },
+  {
+   "coolantTemp": 293.1500000002291,
+   "energy": 0.056985579573414984,
+   "fuelTemp": 293.1500030147952,
+   "indicated": {
+    "fuel-tc": 292.3267647843479,
+    "linear": 0.007324424784233812,
+    "log": 0.007672562543401231,
+    "pool-temp": 293.50197686641775
+   },
+   "iodine": 728156966.0505779,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.0074937109946908165,
+   "precursors": [
+    1.1897750835681262,
+    3.7036955190291625,
+    1.2984279790742006,
+    1.2814962594636967,
+    0.12059931917320198,
+    0.017629863348959357
+   ],
+   "reactivityTotal": -0.00019132801616916686,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.5,
+    "safety": 0.7799999999999692,
+    "transient": 0.5
+   },
+   "step": 1400,
+   "t": 14.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 27126753.71267484
+  },
+  {
+   "coolantTemp": 293.1500000003092,
+   "energy": 0.07278141197770835,
+   "fuelTemp": 293.1500037226547,
+   "indicated": {
+    "fuel-tc": 293.417550895945,
+    "linear": 0.008187926762316982,
+    "log": 0.008485295364745545,
+    "pool-temp": 293.09374287415545
+   },
+   "iodine": 929979217.2239451,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.008272758549909038,
+   "precursors": [
+    1.2507488446873531,
+    4.072096032072304,
+    1.5266806086392484,
+    1.5262280854506858,
+    0.1396320053081322,
+    0.019904755021356926
+   ],
+   "reactivityTotal": -0.00019132808101275873,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.5,
+    "safety": 0.7799999999999692,
+    "transient": 0.5
+   },
+   "step": 1600,
+   "t": 16.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 34661176.4510624
+  },
+  {
+   "coolantTemp": 293.15000000040766,
+   "energy": 0.09001034387459596,
+   "fuelTemp": 293.15000443159283,
+   "indicated": {
+    "fuel-tc": 293.9849557704049,
+    "linear": 0.008982939484819838,
+    "log": 0.00920984163686813,
+    "pool-temp": 293.1257688761534
+   },
+   "iodine": 1150104104.140215,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.008944239943969375,
+   "precursors": [
+    1.3184010200530523,
+    4.4719392253626555,
+    1.7534574484277037,
+    1.734174274201325,
+    0.15265986050701855,
+    0.021577545102650208
+   ],
+   "reactivityTotal": -0.000191328145955536,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.5,
+    "safety": 0.7799999999999692,
+    "transient": 0.5
+   },
+   "step": 1800,
+   "t": 18.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 42886934.40082927
+  },
+  {
+   "coolantTemp": 293.1500000005223,
+   "energy": 0.10851915527202183,
+   "fuelTemp": 293.1500051304542,
+   "indicated": {
+    "fuel-tc": 293.540907572709,
+    "linear": 0.009550661327477769,
+    "log": 0.00997964742372994,
+    "pool-temp": 292.8554988771015
+   },
+   "iodine": 1386572465.5043437,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.009556297927844628,
+   "precursors": [
+    1.3916950655904339,
+    4.8956839214084695,
+    1.9743877671885075,
+    1.9142336934561026,
+    0.16397200406071044,
+    0.023093434730586684
+   ],
+   "reactivityTotal": -0.00019132820997558352,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.5,
+    "safety": 0.7799999999999692,
+    "transient": 0.5
+   },
+   "step": 2000,
+   "t": 20.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 51732383.82257172
+  },
+  {
+   "coolantTemp": 293.150000000654,
+   "energy": 0.13021592651706373,
+   "fuelTemp": 293.15000596311853,
+   "indicated": {
+    "fuel-tc": 293.28274872973043,
+    "linear": 0.012151283766387185,
+    "log": 0.012651851284689297,
+    "pool-temp": 292.9421919797877
+   },
+   "iodine": 1663768187.8890836,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.012460124248468115,
+   "precursors": [
+    1.4814315914809697,
+    5.413741925647737,
+    2.251994882213074,
+    2.190326588980903,
+    0.19692303296884658,
+    0.028979125043292035
+   ],
+   "reactivityTotal": 0.0008925457125471582,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.5399999999999956,
+    "safety": 0.7799999999999692,
+    "transient": 0.5
+   },
+   "step": 2200,
+   "t": 22.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 62103297.95767046
+  },
+  {
+   "coolantTemp": 293.1500000008134,
+   "energy": 0.16017687054235058,
+   "fuelTemp": 293.1500072783065,
+   "indicated": {
+    "fuel-tc": 293.8893410472266,
+    "linear": 0.01811101575907437,
+    "log": 0.018661784885850907,
+    "pool-temp": 293.04849043029975
+   },
+   "iodine": 2046561046.458214,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.018184692629282434,
+   "precursors": [
+    1.6161740107583331,
+    6.209448542052777,
+    2.731695450898575,
+    2.7851984199147592,
+    0.2737027905806078,
+    0.04148200159924111
+   ],
+   "reactivityTotal": 0.0019764195908688062,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.5799999999999912,
+    "safety": 0.7799999999999692,
+    "transient": 0.5
+   },
+   "step": 2400,
+   "t": 24.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 76409915.34527378
+  },
+  {
+   "coolantTemp": 293.1500000010128,
+   "energy": 0.2056956430056554,
+   "fuelTemp": 293.15000953437607,
+   "indicated": {
+    "fuel-tc": 292.1554940010498,
+    "linear": 0.026342956746174526,
+    "log": 0.027409351343049327,
+    "pool-temp": 292.26389617311423
+   },
+   "iodine": 2628155086.8109117,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.026693826769614855,
+   "precursors": [
+    1.836431175471402,
+    7.53768006523651,
+    3.597965409179803,
+    3.9347004926284934,
+    0.4124954287610919,
+    0.06232542547499554
+   ],
+   "reactivityTotal": 0.002518356383602251,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.7799999999999692,
+    "transient": 0.5
+   },
+   "step": 2600,
+   "t": 26.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 98118066.74122377
+  },
+  {
+   "coolantTemp": 293.1500000012753,
+   "energy": 0.26614652545047884,
+   "fuelTemp": 293.150012541132,
+   "indicated": {
+    "fuel-tc": 292.58616293909563,
+    "linear": 0.03367724109291435,
+    "log": 0.033770773731584464,
+    "pool-temp": 292.975666471013
+   },
+   "iodine": 3400541620.381089,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.03388587613181472,
+   "precursors": [
+    2.13642772843071,
+    9.341874212527836,
+    4.749276466628555,
+    5.331791836418666,
+    0.5412404010879995,
+    0.07971673593833777
+   ],
+   "reactivityTotal": 0.0025183561081694554,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.7799999999999692,
+    "transient": 0.5
+   },
+   "step": 2800,
+   "t": 28.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 126942849.2050654
+  },
+  {
+   "coolantTemp": 293.15000000161774,
+   "energy": 0.3418861534857422,
+   "fuelTemp": 293.1500162206067,
+   "indicated": {
+    "fuel-tc": 292.95294985857595,
+    "linear": 0.041764077030561744,
+    "log": 0.0407125783667715,
+    "pool-temp": 293.14421417201737
+   },
+   "iodine": 4368267457.989635,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.04204031791643413,
+   "precursors": [
+    2.5163053449611272,
+    11.608095562163564,
+    6.142753992667429,
+    6.896029820485818,
+    0.6782772825230091,
+    0.099194488322436
+   ],
+   "reactivityTotal": 0.0025183557711120656,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.7799999999999692,
+    "transient": 0.5
+   },
+   "step": 3000,
+   "t": 30.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 163064007.5491475
+  },
+  {
+   "coolantTemp": 293.1500000020567,
+   "energy": 0.43513731134209177,
+   "fuelTemp": 293.15002063679174,
+   "indicated": {
+    "fuel-tc": 294.05524699320546,
+    "linear": 0.05242591334625598,
+    "log": 0.050830532458069004,
+    "pool-temp": 292.70260936906
+   },
+   "iodine": 5559727537.893261,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.05143906658660223,
+   "precursors": [
+    2.986792595219639,
+    14.39174973578836,
+    7.798873356158049,
+    8.668687442497026,
+    0.8345375010134529,
+    0.12160642700162357
+   ],
+   "reactivityTotal": 0.0025183553665679252,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.7799999999999692,
+    "transient": 0.5
+   },
+   "step": 3200,
+   "t": 32.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 207547059.37431338
+  },
+  {
+   "coolantTemp": 293.15000000261097,
+   "energy": 0.548641010879119,
+   "fuelTemp": 293.150025881863,
+   "indicated": {
+    "fuel-tc": 293.18458246432084,
+    "linear": 0.06232892319959617,
+    "log": 0.05867487839698613,
+    "pool-temp": 293.0185443911122
+   },
+   "iodine": 7009937886.599743,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.06233700294678108,
+   "precursors": [
+    3.561310664524734,
+    17.764222314312686,
+    9.749947944957283,
+    10.699168802419193,
+    1.0151916189704644,
+    0.147573363120597
+   ],
+   "reactivityTotal": 0.002518354886093078,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.7799999999999692,
+    "transient": 0.5
+   },
+   "step": 3400,
+   "t": 34.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 261704973.23849395
+  },
+  {
+   "coolantTemp": 293.1500000033009,
+   "energy": 0.6819966333060856,
+   "fuelTemp": 293.15003179321536,
+   "indicated": {
+    "fuel-tc": 292.8792596969719,
+    "linear": 0.0671622846356832,
+    "log": 0.06922664076848878,
+    "pool-temp": 292.7736733579698
+   },
+   "iodine": 8713762682.16831,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.06714360302850517,
+   "precursors": [
+    4.23485562740539,
+    21.673032831966047,
+    11.916594985080204,
+    12.811089035942855,
+    1.1719991552365623,
+    0.16511505796935833
+   ],
+   "reactivityTotal": 0.002098354344582171,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.7599999999999683,
+    "transient": 0.5
+   },
+   "step": 3600,
+   "t": 36.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 325363345.01689357
+  },
+  {
+   "coolantTemp": 293.15000000411993,
+   "energy": 0.8099970537314877,
+   "fuelTemp": 293.15003643955777,
+   "indicated": {
+    "fuel-tc": 292.65004103558516,
+    "linear": 0.06100626038524069,
+    "log": 0.060553783515120155,
+    "pool-temp": 293.04944979093705
+   },
+   "iodine": 10349048648.010303,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.060277421330514745,
+   "precursors": [
+    4.861070755242184,
+    25.14685930552854,
+    13.473501105759944,
+    13.628254021316938,
+    1.1145122735640234,
+    0.15039598609583105
+   ],
+   "reactivityTotal": 0.0012583539189470958,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.7199999999999664,
+    "transient": 0.5
+   },
+   "step": 3800,
+   "t": 38.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 386580049.28060126
+  },
+  {
+   "coolantTemp": 293.15000000502755,
+   "energy": 0.9208511832771263,
+   "fuelTemp": 293.15003916627467,
+   "indicated": {
+    "fuel-tc": 293.4889508080034,
+    "linear": 0.05019056810377538,
+    "log": 0.048869495674597765,
+    "pool-temp": 292.98660368917024
+   },
+   "iodine": 11765115116.880678,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.04942475500614756,
+   "precursors": [
+    5.374051125918412,
+    27.776124687872677,
+    14.188509399239571,
+    13.164551342742373,
+    0.9612250571360322,
+    0.12589765393311375
+   ],
+   "reactivityTotal": 0.0001755247163529143,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.6799999999999646,
+    "transient": 0.5
+   },
+   "step": 4000,
+   "t": 40.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 439756907.2321286
+  },
+  {
+   "coolantTemp": 293.1500000059753,
+   "energy": 1.007572899124179,
+   "fuelTemp": 293.15003975176995,
+   "indicated": {
+    "fuel-tc": 293.78208332579305,
+    "linear": 0.03803027517369995,
+    "log": 0.03645776527781498,
+    "pool-temp": 293.068222506477
+   },
+   "iodine": 12872695293.421768,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.0377141948774487,
+   "precursors": [
+    5.736796020673447,
+    29.352261541109907,
+    14.017984034781499,
+    11.65361874640837,
+    0.7531753307836158,
+    0.09649591250047165
+   ],
+   "reactivityTotal": -0.001150133242899707,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.6399999999999628,
+    "transient": 0.5
+   },
+   "step": 4200,
+   "t": 42.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 481567058.349357
+  },
+  {
+   "coolantTemp": 293.1500000069148,
+   "energy": 1.0734689010078484,
+   "fuelTemp": 293.1500387513799,
+   "indicated": {
+    "fuel-tc": 292.6580802170598,
+    "linear": 0.028668154185223036,
+    "log": 0.02919898283531255,
+    "pool-temp": 293.33451562426706
+   },
+   "iodine": 13714066068.864243,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.02860773789834256,
+   "precursors": [
+    5.971927925730045,
+    30.061830093013125,
+    13.243804703830689,
+    9.758094654064864,
+    0.5741660861015743,
+    0.07320837036311469
+   ],
+   "reactivityTotal": -0.0024757910568808496,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.599999999999961,
+    "transient": 0.5
+   },
+   "step": 4400,
+   "t": 44.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 513561063.80026793
+  },
+  {
+   "coolantTemp": 293.1500000078179,
+   "energy": 1.1237215715582527,
+   "fuelTemp": 293.15003677100447,
+   "indicated": {
+    "fuel-tc": 292.7053481348486,
+    "linear": 0.02337641676116961,
+    "log": 0.02286655167749078,
+    "pool-temp": 293.05312195137054
+   },
+   "iodine": 14355472060.502132,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.022967730941975815,
+   "precursors": [
+    6.112153461689622,
+    30.149120277032356,
+    12.14657241461001,
+    7.9259085248052195,
+    0.4422935336243834,
+    0.05739788452711939
+   ],
+   "reactivityTotal": -0.003288696374691483,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.5799999999999601,
+    "transient": 0.5
+   },
+   "step": 4600,
+   "t": 46.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 538181967.8059131
+  },
+  {
+   "coolantTemp": 293.15000000866956,
+   "energy": 1.1671350859055427,
+   "fuelTemp": 293.15003458859525,
+   "indicated": {
+    "fuel-tc": 293.5214272581202,
+    "linear": 0.02067518691540709,
+    "log": 0.02092110928466758,
+    "pool-temp": 293.29194277121735
+   },
+   "iodine": 14909439013.842636,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.020573518776469776,
+   "precursors": [
+    6.210009692741241,
+    29.978183680914622,
+    11.0610430991846,
+    6.583456117389058,
+    0.3826908412489161,
+    0.05111030204004764
+   ],
+   "reactivityTotal": -0.0032886961747941516,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.5799999999999601,
+    "transient": 0.5
+   },
+   "step": 4800,
+   "t": 48.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 559594782.3169879
+  },
+  {
+   "coolantTemp": 293.1500000094692,
+   "energy": 1.2064114919894016,
+   "fuelTemp": 293.1500324239012,
+   "indicated": {
+    "fuel-tc": 293.1333512843638,
+    "linear": 0.01874662836249995,
+    "log": 0.018612599538032865,
+    "pool-temp": 292.93377991764476
+   },
+   "iodine": 15410502885.838938,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.018782000285009117,
+   "precursors": [
+    6.281885056486199,
+    29.663772918695457,
+    10.065049888976331,
+    5.636400832341834,
+    0.34544496012468484,
+    0.04652753050322406
+   ],
+   "reactivityTotal": -0.003288695976518511,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.5799999999999601,
+    "transient": 0.5
+   },
+   "step": 5000,
+   "t": 50.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 579076592.5156096
+  },
+  {
+   "coolantTemp": 293.1500000102178,
+   "energy": 1.2425260276105294,
+   "fuelTemp": 293.1500303445066,
+   "indicated": {
+    "fuel-tc": 292.96270411623334,
+    "linear": 0.017784503603589633,
+    "log": 0.017686418950273685,
+    "pool-temp": 292.32341989650604
+   },
+   "iodine": 15871129925.200548,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.017387438309981514,
+   "precursors": [
+    6.3339739241645745,
+    29.250560793621656,
+    9.1705355572492,
+    4.955516622136486,
+    0.3176657100202847,
+    0.0429800277512262
+   ],
+   "reactivityTotal": -0.003288695786055488,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.5799999999999601,
+    "transient": 0.5
+   },
+   "step": 5200,
+   "t": 52.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 597087021.9472313
+  },
+  {
+   "coolantTemp": 293.15000001091767,
+   "energy": 1.2761474840129254,
+   "fuelTemp": 293.1500283862199,
+   "indicated": {
+    "fuel-tc": 293.5471178632687,
+    "linear": 0.01639571379036525,
+    "log": 0.016508100395163025,
+    "pool-temp": 293.080349751828
+   },
+   "iodine": 16299869388.685575,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.016273545255447105,
+   "precursors": [
+    6.370573009237955,
+    28.76921565319277,
+    8.3777375213838,
+    4.454555427499926,
+    0.29583816325952533,
+    0.04015827903435401
+   ],
+   "reactivityTotal": -0.003288695606685291,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.5799999999999601,
+    "transient": 0.5
+   },
+   "step": 5400,
+   "t": 54.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 613941027.5425401
+  },
+  {
+   "coolantTemp": 293.1500000115726,
+   "energy": 1.3077558936382434,
+   "fuelTemp": 293.1500265660916,
+   "indicated": {
+    "fuel-tc": 292.508694261341,
+    "linear": 0.015452435037901458,
+    "log": 0.014847924321523483,
+    "pool-temp": 293.56907323476076
+   },
+   "iodine": 16702857770.2092,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.015364004009495655,
+   "precursors": [
+    6.394798034507082,
+    28.241587994901217,
+    7.681084758755576,
+    4.0766785822064975,
+    0.2782147528228571,
+    0.03786259103273207
+   ],
+   "reactivityTotal": -0.003288695439969869,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.5799999999999601,
+    "transient": 0.5
+   },
+   "step": 5600,
+   "t": 56.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 629864508.7350026
+  },
+  {
+   "coolantTemp": 293.1500000121852,
+   "energy": 1.337704593662413,
+   "fuelTemp": 293.1500248895887,
+   "indicated": {
+    "fuel-tc": 293.1202521363715,
+    "linear": 0.014659011187573784,
+    "log": 0.014424431256883134,
+    "pool-temp": 293.2274035158989
+   },
+   "iodine": 17084612089.046299,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.014606648888376395,
+   "precursors": [
+    6.408966303180896,
+    27.68353389806901,
+    7.072245589184189,
+    3.7842987939237998,
+    0.26367854277889646,
+    0.03595716997168109
+   ],
+   "reactivityTotal": -0.003288695286410072,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.5799999999999601,
+    "transient": 0.5
+   },
+   "step": 5800,
+   "t": 58.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 645023612.4320964
+  },
+  {
+   "coolantTemp": 293.15000001275877,
+   "energy": 1.366259437492937,
+   "fuelTemp": 293.1500233550893,
+   "indicated": {
+    "fuel-tc": 293.24760985951605,
+    "linear": 0.013904298359651983,
+    "log": 0.014164356534945636,
+    "pool-temp": 292.9107745503699
+   },
+   "iodine": 17448531091.942474,
+   "latched": [],
+   "mode": "steady",
+   "power": 0.013965084399983771,
+   "precursors": [
+    6.414839721332343,
+    27.10672447055515,
+    6.541873946339874,
+    3.5523665752236098,
+    0.25146510225667523,
+    0.03434758870261315
+   ],
+   "reactivityTotal": -0.003288695145857396,
+   "rodInteraction": -0.003,
+   "rods": {
+    "regulating": 0.599999999999989,
+    "safety": 0.5799999999999601,
+    "transient": 0.5
+   },
+   "step": 6000,
+   "t": 60.0,
+   "tripped": false,
+   "validityStatus": "unvalidated",
+   "xenon": 659543242.172391
+  }
+ ],
+ "script": [
+  {
+   "cmd": {
+    "direction": "out",
+    "rod": "safety",
+    "type": "rod.move"
+   },
+   "step": 0
+  },
+  {
+   "cmd": {
+    "direction": "stop",
+    "rod": "safety",
+    "type": "rod.move"
+   },
+   "step": 1400
+  },
+  {
+   "cmd": {
+    "direction": "out",
+    "rod": "regulating",
+    "type": "rod.move"
+   },
+   "step": 2000
+  },
+  {
+   "cmd": {
+    "direction": "stop",
+    "rod": "regulating",
+    "type": "rod.move"
+   },
+   "step": 2500
+  },
+  {
+   "cmd": {
+    "direction": "in",
+    "rod": "safety",
+    "type": "rod.move"
+   },
+   "step": 3500
+  },
+  {
+   "cmd": {
+    "direction": "stop",
+    "rod": "safety",
+    "type": "rod.move"
+   },
+   "step": 4500
+  }
+ ],
+ "seed": 1,
+ "steps": 6000,
+ "tolerances": {
+  "eventTime": {
+   "abs": 1e-09
+  },
+  "poisons": {
+   "abs": 1.0,
+   "rel": 1e-09
+  },
+  "power": {
+   "abs": 1e-15,
+   "rel": 1e-09
+  },
+  "temperature": {
+   "abs": 1e-09,
+   "rel": 1e-09
+  }
+ },
+ "vectorFormat": 1
+}

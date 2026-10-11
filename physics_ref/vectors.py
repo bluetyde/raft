@@ -152,6 +152,25 @@ def _scenarios(lib: Library) -> list[dict]:
             ],
         },
         {
+            "name": "rod-interaction",
+            "description": "Rod interaction table (synthetic-core-rod-interaction: a correction of -10 % of the summed single-rod reactivities, clamped beyond +0.03): the rods start half out, "
+                           "the safety rod is withdrawn to near critical (the sum passes the end of the table, so the correction clamps), then the regulating rod moves out and the safety rod back in.",
+            "libraryFixture": "synthetic-core-rod-interaction",
+            "init": {"rods": {"safety": 0.5, "regulating": 0.5, "transient": 0.5}},
+            "seed": 1,
+            "config": {"outerDt": 0.01},
+            "steps": 6000,
+            "sampleEvery": 200,
+            "script": [
+                {"step": 0, "cmd": {"type": "rod.move", "rod": "safety", "direction": "out"}},
+                {"step": 1400, "cmd": {"type": "rod.move", "rod": "safety", "direction": "stop"}},
+                {"step": 2000, "cmd": {"type": "rod.move", "rod": "regulating", "direction": "out"}},
+                {"step": 2500, "cmd": {"type": "rod.move", "rod": "regulating", "direction": "stop"}},
+                {"step": 3500, "cmd": {"type": "rod.move", "rod": "safety", "direction": "in"}},
+                {"step": 4500, "cmd": {"type": "rod.move", "rod": "safety", "direction": "stop"}},
+            ],
+        },
+        {
             "name": "period-trip",
             "description": "Transient rod withdrawal triggering internal short-period trip.",
             "init": {"rods": copy.deepcopy(_near_crit)},
@@ -189,6 +208,8 @@ def sample_from_engine(e: Engine) -> dict:
     }
     if "boron" in truth:
         out["boron"] = truth["boron"]
+    if "rodInteraction" in truth["reactivity"]:
+        out["rodInteraction"] = truth["reactivity"]["rodInteraction"]
     return out
 
 

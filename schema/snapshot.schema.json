@@ -166,6 +166,9 @@
       "reference": {
        "type": "number"
       },
+      "rodInteraction": {
+       "type": "number"
+      },
       "rods": {
        "type": "number"
       },
