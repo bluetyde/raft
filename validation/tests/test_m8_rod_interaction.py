@@ -107,9 +107,9 @@ class PlantedAnalysis(unittest.TestCase):
 
     def test_the_limit_is_three_sigma_when_that_is_larger_than_100_pcm(self):
         path = copy.deepcopy(self.path)
+        shift(path, "P-B-76", 1.5e-3)                                 # 150 pcm off: beyond 100 but within 180
         r_ = next(x for x in path if x["case"] == "P-B-76")
         r_["kStd"] = 6.0e-4 * r_["k"] ** 2                             # sigma = 60 pcm: three sigma is 180 pcm
-        shift(path, "P-B-76", 1.5e-3)                                 # 150 pcm off: beyond 100 but within 180
         e = ri.analyse(self.model, self.sweep, path, pin=None)["P"]["P-B-76"]
         self.assertAlmostEqual(e["transportSigmaPcm"], 60.0, places=6)
         self.assertAlmostEqual(e["limitPcm"], 180.0, places=6)
