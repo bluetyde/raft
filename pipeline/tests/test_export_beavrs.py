@@ -17,7 +17,7 @@ from physics_ref.engine import Engine
 from physics_ref.library import Library
 from pipeline.library import export_beavrs as xb
 from pipeline.library.validate import validate_library
-from pipeline.openmc.beavrs_cases import sweep_cases
+from pipeline.openmc.beavrs_cases import path_cases, sweep_cases
 
 CORE = json.loads(xb.CORE.read_text(encoding="utf-8"))
 NXY = 19 * 19
@@ -47,11 +47,26 @@ def x_frac(steps: int) -> float:
     return steps / 228.0
 
 
-def planted_rho(steps, boron, t_fuel, t_water, interaction=0.0) -> float:
-    rho = RHO0 + sum(W[b] * (x_frac(steps[b]) - x_frac(REF_STEPS[b])) for b in xb.BANKS)
+def planted_sum(steps) -> float:
+    """The planted sum of the single-bank reactivities relative to the reference."""
+    return sum(W[b] * (x_frac(steps[b]) - x_frac(REF_STEPS[b])) for b in xb.BANKS)
+
+
+S_DEEPEST = -max(W[b] * x_frac(REF_STEPS[b]) for b in xb.BANKS)      # the deepest single-bank worth, where the planted correction starts
+
+
+def planted_c(s: float) -> float:
+    """A planted correction that is a function of the summed worth only: zero down to the deepest single bank, then half the further sum."""
+    return 0.5 * min(0.0, s - S_DEEPEST)
+
+
+def planted_rho(steps, boron, t_fuel, t_water, interaction=0.0, correction=None) -> float:
+    rho = RHO0 + planted_sum(steps)
     rho += FUEL_SLOPE * ((t_fuel if t_fuel is not None else T_REF) - T_REF) + WATER_SLOPE * ((t_water if t_water is not None else T_REF) - T_REF)
     rho += BORON_SLOPE * (boron - B_REF)
     inserted = sum(1 for b in xb.BANKS if steps[b] < REF_STEPS[b] - 100)
+    if correction is not None:
+        rho += correction(planted_sum(steps))
     return rho + interaction * max(0, inserted - 1)
 
 
@@ -75,11 +90,11 @@ def mesh(units: list[float], core: dict, scale: float) -> list[float]:
     return vec
 
 
-def make_rows(interaction=0.0) -> list[dict]:
+def make_rows(interaction=0.0, plan=None, correction=None) -> list[dict]:
     rows = []
-    for name, c in sweep_cases().items():                  # exactly the plan the real sweep ran
+    for name, c in (plan or sweep_cases()).items():       # exactly the plan the real sweep ran (or the path plan)
         steps, boron, tf, tw = c["steps"], c["boron"], c["tFuel"], c["tWater"]
-        rho = planted_rho(steps, boron, tf, tw, interaction)
+        rho = planted_rho(steps, boron, tf, tw, interaction, correction)
         units = planted_units(steps, tf)
         rows.append({"case": name, "role": c["role"], **{k: c[k] for k in ("particles", "batches", "inactive", "ifp")}, "steps": steps, "boron": boron, "tFuel": tf, "tWater": tw, "k": 1.0 / (1.0 - rho), "kStd": 2.5e-4,
                      "fission": mesh(units, CORE, 1e-3), "fissionStd": mesh([0.01 * u for u in BASE_RAW], CORE, 1e-3), "betaGroups": BETA,
@@ -142,21 +157,108 @@ class PlantedExport(unittest.TestCase):
     def test_it_reproduces_the_planted_base_shape_bin_by_bin(self):
         self.assertLess(base_error(self.folder, CORE), 1e-4)       # float32, in units of the mean bin
 
-    def test_deltas_reproduce_a_planted_shape_at_a_case(self):
-        # a joint case is separable in the planted model, so the stored prediction error is float32 rounding only
-        for j in self.m["domain"]["jointChecked"]:
-            self.assertLess(j["maxShapeErr"], 1e-3)
-            self.assertLess(j["rhoErr"], 1e-9)
-        self.assertEqual(len(self.m["domain"]["jointChecked"]), 3)
+    # the deltas of the shapes and the joint states are covered by the path-case tests below
 
-    def test_a_planted_interaction_between_banks_is_reported_not_hidden(self):
-        rows = make_rows(interaction=-4.0e-4)
-        _, _, report = xb.build(rows, CORE, created="2026-10-10")
-        err = {c: report["cases"][c]["rhoErr"] for c in xb.JOINT_RHO}
-        self.assertAlmostEqual(err["J-W2"], 4.0e-4, places=9)         # two banks in: one interaction unit
-        self.assertAlmostEqual(err["J-W4"], 3 * 4.0e-4, places=9)
-        self.assertAlmostEqual(err["J-W7"], 6 * 4.0e-4, places=9)
-        self.assertAlmostEqual(report["boronSeparability"]["J-B7"]["rhoErr"], 6 * 4.0e-4, places=9)
+    def test_the_fitted_table_holds_the_planted_corrections_at_the_combined_states(self):
+        m, _, report = xb.build(make_rows(interaction=-4.0e-4), CORE, created="2026-10-10")
+        t = m["reactivity"]["rodInteraction"]
+        want = {}
+        for c, n_in in (("J-W2", 2), ("J-W4", 4), ("J-W7", 7)):
+            want[round(planted_sum(sweep_cases()[c]["steps"]), 9)] = -4.0e-4 * (n_in - 1)
+        got = {round(s, 9): r for s, r in zip(t["S"], t["rho"])}
+        for s, r in want.items():
+            self.assertAlmostEqual(got[s], r, places=12)
+        self.assertEqual(got[0.0], 0.0)
+        self.assertEqual(got[xb.S_ABOVE], 0.0)
+        self.assertAlmostEqual(min(t["S"]), planted_sum(sweep_cases()["J-W7"]["steps"]), places=9)
+        # fitted to these cases, so they are reproduced exactly, with and without a boron change (the planted interaction does not depend on boron)
+        for c in ("J-W2", "J-W4", "J-W7", "J-B4", "J-B7"):
+            self.assertLess(report["cases"][c]["rhoErr"], 1e-9, c)
+        self.assertFalse(report["cases"]["J-W2"]["rhoErr"] > report["cases"]["J-W2"]["rhoSigma"])
+        self.assertTrue(all(report["cases"][c]["usedInFit"] for c in xb.FIT_CASES))
+        self.assertEqual(m["domain"]["jointChecked"], [])                       # the fit cases are never listed as checked, and no path cases were given
+
+    def test_a_planted_nonseparable_sweep_is_recovered_by_the_table_between_its_nodes(self):
+        rows = make_rows(correction=planted_c)
+        m, blobs, _ = xb.build(rows, CORE, created="2026-10-10")
+        with tempfile.TemporaryDirectory() as d:
+            folder = Path(d) / "lib"
+            xb.write_library(folder, m, blobs, validate=True)
+            lib = Library(folder)
+            self.assertTrue(lib.has_rod_interaction)
+            order = ["D", "C", "B", "A", "SE", "SD", "SC"]
+            states = [{**REF_STEPS, "D": 0, "C": 0}, {**REF_STEPS, "D": 0, "C": 0, "B": 0}, {**REF_STEPS, **{b: 0 for b in order[:4]}},
+                      {**REF_STEPS, "D": 0, "C": 0, "B": 0, "A": 76}, {**REF_STEPS, **{b: 0 for b in order[:6]}, "SC": 76},
+                      {**REF_STEPS, "D": 0, "C": 100}, {**REF_STEPS, **{b: 0 for b in order}}]
+            for steps in states:
+                init = {"rods": {b.lower(): x_frac(s) for b, s in steps.items()}, "power": {"mode": "given", "value": 1e-3}, "poisons": {"mode": "zero"}}
+                e = Engine(lib, init)
+                self.assertAlmostEqual(e.reactivity(0.0, e.y)["total"], planted_rho(steps, B_REF, None, None, 0.0, planted_c), places=9, msg=str(steps))
+
+    def test_break_a_sign_error_in_the_fitted_correction_is_caught(self):
+        rows = make_rows(correction=planted_c)
+        m, blobs, _ = xb.build(rows, CORE, created="2026-10-10")
+        t = m["reactivity"]["rodInteraction"]
+        t["rho"] = [-v for v in t["rho"]]
+        with tempfile.TemporaryDirectory() as d:
+            folder = Path(d) / "lib"
+            xb.write_library(folder, m, blobs)
+            lib = Library(folder)
+            steps = {**REF_STEPS, "D": 0, "C": 0, "B": 0, "A": 0}
+            e = Engine(lib, {"rods": {b.lower(): x_frac(s) for b, s in steps.items()}, "power": {"mode": "given", "value": 1e-3}, "poisons": {"mode": "zero"}})
+            self.assertGreater(abs(e.reactivity(0.0, e.y)["total"] - planted_rho(steps, B_REF, None, None, 0.0, planted_c)), 1e-4)
+
+    def test_held_out_path_cases_are_labelled_and_only_the_good_ones_are_listed_as_checked(self):
+        rows = make_rows(correction=planted_c)
+        path = make_rows(correction=planted_c, plan=path_cases())
+        m, _, report = xb.build(rows, CORE, created="2026-10-10", path_rows=path)
+        self.assertEqual(len(report["pathCases"]), 9)
+        self.assertTrue(all(v["label"] == "good" for v in report["pathCases"].values()))
+        self.assertEqual(len(m["domain"]["jointChecked"]), 9)
+        # one path case that the correction cannot know about (an effect that is not a function of the summed worth)
+        bad = copy.deepcopy(path)
+        r = next(x for x in bad if x["case"] == "P-SD-76")
+        rho = (r["k"] - 1.0) / r["k"] + 3.0e-3
+        r["k"] = 1.0 / (1.0 - rho)
+        mid = copy.deepcopy(path)
+        r2 = next(x for x in mid if x["case"] == "P-B-76")
+        rho2 = (r2["k"] - 1.0) / r2["k"] + 1.5e-3
+        r2["k"] = 1.0 / (1.0 - rho2)
+        m2, _, report2 = xb.build(rows, CORE, created="2026-10-10", path_rows=bad + [x for x in mid if x["case"] == "P-B-76"][:0])
+        self.assertEqual(report2["pathCases"]["P-SD-76"]["label"], "fails")
+        self.assertEqual(len(m2["domain"]["jointChecked"]), 8)
+        m3, _, report3 = xb.build(rows, CORE, created="2026-10-10", path_rows=mid)
+        self.assertEqual(report3["pathCases"]["P-B-76"]["label"], "plausible")           # 150 pcm: beyond 100, within 200
+        self.assertEqual(len(m3["domain"]["jointChecked"]), 8)
+        self.assertAlmostEqual(report3["pathCases"]["P-B-76"]["difference"], -1.5e-3, places=9)       # the library minus transport
+
+    def test_the_path_rows_must_be_exactly_the_plan(self):
+        path = make_rows(plan=path_cases())
+        with self.assertRaises(ValueError):
+            xb.check_path(path[:-1])
+        with self.assertRaises(ValueError):
+            xb.check_path(path + [copy.deepcopy(path[0])])
+        bad = copy.deepcopy(path)
+        bad[0]["steps"]["SC"] = 0
+        with self.assertRaises(ValueError):
+            xb.check_path(bad)
+        bad = copy.deepcopy(path)
+        bad[1]["particles"] = 4000
+        with self.assertRaises(ValueError):
+            xb.check_path(bad)
+
+    def test_the_fit_refuses_points_with_the_same_summed_reactivity(self):
+        with self.assertRaises(ValueError):
+            xb.fit_correction([{"a": 0.0, "rho": 0.0, "sigma": 0.0}, {"a": 0.0, "rho": 1.0e-3, "sigma": 1.0e-4}])
+
+    def test_a_library_without_a_combined_sweep_effect_has_a_flat_table(self):
+        m, _, _ = xb.build(self.rows, CORE, created="2026-10-10")
+        self.assertTrue(all(abs(v) < 1e-9 for v in m["reactivity"]["rodInteraction"]["rho"]))
+        self.assertIn("point-kinetics/rod-interaction-v1", m["capabilities"])
+
+    def test_the_deltas_and_the_boron_axis_are_unchanged_by_the_table(self):
+        self.assertEqual(self.m["reactivity"]["boron"]["C"], [300.0, 600.0, 975.0, 1300.0, 1600.0])
+
 
     def test_the_reference_has_no_calibration_and_the_boron_axis_holds_the_domain(self):
         self.assertIsNone(self.m["reference"]["calibration"])
@@ -197,14 +299,6 @@ class PlantedExport(unittest.TestCase):
             folder = Path(d) / "lib"
             xb.write_library(folder, self.m, {f"arrays/{n}.f32": (self.folder / f"arrays/{n}.f32").read_bytes() for n in self.m["arrays"]})
             self.assertGreater(evaluate(folder, ids={b.upper(): swapped.get(b, b) for b in ("a", "b")} | {b.upper(): b for b in ("c", "d", "sa", "sb", "sc", "sd", "se")}), 1e-4)
-
-    def test_the_joint_states_are_listed_only_if_the_summed_model_reproduces_them(self):
-        self.assertEqual(len(self.m["domain"]["jointChecked"]), 3)
-        m, _, report = xb.build(make_rows(interaction=-4.0e-4), CORE, created="2026-10-10")
-        self.assertEqual([j["rods"]["c"] for j in m["domain"]["jointChecked"]], [0.0])        # only J-W2 (error 4e-4, under 1e-3) is kept
-        self.assertTrue(report["cases"]["J-W2"]["inJointChecked"])
-        self.assertFalse(report["cases"]["J-W4"]["inJointChecked"])                            # 1.2e-3
-        self.assertFalse(report["cases"]["J-W7"]["inJointChecked"])                            # 2.4e-3
 
     def test_a_duplicate_case_is_refused(self):
         with self.assertRaises(ValueError):

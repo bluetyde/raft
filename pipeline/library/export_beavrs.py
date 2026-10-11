@@ -20,7 +20,7 @@ from pathlib import Path
 from pipeline.library.export_openmc import _pack_f32_slice_normalized, interp, isotonic
 from pipeline.library.synthetic import descriptor, pack
 from pipeline.library.validate import validate_library
-from pipeline.openmc.beavrs_cases import sweep_cases
+from pipeline.openmc.beavrs_cases import path_cases, sweep_cases
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SWEEP = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_sweep.jsonl"
@@ -28,6 +28,7 @@ CORE = REPO_ROOT / "pipeline" / "openmc" / "data" / "beavrs_core.json"
 OUT = REPO_ROOT / "libraries" / "pwr-beavrs-hzp-openmc"
 README = Path(__file__).with_name("beavrs_library_README.md")
 REPORT = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_export_report.json"
+PATH = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_path.jsonl"
 
 LIB_ID = "pwr-beavrs-hzp-openmc"
 BANKS = ["A", "B", "C", "D", "SA", "SB", "SC", "SD", "SE"]
@@ -44,6 +45,9 @@ JOINT_BORON = ("J-B4", "J-B7")
 # A joint state goes into domain.jointChecked (where the summed tables count as checked) only if the summed model reproduces transport there
 RHO_ERR_LIMIT = 1.0e-3        # 100 pcm, about four times a case's statistical error
 SHAPE_ERR_LIMIT = 1.0         # in mean bins
+ROD_INTERACTION_CAPABILITY = "point-kinetics/rod-interaction-v1"
+FIT_CASES = ("J-W2", "J-W4", "J-W7")      # the combined states the rod interaction table is fitted to (and so never listed as checked)
+S_ABOVE = 1.0e-3                          # +100 pcm: nothing above the reference is claimed (the table is zero there, assumed)
 FUEL_DENSITY = 10.3             # g/cm3: BEAVRS fuel densities by enrichment run from 10.29 to 10.36
 # U-235 delayed-neutron decay constants of ENDF/B-VIII.0 (read from neutron/U235.h5, reaction 18, 2026-10-10); the TRIGA libraries use Keepin's
 LAMBDA_ENDF = [0.01334, 0.03274, 0.12078, 0.30278, 0.84949, 2.853]
@@ -115,8 +119,9 @@ def normalized(v: list[float]) -> list[float]:
 
 # ---------------------------------------------------------------- build
 
-def build(rows: list[dict], core: dict, created: str | None = None) -> tuple[dict, dict[str, bytes], dict]:
+def build(rows: list[dict], core: dict, created: str | None = None, path_rows: list[dict] | None = None) -> tuple[dict, dict[str, bytes], dict]:
     by = check_sweep(rows)
+    by_path = check_path(path_rows) if path_rows is not None else {}
     ref = by["REF"]
     rho_ref, sig_ref = rho_of(ref)
     for b in BANKS:
@@ -152,6 +157,23 @@ def build(rows: list[dict], core: dict, created: str | None = None) -> tuple[dic
     cool_t = curve(TC_CASES, t_ref, None, False)
     boron_t = curve(B_CASES, b_ref, None, True)
 
+    # the rod interaction table (docs/validation/m8-rod-interaction-protocol.md): a correction on the summed single-bank reactivities, fitted to the
+    # combined transport cases and to nothing else
+    def sum_rods(steps: dict) -> float:
+        s = 0.0
+        for b in BANKS:
+            s += interp(rod_tables[b]["x"], rod_tables[b]["rho"], x_of(steps[b]))
+        return s
+
+    s_deepest = min(min(rod_tables[b]["rho"]) for b in BANKS)          # the deepest single-bank worth: one bank has nothing to interact with
+    inter_pts = [{"a": 0.0, "rho": 0.0, "sigma": 0.0, "ref": True}, {"a": S_ABOVE, "rho": 0.0, "sigma": 0.0, "ref": False},
+                 {"a": s_deepest, "rho": 0.0, "sigma": 0.0, "ref": False}]
+    for c in FIT_CASES:
+        d, s_ = rel(c)
+        s_k = sum_rods(by[c]["steps"])
+        inter_pts.append({"a": s_k, "rho": d - s_k, "sigma": s_, "ref": False, "case": c})
+    inter_t = fit_correction(inter_pts)
+
     # shapes: normalized to 1 over the 193 assemblies in every case
     elements = [a["label"] for a in core["assemblies"]]
     E, A = len(elements), N_AXIAL
@@ -174,6 +196,9 @@ def build(rows: list[dict], core: dict, created: str | None = None) -> tuple[dic
 
     def shape_of(case: str) -> list[float]:
         return normalized(assembly_shape(by[case], core))
+
+    def shape_of_row(row: dict) -> list[float]:
+        return normalized(assembly_shape(row, core))
 
     def delta_slices(grid_cases: list[tuple[float, str | None]]) -> tuple[list[list[float]], list[list[float]]]:
         f64, f32 = [], []
@@ -199,9 +224,9 @@ def build(rows: list[dict], core: dict, created: str | None = None) -> tuple[dic
     add("tempDelta", [v for sl in f32 for v in sl], [len(t_grid), E, A])
 
     # reactivity tables and the self-check
-    tables = {"rods": {rid(b): rod_tables[b] for b in BANKS}, "fuel": fuel_t, "cool": cool_t, "boron": boron_t}
+    tables = {"rods": {rid(b): rod_tables[b] for b in BANKS}, "fuel": fuel_t, "cool": cool_t, "boron": boron_t, "rodInteraction": inter_t}
 
-    def predict(row: dict) -> tuple[float, list[float]]:
+    def predict(row: dict, with_table: bool = True) -> tuple[float, list[float]]:
         rho = rho_ref
         shape = list(base_f32)
         for b in BANKS:
@@ -210,6 +235,8 @@ def build(rows: list[dict], core: dict, created: str | None = None) -> tuple[dic
             rho += interp(t["x"], t["rho"], x)
             sl = interp_slice(t["x"], delta64[rid(b)], x)
             shape = [s + d for s, d in zip(shape, sl)]
+        if with_table:
+            rho += interp(inter_t["a"], inter_t["rho"], sum_rods(row["steps"]))
         if row.get("tFuel") is not None:
             rho += interp(fuel_t["a"], fuel_t["rho"], float(row["tFuel"]))
             shape = [s + d for s, d in zip(shape, interp_slice(fuel_t["a"], delta64["_fuelTemp"], float(row["tFuel"])))]
@@ -224,13 +251,22 @@ def build(rows: list[dict], core: dict, created: str | None = None) -> tuple[dic
         rho_c, sig_c = rho_of(r)
         err = shape_err(shape_p, shape_of(r["case"]))
         check[r["case"]] = {"rhoCase": rho_c, "rhoPred": rho_p, "rhoErr": abs(rho_p - rho_c), "rhoSigma": sig_c, "maxShapeErr": err,
-                            "negativeBins": sum(1 for v in shape_p if v < -1e-6), "minBin": min(shape_p)}
-    joint = []
-    for c in JOINT_RHO:
-        r, ck = by[c], check[c]
-        ck["inJointChecked"] = ck["rhoErr"] <= RHO_ERR_LIMIT and ck["maxShapeErr"] <= SHAPE_ERR_LIMIT and ck["negativeBins"] == 0
-        if ck["inJointChecked"]:
-            joint.append({"rods": {rid(b): x_of(r["steps"][b]) for b in BANKS}, "maxShapeErr": ck["maxShapeErr"], "rhoErr": ck["rhoErr"]})
+                            "negativeBins": sum(1 for v in shape_p if v < -1e-6), "minBin": min(shape_p),
+                            "rhoPredNoTable": predict(r, with_table=False)[0], "sumRods": sum_rods(r["steps"]), "usedInFit": r["case"] in FIT_CASES}
+
+    # the held-out path cases (not in the fit): label the library's error, and list the good ones as checked states
+    joint, path_report = [], {}
+    for cid, r in by_path.items():
+        rho_p, shape_p = predict(r)
+        rho_c, sig_c = rho_of(r)
+        lim = max(RHO_ERR_LIMIT, 3.0 * sig_c)
+        diff = rho_p - rho_c
+        label_ = "good" if abs(diff) <= lim else "plausible" if abs(diff) <= 2.0 * lim else "fails"
+        path_report[cid] = {"rhoCase": rho_c, "rhoPred": rho_p, "difference": diff, "rhoSigma": sig_c, "limit": lim, "label": label_,
+                            "differenceNoTable": predict(r, with_table=False)[0] - rho_c, "sumRods": sum_rods(r["steps"]),
+                            "maxShapeErr": shape_err(shape_p, shape_of_row(r)), "negativeBins": sum(1 for v in shape_p if v < -1e-6)}
+        if label_ == "good":
+            joint.append({"rods": {rid(b): x_of(r["steps"][b]) for b in BANKS}, "maxShapeErr": path_report[cid]["maxShapeErr"], "rhoErr": abs(diff)})
 
     # manifest
     thermal_mass_kg = core["fuelPinsPerAssembly"] * len(core["assemblies"]) * pin_area * (core["activeFuelTopCm"] - core["activeFuelBotCm"]) * FUEL_DENSITY / 1000.0
@@ -268,7 +304,7 @@ def build(rows: list[dict], core: dict, created: str | None = None) -> tuple[dic
         "id": LIB_ID,
         "name": "PWR (BEAVRS cycle 1) at hot zero power, built with OpenMC",
         "status": "experimental",
-        "capabilities": ["point-kinetics/lumped-thermal-v1", "point-kinetics/boron-v1"],
+        "capabilities": ["point-kinetics/lumped-thermal-v1", "point-kinetics/boron-v1", ROD_INTERACTION_CAPABILITY],
         "provenance": {
             "generator": "pipeline.library.export_beavrs", "transportCode": f"OpenMC {ref.get('openmc', '')}".strip(),
             "nuclearData": "ENDF/B-VIII.0", "model": "BEAVRS 3D full core, hot zero power (mit-crpg/BEAVRS, MIT licence), 45 cases of pipeline/openmc/beavrs_cases.py",
@@ -276,7 +312,10 @@ def build(rows: list[dict], core: dict, created: str | None = None) -> tuple[dic
             "notes": ("Zero-power physics only. Reactivity tables, kinetics, shapes and boron worth come from the transport sweep; the plant (rod speed, scram, "
                       "thermal masses, heat transfer, instruments, trips) is assumed and labelled so. Isothermal temperature coefficient: the transport model is "
                       "1.6 to 2.0 pcm/F too negative against the benchmark measurement (docs/validation/m8-beavrs-hzp-results.md), so temperature feedback is NOT validated. "
-                      "Xenon worth is zero (not computed); no decay heat; no pressure. The shape of the power does not depend on coolant temperature or boron."),
+                      "Xenon worth is zero (not computed); no decay heat; no pressure. The shape of the power does not depend on coolant temperature or boron. "
+                      "Several banks in: the single-bank worths are summed and a correction table on that sum (reactivity.rodInteraction, fitted to the transport cases with banks C and D, "
+                      "A to D, and D to SC in, and to nothing else) accounts for the banks being worth more together; it is valid along the benchmark insertion order "
+                      "(D, C, B, A, SE, SD, SC) and nowhere else claimed (docs/validation/m8-rod-interaction-protocol.md)."),
             "sources": [
                 {"id": "beavrs", "cite": "N. Horelik, B. Herman, B. Forget, K. Smith, Benchmark for Evaluation And Validation of Reactor Simulations (BEAVRS), v2.0.2, MIT Computational Reactor Physics Group, github.com/mit-crpg/BEAVRS (MIT licence)"},
                 {"id": "endfbviii0-u235", "cite": "ENDF/B-VIII.0 (Brown et al., Nucl. Data Sheets 148 (2018) 1): U-235 delayed-neutron group decay constants as read from the HDF5 library"},
@@ -299,6 +338,7 @@ def build(rows: list[dict], core: dict, created: str | None = None) -> tuple[dic
             "coolantTemp": {"T": cool_t["a"], "rho": cool_t["rho"], "unc": cool_t["unc"], "interp": "linear", "outOfRange": "clamp-and-flag", "source": "transport"},
             "xenon": {"N": [0.0, 1e20, 2e20, 4e20], "rho": [0.0, 0.0, 0.0, 0.0], "interp": "linear", "outOfRange": "extrapolate-and-flag", "source": "assumed"},
             "boron": {"C": boron_t["a"], "rho": boron_t["rho"], "unc": boron_t["unc"], "interp": "linear", "outOfRange": "clamp-and-flag", "source": "transport"},
+            "rodInteraction": {"S": inter_t["a"], "rho": inter_t["rho"], "unc": inter_t["unc"], "interp": "linear", "outOfRange": "clamp-and-flag", "source": "transport"},
         },
         "thermal": {
             "fuel": {"mass": S(round(thermal_mass_kg, 1), "cited:beavrs"),
@@ -343,10 +383,41 @@ def build(rows: list[dict], core: dict, created: str | None = None) -> tuple[dic
         "created": created, "rhoRef": rho_ref, "rhoRefSigma": sig_ref, "tables": {k: v for k, v in tables.items() if k != "rods"},
         "rodTables": {b: rod_tables[b] for b in BANKS}, "cases": check,
         "boronSeparability": {c: check[c] for c in JOINT_BORON},
+        "pathCases": path_report,
         "negativeShapeBins": sum(1 for v in base_f32 if v <= 0),
         "limits": {"rhoErr": RHO_ERR_LIMIT, "maxShapeErr": SHAPE_ERR_LIMIT},
     }
     return m, blobs, report
+
+
+def fit_correction(points: list[dict]) -> dict:
+    """The rod interaction table: points a (S), rho (correction), sigma, ref. Weighted isotonic fit, non-decreasing in S (the more the rods are in, the more
+    negative the correction), anchors (sigma 0) held at their value; exactly 0 at the reference point."""
+    pts = sorted(points, key=lambda p: p["a"])
+    xs = [p["a"] for p in pts]
+    if any(b <= a for a, b in zip(xs, xs[1:])):
+        raise ValueError(f"the rod interaction points are not distinct: {xs}")
+    ws = [1e12 if p["sigma"] == 0.0 else 1.0 / (p["sigma"] ** 2) for p in pts]
+    fit = isotonic(xs, [p["rho"] for p in pts], ws)
+    out = [0.0 if p["sigma"] == 0.0 else v for p, v in zip(pts, fit)]
+    return {"a": xs, "rho": out, "unc": [p["sigma"] for p in pts], "raw": [p["rho"] for p in pts]}
+
+
+def check_path(rows: list[dict]) -> dict[str, dict]:
+    """The held-out path rows must be exactly the nine cases of pipeline/openmc/beavrs_cases.path_cases(), once each, with the planned settings."""
+    ids = [r["case"] for r in rows]
+    dup = sorted({c for c in ids if ids.count(c) > 1})
+    if dup:
+        raise ValueError(f"duplicate path cases {dup}")
+    plan = path_cases()
+    if set(ids) != set(plan):
+        raise ValueError(f"the path cases do not match the plan: missing {sorted(set(plan) - set(ids))}, unexpected {sorted(set(ids) - set(plan))}")
+    for r in rows:
+        want = plan[r["case"]]
+        for key in ("steps", "boron", "tFuel", "tWater", "particles", "batches", "inactive", "ifp"):
+            if r.get(key) != want[key]:
+                raise ValueError(f"path case {r['case']}: {key} is {r.get(key)!r}, the plan says {want[key]!r}")
+    return {r["case"]: r for r in rows}
 
 
 def check_sweep(rows: list[dict]) -> dict[str, dict]:
@@ -421,10 +492,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--core", type=Path, default=CORE)
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument("--report", type=Path, default=REPORT)
+    ap.add_argument("--path", type=Path, default=PATH, help="the held-out path cases (beavrs_path.jsonl); absent: no path cases, jointChecked stays empty")
     args = ap.parse_args(argv)
     rows = [json.loads(line) for line in args.sweep.read_text(encoding="utf-8").splitlines() if line.strip()]
     core = json.loads(args.core.read_text(encoding="utf-8"))
-    m, blobs, report = build(rows, core)
+    path_rows = [json.loads(line) for line in args.path.read_text(encoding="utf-8").splitlines() if line.strip()] if args.path.exists() else None
+    m, blobs, report = build(rows, core, path_rows=path_rows)
     blobs["README.md"] = README.read_bytes()          # the library folder is rebuilt from scratch, so its README is part of the export
     write_library(args.out, m, blobs, validate=True)
     args.report.write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8", newline="\n")
