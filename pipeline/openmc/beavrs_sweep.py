@@ -91,11 +91,13 @@ def run_case(cid: str, spec: dict, beavrs_dir: Path, out: Path, dry: bool) -> No
     r1 = resource.getrusage(resource.RUSAGE_CHILDREN)
     with openmc.StatePoint(work / f"statepoint.{spec['batches']}.h5") as sp:
         k = sp.keff
+        k_batches = [float(x) for x in sp.k_generation]          # every batch, inactive included (the drift check of the protocols needs them)
         tl = sp.get_tally(name="fission-mesh")
         line = {"case": cid, **spec, "k": float(k.nominal_value), "kStd": float(k.std_dev),
                 "fission": [float(x) for x in tl.mean.flatten()], "fissionStd": [float(x) for x in tl.std_dev.flatten()],
                 "wallS": wall, "cpuS": r1.ru_utime - r0.ru_utime, "loadBefore": load_before, "loadAfter": os.getloadavg()[0],
-                "openmc": openmc.__version__, "seed": int(sp.seed), "waterDensity": note.get("waterDensity"), "beavrsHead": note["beavrsHead"]}
+                "openmc": openmc.__version__, "seed": int(sp.seed), "waterDensity": note.get("waterDensity"), "beavrsHead": note["beavrsHead"],
+                "kBatches": k_batches}
         if spec["ifp"]:
             kin = sp.get_kinetics_parameters()
             groups, lam = kin.beta_effective, kin.generation_time
