@@ -97,6 +97,7 @@ def make_rows(interaction=0.0, plan=None, correction=None) -> list[dict]:
         rho = planted_rho(steps, boron, tf, tw, interaction, correction)
         units = planted_units(steps, tf)
         rows.append({"case": name, "role": c["role"], **{k: c[k] for k in ("particles", "batches", "inactive", "ifp")}, "steps": steps, "boron": boron, "tFuel": tf, "tWater": tw, "k": 1.0 / (1.0 - rho), "kStd": 2.5e-4,
+                     "kBatches": [1.0 / (1.0 - rho) + (0.001 if i % 2 else -0.001) for i in range(c["batches"])],
                      "fission": mesh(units, CORE, 1e-3), "fissionStd": mesh([0.01 * u for u in BASE_RAW], CORE, 1e-3), "betaGroups": BETA,
                      "betaGroupsStd": [1e-5] * 6, "lambdaS": 2.9e-5, "lambdaStdS": 4e-8, "openmc": "0.15.3"})
     return rows
@@ -246,6 +247,47 @@ class PlantedExport(unittest.TestCase):
         bad[1]["particles"] = 4000
         with self.assertRaises(ValueError):
             xb.check_path(bad)
+
+    def test_an_unconverged_path_case_is_not_labelled_and_not_listed(self):
+        rows = make_rows(correction=planted_c)
+        path = make_rows(correction=planted_c, plan=path_cases())
+        r = next(x for x in path if x["case"] == "P-S5")
+        r["kBatches"] = [(r["k"] - 0.05 if i < 200 else r["k"] + 0.05) + (0.001 if i % 2 else -0.001) for i in range(r["batches"])]
+        m, _, report = xb.build(rows, CORE, created="2026-10-11", path_rows=path)
+        self.assertFalse(report["pathCases"]["P-S5"]["computed"])
+        self.assertEqual(len(m["domain"]["jointChecked"]), 8)
+        self.assertEqual(sum(1 for e in report["pathCases"].values() if e["computed"]), 8)
+
+    def test_path_rows_without_per_batch_k_are_refused(self):
+        rows = make_rows(correction=planted_c)
+        path = make_rows(correction=planted_c, plan=path_cases())
+        del path[0]["kBatches"]
+        with self.assertRaises(ValueError):
+            xb.build(rows, CORE, created="2026-10-11", path_rows=path)
+
+    def test_the_notes_say_whether_the_path_was_checked(self):
+        rows = make_rows(correction=planted_c)
+        m0, _, _ = xb.build(rows, CORE, created="2026-10-11")
+        self.assertIn("NOT checked against held-out", m0["provenance"]["notes"])
+        m1, _, _ = xb.build(rows, CORE, created="2026-10-11", path_rows=make_rows(correction=planted_c, plan=path_cases()))
+        self.assertIn("Checked against 9 held-out path cases: 9 within the limit", m1["provenance"]["notes"])
+        self.assertNotIn("NOT checked", m1["provenance"]["notes"])
+
+    def test_an_absent_path_file_is_an_error_unless_no_path_is_given(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d) / "lib"
+            args = ["--out", str(out), "--report", str(Path(d) / "rep.json"), "--path", str(Path(d) / "nothing.jsonl")]
+            with self.assertRaises(SystemExit):
+                xb.main(args)
+            self.assertFalse(out.exists())
+            self.assertEqual(xb.main(args + ["--no-path"]), 0)
+            self.assertTrue((out / "manifest.json").exists())
+
+    def test_holding_the_anchors_cannot_leave_a_decreasing_table(self):
+        pts = [{"a": 0.0, "rho": 0.0, "sigma": 0.0}, {"a": 1.0e-3, "rho": 0.0, "sigma": 0.0}, {"a": -8.0e-3, "rho": 0.0, "sigma": 0.0},
+               {"a": -9.0e-3, "rho": 5.0e-4, "sigma": 1.0e-4}]       # a positive correction deeper than the zero anchor: the fit would have to decrease
+        with self.assertRaises(ValueError):
+            xb.fit_correction(pts)
 
     def test_the_fit_refuses_points_with_the_same_summed_reactivity(self):
         with self.assertRaises(ValueError):

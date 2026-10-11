@@ -815,9 +815,17 @@ class Engine:
             lo, hi = dom["boron"]
             if not lo <= self.boron_value(self.t) <= hi:
                 out.append("R_DOMAIN_BORON")
+        corrected = False
+        if lib.has_rod_interaction:
+            s = 0.0
+            for r in lib.rods:
+                s += r.worth(self.rod_position(r.id, self.t))
+            if not lib.rod_interaction.xs[0] <= s <= lib.rod_interaction.xs[-1]:
+                out.append("R_DOMAIN_ROD_INTERACTION")          # the summed worth is beyond the table: the correction is held at its end value
+            corrected = lib.rod_interaction(s) != 0.0
         moved = {r.id: self.rod_position(r.id, self.t) for r in lib.rods
                  if abs(self.rod_position(r.id, self.t) - lib.ref_rods[r.id]) > 1e-9}
-        if len(moved) >= 2:
+        if len(moved) >= 2 or (corrected and len(moved) >= 1):
             covered = any(all(abs(jc["rods"].get(rid, lib.ref_rods[rid]) - self.rod_position(rid, self.t)) <= 0.05
                               for rid in lib.rod_by_id) for jc in dom["jointChecked"])
             if not covered:

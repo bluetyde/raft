@@ -104,3 +104,27 @@ describe("rod interaction (point-kinetics/rod-interaction-v1)", () => {
     expect(low.e.halted).toBeNull(); // inside the axis: no halt
   });
 });
+
+describe("rod interaction validity", () => {
+  it("a summed worth beyond the axis is out of domain", async () => {
+    const { e } = await make({ safety: 1.0, regulating: 1.0, transient: 1.0 }); // +0.0525, the axis ends at 0.03
+    const v = e.validity();
+    expect(v.status).toBe("outOfDomain");
+    expect(v.reasons).toContain("R_DOMAIN_ROD_INTERACTION");
+    const inside = await make({ safety: 0.5, regulating: 0.5, transient: 0.5 }); // +0.026, inside
+    expect(inside.e.validity().reasons).not.toContain("R_DOMAIN_ROD_INTERACTION");
+  });
+
+  it("one rod away with a nonzero correction needs a joint check", async () => {
+    const one = { safety: 0.5, regulating: 0.0, transient: 0.0 };
+    const { lib, e } = await make(one);
+    expect(e.reactivity(0.0, e.y).rodInteraction).not.toBe(0);
+    expect(e.validity().reasons).toContain("R_JOINT_UNCHECKED");
+    lib.domain.jointChecked = [{ rods: one, maxShapeErr: 0, rhoErr: 0 }];
+    expect(e.validity().reasons).not.toContain("R_JOINT_UNCHECKED");
+    const plain = await loadSyntheticCore();
+    const e3 = new Engine(plain, { rods: one, power: { mode: "given", value: 1.0 }, poisons: { mode: "zero" } }, 1);
+    expect(e3.validity().reasons).not.toContain("R_JOINT_UNCHECKED"); // without the capability one moved rod never needed it
+  });
+});
+

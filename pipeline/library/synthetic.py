@@ -280,6 +280,8 @@ def add_rod_interaction(m: dict) -> dict:
     """Turn a manifest into the rod-interaction variant (capability point-kinetics/rod-interaction-v1): a correction added to the sum of the single-rod
     reactivities, here -10 % of the sum (rods that shadow each other). Used for the valid fixture and for its invalid ones."""
     m["capabilities"] = m["capabilities"] + [ROD_INTERACTION_CAPABILITY]
+    m["provenance"]["notes"] = (m["provenance"]["notes"] + " Rod interaction: a correction on the sum of the single-rod reactivities, a function of that sum only; valid only along the rod "
+                                "combinations it was fitted to and checked on (here it is invented, so none).")
     m["reactivity"]["rodInteraction"] = {"S": list(ROD_INTERACTION_S), "rho": [round(-ROD_INTERACTION_SHADOW * s, 12) for s in ROD_INTERACTION_S],
                                          "interp": "linear", "outOfRange": "clamp-and-flag", "source": SYN}
     return m

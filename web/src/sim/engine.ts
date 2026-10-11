@@ -1316,6 +1316,19 @@ export class Engine {
       }
     }
 
+    let corrected = false;
+    if (lib.hasRodInteraction) {
+      let s = 0.0;
+      for (const r of lib.rods) {
+        s += r.worth.at(this.rodPosition(r.id, this.t));
+      }
+      const ax = lib.rodInteraction!.xs;
+      if (!(ax[0]! <= s && s <= ax[ax.length - 1]!)) {
+        out.push("R_DOMAIN_ROD_INTERACTION"); // the summed worth is beyond the table: the correction is held at its end value
+      }
+      corrected = lib.rodInteraction!.at(s) !== 0.0;
+    }
+
     const moved: Record<string, number> = {};
     for (const r of lib.rods) {
       const pos = this.rodPosition(r.id, this.t);
@@ -1323,7 +1336,7 @@ export class Engine {
         moved[r.id] = pos;
       }
     }
-    if (Object.keys(moved).length >= 2) {
+    if (Object.keys(moved).length >= 2 || (corrected && Object.keys(moved).length >= 1)) {
       const covered = dom.jointChecked.some((jc: any) =>
         lib.rods.every((r) => {
           const refPos = Object.hasOwn(jc.rods, r.id) ? jc.rods[r.id] : lib.refRods[r.id]!;

@@ -257,16 +257,26 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
     # the held-out path cases (not in the fit): label the library's error, and list the good ones as checked states
     joint, path_report = [], {}
     for cid, r in by_path.items():
+        conv = path_convergence(r)
+        if not conv["converged"]:
+            path_report[cid] = {"computed": False, "reason": f"unconverged (drift z {conv['z']:.2f}); not labelled and not listed as checked"}
+            continue
         rho_p, shape_p = predict(r)
         rho_c, sig_c = rho_of(r)
         lim = max(RHO_ERR_LIMIT, 3.0 * sig_c)
         diff = rho_p - rho_c
         label_ = "good" if abs(diff) <= lim else "plausible" if abs(diff) <= 2.0 * lim else "fails"
-        path_report[cid] = {"rhoCase": rho_c, "rhoPred": rho_p, "difference": diff, "rhoSigma": sig_c, "limit": lim, "label": label_,
+        path_report[cid] = {"computed": True, "driftZ": conv["z"], "rhoCase": rho_c, "rhoPred": rho_p, "difference": diff, "rhoSigma": sig_c, "limit": lim, "label": label_,
                             "differenceNoTable": predict(r, with_table=False)[0] - rho_c, "sumRods": sum_rods(r["steps"]),
                             "maxShapeErr": shape_err(shape_p, shape_of_row(r)), "negativeBins": sum(1 for v in shape_p if v < -1e-6)}
         if label_ == "good":
             joint.append({"rods": {rid(b): x_of(r["steps"][b]) for b in BANKS}, "maxShapeErr": path_report[cid]["maxShapeErr"], "rhoErr": abs(diff)})
+
+    if path_rows is None:
+        checked_note = "NOT checked against held-out transport cases: no path case was given to the exporter, domain.jointChecked is empty."
+    else:
+        n_good = sum(1 for e in path_report.values() if e.get("label") == "good")
+        checked_note = f"Checked against {len(path_report)} held-out path cases: {n_good} within the limit (listed in domain.jointChecked)."
 
     # manifest
     thermal_mass_kg = core["fuelPinsPerAssembly"] * len(core["assemblies"]) * pin_area * (core["activeFuelTopCm"] - core["activeFuelBotCm"]) * FUEL_DENSITY / 1000.0
@@ -315,7 +325,7 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
                       "Xenon worth is zero (not computed); no decay heat; no pressure. The shape of the power does not depend on coolant temperature or boron. "
                       "Several banks in: the single-bank worths are summed and a correction table on that sum (reactivity.rodInteraction, fitted to the transport cases with banks C and D, "
                       "A to D, and D to SC in, and to nothing else) accounts for the banks being worth more together; it is valid along the benchmark insertion order "
-                      "(D, C, B, A, SE, SD, SC) and nowhere else claimed (docs/validation/m8-rod-interaction-protocol.md)."),
+                      "(D, C, B, A, SE, SD, SC) and nowhere else claimed (docs/validation/m8-rod-interaction-protocol.md). " + checked_note),
             "sources": [
                 {"id": "beavrs", "cite": "N. Horelik, B. Herman, B. Forget, K. Smith, Benchmark for Evaluation And Validation of Reactor Simulations (BEAVRS), v2.0.2, MIT Computational Reactor Physics Group, github.com/mit-crpg/BEAVRS (MIT licence)"},
                 {"id": "endfbviii0-u235", "cite": "ENDF/B-VIII.0 (Brown et al., Nucl. Data Sheets 148 (2018) 1): U-235 delayed-neutron group decay constants as read from the HDF5 library"},
@@ -400,7 +410,28 @@ def fit_correction(points: list[dict]) -> dict:
     ws = [1e12 if p["sigma"] == 0.0 else 1.0 / (p["sigma"] ** 2) for p in pts]
     fit = isotonic(xs, [p["rho"] for p in pts], ws)
     out = [0.0 if p["sigma"] == 0.0 else v for p, v in zip(pts, fit)]
+    if any(b < a - 1e-15 for a, b in zip(out, out[1:])):         # holding the anchors at zero must not undo the fit
+        raise ValueError(f"the rod interaction table is not monotone after the anchors are held: {out}")
     return {"a": xs, "rho": out, "unc": [p["sigma"] for p in pts], "raw": [p["rho"] for p in pts]}
+
+
+def path_convergence(row: dict) -> dict:
+    """The drift check of the protocols for a held-out path case (300 batches): the mean k of batches 101 to 200 and of 201 to 300 agree within 2 standard
+    errors of their difference (batch values taken as independent)."""
+    n = row["batches"]
+    kb = row.get("kBatches")
+    if n != 300 or not isinstance(kb, list) or len(kb) != n:
+        raise ValueError(f"path case {row['case']}: the drift check needs 300 batches and one k per batch")
+
+    def mean_se(xs):
+        m = sum(xs) / len(xs)
+        return m, math.sqrt(sum((x - m) ** 2 for x in xs) / (len(xs) - 1) / len(xs))
+
+    m1, s1 = mean_se(kb[100:200])
+    m2, s2 = mean_se(kb[200:300])
+    den = math.hypot(s1, s2)
+    z = abs(m1 - m2) / den if den > 0 else (0.0 if m1 == m2 else math.inf)
+    return {"z": z, "converged": z <= 2.0}
 
 
 def check_path(rows: list[dict]) -> dict[str, dict]:
@@ -492,11 +523,17 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--core", type=Path, default=CORE)
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument("--report", type=Path, default=REPORT)
-    ap.add_argument("--path", type=Path, default=PATH, help="the held-out path cases (beavrs_path.jsonl); absent: no path cases, jointChecked stays empty")
+    ap.add_argument("--path", type=Path, default=PATH, help="the held-out path cases (beavrs_path.jsonl)")
+    ap.add_argument("--no-path", action="store_true", help="export without held-out path cases (jointChecked stays empty and the notes say the path was not checked)")
     args = ap.parse_args(argv)
     rows = [json.loads(line) for line in args.sweep.read_text(encoding="utf-8").splitlines() if line.strip()]
     core = json.loads(args.core.read_text(encoding="utf-8"))
-    path_rows = [json.loads(line) for line in args.path.read_text(encoding="utf-8").splitlines() if line.strip()] if args.path.exists() else None
+    if args.no_path:
+        path_rows = None
+    elif not args.path.exists():
+        raise SystemExit(f"the held-out path file {args.path} does not exist: run the nine path cases (beavrs_sweep --family path) or pass --no-path")
+    else:
+        path_rows = [json.loads(line) for line in args.path.read_text(encoding="utf-8").splitlines() if line.strip()]
     m, blobs, report = build(rows, core, path_rows=path_rows)
     blobs["README.md"] = README.read_bytes()          # the library folder is rebuilt from scratch, so its README is part of the export
     write_library(args.out, m, blobs, validate=True)

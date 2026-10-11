@@ -86,3 +86,25 @@ class TestRodInteraction(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestRodInteractionValidity(unittest.TestCase):
+    def test_a_summed_worth_beyond_the_axis_is_out_of_domain(self):
+        _, e = make({"safety": 1.0, "regulating": 1.0, "transient": 1.0})            # +0.0525, the axis ends at 0.03
+        v = e.validity()
+        self.assertEqual(v["status"], "outOfDomain")
+        self.assertIn("R_DOMAIN_ROD_INTERACTION", v["reasons"])
+        _, e2 = make({"safety": 0.5, "regulating": 0.5, "transient": 0.5})           # +0.026, inside
+        self.assertNotIn("R_DOMAIN_ROD_INTERACTION", e2.validity()["reasons"])
+
+    def test_one_rod_away_with_a_nonzero_correction_needs_a_joint_check(self):
+        _, e = make({"safety": 0.5, "regulating": 0.0, "transient": 0.0})            # one rod moved; the correction is -10 % of its worth
+        self.assertNotEqual(e.reactivity(0.0, e.y)["rodInteraction"], 0.0)
+        self.assertIn("R_JOINT_UNCHECKED", e.validity()["reasons"])
+        lib, e2 = make({"safety": 0.5, "regulating": 0.0, "transient": 0.0})
+        lib.domain["jointChecked"] = [{"rods": {"safety": 0.5, "regulating": 0.0, "transient": 0.0}, "maxShapeErr": 0.0, "rhoErr": 0.0}]
+        self.assertNotIn("R_JOINT_UNCHECKED", e2.validity()["reasons"])
+        # a library without the capability: one moved rod never needed it
+        plain = Library(FIXTURES / "synthetic-core")
+        e3 = Engine(plain, init={"rods": {"safety": 0.5, "regulating": 0.0, "transient": 0.0}, "power": {"mode": "given", "value": 1.0}, "poisons": {"mode": "zero"}}, seed=1)
+        self.assertNotIn("R_JOINT_UNCHECKED", e3.validity()["reasons"])

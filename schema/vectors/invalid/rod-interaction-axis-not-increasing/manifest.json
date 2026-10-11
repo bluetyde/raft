@@ -10,7 +10,7 @@
   "provenance": {
     "generator": "pipeline.library.synthetic",
     "created": "2026-09-25",
-    "notes": "All values invented for tests, except the delayed-group structure (standard U-235 thermal data).",
+    "notes": "All values invented for tests, except the delayed-group structure (standard U-235 thermal data). Rod interaction: a correction on the sum of the single-rod reactivities, a function of that sum only; valid only along the rod combinations it was fitted to and checked on (here it is invented, so none).",
     "sources": []
   },
   "reference": {
