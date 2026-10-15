@@ -1,5 +1,5 @@
 {
- "created": "2026-10-11",
+ "created": "2026-10-14",
  "rhoRef": 0.0010138499610172216,
  "rhoRefSigma": 0.0002460529023218353,
  "tables": {
@@ -932,7 +932,114 @@
    "usedInFit": false
   }
  },
- "pathCases": {},
+ "pathCases": {
+  "P-S3": {
+   "computed": true,
+   "driftZ": 0.43372134202838547,
+   "rhoCase": -0.03133012831518423,
+   "rhoPred": -0.03258749733890086,
+   "difference": -0.0012573690237166271,
+   "rhoSigma": 0.00025990581588595775,
+   "limit": 0.001,
+   "label": "plausible",
+   "differenceNoTable": 0.008314139256905443,
+   "sumRods": -0.02402983901929601,
+   "maxShapeErr": 1.2812985555727585,
+   "negativeBins": 0
+  },
+  "P-S5": {
+   "computed": true,
+   "driftZ": 0.15273922252440852,
+   "rhoCase": -0.040454606285296395,
+   "rhoPred": -0.04308177854310413,
+   "difference": -0.0026271722578077375,
+   "rhoSigma": 0.0002560545677182935,
+   "limit": 0.001,
+   "label": "fails",
+   "differenceNoTable": 0.010915817388167867,
+   "sumRods": -0.03055263885814575,
+   "maxShapeErr": 2.318467754989553,
+   "negativeBins": 19
+  },
+  "P-S6": {
+   "computed": true,
+   "driftZ": 0.5423566941360409,
+   "rhoCase": -0.047780855250936095,
+   "rhoPred": -0.051416029263525925,
+   "difference": -0.00363517401258983,
+   "rhoSigma": 0.00025190711002042436,
+   "limit": 0.001,
+   "label": "fails",
+   "differenceNoTable": 0.012989654707170908,
+   "sumRods": -0.03580505050478241,
+   "maxShapeErr": 2.752214123501565,
+   "negativeBins": 17
+  },
+  "P-C-76": {
+   "computed": true,
+   "driftZ": 0.7147519961524749,
+   "rhoCase": -0.014127135344757272,
+   "rhoPred": -0.015393124698485515,
+   "difference": -0.0012659893537282432,
+   "rhoSigma": 0.0002483280042192106,
+   "limit": 0.001,
+   "label": "plausible",
+   "differenceNoTable": 0.0016583333746706414,
+   "sumRods": -0.013482651931103852,
+   "maxShapeErr": 0.788500480529295,
+   "negativeBins": 5
+  },
+  "P-B-76": {
+   "computed": true,
+   "driftZ": 0.02970578092883166,
+   "rhoCase": -0.02680530761123526,
+   "rhoPred": -0.02830776551278943,
+   "difference": -0.0015024579015541703,
+   "rhoSigma": 0.0002640215466087068,
+   "limit": 0.001,
+   "label": "plausible",
+   "differenceNoTable": 0.006383888096766755,
+   "sumRods": -0.021435269475485727,
+   "maxShapeErr": 0.9651104912405135,
+   "negativeBins": 6
+  },
+  "P-A-76": {
+   "computed": true,
+   "driftZ": 0.8617782987402576,
+   "rhoCase": -0.034732390388556404,
+   "rhoPred": -0.03637346393163248,
+   "difference": -0.001641073543076077,
+   "rhoSigma": 0.00025798688435433833,
+   "limit": 0.001,
+   "label": "plausible",
+   "differenceNoTable": 0.009421174896823765,
+   "sumRods": -0.02632506545274986,
+   "maxShapeErr": 1.3460715380950403,
+   "negativeBins": 2
+  },
+  "P-SE-76": {
+   "computed": false,
+   "reason": "unconverged (drift z 2.25); not labelled and not listed as checked"
+  },
+  "P-SD-76": {
+   "computed": true,
+   "driftZ": 0.26432513078034986,
+   "rhoCase": -0.04546067149772002,
+   "rhoPred": -0.049013356169488945,
+   "difference": -0.0035526846717689256,
+   "rhoSigma": 0.00028231406213376166,
+   "limit": 0.001,
+   "label": "fails",
+   "differenceNoTable": 0.012183683636716756,
+   "sumRods": -0.034290837822020484,
+   "maxShapeErr": 2.6041302857419044,
+   "negativeBins": 49
+  },
+  "P-SC-76": {
+   "computed": false,
+   "reason": "unconverged (drift z 2.69); not labelled and not listed as checked"
+  }
+ },
  "negativeShapeBins": 0,
  "limits": {
   "rhoErr": 0.001,

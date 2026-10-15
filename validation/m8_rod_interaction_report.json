@@ -1,0 +1,416 @@
+{
+  "protocol": "docs/validation/m8-rod-interaction-protocol.md",
+  "library": {
+    "digest": "ce996e3261d25153dc2e7af37d3382f0f92112e01bf1ddeb999b610775da1e6f",
+    "id": "pwr-beavrs-hzp-openmc",
+    "engineVersion": "0.5.0"
+  },
+  "P": {
+    "P-S3": {
+      "computed": true,
+      "libraryPcm": -3258.7497338900857,
+      "transportPcm": -3133.0128315184234,
+      "transportSigmaPcm": 25.990581588595774,
+      "differencePcm": -125.73690237166238,
+      "limitPcm": 100.0,
+      "label": "plausible",
+      "correctionPcm": -957.150828062207,
+      "differenceWithoutTablePcm": 831.4139256905446,
+      "sumRodsPcm": -2402.983901929601,
+      "improvesOnTheSum": true,
+      "driftZ": 0.43372134202838547
+    },
+    "P-S5": {
+      "computed": true,
+      "libraryPcm": -4308.177854310413,
+      "transportPcm": -4045.4606285296395,
+      "transportSigmaPcm": 25.605456771829353,
+      "differencePcm": -262.71722578077333,
+      "limitPcm": 100.0,
+      "label": "fails",
+      "correctionPcm": -1354.2989645975606,
+      "differenceWithoutTablePcm": 1091.5817388167873,
+      "sumRodsPcm": -3055.2638858145747,
+      "improvesOnTheSum": true,
+      "driftZ": 0.15273922252440852
+    },
+    "P-S6": {
+      "computed": true,
+      "libraryPcm": -5141.6029263525925,
+      "transportPcm": -4778.085525093609,
+      "transportSigmaPcm": 25.190711002042434,
+      "differencePcm": -363.5174012589832,
+      "limitPcm": 100.0,
+      "label": "fails",
+      "correctionPcm": -1662.4828719760742,
+      "differenceWithoutTablePcm": 1298.965470717091,
+      "sumRodsPcm": -3580.5050504782407,
+      "improvesOnTheSum": true,
+      "driftZ": 0.5423566941360409
+    },
+    "P-C-76": {
+      "computed": true,
+      "libraryPcm": -1539.3124698478005,
+      "transportPcm": -1412.713534475727,
+      "transportSigmaPcm": 24.83280042192106,
+      "differencePcm": -126.59893537207336,
+      "limitPcm": 100.0,
+      "label": "plausible",
+      "correctionPcm": -292.4322728396187,
+      "differenceWithoutTablePcm": 165.83333746754533,
+      "sumRodsPcm": -1348.265193109904,
+      "improvesOnTheSum": true,
+      "driftZ": 0.7147519961524749
+    },
+    "P-B-76": {
+      "computed": true,
+      "libraryPcm": -2830.776551278202,
+      "transportPcm": -2680.530761123526,
+      "transportSigmaPcm": 26.40215466087068,
+      "differencePcm": -150.2457901546759,
+      "limitPcm": 100.0,
+      "label": "plausible",
+      "correctionPcm": -788.6345998318008,
+      "differenceWithoutTablePcm": 638.3888096771249,
+      "sumRodsPcm": -2143.526947548123,
+      "improvesOnTheSum": true,
+      "driftZ": 0.02970578092883166
+    },
+    "P-A-76": {
+      "computed": true,
+      "libraryPcm": -3637.3463931629867,
+      "transportPcm": -3473.2390388556405,
+      "transportSigmaPcm": 25.79868843543383,
+      "differencePcm": -164.1073543073462,
+      "limitPcm": 100.0,
+      "label": "plausible",
+      "correctionPcm": -1106.2248439898813,
+      "differenceWithoutTablePcm": 942.117489682535,
+      "sumRodsPcm": -2632.506545274827,
+      "improvesOnTheSum": true,
+      "driftZ": 0.8617782987402576
+    },
+    "P-SE-76": {
+      "computed": false,
+      "reason": "unconverged (drift z 2.25)"
+    },
+    "P-SD-76": {
+      "computed": true,
+      "libraryPcm": -4901.335616948443,
+      "transportPcm": -4546.067149772002,
+      "transportSigmaPcm": 28.231406213376165,
+      "differencePcm": -355.26846717644094,
+      "limitPcm": 100.0,
+      "label": "fails",
+      "correctionPcm": -1573.6368308484014,
+      "differenceWithoutTablePcm": 1218.3683636719604,
+      "sumRodsPcm": -3429.083782201764,
+      "improvesOnTheSum": true,
+      "driftZ": 0.26432513078034986
+    },
+    "P-SC-76": {
+      "computed": false,
+      "reason": "unconverged (drift z 2.69)"
+    }
+  },
+  "M": {
+    "A": {
+      "0": {
+        "computed": true,
+        "criticalPpm": 983.1838607788086,
+        "measuredPpm": 975.0,
+        "errorPpm": 8.183860778808594,
+        "sigmaModelPpm": 0.07417312893911956,
+        "z": 0.3719915575463888,
+        "label": "good",
+        "within50ppm": true,
+        "boronWorthPcmPerPpm": 12.389436079750428
+      },
+      "1": {
+        "computed": true,
+        "criticalPpm": 923.6051559448242,
+        "measuredPpm": 902.0,
+        "errorPpm": 21.60515594482422,
+        "sigmaModelPpm": 2.7367660571478223,
+        "z": 0.9745409923461779,
+        "label": "good",
+        "within50ppm": true,
+        "boronWorthPcmPerPpm": 12.820424125685603
+      },
+      "2": {
+        "computed": true,
+        "criticalPpm": 827.1554946899414,
+        "measuredPpm": 810.0,
+        "errorPpm": 17.155494689941406,
+        "sigmaModelPpm": 4.915582551223298,
+        "z": 0.7610299457746396,
+        "label": "good",
+        "within50ppm": true,
+        "boronWorthPcmPerPpm": 12.820424125685603
+      },
+      "4": {
+        "computed": true,
+        "criticalPpm": 691.2412643432617,
+        "measuredPpm": 686.0,
+        "errorPpm": 5.241264343261719,
+        "sigmaModelPpm": 6.458957019719493,
+        "z": 0.2285912426050796,
+        "label": "good",
+        "within50ppm": true,
+        "boronWorthPcmPerPpm": 12.820424125685603
+      },
+      "7": {
+        "computed": true,
+        "criticalPpm": 515.6988143920898,
+        "measuredPpm": 508.0,
+        "errorPpm": 7.698814392089844,
+        "sigmaModelPpm": 7.931271185376877,
+        "z": 0.32920610293386,
+        "label": "good",
+        "within50ppm": true,
+        "boronWorthPcmPerPpm": 13.275208834129938
+      }
+    },
+    "B": {
+      "banks": {
+        "D": {
+          "computed": true,
+          "worthPcm": 760.283113471505,
+          "measuredPcm": 788.0,
+          "difference": -27.716886528495024,
+          "relative": -0.03517371386864851,
+          "sigmaModelPcm": 34.79161598460892,
+          "z": -0.6119462575110557,
+          "label": "good",
+          "erratum": {
+            "sigmaModelSharedPcm": 34.79161598460892,
+            "z": -0.6119462575110557,
+            "label": "good"
+          }
+        },
+        "C": {
+          "computed": true,
+          "worthPcm": 1236.5378523519094,
+          "measuredPcm": 1203.0,
+          "difference": 33.53785235190935,
+          "relative": 0.0278785140082372,
+          "sigmaModelPcm": 70.79153959732233,
+          "z": 0.4316986646126586,
+          "label": "good",
+          "erratum": {
+            "sigmaModelSharedPcm": 50.89723954123902,
+            "z": 0.5578396659255511,
+            "label": "good"
+          }
+        },
+        "B": {
+          "computed": true,
+          "worthPcm": 1363.3137641683936,
+          "measuredPcm": 1171.0,
+          "difference": 192.31376416839362,
+          "relative": 0.16423037076720207,
+          "sigmaModelPcm": 94.13822997473571,
+          "z": 1.9403861058007865,
+          "label": "plausible",
+          "erratum": {
+            "sigmaModelSharedPcm": 62.340692744068306,
+            "z": 2.762216039046829,
+            "label": "fails"
+          }
+        },
+        "A": {
+          "computed": true,
+          "worthPcm": 379.18377348089643,
+          "measuredPcm": 548.0,
+          "difference": -168.81622651910357,
+          "relative": -0.30805880751661235,
+          "sigmaModelPcm": 106.25352662444587,
+          "z": -1.5432742229379481,
+          "label": "plausible",
+          "erratum": {
+            "sigmaModelSharedPcm": 62.03074357993199,
+            "z": -2.509931442667277,
+            "label": "fails"
+          }
+        },
+        "SE": {
+          "computed": true,
+          "worthPcm": 670.2443469394307,
+          "measuredPcm": 461.0,
+          "difference": 209.24434693943067,
+          "relative": 0.45389229271026177,
+          "sigmaModelPcm": 117.13064751636621,
+          "z": 1.7470675018074628,
+          "label": "plausible",
+          "erratum": {
+            "sigmaModelSharedPcm": 62.90537448778062,
+            "z": 3.091164442019456,
+            "label": "fails"
+          }
+        },
+        "SD": {
+          "computed": true,
+          "worthPcm": 833.4250720421796,
+          "measuredPcm": 772.0,
+          "difference": 61.425072042179636,
+          "relative": 0.07956615549505135,
+          "sigmaModelPcm": 127.56218729101772,
+          "z": 0.47033322573417685,
+          "label": "good",
+          "erratum": {
+            "sigmaModelSharedPcm": 62.84270097429931,
+            "z": 0.8928284367806648,
+            "label": "good"
+          }
+        },
+        "SC": {
+          "computed": true,
+          "worthPcm": 785.1695896537476,
+          "measuredPcm": 1099.0,
+          "difference": -313.8304103462524,
+          "relative": -0.2855599730175181,
+          "sigmaModelPcm": 137.02049224518868,
+          "z": -2.233930662591466,
+          "label": "fails",
+          "erratum": {
+            "sigmaModelSharedPcm": 61.852801180605276,
+            "z": -4.53600776301744,
+            "label": "fails"
+          }
+        }
+      },
+      "total": {
+        "computed": true,
+        "worthPcm": 6028.157512108062,
+        "measuredPcm": 6042.0,
+        "difference": -13.842487891937708,
+        "relative": -0.002291044007272047,
+        "sigmaModelPcm": 99.966500104555,
+        "z": -0.10989805147537082,
+        "label": "good",
+        "erratum": {
+          "sigmaModelSharedPcm": 99.966500104555,
+          "z": -0.10989805147537082,
+          "label": "good"
+        }
+      }
+    },
+    "C": {
+      "0": {
+        "computed": true,
+        "itcPcmPerF": -3.5728783300116964,
+        "measuredPcmPerF": -1.75,
+        "sigmaModelPcmPerF": 0.4714572933463694,
+        "z": -2.542905456285532,
+        "label": "fails",
+        "erratum": {
+          "sigmaModelSharedPcmPerF": 0.4714572933463695,
+          "z": -2.5429054562855318,
+          "label": "fails"
+        }
+      },
+      "2": {
+        "computed": true,
+        "itcPcmPerF": -3.572878330011694,
+        "measuredPcmPerF": -8.01,
+        "sigmaModelPcmPerF": 0.9348895498872403,
+        "z": 4.109823085311086,
+        "label": "fails",
+        "erratum": {
+          "sigmaModelSharedPcmPerF": 0.4714572933463695,
+          "z": 6.189760840891468,
+          "label": "fails"
+        }
+      }
+    },
+    "F": {
+      "R-D-0": {
+        "computed": true,
+        "state": 1,
+        "boronPpm": 975.0,
+        "libraryPcm": -658.8981173697828,
+        "transportPcm": -658.8981173697828,
+        "transportSigmaPcm": 24.597484330933295,
+        "differencePcm": 0.0,
+        "exceeds": false
+      },
+      "J-W2": {
+        "computed": true,
+        "state": 2,
+        "boronPpm": 975.0,
+        "libraryPcm": -1895.4359697216921,
+        "transportPcm": -1895.4359697216921,
+        "transportSigmaPcm": 26.60344043250467,
+        "differencePcm": 0.0,
+        "exceeds": false
+      },
+      "J-W4": {
+        "computed": true,
+        "state": 4,
+        "boronPpm": 975.0,
+        "libraryPcm": -3637.933507370982,
+        "transportPcm": -3637.933507370982,
+        "transportSigmaPcm": 27.241871844767175,
+        "differencePcm": 0.0,
+        "exceeds": false
+      },
+      "J-W7": {
+        "computed": true,
+        "state": 7,
+        "boronPpm": 975.0,
+        "libraryPcm": -5926.77251600634,
+        "transportPcm": -5926.77251600634,
+        "transportSigmaPcm": 26.086251487189458,
+        "differencePcm": 0.0,
+        "exceeds": false
+      },
+      "J-B4": {
+        "computed": true,
+        "state": 4,
+        "boronPpm": 686.0,
+        "libraryPcm": 67.1690649521571,
+        "transportPcm": -29.28088194072463,
+        "transportSigmaPcm": 25.39901964853129,
+        "differencePcm": 96.44994689288173,
+        "exceeds": false
+      },
+      "J-B7": {
+        "computed": true,
+        "state": 7,
+        "boronPpm": 508.0,
+        "libraryPcm": 102.2057438657159,
+        "transportPcm": -187.7146142174949,
+        "transportSigmaPcm": 25.579642875469037,
+        "differencePcm": 289.9203580832108,
+        "exceeds": true
+      }
+    },
+    "decision": {
+      "items": [
+        "1. the library reproduces the critical boron at 5 of 5 states (S0, S1, S2, S4, S7): its rod-combination claim may be widened to those states, with the numbers shown",
+        "2. bank worths that fail: SC (sign and size in the table); nothing is refitted",
+        "3. the temperature coefficient fails at S0, S2: the temperature feedback stays not validated; a failure at S2 comes with the library having no rod dependence of its temperature tables",
+        "4. the summed tables differ from their transport source by more than the limit at J-B7: the results note names the smallest format change that would remove it (not built here; a separate decision)",
+        "erratum (shared-table errors cancelled in the differences, the as-run rule treated the two states as independent): B:B plausible -> fails, B:A plausible -> fails, B:SE plausible -> fails",
+        "6. the library status stays experimental; nothing is refitted"
+      ],
+      "libraryChanged": false
+    }
+  },
+  "libraryPcmAtS3S5S6": {
+    "S3": -3258.7497338900857,
+    "S5": -4308.177854310413,
+    "S6": -5141.6029263525925
+  },
+  "decision": {
+    "items": [
+      "P4. not computed: ['P-SE-76', 'P-SC-76']; they enter no decision item (4 of 7 computed cases good or plausible)",
+      "M: 1. the library reproduces the critical boron at 5 of 5 states (S0, S1, S2, S4, S7): its rod-combination claim may be widened to those states, with the numbers shown",
+      "M: 2. bank worths that fail: SC (sign and size in the table); nothing is refitted",
+      "M: 3. the temperature coefficient fails at S0, S2: the temperature feedback stays not validated; a failure at S2 comes with the library having no rod dependence of its temperature tables",
+      "M: 4. the summed tables differ from their transport source by more than the limit at J-B7: the results note names the smallest format change that would remove it (not built here; a separate decision)",
+      "M: erratum (shared-table errors cancelled in the differences, the as-run rule treated the two states as independent): B:B plausible -> fails, B:A plausible -> fails, B:SE plausible -> fails",
+      "M: 6. the library status stays experimental; nothing is refitted"
+    ]
+  }
+}
