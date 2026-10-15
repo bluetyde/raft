@@ -110,6 +110,22 @@ class PlantedAnalysis(unittest.TestCase):
             self.assertAlmostEqual(abs(r["critical"]["differenceSteps"]), d, delta=2.0)
             self.assertEqual(r["critical"]["label"], want, (d, r["critical"]["differenceSteps"]))
 
+    def test_the_critical_position_label_boundaries_are_15_and_30_steps(self):
+        for d, want in ((15.0, "good"), (-15.0, "good"), (15.01, "plausible"), (-30.0, "plausible"), (30.0, "plausible"), (30.01, "fails"), (-30.01, "fails"), (0.0, "good")):
+            self.assertEqual(nc.crit_label(d), want, d)
+
+    def test_the_signs_are_library_minus_transport(self):
+        slope = (planted.W["C"] * 1e5) / 228.0
+        rows = copy.deepcopy(self.rows)
+        shift(rows, "N-C-228", 2.5e-3)                                          # transport 250 pcm higher: the library is lower by 250
+        self.assertAlmostEqual(self.run_with(rows)["P"]["N-C-228"]["differencePcm"], -250.0, delta=0.5)
+        rows = copy.deepcopy(self.rows)
+        shift_all(rows, -20.0 * slope / 1e5)                                   # transport lower everywhere: its zero is at a larger C, the library's is earlier: negative
+        self.assertAlmostEqual(self.run_with(rows)["critical"]["differenceSteps"], -20.0, delta=2.0)
+        rows = copy.deepcopy(self.rows)
+        shift_all(rows, 20.0 * slope / 1e5)
+        self.assertAlmostEqual(self.run_with(rows)["critical"]["differenceSteps"], 20.0, delta=2.0)
+
     def test_a_critical_position_that_fails_defeats_the_lesson_even_with_every_case_good(self):
         rows = copy.deepcopy(self.rows)
         shift_all(rows, -5.0e-4)                                       # 50 pcm: every case good (limit 100), the zero moves by about 40 steps

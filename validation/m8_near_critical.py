@@ -112,13 +112,17 @@ def part_p(model: rs.ShadowModel, rows: list[dict]) -> dict:
     return out
 
 
+def crit_label(d: float) -> str:
+    return "good" if abs(d) <= CRIT_GOOD else "plausible" if abs(d) <= CRIT_PLAUSIBLE else "fails"
+
+
 def critical_item(model: rs.ShadowModel, p: dict, boron: float = BORON) -> dict:
     lib_c = library_critical(model, boron)
     tr = transport_critical({c: e for c, e in p.items() if e["computed"]})
     if lib_c is None or tr is None:
         return {"computed": False, "libraryC": lib_c, "reason": "no bracketing pair of transport cases" if tr is None else "the library does not cross zero"}
     d = lib_c - tr["steps"]
-    label = "good" if abs(d) <= CRIT_GOOD else "plausible" if abs(d) <= CRIT_PLAUSIBLE else "fails"
+    label = crit_label(d)
     return {"computed": True, "libraryC": lib_c, "transportC": tr["steps"], "transportCBetween": tr["between"], "transportCSigmaSteps": tr["sigmaSteps"],
             "differenceSteps": d, "label": label}
 
