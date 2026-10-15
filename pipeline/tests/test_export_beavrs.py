@@ -17,7 +17,7 @@ from physics_ref.engine import Engine
 from physics_ref.library import Library
 from pipeline.library import export_beavrs as xb
 from pipeline.library.validate import validate_library
-from pipeline.openmc.beavrs_cases import path_cases, sweep_cases
+from pipeline.openmc.beavrs_cases import path_cases, shadow_cases, sweep_cases
 
 CORE = json.loads(xb.CORE.read_text(encoding="utf-8"))
 NXY = 19 * 19
@@ -60,13 +60,17 @@ def planted_c(s: float) -> float:
     return 0.5 * min(0.0, s - S_DEEPEST)
 
 
-def planted_rho(steps, boron, t_fuel, t_water, interaction=0.0, correction=None) -> float:
+def planted_rho(steps, boron, t_fuel, t_water, interaction=0.0, correction=None, shadow=None) -> float:
     rho = RHO0 + planted_sum(steps)
     rho += FUEL_SLOPE * ((t_fuel if t_fuel is not None else T_REF) - T_REF) + WATER_SLOPE * ((t_water if t_water is not None else T_REF) - T_REF)
     rho += BORON_SLOPE * (boron - B_REF)
     inserted = sum(1 for b in xb.BANKS if steps[b] < REF_STEPS[b] - 100)
     if correction is not None:
         rho += correction(planted_sum(steps))
+    if shadow is not None:
+        ws = [W[b] * (x_frac(steps[b]) - x_frac(REF_STEPS[b])) for b in xb.BANKS]
+        s = math.fsum(ws)
+        rho += math.fsum(w * shadow(s - w) for w in ws if w != 0.0)
     return rho + interaction * max(0, inserted - 1)
 
 
@@ -90,11 +94,11 @@ def mesh(units: list[float], core: dict, scale: float) -> list[float]:
     return vec
 
 
-def make_rows(interaction=0.0, plan=None, correction=None) -> list[dict]:
+def make_rows(interaction=0.0, plan=None, correction=None, shadow=None) -> list[dict]:
     rows = []
     for name, c in (plan or sweep_cases()).items():       # exactly the plan the real sweep ran (or the path plan)
         steps, boron, tf, tw = c["steps"], c["boron"], c["tFuel"], c["tWater"]
-        rho = planted_rho(steps, boron, tf, tw, interaction, correction)
+        rho = planted_rho(steps, boron, tf, tw, interaction, correction, shadow)
         units = planted_units(steps, tf)
         rows.append({"case": name, "role": c["role"], **{k: c[k] for k in ("particles", "batches", "inactive", "ifp")}, "steps": steps, "boron": boron, "tFuel": tf, "tWater": tw, "k": 1.0 / (1.0 - rho), "kStd": 2.5e-4,
                      "kBatches": [1.0 / (1.0 - rho) + (0.001 if i % 2 else -0.001) for i in range(c["batches"])],
@@ -270,7 +274,7 @@ class PlantedExport(unittest.TestCase):
         m0, _, _ = xb.build(rows, CORE, created="2026-10-11")
         self.assertIn("NOT checked against held-out", m0["provenance"]["notes"])
         m1, _, _ = xb.build(rows, CORE, created="2026-10-11", path_rows=make_rows(correction=planted_c, plan=path_cases()))
-        self.assertIn("Checked against 9 held-out path cases: 9 within the limit", m1["provenance"]["notes"])
+        self.assertIn("Checked against 9 held-out cases: 9 within the limit", m1["provenance"]["notes"])
         self.assertNotIn("NOT checked", m1["provenance"]["notes"])
 
     def test_an_absent_path_file_is_an_error_unless_no_path_is_given(self):
@@ -280,7 +284,7 @@ class PlantedExport(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 xb.main(args)
             self.assertFalse(out.exists())
-            self.assertEqual(xb.main(args + ["--no-path"]), 0)
+            self.assertEqual(xb.main(args + ["--model", "interaction", "--no-path"]), 0)
             self.assertTrue((out / "manifest.json").exists())
 
     def test_holding_the_anchors_cannot_leave_a_decreasing_table(self):
@@ -400,6 +404,139 @@ class PlantedExport(unittest.TestCase):
         rows[0]["steps"]["D"] = 228
         with self.assertRaises(ValueError):
             xb.build(rows, CORE)
+
+
+# --- the shadowing model (fifteenth protocol): each rod's worth scaled by 1 + g(the others' summed reactivity) -------------------------------------------
+SHADOW_A = 3.0          # planted g(R) = SHADOW_A * R for R <= 0 (zero above), held at its value at the deepest knot
+KNOTS = (-0.003, -0.006, -0.009, -0.0125)       # the planted bank worths are about a third of the real ones, so the free knots are scaled to the deepest R the planted fit cases reach (-0.0126)
+
+
+def planted_g(r: float) -> float:
+    return SHADOW_A * max(min(r, 0.0), KNOTS[-1])
+
+
+def planted_g_other(r: float) -> float:
+    return -5.0 * planted_g(r)              # a different planted law (the planted corrections are small, so it must differ a lot to pass the 100 pcm limit), for the held-out cases that must fail
+
+
+def worths_planted(steps) -> list[float]:
+    return [W[b] * (x_frac(steps[b]) - x_frac(REF_STEPS[b])) for b in xb.BANKS]
+
+
+def planted_shadow_sum(steps, g) -> float:
+    ws = worths_planted(steps)
+    s = math.fsum(ws)
+    return math.fsum(w * g(s - w) for w in ws if w != 0.0)
+
+
+class PlantedShadowing(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.rows = make_rows(shadow=planted_g)
+        cls.path = make_rows(plan=path_cases(), shadow=planted_g)
+        cls.held = make_rows(plan=shadow_cases(), shadow=planted_g)
+        cls.m, cls.blobs, cls.report = xb.build(cls.rows, CORE, created="2026-10-15", path_rows=cls.path, model="shadowing", shadow_rows=cls.held, shadow_knots=KNOTS)
+
+    def test_the_fit_recovers_the_planted_g_at_every_knot(self):
+        t = self.m["reactivity"]["rodShadowing"]
+        self.assertEqual(t["R"], sorted([0.0, xb.R_ABOVE] + list(KNOTS)))
+        for r, g in zip(t["R"], t["g"]):
+            self.assertAlmostEqual(g, planted_g(r) if r <= 0.0 else 0.0, places=7, msg=str(r))
+        self.assertEqual(t["g"][t["R"].index(0.0)], 0.0)
+        self.assertEqual(t["g"][-1], 0.0)
+
+    def test_the_library_has_v2_only_and_validates(self):
+        self.assertIn(xb.ROD_SHADOW_CAPABILITY, self.m["capabilities"])
+        self.assertNotIn(xb.ROD_INTERACTION_CAPABILITY, self.m["capabilities"])
+        self.assertNotIn("rodInteraction", self.m["reactivity"])
+        with tempfile.TemporaryDirectory() as d:
+            xb.write_library(Path(d) / "lib", self.m, self.blobs)
+            self.assertEqual(validate_library(Path(d) / "lib"), [])
+
+    def test_the_engine_reproduces_the_planted_reactivity_at_nonseparable_states(self):
+        with tempfile.TemporaryDirectory() as d:
+            folder = Path(d) / "lib"
+            xb.write_library(folder, self.m, self.blobs)
+            lib = Library(folder)
+            for steps in (dict(REF_STEPS), {**REF_STEPS, "D": 0, "C": 60}, {**REF_STEPS, "SC": 0, "SD": 0, "SE": 0, "A": 100},
+                          {**REF_STEPS, "D": 0, "C": 0, "B": 0, "A": 30}, {b: 0 for b in xb.BANKS}):
+                init = {"rods": {b.lower(): x_frac(s) for b, s in steps.items()}, "boron": B_REF, "Tfuel": T_REF, "Tcoolant": T_REF,
+                        "power": {"mode": "given", "value": 1e-3}, "poisons": {"mode": "zero"}}
+                e = Engine(lib, init)
+                want = planted_rho(steps, B_REF, None, None) + planted_shadow_sum(steps, planted_g)
+                self.assertAlmostEqual(e.reactivity(0.0, e.y)["total"], want, places=8, msg=str(steps))
+
+    def test_the_fit_cases_are_the_twelve_and_the_held_out_cases_are_not_in_it(self):
+        self.assertEqual(sorted(self.report["tables"]["rodShadowing"]["fitCases"]), sorted(list(xb.FIT_CASES) + list(path_cases())))
+        self.assertEqual(set(self.report["heldOutCases"]), set(shadow_cases()))
+        self.assertEqual(self.report["pathCases"], {})
+        self.assertEqual(self.report["model"], "shadowing")
+
+    def test_held_out_cases_that_agree_are_good_and_listed_as_checked(self):
+        for cid, e in self.report["heldOutCases"].items():
+            self.assertTrue(e["computed"], cid)
+            self.assertEqual(e["label"], "good", cid)
+            self.assertLess(abs(e["difference"]), 1e-7, cid)
+        self.assertEqual(len(self.m["domain"]["jointChecked"]), 13)
+        self.assertIn("Checked against 13 held-out cases: 13 within the limit", self.m["provenance"]["notes"])
+
+    def test_held_out_cases_from_another_law_are_labelled_and_not_listed(self):
+        held = make_rows(plan=shadow_cases(), shadow=planted_g_other)
+        m, _, report = xb.build(self.rows, CORE, created="2026-10-15", path_rows=self.path, model="shadowing", shadow_rows=held, shadow_knots=KNOTS)
+        deep = report["heldOutCases"]["X-9"]
+        self.assertGreater(abs(deep["difference"]), 2e-3)
+        self.assertEqual(deep["label"], "fails")
+        self.assertLess(len(m["domain"]["jointChecked"]), 13)
+        listed = {tuple(sorted(j["rods"].items())) for j in m["domain"]["jointChecked"]}
+        for cid, e in report["heldOutCases"].items():
+            if e["label"] != "good":
+                self.assertNotIn(tuple(sorted({b.lower(): x_frac(s) for b, s in shadow_cases()[cid]["steps"].items()}.items())), listed, cid)
+
+    def test_an_unconverged_held_out_case_is_not_computed(self):
+        held = make_rows(plan=shadow_cases(), shadow=planted_g)
+        r = next(x for x in held if x["case"] == "O-S3")
+        r["kBatches"] = [(r["k"] - 0.05 if i < 200 else r["k"] + 0.05) + (0.001 if i % 2 else -0.001) for i in range(r["batches"])]
+        m, _, report = xb.build(self.rows, CORE, created="2026-10-15", path_rows=self.path, model="shadowing", shadow_rows=held, shadow_knots=KNOTS)
+        self.assertFalse(report["heldOutCases"]["O-S3"]["computed"])
+        self.assertEqual(len(m["domain"]["jointChecked"]), 12)
+
+    def test_without_held_out_cases_the_notes_say_so_and_nothing_is_listed(self):
+        m, _, _ = xb.build(self.rows, CORE, created="2026-10-15", path_rows=self.path, model="shadowing", shadow_knots=KNOTS)
+        self.assertEqual(m["domain"]["jointChecked"], [])
+        self.assertIn("NOT checked against held-out", m["provenance"]["notes"])
+
+    def test_the_nine_path_cases_are_required_and_the_models_do_not_mix(self):
+        with self.assertRaises(ValueError):
+            xb.build(self.rows, CORE, model="shadowing")                                   # no fit data for g
+        with self.assertRaises(ValueError):
+            xb.build(self.rows, CORE, model="interaction", shadow_rows=self.held)
+        with self.assertRaises(ValueError):
+            xb.build(self.rows, CORE, model="other")
+        short = [r for r in self.path if r["case"] != "P-S5"]
+        with self.assertRaises(ValueError):
+            xb.build(self.rows, CORE, path_rows=short, model="shadowing")
+        wrong = [dict(r, boron=860.0) if r["case"] == "L-C-0" else r for r in self.held]
+        with self.assertRaises(ValueError):
+            xb.build(self.rows, CORE, path_rows=self.path, model="shadowing", shadow_rows=wrong)
+
+    def test_a_fit_that_cannot_determine_every_knot_is_refused(self):
+        ws = worths_planted({**REF_STEPS, "D": 0, "C": 0})
+        cases = [{"case": "only", "ws": ws, "y": planted_shadow_sum({**REF_STEPS, "D": 0, "C": 0}, planted_g), "sigma": 1e-4}]
+        with self.assertRaises(ValueError):
+            xb.fit_shadowing(cases, KNOTS)
+
+    def test_the_fit_weights_the_cases_by_their_statistical_errors(self):
+        # the twelve planted fit cases, one of them given a wrong value: believed (small error) it moves the table, doubted (large error) it does not
+        states = [sweep_cases()[c]["steps"] for c in xb.FIT_CASES] + [c["steps"] for c in path_cases().values()]
+        base = [{"case": str(i), "ws": worths_planted(st), "y": planted_shadow_sum(st, planted_g), "sigma": 1e-4} for i, st in enumerate(states)]
+        wrong = dict(base[2], y=base[2]["y"] + 5e-4)
+        tb = xb.fit_shadowing(base, KNOTS)
+        for r, g in zip(tb["a"], tb["rho"]):
+            self.assertAlmostEqual(g, planted_g(r) if r <= 0.0 else 0.0, places=7)
+        believed = xb.fit_shadowing(base[:2] + [wrong] + base[3:], KNOTS)
+        doubted = xb.fit_shadowing(base[:2] + [dict(wrong, sigma=1e-1)] + base[3:], KNOTS)
+        self.assertGreater(max(abs(a - b) for a, b in zip(believed["rho"], tb["rho"])), 1e-2)
+        self.assertLess(max(abs(a - b) for a, b in zip(doubted["rho"], tb["rho"])), 1e-3)
 
 
 if __name__ == "__main__":

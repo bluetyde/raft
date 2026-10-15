@@ -20,7 +20,7 @@ from pathlib import Path
 from pipeline.library.export_openmc import _pack_f32_slice_normalized, interp, isotonic
 from pipeline.library.synthetic import descriptor, pack
 from pipeline.library.validate import validate_library
-from pipeline.openmc.beavrs_cases import path_cases, sweep_cases
+from pipeline.openmc.beavrs_cases import path_cases, shadow_cases, sweep_cases
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SWEEP = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_sweep.jsonl"
@@ -29,6 +29,7 @@ OUT = REPO_ROOT / "libraries" / "pwr-beavrs-hzp-openmc"
 README = Path(__file__).with_name("beavrs_library_README.md")
 REPORT = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_export_report.json"
 PATH = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_path.jsonl"
+SHADOW = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_shadow.jsonl"
 
 LIB_ID = "pwr-beavrs-hzp-openmc"
 BANKS = ["A", "B", "C", "D", "SA", "SB", "SC", "SD", "SE"]
@@ -46,6 +47,9 @@ JOINT_BORON = ("J-B4", "J-B7")
 RHO_ERR_LIMIT = 1.0e-3        # 100 pcm, about four times a case's statistical error
 SHAPE_ERR_LIMIT = 1.0         # in mean bins
 ROD_INTERACTION_CAPABILITY = "point-kinetics/rod-interaction-v1"
+ROD_SHADOW_CAPABILITY = "point-kinetics/rod-interaction-v2"
+SHADOW_KNOTS = (-0.01, -0.02, -0.03, -0.0385)          # the shadowing table's free knots (fractions): the protocol of the fifteenth fixes them; -3850 pcm is the deepest R among the fit cases
+R_ABOVE = 1.0e-3                                       # +100 pcm: nothing above the reference is claimed (g held at 0 there)
 FIT_CASES = ("J-W2", "J-W4", "J-W7")      # the combined states the rod interaction table is fitted to (and so never listed as checked)
 S_ABOVE = 1.0e-3                          # +100 pcm: nothing above the reference is claimed (the table is zero there, assumed)
 FUEL_DENSITY = 10.3             # g/cm3: BEAVRS fuel densities by enrichment run from 10.29 to 10.36
@@ -119,9 +123,23 @@ def normalized(v: list[float]) -> list[float]:
 
 # ---------------------------------------------------------------- build
 
-def build(rows: list[dict], core: dict, created: str | None = None, path_rows: list[dict] | None = None) -> tuple[dict, dict[str, bytes], dict]:
+def build(rows: list[dict], core: dict, created: str | None = None, path_rows: list[dict] | None = None, model: str = "interaction",
+          shadow_rows: list[dict] | None = None, shadow_knots: tuple[float, ...] = SHADOW_KNOTS) -> tuple[dict, dict[str, bytes], dict]:
+    """model "interaction": the table of the fourteenth protocol (path_rows are held out). model "shadowing": the table of the fifteenth (path_rows are
+    required and are fit data; shadow_rows are the held-out cases, or None for a library that says it was not checked)."""
+    if model not in ("interaction", "shadowing"):
+        raise ValueError(f"unknown model {model!r}")
     by = check_sweep(rows)
-    by_path = check_path(path_rows) if path_rows is not None else {}
+    if model == "shadowing":
+        if path_rows is None:
+            raise ValueError("the shadowing table is fitted to the nine path cases: path_rows are required")
+        by_fit_path = check_path(path_rows)
+        by_path = check_path(shadow_rows, shadow_cases(), "shadow") if shadow_rows is not None else {}
+    else:
+        if shadow_rows is not None:
+            raise ValueError("shadow_rows belong to the shadowing model")
+        by_fit_path = {}
+        by_path = check_path(path_rows) if path_rows is not None else {}
     ref = by["REF"]
     rho_ref, sig_ref = rho_of(ref)
     for b in BANKS:
@@ -172,7 +190,24 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
         d, s_ = rel(c)
         s_k = sum_rods(by[c]["steps"])
         inter_pts.append({"a": s_k, "rho": d - s_k, "sigma": s_, "ref": False, "case": c})
-    inter_t = fit_correction(inter_pts)
+    inter_t = fit_correction(inter_pts) if model == "interaction" else None
+
+    def worths_of(steps: dict) -> list[float]:
+        return [interp(rod_tables[b]["x"], rod_tables[b]["rho"], x_of(steps[b])) for b in BANKS]
+
+    shadow_t = None
+    if model == "shadowing":
+        fit_cases = []
+        for c, row in [(c, by[c]) for c in FIT_CASES] + list(by_fit_path.items()):
+            ws_c = worths_of(row["steps"])
+            r_c, s_c = rho_of(row)
+            fit_cases.append({"case": c, "ws": ws_c, "y": r_c - rho_ref - math.fsum(ws_c), "sigma": s_c})
+        shadow_t = fit_shadowing(fit_cases, shadow_knots)
+
+    def shadow_corr(steps: dict) -> float:
+        ws_c = worths_of(steps)
+        s_c = math.fsum(ws_c)
+        return math.fsum(w * interp(shadow_t["a"], shadow_t["rho"], s_c - w) for w in ws_c if w != 0.0)
 
     # shapes: normalized to 1 over the 193 assemblies in every case
     elements = [a["label"] for a in core["assemblies"]]
@@ -224,7 +259,7 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
     add("tempDelta", [v for sl in f32 for v in sl], [len(t_grid), E, A])
 
     # reactivity tables and the self-check
-    tables = {"rods": {rid(b): rod_tables[b] for b in BANKS}, "fuel": fuel_t, "cool": cool_t, "boron": boron_t, "rodInteraction": inter_t}
+    tables = {"rods": {rid(b): rod_tables[b] for b in BANKS}, "fuel": fuel_t, "cool": cool_t, "boron": boron_t, **({"rodInteraction": inter_t} if model == "interaction" else {"rodShadowing": shadow_t})}
 
     def predict(row: dict, with_table: bool = True) -> tuple[float, list[float]]:
         rho = rho_ref
@@ -236,7 +271,7 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
             sl = interp_slice(t["x"], delta64[rid(b)], x)
             shape = [s + d for s, d in zip(shape, sl)]
         if with_table:
-            rho += interp(inter_t["a"], inter_t["rho"], sum_rods(row["steps"]))
+            rho += interp(inter_t["a"], inter_t["rho"], sum_rods(row["steps"])) if model == "interaction" else shadow_corr(row["steps"])
         if row.get("tFuel") is not None:
             rho += interp(fuel_t["a"], fuel_t["rho"], float(row["tFuel"]))
             shape = [s + d for s, d in zip(shape, interp_slice(fuel_t["a"], delta64["_fuelTemp"], float(row["tFuel"])))]
@@ -272,11 +307,20 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
         if label_ == "good":
             joint.append({"rods": {rid(b): x_of(r["steps"][b]) for b in BANKS}, "maxShapeErr": path_report[cid]["maxShapeErr"], "rhoErr": abs(diff)})
 
-    if path_rows is None:
-        checked_note = "NOT checked against held-out transport cases: no path case was given to the exporter, domain.jointChecked is empty."
+    held_given = (path_rows is not None) if model == "interaction" else (shadow_rows is not None)
+    if not held_given:
+        checked_note = "NOT checked against held-out transport cases: none was given to the exporter, domain.jointChecked is empty."
     else:
         n_good = sum(1 for e in path_report.values() if e.get("label") == "good")
-        checked_note = f"Checked against {len(path_report)} held-out path cases: {n_good} within the limit (listed in domain.jointChecked)."
+        checked_note = f"Checked against {len(path_report)} held-out cases: {n_good} within the limit (listed in domain.jointChecked)."
+    if model == "shadowing":
+        rod_note = ("Several banks in: each bank's worth is scaled by 1 + g(the summed single-bank reactivity of the other banks) (reactivity.rodShadowing, capability rod-interaction-v2, "
+                    "fitted to the three combined sweep cases and the nine path cases of the fourteenth protocol, and to nothing else); it sees only that sum, not which banks or where "
+                    "in the core, so it is valid only along the states it was checked on (docs/validation/m8-rod-shadowing-protocol.md). ")
+    else:
+        rod_note = ("Several banks in: the single-bank worths are summed and a correction table on that sum (reactivity.rodInteraction, fitted to the transport cases with banks C and D, "
+                    "A to D, and D to SC in, and to nothing else) accounts for the banks being worth more together; it is valid along the benchmark insertion order "
+                    "(D, C, B, A, SE, SD, SC) and nowhere else claimed (docs/validation/m8-rod-interaction-protocol.md). ")
 
     # manifest
     thermal_mass_kg = core["fuelPinsPerAssembly"] * len(core["assemblies"]) * pin_area * (core["activeFuelTopCm"] - core["activeFuelBotCm"]) * FUEL_DENSITY / 1000.0
@@ -314,7 +358,7 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
         "id": LIB_ID,
         "name": "PWR (BEAVRS cycle 1) at hot zero power, built with OpenMC",
         "status": "experimental",
-        "capabilities": ["point-kinetics/lumped-thermal-v1", "point-kinetics/boron-v1", ROD_INTERACTION_CAPABILITY],
+        "capabilities": ["point-kinetics/lumped-thermal-v1", "point-kinetics/boron-v1", ROD_INTERACTION_CAPABILITY if model == "interaction" else ROD_SHADOW_CAPABILITY],
         "provenance": {
             "generator": "pipeline.library.export_beavrs", "transportCode": f"OpenMC {ref.get('openmc', '')}".strip(),
             "nuclearData": "ENDF/B-VIII.0", "model": "BEAVRS 3D full core, hot zero power (mit-crpg/BEAVRS, MIT licence), 45 cases of pipeline/openmc/beavrs_cases.py",
@@ -323,9 +367,7 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
                       "thermal masses, heat transfer, instruments, trips) is assumed and labelled so. Isothermal temperature coefficient: the transport model is "
                       "1.6 to 2.0 pcm/F too negative against the benchmark measurement (docs/validation/m8-beavrs-hzp-results.md), so temperature feedback is NOT validated. "
                       "Xenon worth is zero (not computed); no decay heat; no pressure. The shape of the power does not depend on coolant temperature or boron. "
-                      "Several banks in: the single-bank worths are summed and a correction table on that sum (reactivity.rodInteraction, fitted to the transport cases with banks C and D, "
-                      "A to D, and D to SC in, and to nothing else) accounts for the banks being worth more together; it is valid along the benchmark insertion order "
-                      "(D, C, B, A, SE, SD, SC) and nowhere else claimed (docs/validation/m8-rod-interaction-protocol.md). " + checked_note),
+                      + rod_note + checked_note),
             "sources": [
                 {"id": "beavrs", "cite": "N. Horelik, B. Herman, B. Forget, K. Smith, Benchmark for Evaluation And Validation of Reactor Simulations (BEAVRS), v2.0.2, MIT Computational Reactor Physics Group, github.com/mit-crpg/BEAVRS (MIT licence)"},
                 {"id": "endfbviii0-u235", "cite": "ENDF/B-VIII.0 (Brown et al., Nucl. Data Sheets 148 (2018) 1): U-235 delayed-neutron group decay constants as read from the HDF5 library"},
@@ -348,7 +390,9 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
             "coolantTemp": {"T": cool_t["a"], "rho": cool_t["rho"], "unc": cool_t["unc"], "interp": "linear", "outOfRange": "clamp-and-flag", "source": "transport"},
             "xenon": {"N": [0.0, 1e20, 2e20, 4e20], "rho": [0.0, 0.0, 0.0, 0.0], "interp": "linear", "outOfRange": "extrapolate-and-flag", "source": "assumed"},
             "boron": {"C": boron_t["a"], "rho": boron_t["rho"], "unc": boron_t["unc"], "interp": "linear", "outOfRange": "clamp-and-flag", "source": "transport"},
-            "rodInteraction": {"S": inter_t["a"], "rho": inter_t["rho"], "unc": inter_t["unc"], "interp": "linear", "outOfRange": "clamp-and-flag", "source": "transport"},
+            **({"rodInteraction": {"S": inter_t["a"], "rho": inter_t["rho"], "unc": inter_t["unc"], "interp": "linear", "outOfRange": "clamp-and-flag", "source": "transport"}}
+               if model == "interaction" else
+               {"rodShadowing": {"R": shadow_t["a"], "g": shadow_t["rho"], "unc": shadow_t["unc"], "interp": "linear", "outOfRange": "clamp-and-flag", "source": "transport"}}),
         },
         "thermal": {
             "fuel": {"mass": S(round(thermal_mass_kg, 1), "cited:beavrs"),
@@ -393,7 +437,7 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
         "created": created, "rhoRef": rho_ref, "rhoRefSigma": sig_ref, "tables": {k: v for k, v in tables.items() if k != "rods"},
         "rodTables": {b: rod_tables[b] for b in BANKS}, "cases": check,
         "boronSeparability": {c: check[c] for c in JOINT_BORON},
-        "pathCases": path_report,
+        "pathCases": path_report if model == "interaction" else {}, "heldOutCases": path_report if model == "shadowing" else {}, "model": model,
         "negativeShapeBins": sum(1 for v in base_f32 if v <= 0),
         "limits": {"rhoErr": RHO_ERR_LIMIT, "maxShapeErr": SHAPE_ERR_LIMIT},
     }
@@ -415,6 +459,56 @@ def fit_correction(points: list[dict]) -> dict:
     return {"a": xs, "rho": out, "unc": [p["sigma"] for p in pts], "raw": [p["rho"] for p in pts]}
 
 
+def fit_shadowing(cases: list[dict], knots: tuple[float, ...] = SHADOW_KNOTS) -> dict:
+    """The rod shadowing table g(R) (docs/validation/m8-rod-shadowing-protocol.md): cases carry `ws` (the single-rod reactivities, fractions), `y` (the
+    transport reactivity minus the reference minus the sum of ws) and `sigma`. Model y = sum_i w_i g(S - w_i), g piecewise linear on the axis
+    SHADOW_KNOTS (free values) plus 0 and R_ABOVE (held at 0); weighted least squares, weights 1/sigma^2, unconstrained in sign."""
+    axis = sorted([0.0, R_ABOVE] + list(knots))
+    free = [k for k in axis if k < 0.0]
+    n = len(free)
+
+    def basis(r: float) -> list[float]:
+        return [interp(axis, [1.0 if a == f else 0.0 for a in axis], r) for f in free]
+
+    rows, ys, ws = [], [], []
+    for c in cases:
+        s = math.fsum(c["ws"])
+        row = [0.0] * n
+        for w in c["ws"]:
+            if w != 0.0:
+                row = [a + w * b for a, b in zip(row, basis(s - w))]
+        rows.append(row)
+        ys.append(c["y"])
+        ws.append(1.0 / (c["sigma"] ** 2))
+    ata = [[math.fsum(w * r[i] * r[j] for r, w in zip(rows, ws)) for j in range(n)] for i in range(n)]
+    atb = [math.fsum(w * r[i] * y for r, y, w in zip(rows, ys, ws)) for i in range(n)]
+    inv = _invert(ata)
+    g = [math.fsum(inv[i][j] * atb[j] for j in range(n)) for i in range(n)]
+    unc = [math.sqrt(inv[i][i]) for i in range(n)]
+    gv = dict(zip(free, g))
+    uv = dict(zip(free, unc))
+    return {"a": axis, "rho": [gv.get(a, 0.0) for a in axis], "unc": [uv.get(a, 0.0) for a in axis],
+            "residuals": [y - math.fsum(r[i] * g[i] for i in range(n)) for r, y in zip(rows, ys)], "fitCases": [c.get("case") for c in cases]}
+
+
+def _invert(m: list[list[float]]) -> list[list[float]]:
+    """Gauss-Jordan inverse with partial pivoting; refuses a singular matrix (the fit cases cannot determine every knot)."""
+    n = len(m)
+    a = [list(r) + [1.0 if i == j else 0.0 for j in range(n)] for i, r in enumerate(m)]
+    for c in range(n):
+        p = max(range(c, n), key=lambda r: abs(a[r][c]))
+        if abs(a[p][c]) < 1e-12 * max(abs(m[i][i]) for i in range(n)):
+            raise ValueError("the shadowing fit is singular: the fit cases do not determine every knot")
+        a[c], a[p] = a[p], a[c]
+        piv = a[c][c]
+        a[c] = [v / piv for v in a[c]]
+        for r in range(n):
+            if r != c and a[r][c] != 0.0:
+                f = a[r][c]
+                a[r] = [v - f * u for v, u in zip(a[r], a[c])]
+    return [r[n:] for r in a]
+
+
 def path_convergence(row: dict) -> dict:
     """The drift check of the protocols for a held-out path case (300 batches): the mean k of batches 101 to 200 and of 201 to 300 agree within 2 standard
     errors of their difference (batch values taken as independent)."""
@@ -434,20 +528,20 @@ def path_convergence(row: dict) -> dict:
     return {"z": z, "converged": z <= 2.0}
 
 
-def check_path(rows: list[dict]) -> dict[str, dict]:
-    """The held-out path rows must be exactly the nine cases of pipeline/openmc/beavrs_cases.path_cases(), once each, with the planned settings."""
+def check_path(rows: list[dict], plan: dict | None = None, name: str = "path") -> dict[str, dict]:
+    """The path rows must be exactly the cases of the plan (default: the nine of pipeline/openmc/beavrs_cases.path_cases()), once each, with the planned settings."""
     ids = [r["case"] for r in rows]
     dup = sorted({c for c in ids if ids.count(c) > 1})
     if dup:
-        raise ValueError(f"duplicate path cases {dup}")
-    plan = path_cases()
+        raise ValueError(f"duplicate {name} cases {dup}")
+    plan = plan if plan is not None else path_cases()
     if set(ids) != set(plan):
-        raise ValueError(f"the path cases do not match the plan: missing {sorted(set(plan) - set(ids))}, unexpected {sorted(set(ids) - set(plan))}")
+        raise ValueError(f"the {name} cases do not match the plan: missing {sorted(set(plan) - set(ids))}, unexpected {sorted(set(ids) - set(plan))}")
     for r in rows:
         want = plan[r["case"]]
         for key in ("steps", "boron", "tFuel", "tWater", "particles", "batches", "inactive", "ifp"):
             if r.get(key) != want[key]:
-                raise ValueError(f"path case {r['case']}: {key} is {r.get(key)!r}, the plan says {want[key]!r}")
+                raise ValueError(f"{name} case {r['case']}: {key} is {r.get(key)!r}, the plan says {want[key]!r}")
     return {r["case"]: r for r in rows}
 
 
@@ -523,18 +617,36 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--core", type=Path, default=CORE)
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument("--report", type=Path, default=REPORT)
-    ap.add_argument("--path", type=Path, default=PATH, help="the held-out path cases (beavrs_path.jsonl)")
-    ap.add_argument("--no-path", action="store_true", help="export without held-out path cases (jointChecked stays empty and the notes say the path was not checked)")
+    ap.add_argument("--model", choices=("shadowing", "interaction"), default="shadowing",
+                    help="rod-interaction-v2 (the fifteenth protocol, default) or rod-interaction-v1 (the fourteenth)")
+    ap.add_argument("--path", type=Path, default=PATH, help="the nine path cases (beavrs_path.jsonl): fit data for shadowing, held-out for interaction")
+    ap.add_argument("--no-path", action="store_true", help="interaction only: export without held-out path cases (jointChecked stays empty and the notes say so)")
+    ap.add_argument("--shadow", type=Path, default=SHADOW, help="shadowing only: the 13 held-out cases (beavrs_shadow.jsonl)")
+    ap.add_argument("--no-shadow", action="store_true", help="shadowing only: export without the held-out cases (jointChecked stays empty and the notes say so)")
     args = ap.parse_args(argv)
     rows = [json.loads(line) for line in args.sweep.read_text(encoding="utf-8").splitlines() if line.strip()]
     core = json.loads(args.core.read_text(encoding="utf-8"))
-    if args.no_path:
+    def read_rows(p: Path) -> list[dict]:
+        return [json.loads(line) for line in p.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+    shadow_rows = None
+    if args.model == "shadowing":
+        if args.no_path:
+            raise SystemExit("--no-path belongs to the interaction model: the shadowing table is fitted to the nine path cases")
+        if not args.path.exists():
+            raise SystemExit(f"the path file {args.path} does not exist: the shadowing table is fitted to it (beavrs_sweep --family path)")
+        path_rows = read_rows(args.path)
+        if not args.no_shadow:
+            if not args.shadow.exists():
+                raise SystemExit(f"the held-out file {args.shadow} does not exist: run the 13 cases (beavrs_sweep --family shadow) or pass --no-shadow")
+            shadow_rows = read_rows(args.shadow)
+    elif args.no_path:
         path_rows = None
     elif not args.path.exists():
         raise SystemExit(f"the held-out path file {args.path} does not exist: run the nine path cases (beavrs_sweep --family path) or pass --no-path")
     else:
-        path_rows = [json.loads(line) for line in args.path.read_text(encoding="utf-8").splitlines() if line.strip()]
-    m, blobs, report = build(rows, core, path_rows=path_rows)
+        path_rows = read_rows(args.path)
+    m, blobs, report = build(rows, core, path_rows=path_rows, model=args.model, shadow_rows=shadow_rows)
     blobs["README.md"] = README.read_bytes()          # the library folder is rebuilt from scratch, so its README is part of the export
     write_library(args.out, m, blobs, validate=True)
     args.report.write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8", newline="\n")
