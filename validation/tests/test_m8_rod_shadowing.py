@@ -72,6 +72,38 @@ class PlantedAnalysis(unittest.TestCase):
         self.assertAlmostEqual(e["differenceWithoutTablePcm"], -e["correctionPcm"], places=3)
         self.assertAlmostEqual(self.report["P"]["L-ARO-860"]["correctionPcm"], 0.0, places=6)         # nothing moved: no shadowing
 
+    def test_the_correction_is_the_planted_law_and_the_difference_is_library_minus_transport(self):
+        want = planted.planted_shadow_sum(shadow_cases()["X-9"]["steps"], planted.planted_g) * 1e5
+        e = self.report["P"]["X-9"]
+        self.assertAlmostEqual(e["correctionPcm"], want, places=3)
+        held = copy.deepcopy(self.held)
+        shift(held, "X-9", 2.5e-3)                                       # transport 250 pcm higher: the library is 250 pcm lower
+        r = self.run_with(held)
+        self.assertAlmostEqual(r["P"]["X-9"]["differencePcm"], -250.0, delta=0.5)
+        shift(held, "X-9", -5.0e-3)                                      # and 250 pcm lower than the planted: the library is 250 pcm higher
+        r = self.run_with(held)
+        self.assertAlmostEqual(r["P"]["X-9"]["differencePcm"], 250.0, delta=0.5)
+
+    def test_a_table_that_makes_a_case_worse_is_flagged(self):
+        held = copy.deepcopy(self.held)
+        shift(held, "X-9", -self.report["P"]["X-9"]["correctionPcm"] / 1e5)       # the transport case equals the summed model
+        r = self.run_with(held)
+        self.assertFalse(r["P"]["X-9"]["improvesOnTheSum"])
+        self.assertTrue(self.report["P"]["X-9"]["improvesOnTheSum"])
+
+    def test_cases_that_are_not_computed_can_keep_the_decision_open_when_they_could_still_save_it(self):
+        held = copy.deepcopy(self.held)
+        for c in ("O-S3", "O-S5", "O-S6", "X-5"):
+            unconverge(held, c)                                          # nine computed, all good: ten are needed, and four are missing
+        r = self.run_with(held)
+        self.assertEqual(items(r, "P1."), [])
+        self.assertEqual(items(r, "P2."), [])
+        self.assertTrue(any("not decided" in i for i in items(r, "P4.")))
+        shift(held, "L-C-0", 2.5e-3)                                      # now only eight good or plausible even with the four, still reachable (8 + 4 = 12): open
+        shift(held, "L-C-160", 2.5e-3)                                    # two lesson fails: lesson cases 3 of 5 and none missing: defeated
+        r = self.run_with(held)
+        self.assertTrue(items(r, "P2."))
+
     def test_part_m_is_the_twelfth_protocols_analysis_of_the_library(self):
         m = self.report["M"]
         for key in ("A", "B", "C", "F"):
