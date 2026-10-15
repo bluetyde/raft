@@ -95,6 +95,7 @@ class Rod:
 
 BORON_CAPABILITY = "point-kinetics/boron-v1"
 ROD_INTERACTION_CAPABILITY = "point-kinetics/rod-interaction-v1"
+ROD_SHADOW_CAPABILITY = "point-kinetics/rod-interaction-v2"
 
 
 def _digest(folder: Path, manifest: dict) -> str:
@@ -142,6 +143,9 @@ class Library:
         self.has_rod_interaction = ROD_INTERACTION_CAPABILITY in m["capabilities"]
         self.rod_interaction = (Table(r["rodInteraction"]["S"], r["rodInteraction"]["rho"], r["rodInteraction"]["outOfRange"])
                                 if self.has_rod_interaction else None)     # a correction added to the sum of the single-rod reactivities, a function of that sum
+        self.has_rod_shadow = ROD_SHADOW_CAPABILITY in m["capabilities"]
+        self.rod_shadow = (Table(r["rodShadowing"]["R"], r["rodShadowing"]["g"], r["rodShadowing"]["outOfRange"])
+                           if self.has_rod_shadow else None)     # g(R): the fractional change of a rod's worth when the other rods' summed reactivity is R
         self.has_boron = BORON_CAPABILITY in m["capabilities"]
         self.boron = None
         self.ref_boron = None

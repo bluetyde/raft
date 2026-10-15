@@ -26,7 +26,8 @@ SCHEMA_PATH = REPO_ROOT / "schema" / "library.schema.json"
 SUPPORTED_VERSIONS = ("0.1.0",)
 BORON_CAPABILITY = "point-kinetics/boron-v1"      # soluble boron: reference.boron, reactivity.boron, plant.boron, domain.boron, truth.boron, boron.set
 ROD_INTERACTION_CAPABILITY = "point-kinetics/rod-interaction-v1"      # reactivity.rodInteraction: a correction on the summed single-rod reactivities
-SUPPORTED_CAPABILITIES = ("point-kinetics/lumped-thermal-v1", "point-kinetics/lumped-thermal-v2", BORON_CAPABILITY, ROD_INTERACTION_CAPABILITY)
+ROD_SHADOW_CAPABILITY = "point-kinetics/rod-interaction-v2"           # reactivity.rodShadowing: each rod's worth scaled by 1 + g(the other rods' summed reactivity)
+SUPPORTED_CAPABILITIES = ("point-kinetics/lumped-thermal-v1", "point-kinetics/lumped-thermal-v2", BORON_CAPABILITY, ROD_INTERACTION_CAPABILITY, ROD_SHADOW_CAPABILITY)
 TRUTH_SIGNALS = ("power", "period", "fuelTemp", "coolantTemp", "xenon", "mode")
 
 TABLE_REF_TOL = 1e-9     # reactivity tables (JSON doubles)
@@ -84,6 +85,7 @@ class _Checker:
         self.arrays: dict[str, list[float]] = {}
         self.has_boron = False
         self.has_rod_interaction = False
+        self.has_rod_shadow = False
 
     def add(self, code: str, path: str, message: str) -> None:
         self.issues.append(Issue(code, path, message))
@@ -137,6 +139,14 @@ class _Checker:
             self.add("E_CAPABILITY_UNSUPPORTED", "$.reactivity.rodInteraction", f"rodInteraction needs the capability {ROD_INTERACTION_CAPABILITY}")
         if self.has_rod_interaction and not has_field:
             self.add("E_SCHEMA", "$.reactivity.rodInteraction", f"required by the capability {ROD_INTERACTION_CAPABILITY}")
+        self.has_rod_shadow = ROD_SHADOW_CAPABILITY in m["capabilities"]
+        has_shadow = "rodShadowing" in m["reactivity"]
+        if has_shadow and not self.has_rod_shadow:
+            self.add("E_CAPABILITY_UNSUPPORTED", "$.reactivity.rodShadowing", f"rodShadowing needs the capability {ROD_SHADOW_CAPABILITY}")
+        if self.has_rod_shadow and not has_shadow:
+            self.add("E_SCHEMA", "$.reactivity.rodShadowing", f"required by the capability {ROD_SHADOW_CAPABILITY}")
+        if self.has_rod_shadow and self.has_rod_interaction:
+            self.add("E_CAPABILITY_UNSUPPORTED", "$.capabilities", f"{ROD_SHADOW_CAPABILITY} and {ROD_INTERACTION_CAPABILITY} replace each other: a library carries one of them")
         if self.issues:
             return self.issues
 
@@ -231,6 +241,8 @@ class _Checker:
         self._table(r["xenon"], "N", "rho", "$.reactivity.xenon", ref["xenon"]["value"])
         if self.has_rod_interaction:
             self._table(r["rodInteraction"], "S", "rho", "$.reactivity.rodInteraction", 0.0)       # zero where every rod is at its reference position
+        if self.has_rod_shadow:
+            self._table(r["rodShadowing"], "R", "g", "$.reactivity.rodShadowing", 0.0)       # no shadowing where the other rods are at their reference positions
         if self.has_boron:
             self._table(r["boron"], "C", "rho", "$.reactivity.boron", ref["boron"]["value"])
             lo, hi = m["plant"]["boron"]["range"]

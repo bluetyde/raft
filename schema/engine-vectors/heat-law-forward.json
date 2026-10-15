@@ -47,7 +47,7 @@
    "outerDt": 0.01,
    "rtol": 1e-06
   },
-  "engineVersion": "0.5.0",
+  "engineVersion": "0.6.0",
   "libraryDigest": "55365c04f911f46a7ac1d56a423c07c810e59aa18140be516e87625d1af6fd2c"
  },
  "sampleEvery": 25,

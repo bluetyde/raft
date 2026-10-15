@@ -171,6 +171,26 @@ def _scenarios(lib: Library) -> list[dict]:
             ],
         },
         {
+            "name": "rod-shadowing",
+            "description": "Rod shadowing table (synthetic-core-rod-shadowing: each rod's worth scaled by 1 + g(R), g = -2 R, R the summed reactivity of the other rods, clamped beyond +0.03): "
+                           "the rods start half out, the safety rod is withdrawn to near critical (the others' summed reactivity passes the end of the table, so g clamps), "
+                           "then the regulating rod moves out and the safety rod back in.",
+            "libraryFixture": "synthetic-core-rod-shadowing",
+            "init": {"rods": {"safety": 0.5, "regulating": 0.5, "transient": 0.5}},
+            "seed": 1,
+            "config": {"outerDt": 0.01},
+            "steps": 6000,
+            "sampleEvery": 200,
+            "script": [
+                {"step": 0, "cmd": {"type": "rod.move", "rod": "safety", "direction": "out"}},
+                {"step": 1400, "cmd": {"type": "rod.move", "rod": "safety", "direction": "stop"}},
+                {"step": 2000, "cmd": {"type": "rod.move", "rod": "regulating", "direction": "out"}},
+                {"step": 2500, "cmd": {"type": "rod.move", "rod": "regulating", "direction": "stop"}},
+                {"step": 3500, "cmd": {"type": "rod.move", "rod": "safety", "direction": "in"}},
+                {"step": 4500, "cmd": {"type": "rod.move", "rod": "safety", "direction": "stop"}},
+            ],
+        },
+        {
             "name": "period-trip",
             "description": "Transient rod withdrawal triggering internal short-period trip.",
             "init": {"rods": copy.deepcopy(_near_crit)},
