@@ -6,15 +6,15 @@
   "capabilities": [
     "point-kinetics/lumped-thermal-v1",
     "point-kinetics/boron-v1",
-    "point-kinetics/rod-interaction-v1"
+    "point-kinetics/rod-interaction-v2"
   ],
   "provenance": {
     "generator": "pipeline.library.export_beavrs",
     "transportCode": "OpenMC 0.15.3",
     "nuclearData": "ENDF/B-VIII.0",
     "model": "BEAVRS 3D full core, hot zero power (mit-crpg/BEAVRS, MIT licence), 45 cases of pipeline/openmc/beavrs_cases.py",
-    "created": "2026-10-14",
-    "notes": "Zero-power physics only. Reactivity tables, kinetics, shapes and boron worth come from the transport sweep; the plant (rod speed, scram, thermal masses, heat transfer, instruments, trips) is assumed and labelled so. Isothermal temperature coefficient: the transport model is 1.6 to 2.0 pcm/F too negative against the benchmark measurement (docs/validation/m8-beavrs-hzp-results.md), so temperature feedback is NOT validated. Xenon worth is zero (not computed); no decay heat; no pressure. The shape of the power does not depend on coolant temperature or boron. Several banks in: the single-bank worths are summed and a correction table on that sum (reactivity.rodInteraction, fitted to the transport cases with banks C and D, A to D, and D to SC in, and to nothing else) accounts for the banks being worth more together; it is valid along the benchmark insertion order (D, C, B, A, SE, SD, SC) and nowhere else claimed (docs/validation/m8-rod-interaction-protocol.md). Checked against 9 held-out path cases: 0 within the limit (listed in domain.jointChecked).",
+    "created": "2026-10-15",
+    "notes": "Zero-power physics only. Reactivity tables, kinetics, shapes and boron worth come from the transport sweep; the plant (rod speed, scram, thermal masses, heat transfer, instruments, trips) is assumed and labelled so. Isothermal temperature coefficient: the transport model is 1.6 to 2.0 pcm/F too negative against the benchmark measurement (docs/validation/m8-beavrs-hzp-results.md), so temperature feedback is NOT validated. Xenon worth is zero (not computed); no decay heat; no pressure. The shape of the power does not depend on coolant temperature or boron. Several banks in: each bank's worth is scaled by 1 + g(the summed single-bank reactivity of the other banks) (reactivity.rodShadowing, capability rod-interaction-v2, fitted to the three combined sweep cases and the nine path cases of the fourteenth protocol, and to nothing else); it sees only that sum, not which banks or where in the core, so it is valid only along the states it was checked on (docs/validation/m8-rod-shadowing-protocol.md). NOT checked against held-out transport cases: none was given to the exporter, domain.jointChecked is empty.",
     "sources": [
       {
         "id": "beavrs",
@@ -641,28 +641,28 @@
       "outOfRange": "clamp-and-flag",
       "source": "transport"
     },
-    "rodInteraction": {
-      "S": [
-        -0.0407533464411849,
-        -0.026328624808111406,
-        -0.01576480626750654,
-        -0.00826503275178947,
+    "rodShadowing": {
+      "R": [
+        -0.0385,
+        -0.03,
+        -0.02,
+        -0.01,
         0.0,
         0.001
       ],
-      "rho": [
-        -0.019528228679895725,
-        -0.011064560226615637,
-        -0.004203403390727601,
-        0.0,
+      "g": [
+        0.618297137569249,
+        0.3275776067511597,
+        0.39204865789439236,
+        0.2715468003417978,
         0.0,
         0.0
       ],
       "unc": [
-        0.0003585962665816364,
-        0.0003670885300600803,
-        0.0003623759581230259,
-        0.0,
+        0.015264219966739732,
+        0.007752397260112986,
+        0.006843710414713642,
+        0.012730106328314806,
         0.0,
         0.0
       ],
