@@ -275,3 +275,18 @@ The reactivity of section 5 gains one term, `rodInteraction(Σ wᵢ(xᵢ))`, add
 Validity: a summed worth outside the table's axis sets `R_DOMAIN_ROD_INTERACTION` (status `outOfDomain`; the correction is held at the end value under `clamp-and-flag`), because this table has no `domain` entry of its own. A state where the correction is not zero is a combination of rods like any other: with one rod away from its reference it needs a `jointChecked` entry too (`R_JOINT_UNCHECKED` otherwise), as two or more moved rods always did.
 
 What a library using it should say in its notes (advisory, not validated): the correction depends on the sum S alone, not on which rods make it up, so it is valid only along the rod combinations it was fitted to and checked on (the BEAVRS library: the benchmark insertion order); `domain.jointChecked` lists the combinations that were checked against full transport runs, and the runtime still reports `R_JOINT_UNCHECKED` elsewhere. Not in this version: a dependence of the temperature, boron or xenon tables on the rods, and of the power shapes on the correction.
+
+## 17. Rod shadowing (capability `point-kinetics/rod-interaction-v2`)
+
+The second candidate for the same problem as section 16: rods that do not act independently. Section 16's correction depends only on the *sum* of the single-rod reactivities, and the fourteenth protocol showed that is not enough (`docs/validation/m8-rod-interaction-results.md`: two states with the same sum needed corrections 164 pcm apart). This one scales each rod's worth by a function of what the *other* rods are doing. A library carries `rod-interaction-v1` or `rod-interaction-v2`, not both (`E_CAPABILITY_UNSUPPORTED`). Adds one field, required with the capability and refused without it (`E_CAPABILITY_UNSUPPORTED` when present without it, `E_SCHEMA` when missing with it).
+
+- `reactivity.rodShadowing`: a table `{ "R": [...], "g": [...], "unc"?, "interp", "outOfRange", "source" }`. The axis `R` is **the summed single-rod reactivity of all the other rods**, `Rᵢ = Σⱼ≠ᵢ wⱼ(xⱼ)` (pcm as a fraction, the engine's unit; negative when the others are further in). The value `g` is dimensionless: the **fractional change of rod i's worth** when the others are at `Rᵢ`. The rods' own term of section 5, `Σ wᵢ`, becomes `Σ wᵢ · (1 + g(Rᵢ))`; with `S = Σ wᵢ` and `Rᵢ = S − wᵢ`, the correction added is `Σ wᵢ · g(S − wᵢ)`.
+
+Rules: `g` is zero at `R = 0` and `R = 0` must lie inside the axis (`E_REF_NONZERO`; the axis should extend somewhat above 0, because the others can be slightly above their reference); the axis is strictly increasing (`E_TABLE_NOT_MONOTONIC`); the columns have equal length (`E_TABLE_LENGTH`). `outOfRange` as for the other tables; with `reject` the engine halts (`R_TABLE_REJECT_rodInteraction`) when a rod's `Rᵢ` leaves the axis.
+
+The snapshot's `truth.reactivity` carries the correction in the field `rodInteraction` (the same field as section 16; a library has one of the two). A rod at its reference position (worth 0) has no term and is not checked against the axis. One rod alone is not shadowed (`R = 0`).
+
+Validity: a rod whose `Rᵢ` lies outside the axis sets `R_DOMAIN_ROD_INTERACTION` (status `outOfDomain`; `g` is held at the end value under `clamp-and-flag`). Two or more rods away from their references need a `jointChecked` entry as always (`R_JOINT_UNCHECKED` otherwise).
+
+What a library using it should say in its notes (advisory, not validated): the model sees only the others' summed reactivity, not which rods or where in the core, so it is valid only along the rod combinations it was fitted to and checked on.
+
