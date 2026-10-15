@@ -80,6 +80,28 @@ def path_cases() -> "OrderedDict[str, dict]":
     return out
 
 
+SHADOW_LESSON_BORON = 860.0
+
+
+def shadow_cases() -> "OrderedDict[str, dict]":
+    """The 13 new held-out cases of docs/validation/m8-rod-shadowing-protocol.md (fifteenth protocol), not used to fit the shadowing correction.
+    L: the lesson's path (seven banks in, C part-way) at 860 ppm; L-ARO-860: all banks at reference, 860 ppm; O: a different insertion order;
+    X: states with SA and SB in. 566.483 K, the sweep's settings."""
+    seven = {b: 0 for b in INSERT_ORDER}
+    out: "OrderedDict[str, dict]" = OrderedDict()
+    for c in (0, 40, 83, 120, 160):
+        out[f"L-C-{c}"] = _case("shadow", {**seven, "C": c}, boron=SHADOW_LESSON_BORON)
+    out["L-ARO-860"] = _case("shadow", None, boron=SHADOW_LESSON_BORON)
+    out["O-S3"] = _case("shadow", {b: 0 for b in ("SC", "SD", "SE")})
+    out["O-S5"] = _case("shadow", {b: 0 for b in ("SC", "SD", "SE", "A", "B")})
+    out["O-S6"] = _case("shadow", {b: 0 for b in ("SC", "SD", "SE", "A", "B", "C")})
+    out["O-D-76"] = _case("shadow", {**{b: 0 for b in ("SC", "SD", "SE", "A", "B", "C")}, "D": 76})
+    out["X-5"] = _case("shadow", {b: 0 for b in ("D", "C", "B", "A", "SA")})
+    out["X-6"] = _case("shadow", {b: 0 for b in ("D", "C", "B", "A", "SA", "SB")})
+    out["X-9"] = _case("shadow", {b: 0 for b in BANKS})
+    return out
+
+
 def check_beavrs_head(beavrs_dir: Path, expected: str | None = None) -> str:
     """The clone the runners import the model from must be at the commit the protocols fix; returns it, else raises."""
     want = expected or BEAVRS_HEAD
