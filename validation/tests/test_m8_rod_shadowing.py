@@ -73,9 +73,9 @@ class PlantedAnalysis(unittest.TestCase):
         self.assertAlmostEqual(self.report["P"]["L-ARO-860"]["correctionPcm"], 0.0, places=6)         # nothing moved: no shadowing
 
     def test_the_correction_is_the_planted_law_and_the_difference_is_library_minus_transport(self):
-        want = planted.planted_shadow_sum(shadow_cases()["X-9"]["steps"], planted.planted_g) * 1e5
-        e = self.report["P"]["X-9"]
-        self.assertAlmostEqual(e["correctionPcm"], want, places=3)
+        for cid, c in shadow_cases().items():            # all 13: in the deep states the planted g saturates, so the shallower ones are what tell s - w from s
+            want = planted.planted_shadow_sum(c["steps"], planted.planted_g) * 1e5
+            self.assertAlmostEqual(self.report["P"][cid]["correctionPcm"], want, places=3, msg=cid)
         held = copy.deepcopy(self.held)
         shift(held, "X-9", 2.5e-3)                                       # transport 250 pcm higher: the library is 250 pcm lower
         r = self.run_with(held)
