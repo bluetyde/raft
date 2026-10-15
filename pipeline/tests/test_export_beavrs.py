@@ -17,7 +17,7 @@ from physics_ref.engine import Engine
 from physics_ref.library import Library
 from pipeline.library import export_beavrs as xb
 from pipeline.library.validate import validate_library
-from pipeline.openmc.beavrs_cases import path_cases, shadow_cases, sweep_cases
+from pipeline.openmc.beavrs_cases import near_cases, path_cases, shadow_cases, sweep_cases
 
 CORE = json.loads(xb.CORE.read_text(encoding="utf-8"))
 NXY = 19 * 19
@@ -518,6 +518,15 @@ class PlantedShadowing(unittest.TestCase):
         self.assertIn("Checked against 12 held-out cases: 12 within the limit", m["provenance"]["notes"])
         with self.assertRaises(ValueError):                              # an unknown case is still refused
             xb.build(self.rows, CORE, path_rows=self.path, model="shadowing", shadow_rows=[dict(held[0], case="Z-1")], shadow_knots=KNOTS)
+
+    def test_the_near_critical_cases_of_the_sixteenth_protocol_are_held_out_too(self):
+        held = self.held + make_rows(plan=near_cases(), shadow=planted_g)
+        m, _, report = xb.build(self.rows, CORE, created="2026-10-15", path_rows=self.path, model="shadowing", shadow_rows=held, shadow_knots=KNOTS)
+        for cid in near_cases():
+            self.assertEqual(report["heldOutCases"][cid]["label"], "good", cid)
+        self.assertEqual(len(m["domain"]["jointChecked"]), 20)
+        self.assertEqual(report["tables"]["rodShadowing"]["fitCases"], self.report["tables"]["rodShadowing"]["fitCases"])      # they do not enter the fit
+        self.assertEqual(m["reactivity"]["rodShadowing"], self.m["reactivity"]["rodShadowing"])
 
     def test_the_notes_say_that_checks_at_another_boron_hold_there_only(self):
         self.assertIn("860 ppm hold at that boron only", self.m["provenance"]["notes"])

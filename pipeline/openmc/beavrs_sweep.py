@@ -31,6 +31,7 @@ from pipeline.openmc import beavrs_cases as bc  # noqa: E402
 RESULTS = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_sweep.jsonl"
 PATH_RESULTS = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_path.jsonl"
 SHADOW_RESULTS = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_shadow.jsonl"
+NEAR_RESULTS = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_near.jsonl"
 PRESSURE_MPA = 15.5
 WATER = ("Borated Water", "Water SPN")
 IFP_GENERATIONS = 10
@@ -116,12 +117,12 @@ def main(argv: list[str] | None = None) -> int:
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--all", action="store_true")
     g.add_argument("--case", action="append")
-    ap.add_argument("--family", choices=("sweep", "path", "shadow"), default="sweep", help="the 45 library cases, the nine held-out path cases of the fourteenth protocol, or the 13 held-out cases of the fifteenth")
+    ap.add_argument("--family", choices=("sweep", "path", "shadow", "near"), default="sweep", help="the 45 library cases, the nine held-out path cases of the fourteenth protocol, or the 13 held-out cases of the fifteenth")
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--smoke", default=None, help="particles,batches,inactive for a test run; only with an --out other than the sweep's file")
     args = ap.parse_args(argv)
-    plan, default_out = {"sweep": (bc.sweep_cases, RESULTS), "path": (bc.path_cases, PATH_RESULTS), "shadow": (bc.shadow_cases, SHADOW_RESULTS)}[args.family]
+    plan, default_out = {"sweep": (bc.sweep_cases, RESULTS), "path": (bc.path_cases, PATH_RESULTS), "shadow": (bc.shadow_cases, SHADOW_RESULTS), "near": (bc.near_cases, NEAR_RESULTS)}[args.family]
     plan = plan()
     if args.out is None:
         args.out = default_out

@@ -102,6 +102,19 @@ def shadow_cases() -> "OrderedDict[str, dict]":
     return out
 
 
+NEAR_BORON = 900.0
+NEAR_C_STEPS = (0, 40, 80, 120, 140, 180, 228)
+
+
+def near_cases() -> "OrderedDict[str, dict]":
+    """The 7 new held-out cases of docs/validation/m8-near-critical-protocol.md (sixteenth protocol): banks D and C in, C withdrawn, every other bank at its
+    reference position, 900 ppm, 566.483 K, the sweep's settings."""
+    out: "OrderedDict[str, dict]" = OrderedDict()
+    for c in NEAR_C_STEPS:
+        out[f"N-C-{c}"] = _case("near", {"D": 0, "C": c}, boron=NEAR_BORON)
+    return out
+
+
 def check_beavrs_head(beavrs_dir: Path, expected: str | None = None) -> str:
     """The clone the runners import the model from must be at the commit the protocols fix; returns it, else raises."""
     want = expected or BEAVRS_HEAD

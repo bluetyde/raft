@@ -20,7 +20,7 @@ from pathlib import Path
 from pipeline.library.export_openmc import _pack_f32_slice_normalized, interp, isotonic
 from pipeline.library.synthetic import descriptor, pack
 from pipeline.library.validate import validate_library
-from pipeline.openmc.beavrs_cases import path_cases, shadow_cases, sweep_cases
+from pipeline.openmc.beavrs_cases import near_cases, path_cases, shadow_cases, sweep_cases
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SWEEP = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_sweep.jsonl"
@@ -30,6 +30,7 @@ README = Path(__file__).with_name("beavrs_library_README.md")
 REPORT = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_export_report.json"
 PATH = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_path.jsonl"
 SHADOW = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_shadow.jsonl"
+NEAR = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_near.jsonl"
 
 LIB_ID = "pwr-beavrs-hzp-openmc"
 BANKS = ["A", "B", "C", "D", "SA", "SB", "SC", "SD", "SE"]
@@ -134,7 +135,7 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
         if path_rows is None:
             raise ValueError("the shadowing table is fitted to the nine path cases: path_rows are required")
         by_fit_path = check_path(path_rows)
-        by_path = check_path(shadow_rows, shadow_cases(), "shadow", allow_subset=True) if shadow_rows is not None else {}
+        by_path = check_path(shadow_rows, {**shadow_cases(), **near_cases()}, "shadow", allow_subset=True) if shadow_rows is not None else {}
     else:
         if shadow_rows is not None:
             raise ValueError("shadow_rows belong to the shadowing model")
@@ -629,6 +630,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--path", type=Path, default=PATH, help="the nine path cases (beavrs_path.jsonl): fit data for shadowing, held-out for interaction")
     ap.add_argument("--no-path", action="store_true", help="interaction only: export without held-out path cases (jointChecked stays empty and the notes say so)")
     ap.add_argument("--shadow", type=Path, default=SHADOW, help="shadowing only: the 13 held-out cases (beavrs_shadow.jsonl)")
+    ap.add_argument("--near", type=Path, default=NEAR, help="shadowing only: the 7 near-critical held-out cases of the sixteenth protocol (beavrs_near.jsonl), used if the file exists")
     ap.add_argument("--no-shadow", action="store_true", help="shadowing only: export without the held-out cases (jointChecked stays empty and the notes say so)")
     args = ap.parse_args(argv)
     rows = [json.loads(line) for line in args.sweep.read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -647,6 +649,8 @@ def main(argv: list[str] | None = None) -> int:
             if not args.shadow.exists():
                 raise SystemExit(f"the held-out file {args.shadow} does not exist: run the 13 cases (beavrs_sweep --family shadow) or pass --no-shadow")
             shadow_rows = read_rows(args.shadow)
+            if args.near.exists():
+                shadow_rows += read_rows(args.near)
     elif args.no_path:
         path_rows = None
     elif not args.path.exists():
