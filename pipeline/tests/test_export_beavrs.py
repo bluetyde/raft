@@ -445,6 +445,15 @@ class PlantedShadowing(unittest.TestCase):
         self.assertEqual(t["g"][t["R"].index(0.0)], 0.0)
         self.assertEqual(t["g"][-1], 0.0)
 
+    def test_the_table_carries_the_fits_uncertainty_at_the_free_knots_only(self):
+        t = self.m["reactivity"]["rodShadowing"]
+        for r, u in zip(t["R"], t["unc"]):
+            if r < 0.0:
+                self.assertGreater(u, 0.0, r)
+                self.assertLess(u, 0.1, r)            # g is dimensionless: errors of 1e-4 in reactivity on worths of 1e-3 give an uncertainty of a few percent
+            else:
+                self.assertEqual(u, 0.0, r)
+
     def test_the_library_has_v2_only_and_validates(self):
         self.assertIn(xb.ROD_SHADOW_CAPABILITY, self.m["capabilities"])
         self.assertNotIn(xb.ROD_INTERACTION_CAPABILITY, self.m["capabilities"])
@@ -509,13 +518,13 @@ class PlantedShadowing(unittest.TestCase):
         with self.assertRaises(ValueError):
             xb.build(self.rows, CORE, model="shadowing")                                   # no fit data for g
         with self.assertRaises(ValueError):
-            xb.build(self.rows, CORE, model="interaction", shadow_rows=self.held)
+            xb.build(make_rows(), CORE, model="interaction", shadow_rows=self.held)
         with self.assertRaises(ValueError):
             xb.build(self.rows, CORE, model="other")
         short = [r for r in self.path if r["case"] != "P-S5"]
         with self.assertRaises(ValueError):
             xb.build(self.rows, CORE, path_rows=short, model="shadowing")
-        wrong = [dict(r, boron=860.0) if r["case"] == "L-C-0" else r for r in self.held]
+        wrong = [dict(r, boron=975.0) if r["case"] == "L-C-0" else r for r in self.held]
         with self.assertRaises(ValueError):
             xb.build(self.rows, CORE, path_rows=self.path, model="shadowing", shadow_rows=wrong)
 
