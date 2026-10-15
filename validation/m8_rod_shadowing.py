@@ -79,6 +79,8 @@ class ShadowModel(lb.Model):
 
     def sigma_between(self, a: tuple, b: tuple) -> float:
         base = super().sigma_between(a, b)
+        if a[0] == b[0]:
+            return base                      # the same rod positions: the shadowing correction is the same number at both ends and cancels
         return math.sqrt(base ** 2 + self.extra(a[0]) ** 2 + self.extra(b[0]) ** 2)
 
 
@@ -92,18 +94,20 @@ def check_pin(model: ShadowModel, knots=PROTOCOL_KNOTS, tol: float = PIN_TOL) ->
         have = next(v for a, v in got.items() if abs(r - a) < 1e-9)
         if abs(have - g) > tol:
             raise PinError(f"the library's g at R = {r} is {have:.3f}, the protocol fixes {g:.3f} (within {tol})")
+    axis = sorted([r for r, _ in knots] + [0.0, xb.R_ABOVE])
+    if len(t["R"]) != len(axis) or any(abs(a - b) > 1e-9 for a, b in zip(sorted(t["R"]), axis)):
+        raise PinError(f"the library's shadowing axis is {t['R']}, the protocol fixes {axis}")
     if any(a >= 0.0 and abs(v) > 1e-12 for a, v in got.items()):
         raise PinError("the library's g is not zero at and above R = 0")
-    if len(t["R"]) != len(knots) + 2:
-        raise PinError(f"the library's shadowing axis has {len(t['R'])} points, the protocol fixes {len(knots) + 2}")
 
 
 def load_shadow(path: Path) -> list[dict]:
+    """The 13 cases of the plan, each once with its planned settings; a case the run did not deliver may be absent (it is then reported as not computed)."""
     rows = [json.loads(x) for x in Path(path).read_text(encoding="utf-8").splitlines() if x.strip()]
     for r in rows:
         if not isinstance(r.get("kBatches"), list) or len(r["kBatches"]) != r.get("batches"):
             raise ValueError(f"case {r.get('case')}: kBatches missing or not one value per batch")
-    xb.check_path(rows, shadow_cases(), "shadow")            # exactly the 13 cases, once, with the planned settings (boron included)
+    xb.check_path(rows, shadow_cases(), "shadow", allow_subset=True)            # no duplicates, no unknown case, the planned settings (boron included)
     return rows
 
 
@@ -121,6 +125,9 @@ def part_p(model: ShadowModel, held: list[dict], v1: "ri.RIModel | None" = None)
     by = {r["case"]: r for r in held}
     out = {}
     for cid in shadow_cases():
+        if cid not in by:
+            out[cid] = {"computed": False, "reason": "missing: not in the held-out file"}
+            continue
         r = by[cid]
         conv = t11.convergence(r)
         if not conv["converged"]:
@@ -154,31 +161,29 @@ def decide_p(p: dict) -> list[str]:
     r_ok = GROUPS["R"][0] in ok
     l_miss = [c for c in lesson if c not in comp]
     r_miss = GROUPS["R"][0] not in comp
-    # the thresholds count a case that was not computed as neither passed nor failed
+    # the thresholds apply to the cases that could be computed (protocol, decision 6): a case not computed counts neither as passed nor as failed,
+    # and if the computed cases do not reach the thresholds the decision is 2
     met = len(l_ok) >= MIN_LESSON and not l_far and r_ok and len(ok) >= MIN_OVERALL and not far
-    possible = (not l_far and not far and len(l_ok) + len(l_miss) >= MIN_LESSON and (r_ok or r_miss) and len(ok) + len(missing) >= MIN_OVERALL)
     if met:
         items.append(f"P1. the lesson may be built on the library: {len(l_ok)} of 5 lesson cases good or plausible, none beyond {BEYOND_LESSON:.0f} pcm, L-ARO-860 {comp['L-ARO-860']['label']}; "
                      f"{len(ok)} of {len(p)} overall, none beyond {BEYOND:.0f} pcm (worst {worst:.0f} pcm); the good cases enter jointChecked; envelope: seven banks in, C withdrawn, boron near 860 ppm")
-    elif not possible:
+    else:
         why = []
-        if len(l_ok) + len(l_miss) < MIN_LESSON:
-            why.append(f"only {len(l_ok)} of 5 lesson cases good or plausible")
+        if len(l_ok) < MIN_LESSON:
+            why.append(f"only {len(l_ok)} of 5 lesson cases good or plausible" + (f" ({len(l_miss)} not computed)" if l_miss else ""))
         if l_far:
             why.append(f"lesson cases beyond {BEYOND_LESSON:.0f} pcm: {', '.join(l_far)}")
-        if not r_ok and not r_miss:
-            why.append("L-ARO-860 is not good or plausible: the boron table, not the rods, is the cause")
-        if len(ok) + len(missing) < MIN_OVERALL:
-            why.append(f"only {len(ok)} of {len(p)} good or plausible overall")
+        if not r_ok:
+            why.append("L-ARO-860 is not good or plausible: the boron table, not the rods, is the cause" if not r_miss else "L-ARO-860 not computed")
+        if len(ok) < MIN_OVERALL:
+            why.append(f"only {len(ok)} of {len(p)} good or plausible overall" + (f" ({len(missing)} not computed)" if missing else ""))
         if far:
             why.append(f"beyond {BEYOND:.0f} pcm: {', '.join(far)}")
         items.append("P2. the lesson is not built on this model: " + "; ".join(why) +
                      "; the user chooses a narrower lesson or stops, and there is no further modelling without a new plan")
         if any(not e["improvesOnTheSum"] for e in comp.values()):
             items.append("P2b. the shadowing table does not improve on the summed model at: " + ", ".join(c for c, e in comp.items() if not e["improvesOnTheSum"]))
-    else:
-        items.append(f"P4. not decided: the thresholds are met only if the not-computed cases {missing} pass; they enter no decision item")
-    if missing and (met or not possible):
+    if missing:
         items.append(f"P4. not computed: {missing}; they enter no decision item ({len(ok)} of {len(comp)} computed cases good or plausible)")
     o_ok = [c for c in GROUPS["O"] if c in ok]
     o_n = len([c for c in GROUPS["O"] if c in comp])

@@ -134,7 +134,7 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
         if path_rows is None:
             raise ValueError("the shadowing table is fitted to the nine path cases: path_rows are required")
         by_fit_path = check_path(path_rows)
-        by_path = check_path(shadow_rows, shadow_cases(), "shadow") if shadow_rows is not None else {}
+        by_path = check_path(shadow_rows, shadow_cases(), "shadow", allow_subset=True) if shadow_rows is not None else {}
     else:
         if shadow_rows is not None:
             raise ValueError("shadow_rows belong to the shadowing model")
@@ -311,8 +311,15 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
     if not held_given:
         checked_note = "NOT checked against held-out transport cases: none was given to the exporter, domain.jointChecked is empty."
     else:
+        if model == "shadowing":                                 # a case the run did not deliver is reported as not computed, and enters no decision
+            for cid in shadow_cases():
+                path_report.setdefault(cid, {"computed": False, "reason": "missing: not in the held-out file"})
         n_good = sum(1 for e in path_report.values() if e.get("label") == "good")
-        checked_note = f"Checked against {len(path_report)} held-out cases: {n_good} within the limit (listed in domain.jointChecked)."
+        n_comp = sum(1 for e in path_report.values() if e.get("computed"))
+        at = sorted({r["boron"] for r in by_path.values() if r["boron"] != b_ref})
+        boron_note = (f" The checks at {', '.join(f'{b:g}' for b in at)} ppm hold at that boron only (domain.jointChecked lists rod positions, not boron; "
+                      "the boron x bank interaction is not in the model).") if at else ""
+        checked_note = f"Checked against {n_comp} held-out cases: {n_good} within the limit (listed in domain.jointChecked)." + boron_note
     if model == "shadowing":
         rod_note = ("Several banks in: each bank's worth is scaled by 1 + g(the summed single-bank reactivity of the other banks) (reactivity.rodShadowing, capability rod-interaction-v2, "
                     "fitted to the three combined sweep cases and the nine path cases of the fourteenth protocol, and to nothing else); it sees only that sum, not which banks or where "
@@ -528,14 +535,14 @@ def path_convergence(row: dict) -> dict:
     return {"z": z, "converged": z <= 2.0}
 
 
-def check_path(rows: list[dict], plan: dict | None = None, name: str = "path") -> dict[str, dict]:
+def check_path(rows: list[dict], plan: dict | None = None, name: str = "path", allow_subset: bool = False) -> dict[str, dict]:
     """The path rows must be exactly the cases of the plan (default: the nine of pipeline/openmc/beavrs_cases.path_cases()), once each, with the planned settings."""
     ids = [r["case"] for r in rows]
     dup = sorted({c for c in ids if ids.count(c) > 1})
     if dup:
         raise ValueError(f"duplicate {name} cases {dup}")
     plan = plan if plan is not None else path_cases()
-    if set(ids) != set(plan):
+    if set(ids) - set(plan) or (not allow_subset and set(ids) != set(plan)):
         raise ValueError(f"the {name} cases do not match the plan: missing {sorted(set(plan) - set(ids))}, unexpected {sorted(set(ids) - set(plan))}")
     for r in rows:
         want = plan[r["case"]]

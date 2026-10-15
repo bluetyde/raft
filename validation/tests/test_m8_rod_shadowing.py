@@ -91,18 +91,30 @@ class PlantedAnalysis(unittest.TestCase):
         self.assertFalse(r["P"]["X-9"]["improvesOnTheSum"])
         self.assertTrue(self.report["P"]["X-9"]["improvesOnTheSum"])
 
-    def test_cases_that_are_not_computed_can_keep_the_decision_open_when_they_could_still_save_it(self):
+    def test_four_unconverged_cases_leave_nine_computed_and_the_lesson_is_not_built(self):
         held = copy.deepcopy(self.held)
         for c in ("O-S3", "O-S5", "O-S6", "X-5"):
-            unconverge(held, c)                                          # nine computed, all good: ten are needed, and four are missing
+            unconverge(held, c)                                          # nine computed, all good: ten are needed (the protocol's decision 6)
         r = self.run_with(held)
         self.assertEqual(items(r, "P1."), [])
-        self.assertEqual(items(r, "P2."), [])
-        self.assertTrue(any("not decided" in i for i in items(r, "P4.")))
-        shift(held, "L-C-0", 2.5e-3)                                      # now only eight good or plausible even with the four, still reachable (8 + 4 = 12): open
-        shift(held, "L-C-160", 2.5e-3)                                    # two lesson fails: lesson cases 3 of 5 and none missing: defeated
+        self.assertIn("only 9 of 13 good or plausible overall (4 not computed)", items(r, "P2.")[0])
+
+    def test_a_case_missing_from_the_file_is_reported_as_not_computed(self):
+        held = [r for r in copy.deepcopy(self.held) if r["case"] != "O-S3"]
         r = self.run_with(held)
-        self.assertTrue(items(r, "P2."))
+        self.assertFalse(r["P"]["O-S3"]["computed"])
+        self.assertIn("missing", r["P"]["O-S3"]["reason"])
+        self.assertEqual(len(items(r, "P1.")), 1)                        # 12 computed, all good
+        self.assertTrue(any("O-S3" in i for i in items(r, "P4.")))
+
+    def test_the_shadowing_error_cancels_between_states_with_the_same_rods(self):
+        rods = self.model.rods(7)
+        same = self.model.sigma_between((rods, lb.BORON_REF, 566.0, 566.0), (rods, lb.BORON_REF, 600.0, 600.0))
+        base = lb.Model.sigma_between(self.model, (rods, lb.BORON_REF, 566.0, 566.0), (rods, lb.BORON_REF, 600.0, 600.0))
+        self.assertEqual(same, base)
+        other = self.model.rods(4)
+        a, b = (rods, lb.BORON_REF, 566.0, 566.0), (other, lb.BORON_REF, 566.0, 566.0)
+        self.assertGreater(self.model.sigma_between(a, b), lb.Model.sigma_between(self.model, a, b))
 
     def test_part_m_is_the_twelfth_protocols_analysis_of_the_library(self):
         m = self.report["M"]
@@ -176,15 +188,14 @@ class PlantedAnalysis(unittest.TestCase):
         self.assertEqual(len(items(r, "P1.")), 1)
         self.assertTrue(any("not computed" in i and "L-C-40" in i for i in items(r, "P4.")))
 
-    def test_two_unconverged_lesson_cases_leave_the_decision_open(self):
+    def test_two_unconverged_lesson_cases_count_neither_way_and_the_computed_ones_decide(self):
         held = copy.deepcopy(self.held)
         unconverge(held, "L-C-40")
         unconverge(held, "L-C-120")
-        shift(held, "L-C-83", 2.5e-3)                                    # computed: 2 good or plausible of 5 (one fails, two missing): the thresholds need the missing ones
-        r = self.run_with(held)
+        r = self.run_with(held)                                          # three of five computed, all good: the thresholds need four
         self.assertEqual(items(r, "P1."), [])
-        self.assertEqual(items(r, "P2."), [])
-        self.assertTrue(any("not decided" in i for i in items(r, "P4.")))
+        self.assertIn("only 3 of 5 lesson cases good or plausible (2 not computed)", items(r, "P2.")[0])
+        self.assertTrue(items(r, "P4."))
 
     def test_the_three_sigma_rule_widens_the_limit_for_an_uncertain_transport_case(self):
         held = copy.deepcopy(self.held)
@@ -222,6 +233,12 @@ class PlantedAnalysis(unittest.TestCase):
         m.m["reactivity"]["rodShadowing"]["g"][-1] = 0.01
         with self.assertRaises(rs.PinError):
             rs.check_pin(m)
+        m.m = copy.deepcopy(real.m)
+        t = m.m["reactivity"]["rodShadowing"]
+        t["R"][-2:] = [-0.005, 0.0]                                      # the two points at and above zero replaced: the four knots alone would still pass
+        t["g"][-2:] = [0.2, 0.0]
+        with self.assertRaises(rs.PinError):
+            rs.check_pin(m)
 
     def test_the_held_out_file_must_be_the_plan(self):
         with tempfile.TemporaryDirectory() as d:
@@ -230,8 +247,11 @@ class PlantedAnalysis(unittest.TestCase):
                 p.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
                 return p
             self.assertEqual(len(rs.load_shadow(write(self.held))), 13)
+            self.assertEqual(len(rs.load_shadow(write(self.held[:-1]))), 12)       # a missing case is allowed (reported as not computed)
+            unknown = copy.deepcopy(self.held)
+            unknown[0]["case"] = "Z-1"
             with self.assertRaises(ValueError):
-                rs.load_shadow(write(self.held[:-1]))
+                rs.load_shadow(write(unknown))
             wrong = copy.deepcopy(self.held)
             wrong[0]["boron"] = 975.0
             with self.assertRaises(ValueError):

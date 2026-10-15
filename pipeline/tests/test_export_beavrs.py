@@ -509,6 +509,22 @@ class PlantedShadowing(unittest.TestCase):
         self.assertFalse(report["heldOutCases"]["O-S3"]["computed"])
         self.assertEqual(len(m["domain"]["jointChecked"]), 12)
 
+    def test_a_held_out_case_missing_from_the_run_is_not_computed_and_the_rest_are_used(self):
+        held = [r for r in make_rows(plan=shadow_cases(), shadow=planted_g) if r["case"] != "O-S3"]
+        m, _, report = xb.build(self.rows, CORE, created="2026-10-15", path_rows=self.path, model="shadowing", shadow_rows=held, shadow_knots=KNOTS)
+        self.assertFalse(report["heldOutCases"]["O-S3"]["computed"])
+        self.assertIn("missing", report["heldOutCases"]["O-S3"]["reason"])
+        self.assertEqual(len(m["domain"]["jointChecked"]), 12)
+        self.assertIn("Checked against 12 held-out cases: 12 within the limit", m["provenance"]["notes"])
+        with self.assertRaises(ValueError):                              # an unknown case is still refused
+            xb.build(self.rows, CORE, path_rows=self.path, model="shadowing", shadow_rows=[dict(held[0], case="Z-1")], shadow_knots=KNOTS)
+
+    def test_the_notes_say_that_checks_at_another_boron_hold_there_only(self):
+        self.assertIn("860 ppm hold at that boron only", self.m["provenance"]["notes"])
+        no_lesson = [r for r in make_rows(plan=shadow_cases(), shadow=planted_g) if r["boron"] == 975.0]
+        m, _, _ = xb.build(self.rows, CORE, created="2026-10-15", path_rows=self.path, model="shadowing", shadow_rows=no_lesson, shadow_knots=KNOTS)
+        self.assertNotIn("hold at that boron only", m["provenance"]["notes"])
+
     def test_without_held_out_cases_the_notes_say_so_and_nothing_is_listed(self):
         m, _, _ = xb.build(self.rows, CORE, created="2026-10-15", path_rows=self.path, model="shadowing", shadow_knots=KNOTS)
         self.assertEqual(m["domain"]["jointChecked"], [])
