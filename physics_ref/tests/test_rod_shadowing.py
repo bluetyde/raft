@@ -114,6 +114,19 @@ class TestRodShadowingValidity(unittest.TestCase):
         _, e2 = make({"safety": 0.5, "regulating": 0.5, "transient": 0.5})
         self.assertNotIn("R_DOMAIN_ROD_INTERACTION", e2.validity()["reasons"])
 
+    def test_a_rod_at_its_reference_is_not_checked_against_the_axis(self):
+        # safety and transient out (their worths sum to 0.0385, beyond the axis end at 0.03); regulating stays at its reference, where its worth is 0 and its term is 0.
+        # Only the regulating rod "sees" 0.0385, so nothing is out of the domain.
+        rods = {"safety": 1.0, "regulating": 0.0, "transient": 1.0}
+        lib, e = make(rods)
+        w = worths(lib, rods)
+        self.assertGreater(sum(w.values()), R_HI)
+        self.assertTrue(all(sum(w.values()) - wi <= R_HI for wi in w.values() if wi != 0.0))
+        self.assertNotIn("R_DOMAIN_ROD_INTERACTION", e.validity()["reasons"])
+        lib.rod_shadow.out_of_range = "reject"
+        e.step()
+        self.assertIsNone(e.halted)
+
     def test_one_rod_away_with_a_nonzero_correction_needs_a_joint_check(self):
         # safety and regulating out: R of each is the other's worth, g is not 0
         rods = {"safety": 0.5, "regulating": 0.5, "transient": 0.0}

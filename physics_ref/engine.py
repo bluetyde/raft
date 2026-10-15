@@ -852,7 +852,6 @@ class Engine:
             terms = self.rod_shadow_terms(self.t)[1]
             if any(not lib.rod_shadow.xs[0] <= rr <= lib.rod_shadow.xs[-1] for rr, _ in terms):
                 out.append("R_DOMAIN_ROD_INTERACTION")          # a rod's surroundings are beyond the table: g is held at its end value
-            corrected = any(lib.rod_shadow(rr) != 0.0 for rr, _ in terms)
         moved = {r.id: self.rod_position(r.id, self.t) for r in lib.rods
                  if abs(self.rod_position(r.id, self.t) - lib.ref_rods[r.id]) > 1e-9}
         if len(moved) >= 2 or (corrected and len(moved) >= 1):
