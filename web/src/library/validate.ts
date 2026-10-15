@@ -14,11 +14,14 @@ export const SUPPORTED_VERSIONS = ["0.1.0"];
 export const BORON_CAPABILITY = "point-kinetics/boron-v1";
 // reactivity.rodInteraction: a correction on the summed single-rod reactivities
 export const ROD_INTERACTION_CAPABILITY = "point-kinetics/rod-interaction-v1";
+// reactivity.rodShadowing: each rod's worth scaled by 1 + g(the other rods' summed reactivity)
+export const ROD_SHADOW_CAPABILITY = "point-kinetics/rod-interaction-v2";
 export const SUPPORTED_CAPABILITIES = [
   "point-kinetics/lumped-thermal-v1",
   "point-kinetics/lumped-thermal-v2",
   BORON_CAPABILITY,
   ROD_INTERACTION_CAPABILITY,
+  ROD_SHADOW_CAPABILITY,
 ];
 export const TRUTH_SIGNALS = ["power", "period", "fuelTemp", "coolantTemp", "xenon", "mode"];
 
@@ -95,6 +98,7 @@ class Checker {
   private arrays = new Map<string, number[]>();
   private hasBoron = false;
   private hasRodInteraction = false;
+  private hasRodShadow = false;
 
   constructor(private reader: LibraryReader) {}
 
@@ -190,6 +194,17 @@ class Checker {
     }
     if (this.hasRodInteraction && !hasRodField) {
       this.add("E_SCHEMA", "$.reactivity.rodInteraction", `required by the capability ${ROD_INTERACTION_CAPABILITY}`);
+    }
+    this.hasRodShadow = capabilities.includes(ROD_SHADOW_CAPABILITY);
+    const hasShadowField = Object.hasOwn(mm.reactivity!, "rodShadowing");
+    if (hasShadowField && !this.hasRodShadow) {
+      this.add("E_CAPABILITY_UNSUPPORTED", "$.reactivity.rodShadowing", `rodShadowing needs the capability ${ROD_SHADOW_CAPABILITY}`);
+    }
+    if (this.hasRodShadow && !hasShadowField) {
+      this.add("E_SCHEMA", "$.reactivity.rodShadowing", `required by the capability ${ROD_SHADOW_CAPABILITY}`);
+    }
+    if (this.hasRodShadow && this.hasRodInteraction) {
+      this.add("E_CAPABILITY_UNSUPPORTED", "$.capabilities", `${ROD_SHADOW_CAPABILITY} and ${ROD_INTERACTION_CAPABILITY} replace each other: a library carries one of them`);
     }
     if (this.issues.length > 0) {
       return this.issues;
@@ -364,6 +379,9 @@ class Checker {
     this.table(r.xenon, "N", "rho", "$.reactivity.xenon", ref.xenon.value);
     if (this.hasRodInteraction) {
       this.table(r.rodInteraction, "S", "rho", "$.reactivity.rodInteraction", 0.0); // zero where every rod is at its reference position
+    }
+    if (this.hasRodShadow) {
+      this.table(r.rodShadowing, "R", "g", "$.reactivity.rodShadowing", 0.0); // no shadowing where the other rods are at their reference positions
     }
     if (this.hasBoron) {
       this.table(r.boron, "C", "rho", "$.reactivity.boron", ref.boron.value);

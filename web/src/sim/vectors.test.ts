@@ -12,7 +12,7 @@ describe("Engine golden vectors (the main oracle)", () => {
     const files = readdirSync(engineVectorsDir)
       .filter((f) => f.endsWith(".json"))
       .sort();
-    expect(files.length).toBe(10);
+    expect(files.length).toBe(11);
 
     for (const file of files) {
       const content = readFileSync(join(engineVectorsDir, file), "utf-8");
@@ -77,7 +77,7 @@ describe("Engine golden vectors (the main oracle)", () => {
     const files = readdirSync(engineVectorsDir)
       .filter((f) => f.endsWith(".json"))
       .sort();
-    expect(files.length).toBe(10);
+    expect(files.length).toBe(11);
 
     for (const file of files) {
       const content = readFileSync(join(engineVectorsDir, file), "utf-8");
@@ -142,7 +142,7 @@ describe("Engine golden vectors (the main oracle)", () => {
     const files = readdirSync(engineVectorsDir)
       .filter((f) => f.endsWith(".json"))
       .sort();
-    expect(files.length).toBe(10);
+    expect(files.length).toBe(11);
 
     for (const file of files) {
       const doc = JSON.parse(readFileSync(join(engineVectorsDir, file), "utf-8"));

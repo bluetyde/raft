@@ -7,11 +7,12 @@
 import { Library, Table } from "./library";
 import { MASK64, SplitMix64, luFactor, luSolve, type LUFactored } from "./numerics";
 
-export const ENGINE_VERSION = "0.5.0";
+export const ENGINE_VERSION = "0.6.0";
 export const CAPABILITY = "point-kinetics/lumped-thermal-v1";
 export const CAPABILITY_V2 = "point-kinetics/lumped-thermal-v2"; // adds thermal.hA.exponent
 export const CAPABILITY_BORON = "point-kinetics/boron-v1"; // adds soluble boron: a concentration the operator changes at a limited rate (ppm), and its reactivity table
 export const CAPABILITY_ROD_INTERACTION = "point-kinetics/rod-interaction-v1"; // adds reactivity.rodInteraction: a correction on the summed single-rod reactivities (rods shadow or boost each other)
+export const CAPABILITY_ROD_SHADOW = "point-kinetics/rod-interaction-v2"; // adds reactivity.rodShadowing: each rod's worth scaled by 1 + g(the other rods' summed reactivity)
 
 export interface EngineConfig {
   outerDt: number;
@@ -508,6 +509,28 @@ export class Engine {
     }
   }
 
+  /** The shadowing correction (a fraction, the engine's unit) and the [R_i, w_i] of the rods that are not at their reference: sum of w_i * g(S - w_i). */
+  rodShadowTerms(t: number): [number, [number, number][]] {
+    const lib = this.lib;
+    const ws: number[] = [];
+    let s = 0.0;
+    for (const r of lib.rods) {
+      // the same explicit sums as reactivity()
+      const w = r.worth.at(this.rodPosition(r.id, t));
+      ws.push(w);
+      s += w;
+    }
+    let corr = 0.0;
+    const terms: [number, number][] = [];
+    for (const w of ws) {
+      if (w !== 0.0) {
+        corr += w * lib.rodShadow!.at(s - w);
+        terms.push([s - w, w]);
+      }
+    }
+    return [corr, terms];
+  }
+
   reactivity(t: number, y: number[]): Record<string, any> {
     const lib = this.lib;
     let rods = 0.0;
@@ -534,6 +557,10 @@ export class Engine {
     }
     if (lib.hasRodInteraction) {
       out.rodInteraction = lib.rodInteraction!.at(rods);
+      out.total += out.rodInteraction;
+    }
+    if (lib.hasRodShadow) {
+      out.rodInteraction = this.rodShadowTerms(t)[0];
       out.total += out.rodInteraction;
     }
     return out;
@@ -563,6 +590,9 @@ export class Engine {
         s += r.worth.at(this.rodPosition(r.id, t));
       }
       rho += lib.rodInteraction!.at(s);
+    }
+    if (lib.hasRodShadow) {
+      rho += this.rodShadowTerms(t)[0];
     }
 
     const L = lib.genTime;
@@ -1035,6 +1065,11 @@ export class Engine {
       }
       checks.push([lib.rodInteraction!, s, "rodInteraction"]);
     }
+    if (lib.hasRodShadow) {
+      for (const [rr] of this.rodShadowTerms(this.t)[1]) {
+        checks.push([lib.rodShadow!, rr, "rodInteraction"]);
+      }
+    }
     for (const [table, x, name] of checks) {
       if (table.outOfRange === "reject" && table.value(x)[1]) {
         this.halted = `R_TABLE_REJECT_${name}`;
@@ -1327,6 +1362,13 @@ export class Engine {
         out.push("R_DOMAIN_ROD_INTERACTION"); // the summed worth is beyond the table: the correction is held at its end value
       }
       corrected = lib.rodInteraction!.at(s) !== 0.0;
+    }
+    if (lib.hasRodShadow) {
+      const terms = this.rodShadowTerms(this.t)[1];
+      const ax = lib.rodShadow!.xs;
+      if (terms.some(([rr]) => !(ax[0]! <= rr && rr <= ax[ax.length - 1]!))) {
+        out.push("R_DOMAIN_ROD_INTERACTION"); // a rod's surroundings are beyond the table: g is held at its end value
+      }
     }
 
     const moved: Record<string, number> = {};
