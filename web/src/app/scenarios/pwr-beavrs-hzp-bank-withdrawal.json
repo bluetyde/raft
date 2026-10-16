@@ -1,0 +1,145 @@
+{
+  "format": "virtual-reactor-scenario",
+  "version": 1,
+  "id": "pwr-beavrs-hzp-bank-withdrawal",
+  "library": "pwr-beavrs-hzp-openmc",
+  "title": "Approach to criticality by bank withdrawal (PWR, hot zero power)",
+  "brief": "The reactor is shut down at hot zero power: banks C and D are fully in, every other bank is out, the water is at 566 K with 900 ppm of boron, and the neutron source is in the core. The reactor is about 850 pcm subcritical. Withdraw bank C to bring it critical. Bank C moves at 72 steps a minute, so its full travel takes about three minutes, and near criticality a few seconds of withdrawal is tens of pcm: move it a few seconds at a time and wait for the power to settle. Watch the log channel and the period: the power rises slowly while the reactor is far from critical and faster as it comes close. When the log channel is above 0.1 W and bank C is past 0.59 of its travel, the reactor is critical; then step bank C in a little and hold the power steady for five minutes. Do not trip the reactor: the startup-rate trip scrams it if the period gets short. The boron does not change in this lesson. This is the second supported lesson of the PWR library, and it is valid only for this state: banks D and C in, the others out, boron near 900 ppm. The library was checked against transport calculations at a few positions of bank C, and the banner says so between them.",
+  "outerDt": 1,
+  "seed": 1,
+  "init": {
+    "rods": {
+      "a": 1,
+      "b": 1,
+      "c": 0,
+      "d": 0,
+      "sa": 1,
+      "sb": 1,
+      "sc": 1,
+      "sd": 1,
+      "se": 1
+    },
+    "boron": 900
+  },
+  "controls": {
+    "allow": [
+      "rod.move",
+      "scram"
+    ]
+  },
+  "envelope": {
+    "summary": "Approach to criticality by withdrawing bank C with bank D in and every other bank out, boron fixed at 900 ppm, and a hold at zero power; no power operation.",
+    "power": {
+      "fromTrip": "zero-power-limit",
+      "times": 6e-05,
+      "source": "this lesson: the goals end below 5 W; this limit is about 100 W (docs/validation/m8-near-critical-protocol.md)"
+    },
+    "fuelTemp": {
+      "max": 575,
+      "source": "hot zero power: the fuel stays within a few K of the reference 566.5 K (libraries/pwr-beavrs-hzp-openmc/manifest.json)"
+    },
+    "modes": [
+      "steady"
+    ],
+    "knownLimits": [
+      {
+        "text": "The model's temperature feedback is not validated: its isothermal temperature coefficient is 1.6 to 2.0 pcm/F too negative against the benchmark measurement. At zero power the temperatures hardly move, so this lesson does not depend on it.",
+        "source": "docs/validation/m8-beavrs-hzp-results.md"
+      },
+      {
+        "text": "Bank C's position at criticality is a result of the library: 0.592 of travel (135 steps) at 900 ppm, against 133 steps in the transport calculation it was checked against. The measured critical boron with C and D in is 810 ppm against the library's 834 ppm, so the real reactor would be critical at a different bank position, and the real startup would use a different boron.",
+        "source": "docs/validation/m8-near-critical-results.md; docs/validation/m8-rod-shadowing-results.md"
+      },
+      {
+        "text": "Two banks in: the library adds the single-bank worths and a correction for the banks shadowing each other, fitted to twelve transport cases and checked on seven near this state (reactivity within 100 pcm at five of six, 198 pcm at bank C = 40 steps, and one case not converged). The banner shows 'unvalidated' for bank C positions between the checked ones. The rod speed, the trip setpoints and the neutron source are assumed.",
+        "source": "docs/validation/m8-near-critical-results.md; libraries/pwr-beavrs-hzp-openmc/README.md"
+      }
+    ]
+  },
+  "goals": [
+    {
+      "id": "approach",
+      "text": "Raise the log channel above 0.03 W, about four times its starting level",
+      "check": {
+        "signal": "indicated.log",
+        "op": "gt",
+        "value": 0.03
+      },
+      "within": 1200,
+      "source": "this lesson, from a run of the library: the log channel starts at 0.007 W with bank C in, and 0.03 W is about 100 pcm below critical (docs/validation/m8-near-critical-results.md)"
+    },
+    {
+      "id": "critical",
+      "text": "Bring the reactor critical: bank C withdrawn past 0.59 of its travel and the log channel above 0.1 W",
+      "check": {
+        "all": [
+          {
+            "signal": "indicated.log",
+            "op": "gt",
+            "value": 0.1
+          },
+          {
+            "signal": "truth.rod.c",
+            "op": "gt",
+            "value": 0.59
+          }
+        ]
+      },
+      "after": "approach",
+      "within": 600,
+      "source": "the library's critical position of bank C at 900 ppm is 0.592 of its travel (135 steps); below it the reactor is subcritical, and a power above 0.1 W alone can be source multiplication"
+    },
+    {
+      "id": "hold",
+      "text": "Hold the log channel steady between 0.1 W and 5 W for 5 minutes: not rising with a period under 10 minutes",
+      "check": {
+        "all": [
+          {
+            "signal": "indicated.log",
+            "op": "between",
+            "value": [
+              0.1,
+              5
+            ]
+          },
+          {
+            "not": {
+              "signal": "truth.period",
+              "op": "between",
+              "value": [
+                0,
+                600
+              ]
+            }
+          }
+        ]
+      },
+      "for": 300,
+      "after": "critical",
+      "within": 900,
+      "source": "this lesson: 0.1 W is about 40 pcm below critical at the library's source level; 5 W is well below the zero-power limit; a period under 600 s is a rise of more than 1.6 times in 5 minutes"
+    },
+    {
+      "id": "position-band",
+      "text": "End the hold with bank C between 0.56 and 0.63 of its travel, close to its critical position",
+      "check": {
+        "signal": "truth.rod.c",
+        "op": "between",
+        "value": [
+          0.56,
+          0.63
+        ]
+      },
+      "after": "hold",
+      "within": 60,
+      "source": "the library's critical position is 0.592 (135 of 228 steps); the band is about 8 steps, or 70 pcm, either side at the bank's worth of about 8 pcm per step there"
+    }
+  ],
+  "hints": [
+    "Withdraw bank C in one motion at first: far from critical, the power hardly moves. Stop it before it passes half of its travel.",
+    "The log channel is the one to watch: the linear channel reads nothing at this power.",
+    "Near criticality, move bank C a few seconds at a time and wait 15 seconds or so for the power to settle before the next move.",
+    "To hold, step bank C in a little when the period is short, and out a little when the power falls.",
+    "A short period means the power rises fast. The period-short trip acts below 10 s."
+  ]
+}
