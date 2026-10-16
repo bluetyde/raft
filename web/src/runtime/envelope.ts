@@ -106,7 +106,9 @@ const LIBRARY_TEXT: Record<string, string> = {
   R_LIBRARY_EXPERIMENTAL: "The model is experimental: it has not been checked against measured reactor data yet.",
   R_LIBRARY_SYNTHETIC: "This is a synthetic teaching library, not a real reactor.",
   R_JOINT_UNCHECKED:
-    "Several rods are away from their reference positions together, in a combination not checked against full transport runs. The rod worths are added as if the rods did not affect each other.",
+    "Several rods are away from their reference positions together, in a combination not checked against full transport runs, so the combined rod worth is less certain.",
+  R_DOMAIN_ROD_INTERACTION: "The rods are further in together than the data on rods shadowing each other covers, so the combined rod worth is held at its last value.",
+  R_DOMAIN_BORON: "Boron is outside the range the data covers.",
   R_DOMAIN_TFUEL: "Fuel temperature is outside the range the data covers.",
   R_DOMAIN_TCOOLANT: "Coolant temperature is outside the range the data covers.",
   R_DOMAIN_XENON: "Xenon is outside the range the data covers.",

@@ -71,7 +71,8 @@ class PlantedAnalysis(unittest.TestCase):
             self.assertFalse(e["exceeds"])
 
     def test_a_planted_interaction_shows_up_as_the_difference_and_trips_the_limit(self):
-        tmp, folder, rows = build(interaction=-4.0e-4)
+        tmp, folder, _ = build()                                  # a library built from a separable sweep (its rod interaction table is flat)
+        rows = planted.make_rows(-4.0e-4)                          # against transport cases that have the interaction
         try:
             m = lb.analyse(lb.Model(folder, expect_digest=None), rows)
         finally:

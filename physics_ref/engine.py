@@ -21,9 +21,11 @@ import math
 from .library import Library
 from .numerics import SplitMix64, lu_factor, lu_solve
 
-ENGINE_VERSION = "0.4.0"
+ENGINE_VERSION = "0.6.0"
 CAPABILITY = "point-kinetics/lumped-thermal-v1"
 CAPABILITY_V2 = "point-kinetics/lumped-thermal-v2"      # adds thermal.hA.exponent: hA depends on the fuel-to-coolant temperature difference
+CAPABILITY_ROD_INTERACTION = "point-kinetics/rod-interaction-v1"   # adds reactivity.rodInteraction: a correction on the summed single-rod reactivities (rods shadow or boost each other)
+CAPABILITY_ROD_SHADOW = "point-kinetics/rod-interaction-v2"   # adds reactivity.rodShadowing: each rod's worth scaled by 1 + g(the other rods' summed reactivity)
 CAPABILITY_BORON = "point-kinetics/boron-v1"             # adds soluble boron: a concentration the operator changes at a limited rate (ppm), and its reactivity table
 
 DEFAULT_CONFIG = {
@@ -337,6 +339,23 @@ class Engine:
                 self.motions[rid] = {"kind": "scram", "t0": t, "tau0": self.lib.rod_by_id[rid].scram_tau(x)}
 
     # ------------------------------------------------ physics
+    def rod_shadow_terms(self, t):
+        """The shadowing correction (pcm as a fraction, the engine's unit) and the (R_i, w_i) of the rods that are not at their reference: sum of w_i * g(S - w_i)."""
+        lib = self.lib
+        ws = []
+        s = 0.0
+        for r in lib.rods:      # the same explicit sums as reactivity()
+            w = r.worth(self.rod_position(r.id, t))
+            ws.append(w)
+            s += w
+        corr = 0.0
+        terms = []
+        for w in ws:
+            if w != 0.0:
+                corr += w * lib.rod_shadow(s - w)
+                terms.append((s - w, w))
+        return corr, terms
+
     def reactivity(self, t, y) -> dict:
         lib = self.lib
         rods = 0.0
@@ -352,6 +371,12 @@ class Engine:
         if lib.has_boron:
             out["boron"] = lib.boron(self.boron_value(t))
             out["total"] += out["boron"]
+        if lib.has_rod_interaction:
+            out["rodInteraction"] = lib.rod_interaction(rods)
+            out["total"] += out["rodInteraction"]
+        if lib.has_rod_shadow:
+            out["rodInteraction"] = self.rod_shadow_terms(t)[0]
+            out["total"] += out["rodInteraction"]
         return out
 
     def rhs(self, t, y) -> list[float]:
@@ -364,6 +389,13 @@ class Engine:
         rho += lib.fuel_temp(tf) + lib.cool_temp(tc) + lib.xenon(x_)
         if lib.has_boron:
             rho += lib.boron(self.boron_value(t))
+        if lib.has_rod_interaction:
+            s = 0.0
+            for r in lib.rods:      # the same explicit sum as reactivity()
+                s += r.worth(self.rod_position(r.id, t))
+            rho += lib.rod_interaction(s)
+        if lib.has_rod_shadow:
+            rho += self.rod_shadow_terms(t)[0]
         L = lib.gen_time
         d = [0.0] * len(y)
         d[IP] = (rho - lib.beta_total) / L * P + lib.ext_source
@@ -630,6 +662,13 @@ class Engine:
         checks += [(r.worth, self.rod_position(r.id, self.t), f"rod.{r.id}") for r in lib.rods]
         if lib.has_boron:
             checks.append((lib.boron, self.boron_value(self.t), "boron"))
+        if lib.has_rod_interaction:
+            s = 0.0
+            for r in lib.rods:
+                s += r.worth(self.rod_position(r.id, self.t))
+            checks.append((lib.rod_interaction, s, "rodInteraction"))
+        if lib.has_rod_shadow:
+            checks += [(lib.rod_shadow, rr, "rodInteraction") for rr, _ in self.rod_shadow_terms(self.t)[1]]
         for table, x, name in checks:
             if table.out_of_range == "reject" and table.value(x)[1]:
                 self.halted = f"R_TABLE_REJECT_{name}"
@@ -801,9 +840,21 @@ class Engine:
             lo, hi = dom["boron"]
             if not lo <= self.boron_value(self.t) <= hi:
                 out.append("R_DOMAIN_BORON")
+        corrected = False
+        if lib.has_rod_interaction:
+            s = 0.0
+            for r in lib.rods:
+                s += r.worth(self.rod_position(r.id, self.t))
+            if not lib.rod_interaction.xs[0] <= s <= lib.rod_interaction.xs[-1]:
+                out.append("R_DOMAIN_ROD_INTERACTION")          # the summed worth is beyond the table: the correction is held at its end value
+            corrected = lib.rod_interaction(s) != 0.0
+        if lib.has_rod_shadow:
+            terms = self.rod_shadow_terms(self.t)[1]
+            if any(not lib.rod_shadow.xs[0] <= rr <= lib.rod_shadow.xs[-1] for rr, _ in terms):
+                out.append("R_DOMAIN_ROD_INTERACTION")          # a rod's surroundings are beyond the table: g is held at its end value
         moved = {r.id: self.rod_position(r.id, self.t) for r in lib.rods
                  if abs(self.rod_position(r.id, self.t) - lib.ref_rods[r.id]) > 1e-9}
-        if len(moved) >= 2:
+        if len(moved) >= 2 or (corrected and len(moved) >= 1):
             covered = any(all(abs(jc["rods"].get(rid, lib.ref_rods[rid]) - self.rod_position(rid, self.t)) <= 0.05
                               for rid in lib.rod_by_id) for jc in dom["jointChecked"])
             if not covered:

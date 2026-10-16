@@ -1,0 +1,97 @@
+{
+  "protocol": "docs/validation/m8-near-critical-protocol.md",
+  "library": {
+    "folder": "C:\\Users\\jwncr\\Claude Code Test\\virtual-reactor\\libraries\\pwr-beavrs-hzp-openmc",
+    "reactivityDigest": "91b18998173ddd54a16ac25ef2108a00938394ec6bb32454bc9d58471ed343bd"
+  },
+  "P": {
+    "N-C-0": {
+      "computed": true,
+      "C": 0,
+      "libraryPcm": -850.5757686275168,
+      "transportPcm": -897.0749731549163,
+      "transportSigmaPcm": 23.781430148043654,
+      "differencePcm": 46.499204527399456,
+      "limitPcm": 100.0,
+      "label": "good",
+      "driftZ": 0.6786741776338071
+    },
+    "N-C-40": {
+      "computed": true,
+      "C": 40,
+      "libraryPcm": -680.8669775783044,
+      "transportPcm": -878.8308466124425,
+      "transportSigmaPcm": 25.232442833406743,
+      "differencePcm": 197.96386903413816,
+      "limitPcm": 100.0,
+      "label": "plausible",
+      "driftZ": 1.2703212437407239
+    },
+    "N-C-80": {
+      "computed": true,
+      "C": 80,
+      "libraryPcm": -492.33946001599696,
+      "transportPcm": -445.8797577488612,
+      "transportSigmaPcm": 25.90822761736818,
+      "differencePcm": -46.459702267135754,
+      "limitPcm": 100.0,
+      "label": "good",
+      "driftZ": 0.6904405356111687
+    },
+    "N-C-120": {
+      "computed": false,
+      "reason": "unconverged (drift z 2.33)"
+    },
+    "N-C-140": {
+      "computed": true,
+      "C": 140,
+      "libraryPcm": 44.50462424889152,
+      "transportPcm": 63.018720997141216,
+      "transportSigmaPcm": 25.57978431171302,
+      "differencePcm": -18.5140967482497,
+      "limitPcm": 100.0,
+      "label": "good",
+      "driftZ": 0.21116158069601723
+    },
+    "N-C-180": {
+      "computed": true,
+      "C": 180,
+      "libraryPcm": 207.41669145395994,
+      "transportPcm": 240.6604494954332,
+      "transportSigmaPcm": 25.464990142397085,
+      "differencePcm": -33.24375804147326,
+      "limitPcm": 100.0,
+      "label": "good",
+      "driftZ": 1.5885401202069185
+    },
+    "N-C-228": {
+      "computed": true,
+      "C": 228,
+      "libraryPcm": 302.6336920566371,
+      "transportPcm": 302.9042390452877,
+      "transportSigmaPcm": 23.966398427148576,
+      "differencePcm": -0.270546988650608,
+      "limitPcm": 100.0,
+      "label": "good",
+      "driftZ": 1.743349663308681
+    }
+  },
+  "critical": {
+    "computed": true,
+    "libraryC": 135.02597209655391,
+    "transportC": 132.5699851389894,
+    "transportCBetween": [
+      80,
+      140
+    ],
+    "transportCSigmaSteps": 3.054624295345866,
+    "differenceSteps": 2.4559869575645052,
+    "label": "good"
+  },
+  "decision": {
+    "items": [
+      "Q1. the lesson may be built on the library: 6 of 7 cases good or plausible, none beyond 300 pcm (worst 198 pcm), critical C 135.0 steps against transport 132.6 (+2.5, good); the good cases enter jointChecked; envelope: D and C in, every other bank at its benchmark position, boron near 900 ppm, C withdrawn",
+      "Q3. not computed: ['N-C-120']; they enter no decision item"
+    ]
+  }
+}

@@ -5,15 +5,16 @@
   "status": "experimental",
   "capabilities": [
     "point-kinetics/lumped-thermal-v1",
-    "point-kinetics/boron-v1"
+    "point-kinetics/boron-v1",
+    "point-kinetics/rod-interaction-v2"
   ],
   "provenance": {
     "generator": "pipeline.library.export_beavrs",
     "transportCode": "OpenMC 0.15.3",
     "nuclearData": "ENDF/B-VIII.0",
     "model": "BEAVRS 3D full core, hot zero power (mit-crpg/BEAVRS, MIT licence), 45 cases of pipeline/openmc/beavrs_cases.py",
-    "created": "2026-10-10",
-    "notes": "Zero-power physics only. Reactivity tables, kinetics, shapes and boron worth come from the transport sweep; the plant (rod speed, scram, thermal masses, heat transfer, instruments, trips) is assumed and labelled so. Isothermal temperature coefficient: the transport model is 1.6 to 2.0 pcm/F too negative against the benchmark measurement (docs/validation/m8-beavrs-hzp-results.md), so temperature feedback is NOT validated. Xenon worth is zero (not computed); no decay heat; no pressure. The shape of the power does not depend on coolant temperature or boron.",
+    "created": "2026-10-15",
+    "notes": "Zero-power physics only. Reactivity tables, kinetics, shapes and boron worth come from the transport sweep; the plant (rod speed, scram, thermal masses, heat transfer, instruments, trips) is assumed and labelled so. Isothermal temperature coefficient: the transport model is 1.6 to 2.0 pcm/F too negative against the benchmark measurement (docs/validation/m8-beavrs-hzp-results.md), so temperature feedback is NOT validated. Xenon worth is zero (not computed); no decay heat; no pressure. The shape of the power does not depend on coolant temperature or boron. Several banks in: each bank's worth is scaled by 1 + g(the summed single-bank reactivity of the other banks) (reactivity.rodShadowing, capability rod-interaction-v2, fitted to the three combined sweep cases and the nine path cases of the fourteenth protocol, and to nothing else); it sees only that sum, not which banks or where in the core, so it is valid only along the states it was checked on (docs/validation/m8-rod-shadowing-protocol.md). Checked against 19 held-out cases: 13 within the limit (listed in domain.jointChecked). The checks at 860, 900 ppm hold at that boron only (domain.jointChecked lists rod positions, not boron; the boron x bank interaction is not in the model).",
     "sources": [
       {
         "id": "beavrs",
@@ -635,6 +636,35 @@
         0.0,
         0.0003649415123445314,
         0.00036664552447858363
+      ],
+      "interp": "linear",
+      "outOfRange": "clamp-and-flag",
+      "source": "transport"
+    },
+    "rodShadowing": {
+      "R": [
+        -0.0385,
+        -0.03,
+        -0.02,
+        -0.01,
+        0.0,
+        0.001
+      ],
+      "g": [
+        0.618297137569249,
+        0.3275776067511597,
+        0.39204865789439236,
+        0.2715468003417978,
+        0.0,
+        0.0
+      ],
+      "unc": [
+        0.015264219966739732,
+        0.007752397260112986,
+        0.006843710414713642,
+        0.012730106328314806,
+        0.0,
+        0.0
       ],
       "interp": "linear",
       "outOfRange": "clamp-and-flag",
@@ -4936,6 +4966,202 @@
       300.0,
       1600.0
     ],
-    "jointChecked": []
+    "jointChecked": [
+      {
+        "rods": {
+          "a": 0.0,
+          "b": 0.0,
+          "c": 0.0,
+          "d": 0.0,
+          "sa": 1.0,
+          "sb": 1.0,
+          "sc": 0.0,
+          "sd": 0.0,
+          "se": 0.0
+        },
+        "maxShapeErr": 2.5410421176311666,
+        "rhoErr": 0.0007648338727135676
+      },
+      {
+        "rods": {
+          "a": 0.0,
+          "b": 0.0,
+          "c": 0.364035087719,
+          "d": 0.0,
+          "sa": 1.0,
+          "sb": 1.0,
+          "sc": 0.0,
+          "sd": 0.0,
+          "se": 0.0
+        },
+        "maxShapeErr": 1.9239268418977082,
+        "rhoErr": 0.0009150083973102213
+      },
+      {
+        "rods": {
+          "a": 0.0,
+          "b": 0.0,
+          "c": 0.526315789474,
+          "d": 0.0,
+          "sa": 1.0,
+          "sb": 1.0,
+          "sc": 0.0,
+          "sd": 0.0,
+          "se": 0.0
+        },
+        "maxShapeErr": 1.9373458229398974,
+        "rhoErr": 0.0005184822295771913
+      },
+      {
+        "rods": {
+          "a": 0.0,
+          "b": 0.0,
+          "c": 0.701754385965,
+          "d": 0.0,
+          "sa": 1.0,
+          "sb": 1.0,
+          "sc": 0.0,
+          "sd": 0.0,
+          "se": 0.0
+        },
+        "maxShapeErr": 1.9101894048102805,
+        "rhoErr": 9.39846207623947e-05
+      },
+      {
+        "rods": {
+          "a": 1.0,
+          "b": 1.0,
+          "c": 1.0,
+          "d": 0.934210526316,
+          "sa": 1.0,
+          "sb": 1.0,
+          "sc": 1.0,
+          "sd": 1.0,
+          "se": 1.0
+        },
+        "maxShapeErr": 0.39343172824104855,
+        "rhoErr": 0.0004934391382426413
+      },
+      {
+        "rods": {
+          "a": 0.0,
+          "b": 0.0,
+          "c": 1.0,
+          "d": 0.934210526316,
+          "sa": 1.0,
+          "sb": 1.0,
+          "sc": 0.0,
+          "sd": 0.0,
+          "se": 0.0
+        },
+        "maxShapeErr": 1.709220707288524,
+        "rhoErr": 0.0003241905074224394
+      },
+      {
+        "rods": {
+          "a": 0.0,
+          "b": 0.0,
+          "c": 0.0,
+          "d": 0.934210526316,
+          "sa": 1.0,
+          "sb": 1.0,
+          "sc": 0.0,
+          "sd": 0.0,
+          "se": 0.0
+        },
+        "maxShapeErr": 2.4173801292117676,
+        "rhoErr": 0.0007805875806864496
+      },
+      {
+        "rods": {
+          "a": 0.0,
+          "b": 0.0,
+          "c": 0.0,
+          "d": 0.0,
+          "sa": 0.0,
+          "sb": 0.0,
+          "sc": 0.0,
+          "sd": 0.0,
+          "se": 0.0
+        },
+        "maxShapeErr": 2.5529619905539773,
+        "rhoErr": 0.0006036685742958486
+      },
+      {
+        "rods": {
+          "a": 1.0,
+          "b": 1.0,
+          "c": 0.0,
+          "d": 0.0,
+          "sa": 1.0,
+          "sb": 1.0,
+          "sc": 1.0,
+          "sd": 1.0,
+          "se": 1.0
+        },
+        "maxShapeErr": 0.744207661557281,
+        "rhoErr": 0.0004649920452739955
+      },
+      {
+        "rods": {
+          "a": 1.0,
+          "b": 1.0,
+          "c": 0.350877192982,
+          "d": 0.0,
+          "sa": 1.0,
+          "sb": 1.0,
+          "sc": 1.0,
+          "sd": 1.0,
+          "se": 1.0
+        },
+        "maxShapeErr": 0.7015217573460751,
+        "rhoErr": 0.0004645970226806609
+      },
+      {
+        "rods": {
+          "a": 1.0,
+          "b": 1.0,
+          "c": 0.614035087719,
+          "d": 0.0,
+          "sa": 1.0,
+          "sb": 1.0,
+          "sc": 1.0,
+          "sd": 1.0,
+          "se": 1.0
+        },
+        "maxShapeErr": 0.6444036306398253,
+        "rhoErr": 0.00018514096748858217
+      },
+      {
+        "rods": {
+          "a": 1.0,
+          "b": 1.0,
+          "c": 0.789473684211,
+          "d": 0.0,
+          "sa": 1.0,
+          "sb": 1.0,
+          "sc": 1.0,
+          "sd": 1.0,
+          "se": 1.0
+        },
+        "maxShapeErr": 0.5009491300820412,
+        "rhoErr": 0.0003324375804125905
+      },
+      {
+        "rods": {
+          "a": 1.0,
+          "b": 1.0,
+          "c": 1.0,
+          "d": 0.0,
+          "sa": 1.0,
+          "sb": 1.0,
+          "sc": 1.0,
+          "sd": 1.0,
+          "se": 1.0
+        },
+        "maxShapeErr": 0.5102106739283176,
+        "rhoErr": 2.7054698865059887e-06
+      }
+    ]
   }
 }

@@ -85,7 +85,9 @@
         "fuelTemp": { "$ref": "#/$defs/tableT" },
         "coolantTemp": { "$ref": "#/$defs/tableT" },
         "xenon": { "$ref": "#/$defs/tableN" },
-        "boron": { "$ref": "#/$defs/tableC" }
+        "boron": { "$ref": "#/$defs/tableC" },
+        "rodInteraction": { "$ref": "#/$defs/tableS" },
+        "rodShadowing": { "$ref": "#/$defs/tableR" }
       }
     },
     "thermal": {
@@ -332,6 +334,20 @@
       "type": "object", "required": ["C", "rho", "interp", "outOfRange", "source"], "additionalProperties": false,
       "properties": {
         "C": { "$ref": "#/$defs/numbers" }, "rho": { "$ref": "#/$defs/numbers" }, "unc": { "$ref": "#/$defs/numbers" },
+        "interp": { "$ref": "#/$defs/interp" }, "outOfRange": { "$ref": "#/$defs/outOfRange" }, "source": { "$ref": "#/$defs/source" }
+      }
+    },
+    "tableR": {
+      "type": "object", "required": ["R", "g", "interp", "outOfRange", "source"], "additionalProperties": false,
+      "properties": {
+        "R": { "$ref": "#/$defs/numbers" }, "g": { "$ref": "#/$defs/numbers" }, "unc": { "$ref": "#/$defs/numbers" },
+        "interp": { "$ref": "#/$defs/interp" }, "outOfRange": { "$ref": "#/$defs/outOfRange" }, "source": { "$ref": "#/$defs/source" }
+      }
+    },
+    "tableS": {
+      "type": "object", "required": ["S", "rho", "interp", "outOfRange", "source"], "additionalProperties": false,
+      "properties": {
+        "S": { "$ref": "#/$defs/numbers" }, "rho": { "$ref": "#/$defs/numbers" }, "unc": { "$ref": "#/$defs/numbers" },
         "interp": { "$ref": "#/$defs/interp" }, "outOfRange": { "$ref": "#/$defs/outOfRange" }, "source": { "$ref": "#/$defs/source" }
       }
     },

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadSyntheticCore, repoRoot } from "../sim/testing";
-import { evaluateValidity, resolveEnvelope, validateEnvelope, type EnvelopeSpec } from "./envelope";
+import { describeReason, evaluateValidity, resolveEnvelope, validateEnvelope, type EnvelopeSpec } from "./envelope";
 import { agentRig } from "./agent-harness";
 import { Runtime } from "./runtime";
 import { FakeHost, readFolder, send } from "./test-helpers";
@@ -136,5 +136,15 @@ describe("the shipped lesson: low-power ascension on the OpenMC TRIGA 242 librar
     host.drain();
     await send(rt, { kind: "resync" });
     expect(host.last("validity")!.view).toEqual(v);
+  });
+});
+
+describe("the reasons the banner shows", () => {
+  it("names the rod-shadowing and boron limits in words, not as a rod called INTERACTION", () => {
+    expect(describeReason("R_DOMAIN_ROD_INTERACTION")).toMatch(/shadowing each other/);
+    expect(describeReason("R_DOMAIN_ROD_INTERACTION")).not.toMatch(/INTERACTION rod/);
+    expect(describeReason("R_DOMAIN_BORON")).toBe("Boron is outside the range the data covers.");
+    expect(describeReason("R_DOMAIN_ROD_SAFETY")).toBe("The SAFETY rod is outside the range the data covers.");
+    expect(describeReason("R_JOINT_UNCHECKED")).not.toMatch(/added as if/);
   });
 });

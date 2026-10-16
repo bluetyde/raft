@@ -30,6 +30,8 @@ from pipeline.openmc import beavrs_cases as bc  # noqa: E402
 
 RESULTS = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_sweep.jsonl"
 PATH_RESULTS = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_path.jsonl"
+SHADOW_RESULTS = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_shadow.jsonl"
+NEAR_RESULTS = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_near.jsonl"
 PRESSURE_MPA = 15.5
 WATER = ("Borated Water", "Water SPN")
 IFP_GENERATIONS = 10
@@ -91,11 +93,13 @@ def run_case(cid: str, spec: dict, beavrs_dir: Path, out: Path, dry: bool) -> No
     r1 = resource.getrusage(resource.RUSAGE_CHILDREN)
     with openmc.StatePoint(work / f"statepoint.{spec['batches']}.h5") as sp:
         k = sp.keff
+        k_batches = [float(x) for x in sp.k_generation]          # every batch, inactive included (the drift check of the protocols needs them)
         tl = sp.get_tally(name="fission-mesh")
         line = {"case": cid, **spec, "k": float(k.nominal_value), "kStd": float(k.std_dev),
                 "fission": [float(x) for x in tl.mean.flatten()], "fissionStd": [float(x) for x in tl.std_dev.flatten()],
                 "wallS": wall, "cpuS": r1.ru_utime - r0.ru_utime, "loadBefore": load_before, "loadAfter": os.getloadavg()[0],
-                "openmc": openmc.__version__, "seed": int(sp.seed), "waterDensity": note.get("waterDensity"), "beavrsHead": note["beavrsHead"]}
+                "openmc": openmc.__version__, "seed": int(sp.seed), "waterDensity": note.get("waterDensity"), "beavrsHead": note["beavrsHead"],
+                "kBatches": k_batches}
         if spec["ifp"]:
             kin = sp.get_kinetics_parameters()
             groups, lam = kin.beta_effective, kin.generation_time
@@ -113,13 +117,13 @@ def main(argv: list[str] | None = None) -> int:
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--all", action="store_true")
     g.add_argument("--case", action="append")
-    ap.add_argument("--family", choices=("sweep", "path"), default="sweep", help="the 45 library cases or the nine held-out path cases of the fourteenth protocol")
+    ap.add_argument("--family", choices=("sweep", "path", "shadow", "near"), default="sweep", help="the 45 library cases, the nine held-out path cases of the fourteenth protocol, or the 13 held-out cases of the fifteenth")
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--smoke", default=None, help="particles,batches,inactive for a test run; only with an --out other than the sweep's file")
     args = ap.parse_args(argv)
-    plan = bc.sweep_cases() if args.family == "sweep" else bc.path_cases()
-    default_out = RESULTS if args.family == "sweep" else PATH_RESULTS
+    plan, default_out = {"sweep": (bc.sweep_cases, RESULTS), "path": (bc.path_cases, PATH_RESULTS), "shadow": (bc.shadow_cases, SHADOW_RESULTS), "near": (bc.near_cases, NEAR_RESULTS)}[args.family]
+    plan = plan()
     if args.out is None:
         args.out = default_out
     ids = list(plan) if args.all else args.case

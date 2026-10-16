@@ -22,6 +22,7 @@ describe("scenario validator (docs/m5-scenarios-design.md §3)", () => {
     };
     const all = shipped();
     expect(all.map((s) => s.id).sort()).toEqual([
+      "pwr-beavrs-hzp-bank-withdrawal",
       "pwr-beavrs-hzp-dilution",
       "synthetic-power-ascension",
       "synthetic-scram-and-restart",
