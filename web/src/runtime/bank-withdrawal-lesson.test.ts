@@ -48,6 +48,21 @@ describe("the bank-withdrawal lesson", () => {
     expect(e.reactivity(0, e.y)["total"] * 1e5).toBeCloseTo(-851, -1);       // the sixteenth protocol's library value at N-C-0
     expect(e.indicated["log"] as number).toBeGreaterThan(0.005);
     expect(e.indicated["log"] as number).toBeLessThan(0.01);
+    expect(e.validity().reasons).not.toContain("R_JOINT_UNCHECKED"); // the start state is one of the checked states
+  });
+
+  it("moving another bank away from its place leaves the checked states: the banner says so", async () => {
+    let started = false;
+    const { e } = await play(async (e, op) => {
+      if (!started) {
+        started = true;
+        await op({ type: "rod.move", rod: "a", direction: "in" });
+      } else if (e.t >= 20) {
+        await op({ type: "rod.move", rod: "a", direction: "stop" });
+      }
+    }, 30);
+    expect(Number((e.snapshot().truth.rods as Record<string, { position: number }>)["a"]!.position)).toBeLessThan(0.9);
+    expect(e.validity().reasons).toContain("R_JOINT_UNCHECKED");
   });
 
   it("a careful operator meets every goal with no trip", async () => {
@@ -164,6 +179,20 @@ describe("the bank-withdrawal lesson", () => {
     }), 3000);
     expect(view.goals.find((g) => g.id === "critical")!.status).toBe("met");
     expect(view.goals.find((g) => g.id === "hold")!.status).toBe("failed");
+  }, 240_000);
+
+  it("an operator who crosses critical and then retreats deep into subcritical loses the hold: the power falls out of the window", async () => {
+    let last = -10;
+    const { view, e } = await play(approachThen(0.605, async (e, nudge) => {
+      if (e.t - last >= 3 && posC(e) > 0.45) {
+        last = e.t;
+        await nudge("in"); // one second at a time, down to 0.45 of travel
+      }
+    }), 3000);
+    expect(view.goals.find((g) => g.id === "critical")!.status).toBe("met");
+    expect(view.goals.find((g) => g.id === "hold")!.status).toBe("failed");
+    expect(posC(e)).toBeLessThan(0.5);
+    expect(view.score.trips).toBe(0);
   }, 240_000);
 
   it("a reckless operator, who withdraws bank C all the way, trips the startup-rate trip and fails the hold", async () => {

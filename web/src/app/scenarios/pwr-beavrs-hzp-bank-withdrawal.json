@@ -4,7 +4,7 @@
   "id": "pwr-beavrs-hzp-bank-withdrawal",
   "library": "pwr-beavrs-hzp-openmc",
   "title": "Approach to criticality by bank withdrawal (PWR, hot zero power)",
-  "brief": "The reactor is shut down at hot zero power: banks C and D are fully in, every other bank is out, the water is at 566 K with 900 ppm of boron, and the neutron source is in the core. The reactor is about 850 pcm subcritical. Withdraw bank C to bring it critical. Bank C moves at 72 steps a minute, so its full travel takes about three minutes, and near criticality a few seconds of withdrawal is tens of pcm: move it a few seconds at a time and wait for the power to settle. Watch the log channel and the period: the power rises slowly while the reactor is far from critical and faster as it comes close. When the log channel is above 0.1 W and bank C is past 0.59 of its travel, the reactor is critical; then step bank C in a little and hold the power steady for five minutes. Do not trip the reactor: the startup-rate trip scrams it if the period gets short. The boron does not change in this lesson. This is the second supported lesson of the PWR library, and it is valid only for this state: banks D and C in, the others out, boron near 900 ppm. The library was checked against transport calculations at a few positions of bank C, and the banner says so between them.",
+  "brief": "The reactor is shut down at hot zero power: banks C and D are fully in, every other bank is out, the water is at 566 K with 900 ppm of boron, and the neutron source is in the core. The reactor is about 850 pcm subcritical. Withdraw bank C to bring it critical. Bank C moves at 72 steps a minute, so its full travel takes about three minutes, and near criticality a few seconds of withdrawal is tens of pcm: move it a few seconds at a time and wait for the power to settle. Watch the log channel and the period: the power rises slowly while the reactor is far from critical and faster as it comes close. When the log channel is above 0.1 W and bank C is past 0.59 of its travel, the reactor is critical; then step bank C in or out a little and hold the power steady, neither rising nor falling faster than 1.6 times in five minutes, for five minutes. A power above 0.1 W with the reactor a little subcritical also counts as steady; the log channel then settles within about 60 pcm of critical. Do not trip the reactor: the startup-rate trip scrams it if the period gets short. The boron does not change in this lesson. This is the second supported lesson of the PWR library, and it is valid only for this state: banks D and C in, the others out, boron near 900 ppm. The library was checked against transport calculations at a few positions of bank C, and the banner says so between them.",
   "outerDt": 1,
   "seed": 1,
   "init": {
@@ -87,11 +87,11 @@
       },
       "after": "approach",
       "within": 600,
-      "source": "the library's critical position of bank C at 900 ppm is 0.592 of its travel (135 steps); below it the reactor is subcritical, and a power above 0.1 W alone can be source multiplication"
+      "source": "the library's critical position of bank C at 900 ppm is 0.592 of its travel (135 steps); below it the reactor is subcritical, and a power above 0.1 W alone can be source multiplication (about 60 pcm below critical at this source level), which is why the position is part of the goal"
     },
     {
       "id": "hold",
-      "text": "Hold the log channel steady between 0.1 W and 5 W for 5 minutes: not rising with a period under 10 minutes",
+      "text": "Hold the log channel steady between 0.1 W and 5 W for 5 minutes: changing by less than 1.6 times in 5 minutes (a period longer than 10 minutes), up or down",
       "check": {
         "all": [
           {
@@ -107,7 +107,7 @@
               "signal": "truth.period",
               "op": "between",
               "value": [
-                0,
+                -600,
                 600
               ]
             }
@@ -117,7 +117,7 @@
       "for": 300,
       "after": "critical",
       "within": 900,
-      "source": "this lesson: 0.1 W is about 40 pcm below critical at the library's source level; 5 W is well below the zero-power limit; a period under 600 s is a rise of more than 1.6 times in 5 minutes"
+      "source": "this lesson: at the library's source level the power is 0.1 W when the reactor is about 60 pcm below critical (it starts at 0.0069 W at 851 pcm below), so the window also keeps the reactor within about 60 pcm of critical; 5 W is well below the zero-power limit; a period under 600 s, rising or falling, is a change of more than 1.6 times in 5 minutes"
     },
     {
       "id": "position-band",
