@@ -149,6 +149,23 @@ describe("the bank-withdrawal lesson", () => {
     expect(peak).toBeLessThan(5);
   }, 240_000);
 
+  it("an operator who holds for only two minutes and then lets the power run does not meet the five-minute hold", async () => {
+    let t1 = -1;
+    const { view } = await play(approachThen(0.597, async (e, nudge) => {
+      const per = e.snapshot().truth.period as number;
+      const log = e.indicated["log"] as number;
+      if (t1 < 0) t1 = e.t;
+      if (e.t - t1 < 120) {
+        if (per > 0 && per < 600 && log > 0.1) await nudge("in");
+        else if (per < 0 && per > -600 && log < 0.15) await nudge("out");
+      } else {
+        await nudge("out"); // two minutes in, push the bank out a second at a time: the period shortens
+      }
+    }), 3000);
+    expect(view.goals.find((g) => g.id === "critical")!.status).toBe("met");
+    expect(view.goals.find((g) => g.id === "hold")!.status).toBe("failed");
+  }, 240_000);
+
   it("a reckless operator, who withdraws bank C all the way, trips the startup-rate trip and fails the hold", async () => {
     let started = false;
     const { view, e } = await play(async (_e, op) => {
