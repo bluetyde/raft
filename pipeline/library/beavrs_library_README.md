@@ -2,7 +2,7 @@
 
 A PWR at **hot zero power** (566.5 K, 15.5 MPa water, no decay heat), built with OpenMC 0.15.3 and ENDF/B-VIII.0 from the BEAVRS benchmark cycle 1 model (MIT, `mit-crpg/BEAVRS`). Status `experimental`. Exporter: `python -m pipeline.library.export_beavrs`; sweep: `pipeline/openmc/beavrs_sweep.py` (45 cases); plan: `docs/m8-beavrs-exporter-plan.md`; comparison with the measured hot zero power data: `docs/validation/m8-beavrs-hzp-results.md`.
 
-**Use it for zero-power physics only** (the shipped lesson is approach to criticality by dilution, `web/src/app/scenarios/pwr-beavrs-hzp-dilution.json`), near the benchmark rod configuration (all banks out, bank D at step 213). Soluble boron works there, and the critical concentration is 983 ppm in both engines. With several banks in, the library is not reliable (below). A trip scrams the rods at about 1.7 MW (0.05 % of full power).
+**Use it for zero-power physics only** (the shipped lessons are approach to criticality by dilution, `web/src/app/scenarios/pwr-beavrs-hzp-dilution.json`, near the benchmark rod configuration with all banks out and bank D at step 213, and by bank withdrawal, `pwr-beavrs-hzp-bank-withdrawal.json`, with banks D and C in, the others out and 900 ppm of boron). Soluble boron works there, and the critical concentration is 983 ppm in both engines. With several banks in, the library is checked only at the states listed in `domain.jointChecked` (below). A trip scrams the rods at about 1.7 MW (0.05 % of full power).
 
 ## What comes from transport (source `transport`)
 
