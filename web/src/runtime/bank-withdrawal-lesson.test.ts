@@ -92,6 +92,63 @@ describe("the bank-withdrawal lesson", () => {
     expect(peak).toBeLessThan(5);
   }, 240_000);
 
+  /** The careful operator's approach (out to half, then a few seconds at a time to 0.597 and a little beyond), with the hold left to `hold`. */
+  function approachThen(stopAt: number, hold: (e: Engine, nudge: (direction: "in" | "out") => Promise<void>) => Promise<void>) {
+    let phase = 0;
+    let t0 = 0;
+    let pulse = 0;
+    return async (e: Engine, op: Op) => {
+      const c = posC(e);
+      if (pulse > 0) {
+        pulse -= 1;
+        if (pulse === 0) await op({ type: "rod.move", rod: "c", direction: "stop" });
+      } else if (phase === 0) {
+        phase = 1;
+        await op({ type: "rod.move", rod: "c", direction: "out" });
+      } else if (phase === 1 && c >= 0.5) {
+        phase = 2;
+        t0 = e.t;
+        await op({ type: "rod.move", rod: "c", direction: "stop" });
+      } else if (phase === 2 && e.t - t0 >= 15) {
+        t0 = e.t;
+        if (c < stopAt) {
+          pulse = 2;
+          await op({ type: "rod.move", rod: "c", direction: "out" });
+        } else {
+          phase = 3;
+        }
+      } else if (phase === 3) {
+        await hold(e, async (direction) => {
+          pulse = 1; // a second in or out, then stop
+          await op({ type: "rod.move", rod: "c", direction });
+        });
+      }
+    };
+  }
+
+  it("an operator who stops bank C short of its critical position sees a power above 0.1 W (source multiplication) but is not critical", async () => {
+    const { view } = await play(approachThen(0.575, async () => {}), 2500);
+    expect(view.goals.find((g) => g.id === "approach")!.status).toBe("met");
+    expect(view.goals.find((g) => g.id === "critical")!.status).toBe("failed");
+    expect(view.score.trips).toBe(0);
+  }, 240_000);
+
+  it("an operator who parks bank C just past critical and leaves it loses the hold: the power runs out of the window", async () => {
+    const { view } = await play(approachThen(0.597, async () => {}), 3000);
+    expect(view.goals.find((g) => g.id === "critical")!.status).toBe("met");
+    expect(view.goals.find((g) => g.id === "hold")!.status).toBe("failed");
+  }, 240_000);
+
+  it("an operator who holds with a short but steady period (under 10 minutes) fails the hold even with the power inside the window", async () => {
+    const { view, peak } = await play(approachThen(0.597, async (e, nudge) => {
+      const per = e.snapshot().truth.period as number;
+      if (per > 0 && per < 100) await nudge("in");
+    }), 3000);
+    expect(view.goals.find((g) => g.id === "critical")!.status).toBe("met");
+    expect(view.goals.find((g) => g.id === "hold")!.status).toBe("failed");
+    expect(peak).toBeLessThan(5);
+  }, 240_000);
+
   it("a reckless operator, who withdraws bank C all the way, trips the startup-rate trip and fails the hold", async () => {
     let started = false;
     const { view, e } = await play(async (_e, op) => {
