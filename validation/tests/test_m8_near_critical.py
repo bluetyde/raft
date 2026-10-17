@@ -225,6 +225,11 @@ class PlantedAnalysis(unittest.TestCase):
                 nc.load_near(write(nob))
             with self.assertRaises(ValueError):
                 nc.load_near(write(plan_rows + [copy.deepcopy(plan_rows[0])]))
+            for key, bad in (("seed", 2), ("beavrsHead", "deadbee")):
+                other = copy.deepcopy(plan_rows)
+                other[0][key] = bad
+                with self.assertRaises(ValueError):
+                    nc.load_near(write(other))
             unknown = copy.deepcopy(plan_rows)
             unknown[0]["case"] = "Z-1"
             with self.assertRaises(ValueError):

@@ -248,6 +248,11 @@ class PlantedAnalysis(unittest.TestCase):
                 return p
             self.assertEqual(len(rs.load_shadow(write(self.held))), 13)
             self.assertEqual(len(rs.load_shadow(write(self.held[:-1]))), 12)       # a missing case is allowed (reported as not computed)
+            for key, bad in (("seed", 2), ("beavrsHead", "deadbee")):
+                other = copy.deepcopy(self.held)
+                other[0][key] = bad
+                with self.assertRaises(ValueError):
+                    rs.load_shadow(write(other))
             unknown = copy.deepcopy(self.held)
             unknown[0]["case"] = "Z-1"
             with self.assertRaises(ValueError):

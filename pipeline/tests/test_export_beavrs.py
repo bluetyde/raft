@@ -17,7 +17,7 @@ from physics_ref.engine import Engine
 from physics_ref.library import Library
 from pipeline.library import export_beavrs as xb
 from pipeline.library.validate import validate_library
-from pipeline.openmc.beavrs_cases import near_cases, path_cases, shadow_cases, sweep_cases
+from pipeline.openmc.beavrs_cases import BEAVRS_HEAD, near_cases, path_cases, shadow_cases, sweep_cases
 
 CORE = json.loads(xb.CORE.read_text(encoding="utf-8"))
 NXY = 19 * 19
@@ -103,7 +103,7 @@ def make_rows(interaction=0.0, plan=None, correction=None, shadow=None) -> list[
         rows.append({"case": name, "role": c["role"], **{k: c[k] for k in ("particles", "batches", "inactive", "ifp")}, "steps": steps, "boron": boron, "tFuel": tf, "tWater": tw, "k": 1.0 / (1.0 - rho), "kStd": 2.5e-4,
                      "kBatches": [1.0 / (1.0 - rho) + (0.001 if i % 2 else -0.001) for i in range(c["batches"])],
                      "fission": mesh(units, CORE, 1e-3), "fissionStd": mesh([0.01 * u for u in BASE_RAW], CORE, 1e-3), "betaGroups": BETA,
-                     "betaGroupsStd": [1e-5] * 6, "lambdaS": 2.9e-5, "lambdaStdS": 4e-8, "openmc": "0.15.3"})
+                     "betaGroupsStd": [1e-5] * 6, "lambdaS": 2.9e-5, "lambdaStdS": 4e-8, "openmc": "0.15.3", "seed": 1, "beavrsHead": BEAVRS_HEAD})
     return rows
 
 
@@ -527,6 +527,28 @@ class PlantedShadowing(unittest.TestCase):
         self.assertEqual(len(m["domain"]["jointChecked"]), 20)
         self.assertEqual(report["tables"]["rodShadowing"]["fitCases"], self.report["tables"]["rodShadowing"]["fitCases"])      # they do not enter the fit
         self.assertEqual(m["reactivity"]["rodShadowing"], self.m["reactivity"]["rodShadowing"])
+
+    def test_held_out_rows_from_another_seed_or_beavrs_commit_are_refused(self):
+        for key, bad in (("seed", 2), ("seed", None), ("beavrsHead", "deadbee"), ("beavrsHead", None)):
+            held = make_rows(plan=shadow_cases(), shadow=planted_g)
+            held[3][key] = bad
+            if bad is None:
+                del held[3][key]
+            with self.subTest(key=key, bad=bad), self.assertRaises(ValueError):
+                xb.build(self.rows, CORE, path_rows=self.path, model="shadowing", shadow_rows=held, shadow_knots=KNOTS)
+        path = make_rows(plan=path_cases(), shadow=planted_g)
+        path[0]["beavrsHead"] = "deadbee"
+        with self.assertRaises(ValueError):
+            xb.build(self.rows, CORE, path_rows=path, model="shadowing", shadow_knots=KNOTS)
+
+    def test_near_cases_that_are_planned_but_absent_are_reported_once_any_near_case_is_delivered(self):
+        near = [r for r in make_rows(plan=near_cases(), shadow=planted_g) if r["case"] != "N-C-228"]
+        m, _, report = xb.build(self.rows, CORE, created="2026-10-15", path_rows=self.path, model="shadowing", shadow_rows=self.held + near, shadow_knots=KNOTS)
+        self.assertFalse(report["heldOutCases"]["N-C-228"]["computed"])
+        self.assertIn("missing", report["heldOutCases"]["N-C-228"]["reason"])
+        self.assertEqual(sum(1 for c in near_cases() if report["heldOutCases"][c]["computed"]), 6)
+        _, _, report0 = xb.build(self.rows, CORE, created="2026-10-15", path_rows=self.path, model="shadowing", shadow_rows=self.held, shadow_knots=KNOTS)
+        self.assertFalse(any(c in report0["heldOutCases"] for c in near_cases()))       # no near case delivered: the optional file is simply not part of this export
 
     def test_the_notes_say_that_checks_at_another_boron_hold_there_only(self):
         self.assertIn("860 ppm hold at that boron only", self.m["provenance"]["notes"])

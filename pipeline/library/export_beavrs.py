@@ -20,7 +20,7 @@ from pathlib import Path
 from pipeline.library.export_openmc import _pack_f32_slice_normalized, interp, isotonic
 from pipeline.library.synthetic import descriptor, pack
 from pipeline.library.validate import validate_library
-from pipeline.openmc.beavrs_cases import near_cases, path_cases, shadow_cases, sweep_cases
+from pipeline.openmc.beavrs_cases import BEAVRS_HEAD, near_cases, path_cases, shadow_cases, sweep_cases
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SWEEP = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_sweep.jsonl"
@@ -49,6 +49,7 @@ RHO_ERR_LIMIT = 1.0e-3        # 100 pcm, about four times a case's statistical e
 SHAPE_ERR_LIMIT = 1.0         # in mean bins
 ROD_INTERACTION_CAPABILITY = "point-kinetics/rod-interaction-v1"
 ROD_SHADOW_CAPABILITY = "point-kinetics/rod-interaction-v2"
+HELD_OUT_SEED = 1                                      # the seed of the path, shadow and near runs (the sweep's too)
 SHADOW_KNOTS = (-0.01, -0.02, -0.03, -0.0385)          # the shadowing table's free knots (fractions): the protocol of the fifteenth fixes them; -3850 pcm is the deepest R among the fit cases
 R_ABOVE = 1.0e-3                                       # +100 pcm: nothing above the reference is claimed (g held at 0 there)
 FIT_CASES = ("J-W2", "J-W4", "J-W7")      # the combined states the rod interaction table is fitted to (and so never listed as checked)
@@ -315,6 +316,9 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
         if model == "shadowing":                                 # a case the run did not deliver is reported as not computed, and enters no decision
             for cid in shadow_cases():
                 path_report.setdefault(cid, {"computed": False, "reason": "missing: not in the held-out file"})
+            if any(c in near_cases() for c in by_path):           # near cases were delivered: any planned one that is absent is reported, not dropped
+                for cid in near_cases():
+                    path_report.setdefault(cid, {"computed": False, "reason": "missing: not in the held-out file"})
         n_good = sum(1 for e in path_report.values() if e.get("label") == "good")
         n_comp = sum(1 for e in path_report.values() if e.get("computed"))
         at = sorted({r["boron"] for r in by_path.values() if r["boron"] != b_ref})
@@ -550,6 +554,10 @@ def check_path(rows: list[dict], plan: dict | None = None, name: str = "path", a
         for key in ("steps", "boron", "tFuel", "tWater", "particles", "batches", "inactive", "ifp"):
             if r.get(key) != want[key]:
                 raise ValueError(f"{name} case {r['case']}: {key} is {r.get(key)!r}, the plan says {want[key]!r}")
+        if r.get("seed") != HELD_OUT_SEED:                      # the protocols fix seed 1 and the BEAVRS commit for these runs
+            raise ValueError(f"{name} case {r['case']}: seed is {r.get('seed')!r}, the protocols fix {HELD_OUT_SEED}")
+        if r.get("beavrsHead") != BEAVRS_HEAD:
+            raise ValueError(f"{name} case {r['case']}: the BEAVRS commit is {r.get('beavrsHead')!r}, the protocols fix {BEAVRS_HEAD!r}")
     return {r["case"]: r for r in rows}
 
 
