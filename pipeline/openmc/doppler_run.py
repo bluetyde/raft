@@ -156,6 +156,9 @@ def main(argv: list[str] | None = None) -> int:
     for cid in ids:
         if cid not in plan:
             raise SystemExit(f"{cid} is not a case (see doppler_cases.py)")
+    repeated = sorted({c for c in ids if ids.count(c) > 1})
+    if repeated:
+        raise SystemExit(f"{repeated} given more than once: each case is run once")
 
     if args.dry:
         for cid in ids:

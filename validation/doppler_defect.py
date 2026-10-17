@@ -24,7 +24,8 @@ PROTOCOL = "docs/validation/doppler-defect-protocol.md"
 
 PCM = 1e5
 DELTA_T = 300.0                                  # K, HFP minus HZP
-EXPECTED = {"particles": 20000, "batches": 600, "inactive": 100}
+EXPECTED = {"particles": 20000, "batches": 600, "inactive": 100, "openmc": "0.15.3"}
+CROSS_SECTIONS_MARK = "endfb-viii.0"       # the protocol fixes ENDF/B-VIII.0; the library path the runner records must name it
 SEED = {"hzp": 1, "hfp": 2}
 FUEL_K = {"hzp": 600, "hfp": 900}
 STATES = ("hzp", "hfp")
@@ -60,6 +61,12 @@ def load_runs(path: Path, reference: dict) -> dict:
         for key, want in EXPECTED.items():
             if r.get(key) != want:
                 raise ValueError(f"{where}: case {cid} {state} has {key} {r.get(key)!r}, the protocol has {want!r}")
+        ref_case = next(c for c in reference["cases"] if c["id"] == cid)
+        for key in ("subset", "content"):
+            if r.get(key) != ref_case[key]:
+                raise ValueError(f"{where}: case {cid} {state} has {key} {r.get(key)!r}, the protocol's case has {ref_case[key]!r}")
+        if CROSS_SECTIONS_MARK not in str(r.get("crossSections", "")):
+            raise ValueError(f"{where}: case {cid} {state} was run with {r.get('crossSections')!r}, the protocol fixes ENDF/B-VIII.0")
         if r.get("seed") != SEED[state]:
             raise ValueError(f"{where}: case {cid} {state} has seed {r.get('seed')!r}, the protocol has {SEED[state]}")
         if r.get("fuelK") != FUEL_K[state]:

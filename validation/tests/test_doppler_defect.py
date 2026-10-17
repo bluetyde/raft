@@ -29,7 +29,8 @@ def planted_rows(dc_of=None, drop=(), shape=None):
             kb = [k + (0.001 if i % 2 else -0.001) + (shape(cid, state, i) if shape else 0.0) for i in range(n)]
             rows.append({"case": cid, "state": state, "fuelK": dd.FUEL_K[state], "subset": sub, "content": case["content"],
                          "particles": 20000, "batches": n, "inactive": 100, "seed": dd.SEED[state],
-                         "k": k, "kStd": SIGMA_K, "kBatches": kb, "openmc": "planted", "wallS": 0.0, "cpuS": 0.0,
+                         "k": k, "kStd": SIGMA_K, "kBatches": kb, "openmc": "0.15.3", "crossSections": "/root/nuclear_data/endfb-viii.0-hdf5/cross_sections.xml",
+                         "wallS": 0.0, "cpuS": 0.0,
                          "loadBefore": 0.0, "loadAfter": 0.0})
     return rows
 
@@ -197,10 +198,26 @@ class Refusals(unittest.TestCase):
             "unknown state": lambda rows: rows[0].update(state="warm"),
             "missing kBatches": lambda rows: rows[0].pop("kBatches"),
             "short kBatches": lambda rows: rows[0].update(kBatches=rows[0]["kBatches"][:599]),
+            "another OpenMC version": lambda rows: rows[0].update(openmc="0.14.0"),
+            "another cross-section library": lambda rows: rows[0].update(crossSections="/root/nuclear_data/endfb-vii.1-hdf5/cross_sections.xml"),
+            "no cross-section library": lambda rows: rows[0].pop("crossSections"),
+            "another subset": lambda rows: rows[0].update(subset="mox-weapons"),
+            "another content": lambda rows: rows[0].update(content="9.99"),
         }
         for name, f in cases.items():
             with self.subTest(name), self.assertRaises(ValueError):
                 write(mutate(f))
+
+
+class Runner(unittest.TestCase):
+    def test_a_case_given_twice_in_one_call_is_refused(self):
+        try:
+            from pipeline.openmc import doppler_run as dr
+        except ImportError:                      # the runner imports POSIX modules: it runs in WSL only
+            self.skipTest("the runner imports POSIX modules")
+        with self.assertRaises(SystemExit) as cm:
+            dr.main(["--case", "uo2-3.1/hzp", "--case", "uo2-3.1/hzp", "--dry"])
+        self.assertIn("more than once", str(cm.exception))
 
 
 if __name__ == "__main__":
