@@ -153,11 +153,19 @@ def decide(p: dict, crit: dict) -> list[str]:
     return items
 
 
+def _rel(p: Path) -> str:
+    """The library folder as a repo-relative path, so a report carries no machine path."""
+    try:
+        return Path(p).resolve().relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return Path(p).name
+
+
 def analyse(model: rs.ShadowModel, rows: list[dict], digest: str | None = REACTIVITY_DIGEST, boron: float = BORON) -> dict:
     check_pin(model, digest)
     p = part_p(model, rows)
     crit = critical_item(model, p, boron)
-    return {"library": {"folder": str(model.folder), "reactivityDigest": reactivity_digest(model.m)}, "P": p, "critical": crit, "decision": {"items": decide(p, crit)}}
+    return {"library": {"folder": _rel(model.folder), "reactivityDigest": reactivity_digest(model.m)}, "P": p, "critical": crit, "decision": {"items": decide(p, crit)}}
 
 
 def print_summary(r: dict) -> None:

@@ -12,7 +12,7 @@ Re-check anything you're about to rely on if this is months old.
 
 | Repo | Where | Stack | Relationship to this project |
 |---|---|---|---|
-| **virtual-reactor** (this) | `C:\Users\jwncr\Claude Code Test\virtual-reactor` | Planned: Python pipeline + TS/Vite/three.js web | Not a git repo yet (TODO: private `bluetyde/virtual-reactor`) |
+| **virtual-reactor** (this) | this repository | Python pipeline + TS/Vite/three.js web | `bluetyde/raft` |
 | **openmc-studio** | `bluetyde/openmc-studio` (public or going public). Daily install `C:\OpenMC`, SSD/shared checkout `D:\OpenMC`, Claude clone `C:\agents\claude\openmc-studio` | Python stdlib `http.server` + OpenMC; single `static/index.html`; hand-written **WebGL2** CSG ray tracer with a **BVH** in textures (since `4b163a6`, 2026-09-17; 10,000+ parts); FreeCAD CAD import (`openmc-cad` env); ParaView export | **Main reuse source.** It already has a CSG ray tracer, cutaways, a flux-map slice, a 3D volume view, CAD import and a material library (PNNL-15870). A possible later "export simulator library" button |
 | **openmc-mcnp-project** | `bluetyde/openmc-mcnp-project`, WSL `~/openmc-mcnp-project` (a stray untracked copy exists under `C:\...`; ignore it) | Python; OpenMC → MCNPy → MontePy; deck validation | Only needed if we want MCNP cross-checks of the TRIGA model. Useful for level-3 validation against published MCNP results |
 

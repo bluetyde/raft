@@ -1,7 +1,7 @@
 {
   "protocol": "docs/validation/m8-near-critical-protocol.md",
   "library": {
-    "folder": "C:\\Users\\jwncr\\Claude Code Test\\virtual-reactor\\libraries\\pwr-beavrs-hzp-openmc",
+    "folder": "libraries/pwr-beavrs-hzp-openmc",
     "reactivityDigest": "91b18998173ddd54a16ac25ef2108a00938394ec6bb32454bc9d58471ed343bd"
   },
   "P": {
