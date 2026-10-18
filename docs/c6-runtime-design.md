@@ -110,7 +110,7 @@ Every message has `kind` and the first one has `protocol`. The worker is the onl
 |---|---|---|
 | T1 | Keep one `outerDt` (10 ms) for all sessions. The rate caps at about 150×, and the UI shows the achieved rate. | Nothing. Xenon scenarios (hours) take minutes of wall time. |
 | **T2 (chosen)** | `outerDt` is a session setting, fixed for the session (the engine already supports this, and pins it). A xenon scenario uses, for example, 0.5 s. The UI offers only the rates the session can reach. | Instruments are sampled and boundary trips are checked once per outer step, so a coarse session reacts later to fast events. It suits slow scenarios, not pulses. |
-| T3 (later, needs the engine) | Let a session change `outerDt` at a logged boundary, so one session can be fine during a pulse and coarse during a xenon wait. | An engine change in Python and TypeScript: time is no longer `stepIndex × outerDt`. Request R3 in `docs/cloud-notes.md`, only if you choose it. |
+| T3 (later, needs the engine) | Let a session change `outerDt` at a logged boundary, so one session can be fine during a pulse and coarse during a xenon wait. | An engine change in Python and TypeScript: time is no longer `stepIndex × outerDt`. Request R3 in the agent coordination notes (kept outside this repository), only if you choose it. |
 
 ## 6. Command bus
 
