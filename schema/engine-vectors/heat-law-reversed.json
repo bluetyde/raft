@@ -32,7 +32,7 @@
    "outerDt": 0.01,
    "rtol": 1e-06
   },
-  "engineVersion": "0.7.0",
+  "engineVersion": "0.7.1",
   "libraryDigest": "55365c04f911f46a7ac1d56a423c07c810e59aa18140be516e87625d1af6fd2c"
  },
  "sampleEvery": 25,
@@ -68,6 +68,10 @@
    "step": 0,
    "t": 0.0,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC",
+    "R_JOINT_UNCHECKED"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 0.0
   },
@@ -102,6 +106,10 @@
    "step": 25,
    "t": 0.25,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC",
+    "R_JOINT_UNCHECKED"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 1512169.5495838737
   },
@@ -136,6 +144,10 @@
    "step": 50,
    "t": 0.5,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC",
+    "R_JOINT_UNCHECKED"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 3018581.998214603
   },
@@ -170,6 +182,10 @@
    "step": 75,
    "t": 0.75,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC",
+    "R_JOINT_UNCHECKED"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 4519113.0505778855
   },
@@ -204,6 +220,10 @@
    "step": 100,
    "t": 1.0,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC",
+    "R_JOINT_UNCHECKED"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 6013694.935494222
   },
@@ -238,6 +258,10 @@
    "step": 125,
    "t": 1.25,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC",
+    "R_JOINT_UNCHECKED"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 7502294.947866286
   },
@@ -272,6 +296,10 @@
    "step": 150,
    "t": 1.5,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC",
+    "R_JOINT_UNCHECKED"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 8984904.441408765
   },
@@ -306,6 +334,10 @@
    "step": 175,
    "t": 1.75,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC",
+    "R_JOINT_UNCHECKED"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 10461532.088920305
   },
@@ -340,6 +372,10 @@
    "step": 200,
    "t": 2.0,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC",
+    "R_JOINT_UNCHECKED"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 11932199.499796988
   },
@@ -374,6 +410,10 @@
    "step": 225,
    "t": 2.25,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC",
+    "R_JOINT_UNCHECKED"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 13396938.208462358
   },
@@ -408,6 +448,10 @@
    "step": 250,
    "t": 2.5,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC",
+    "R_JOINT_UNCHECKED"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 14855787.506430991
   },
@@ -442,6 +486,10 @@
    "step": 275,
    "t": 2.75,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC",
+    "R_JOINT_UNCHECKED"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 16308792.823658118
   },
@@ -476,6 +524,10 @@
    "step": 300,
    "t": 3.0,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC",
+    "R_JOINT_UNCHECKED"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 17756004.486189213
   }

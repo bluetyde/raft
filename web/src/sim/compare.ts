@@ -59,6 +59,11 @@ function compareInner(
       problems.push(`${path}: type differs`);
       return;
     }
+    if (!Number.isFinite(a) || !Number.isFinite(b)) {
+      // a NaN or an infinity never compares equal to anything: NaN would pass every tolerance test below, because `NaN > limit` is false
+      problems.push(`${path}: ${String(a)} vs ${String(b)} (a value that is not finite)`);
+      return;
+    }
     const cat = key ? CATEGORY[key] : undefined;
     const t = cat && tol[cat] ? tol[cat] : DEFAULT_TOL;
     const absTol = t.abs ?? 0.0;

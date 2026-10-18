@@ -7,7 +7,7 @@
 import { Library, Table } from "./library";
 import { MASK64, SplitMix64, luFactor, luSolve, type LUFactored } from "./numerics";
 
-export const ENGINE_VERSION = "0.7.0";
+export const ENGINE_VERSION = "0.7.1";
 export const CAPABILITY = "point-kinetics/lumped-thermal-v1";
 export const CAPABILITY_V2 = "point-kinetics/lumped-thermal-v2"; // adds thermal.hA.exponent
 export const CAPABILITY_BORON = "point-kinetics/boron-v1"; // adds soluble boron: a concentration the operator changes at a limited rate (ppm), and its reactivity table
@@ -231,6 +231,13 @@ export class Engine {
     }
     this.lib = lib;
     this.config = { ...DEFAULT_CONFIG, ...(config ?? {}) };
+    for (const key of ["outerDt", "rtol", "hInit", "hMin", "eventTol"] as const) {
+      // a zero or non-finite interval would advance the step count without advancing time
+      const v = (this.config as any)[key];
+      if (typeof v !== "number" || !Number.isFinite(v) || v <= 0) {
+        throw new InitError("E_INIT_INVALID", `config ${key} must be a finite number > 0, got ${String(v)}`);
+      }
+    }
     const method = this.config.method;
     if (method === "ros2") {
       this._stepper = this._ros2.bind(this);
@@ -360,8 +367,8 @@ export class Engine {
     let p0: number;
     if (power.mode === "given" || power.mode === "critical-equilibrium") {
       p0 = Number(power.value);
-      if (p0 < 0) {
-        throw new InitError("E_INIT_INVALID", "power must be >= 0");
+      if (!Number.isFinite(p0) || p0 < 0) {
+        throw new InitError("E_INIT_INVALID", "power must be finite and >= 0");
       }
     } else {
       p0 = 0.0;
@@ -837,6 +844,9 @@ export class Engine {
       let err: number;
       while (true) {
         [yNew, err] = this._stepper(t, y, hs, J, f0, ft);
+        if (!Number.isFinite(err)) {
+          throw new SolverError(`non-finite error estimate at t = ${t.toPrecision(9)}`);
+        }
         if (err <= 1.0 && yNew[IP]! >= 0.0) {
           break;
         }
@@ -1228,7 +1238,13 @@ export class Engine {
       if (cmd.kind === "clear") {
         this.extraRho = 0.0;
       } else {
-        this.extraRho += Number(cmd.deltaRho ?? 0.0);
+        const delta = Number(cmd.deltaRho ?? 0.0);
+        if (!Number.isFinite(delta)) {
+          status = "rejected";
+          reason = "REJ_BAD_ARGUMENT";
+        } else {
+          this.extraRho += delta;
+        }
       }
     } else if (ctype === "fault.instrument") {
       const iid = cmd.instrument;
@@ -1240,16 +1256,13 @@ export class Engine {
         delete this.faults[iid];
       } else if (kind === "stuck" || kind === "dead") {
         this.faults[iid] = kind;
-      } else if (kind === "drift") {
-        const rate = Number(cmd.rate ?? 0.0);
-        if (rate !== 0.0) {
-          this.faults[iid] = { kind: "drift", rate, t0: t, v0: this.indicated[iid] } as any;
-        }
       } else {
         status = "rejected";
         reason = "REJ_BAD_ARGUMENT";
       }
-    } else if (ctype === "fault.rod") {
+    } else if (false as boolean && ctype === "fault.rod") {
+      // dormant: rod faults are in the TypeScript engine only (the Python reference and the golden vectors do not have them), so the engines would disagree;
+      // the command is refused (REJ_UNKNOWN_COMMAND) until the reference has them too
       const rid = cmd.rod;
       const kind = cmd.kind;
       if (typeof rid !== "string" || !Object.hasOwn(this.lib.rodById, rid)) {
@@ -1302,13 +1315,25 @@ export class Engine {
     this._integrate(t0, t1);
     this.stepIndex += 1;
     this._boundary();
+    if (!this.y.every((v) => Number.isFinite(v))) {
+      // a state that is not a number is never a result: halt, with the reason
+      this.halted = "R_NONFINITE_STATE";
+      this.events.push({ type: "halt", t: this.t, reason: this.halted });
+    }
   }
 
-  advance(seconds: number): void {
+  /** Advance a whole number of outer steps; returns how many were taken (fewer than asked if the engine halted). */
+  advance(seconds: number): number {
     const n = roundHalfEven(seconds / this.config.outerDt);
+    let taken = 0;
     for (let i = 0; i < n; i++) {
+      if (this.halted) {
+        break;
+      }
       this.step();
+      taken += 1;
     }
+    return taken;
   }
 
   validity(): Record<string, any> {

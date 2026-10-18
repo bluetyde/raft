@@ -543,6 +543,10 @@ def invalid_cases() -> list[tuple[str, list[str], Callable]]:
     def domain_tfuel_below_table(m, b):
         m["domain"]["Tfuel"][0] = m["reactivity"]["fuelTemp"]["T"][0] - 50.0
 
+    def domain_tfuel_beyond_cp_table(m, b):
+        cp = m["thermal"]["fuel"]["cp"]
+        cp["T"], cp["c"] = cp["T"][:2], cp["c"][:2]                          # the heat capacity table now ends below the fuel temperature domain
+
     def domain_interval_reversed(m, b):
         lo, hi = m["domain"]["xenon"]
         m["domain"]["xenon"] = [hi, lo]
@@ -600,6 +604,7 @@ def invalid_cases() -> list[tuple[str, list[str], Callable]]:
         ("scram-profile-not-from-the-top", ["E_SCRAM_PROFILE"], scram_not_from_top),
         ("domain-tfuel-beyond-table", ["E_SCHEMA"], domain_tfuel_beyond_table),
         ("domain-tfuel-below-table", ["E_SCHEMA"], domain_tfuel_below_table),
+        ("domain-tfuel-beyond-cp-table", ["E_SCHEMA"], domain_tfuel_beyond_cp_table),
         ("domain-interval-reversed", ["E_SCHEMA"], domain_interval_reversed),
         ("domain-rod-beyond-table", ["E_SCHEMA"], domain_rod_beyond_table),
         ("rod-delta-missing", ["E_ROD_UNKNOWN"], rod_delta_missing),

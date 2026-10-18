@@ -258,6 +258,9 @@ class _Checker:
                 self.add("E_SCHEMA", f"$.domain.{name}", "must be [lo, hi] with lo <= hi")
             elif lo < table[axis_col][0] or hi > table[axis_col][-1]:
                 self.add("E_SCHEMA", f"$.domain.{name}", f"must lie within the axis of reactivity table for it (the domain is where the table has data)")
+        cp_axis = m["thermal"]["fuel"]["cp"]["T"]                     # the heat capacity table is read at the fuel temperature too
+        if dom["Tfuel"][0] <= dom["Tfuel"][1] and (dom["Tfuel"][0] < cp_axis[0] or dom["Tfuel"][1] > cp_axis[-1]):
+            self.add("E_SCHEMA", "$.domain.Tfuel", "must lie within the temperature axis of thermal.fuel.cp (the domain is where the tables have data)")
         for rod in r["rods"]:
             lo, hi = dom["rods"][rod["id"]]
             if lo > hi:

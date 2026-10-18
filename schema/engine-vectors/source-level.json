@@ -20,7 +20,7 @@
    "outerDt": 0.01,
    "rtol": 1e-06
   },
-  "engineVersion": "0.7.0",
+  "engineVersion": "0.7.1",
   "libraryDigest": "d4392d0f218e1cf4825aa75c022de23d06d77befb28cc27ac1c09c2cbcb1b7c4"
  },
  "sampleEvery": 10,
@@ -56,6 +56,9 @@
    "step": 0,
    "t": 0.0,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 0.0
   },
@@ -90,6 +93,9 @@
    "step": 10,
    "t": 0.1,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 29170.352451618648
   },
@@ -124,6 +130,9 @@
    "step": 20,
    "t": 0.2,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 58342.94826009847
   },
@@ -158,6 +167,9 @@
    "step": 30,
    "t": 0.3,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 87517.78741398879
   },
@@ -192,6 +204,9 @@
    "step": 40,
    "t": 0.4,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 116694.86990185014
   },
@@ -226,6 +241,9 @@
    "step": 50,
    "t": 0.5,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 145874.19571224324
   },
@@ -260,6 +278,9 @@
    "step": 60,
    "t": 0.6,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 175055.76483372902
   },
@@ -294,6 +315,9 @@
    "step": 70,
    "t": 0.7000000000000001,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 204239.5772548685
   },
@@ -328,6 +352,9 @@
    "step": 80,
    "t": 0.8,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 233425.63296422287
   },
@@ -362,6 +389,9 @@
    "step": 90,
    "t": 0.9,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 262613.93195035344
   },
@@ -396,6 +426,9 @@
    "step": 100,
    "t": 1.0,
    "tripped": false,
+   "validityReasons": [
+    "R_LIBRARY_SYNTHETIC"
+   ],
    "validityStatus": "unvalidated",
    "xenon": 291804.47420182166
   }

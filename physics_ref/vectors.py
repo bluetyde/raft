@@ -225,6 +225,7 @@ def sample_from_engine(e: Engine) -> dict:
         "tripped": snap["tripped"],
         "latched": list(snap["trips"]["latched"]),
         "validityStatus": snap["validity"]["status"],
+        "validityReasons": list(snap["validity"]["reasons"]),         # which limit was exceeded matters, not only that one was
     }
     if "boron" in truth:
         out["boron"] = truth["boron"]
@@ -261,6 +262,8 @@ def run_scenario(lib: Library, sc: dict) -> dict:
         for cmd in script_by_step.get(k, []):
             e.submit(cmd)
         e.step()
+        if e.halted:                                                  # a vector declares its steps: one that stops early would claim a run it did not make
+            raise RuntimeError(f"vector {sc['name']}: the engine halted at step {e.step_index} ({e.halted}) before step {total_steps}")
         if e.step_index % sample_every == 0 or e.step_index == total_steps:
             if e.step_index not in sampled_steps:
                 samples.append(sample_from_engine(e))

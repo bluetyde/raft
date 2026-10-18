@@ -65,6 +65,7 @@ export function sampleFromEngine(e: Engine): Record<string, any> {
     tripped: snap.tripped,
     latched: [...snap.trips.latched],
     validityStatus: snap.validity.status,
+    validityReasons: [...snap.validity.reasons], // which limit was exceeded matters, not only that one was
   };
   if (truth.boron !== undefined) {
     out.boron = truth.boron;
@@ -103,6 +104,10 @@ export function runScenario(
       }
     }
     e.step();
+    if (e.halted) {
+      // a vector declares its steps: one that stops early would claim a run it did not make
+      throw new Error(`vector ${sc.name}: the engine halted at step ${e.stepIndex} (${e.halted}) before step ${totalSteps}`);
+    }
     if (onStep) {
       onStep(e);
     }

@@ -7,7 +7,7 @@ RAFT follows [semantic versioning](https://semver.org/) for the app and the libr
 Experimental and educational. No library is marked validated.
 
 **Simulator**
-- Point kinetics with six delayed-neutron groups, a lumped fuel and coolant node, and reactivity as a sum of tables from a library; a Python reference engine (`physics_ref`) and a TypeScript engine (`web/src/sim`) that agree on 11 golden vectors. Engine 0.7.0.
+- Point kinetics with six delayed-neutron groups, a lumped fuel and coolant node, and reactivity as a sum of tables from a library; a Python reference engine (`physics_ref`) and a TypeScript engine (`web/src/sim`) that agree on 11 golden vectors. Engine 0.7.1.
 - Library format 0.1.0 (`docs/library-format.md`) with capabilities: lumped thermal v1 and v2 (hA depends on the temperature difference), soluble boron, rod interaction v1 (a correction on the summed rod worth) and rod interaction v2 (each rod's worth scaled by the others, "shadowing"). A validator in Python and TypeScript (55 invalid fixtures). A checked state in `domain.jointChecked` can carry a boron window, so a state checked at one concentration is not reported as checked at another.
 - A runtime with a worker, two-window sessions, replay and rewind, an operator panel (instruments, annunciator, rods, boron, SCRAM), an instructor panel (time, scenarios, faults, notes, branches, export), and a 3D core view.
 - Scenarios with goals, a score and an envelope that says what a lesson claims.

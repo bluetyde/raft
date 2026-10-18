@@ -21,7 +21,7 @@ import math
 from .library import Library
 from .numerics import SplitMix64, lu_factor, lu_solve
 
-ENGINE_VERSION = "0.7.0"
+ENGINE_VERSION = "0.7.1"
 CAPABILITY = "point-kinetics/lumped-thermal-v1"
 CAPABILITY_V2 = "point-kinetics/lumped-thermal-v2"      # adds thermal.hA.exponent: hA depends on the fuel-to-coolant temperature difference
 CAPABILITY_ROD_INTERACTION = "point-kinetics/rod-interaction-v1"   # adds reactivity.rodInteraction: a correction on the summed single-rod reactivities (rods shadow or boost each other)
@@ -154,6 +154,10 @@ class Engine:
             raise InitError("E_INIT_INVALID", f"library doesn't declare {CAPABILITY} or {CAPABILITY_V2}")
         self.lib = lib
         self.config = dict(DEFAULT_CONFIG, **(config or {}))
+        for key in ("outerDt", "rtol", "hInit", "hMin", "eventTol"):       # a zero or non-finite interval would advance the step count without advancing time
+            v = self.config[key]
+            if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or v <= 0:
+                raise InitError("E_INIT_INVALID", f"config {key} must be a finite number > 0, got {v!r}")
         method = self.config.get("method")
         if method == "ros2":
             self._stepper = self._ros2
@@ -225,6 +229,8 @@ class Engine:
         self.pumps = {p: bool(init.get("pumps", {}).get(p, True)) for p in lib.pumps}
         tf = float(init.get("Tfuel", lib.ref_tfuel))
         tc = float(init.get("Tcoolant", lib.ref_tcool))
+        if not (math.isfinite(tf) and math.isfinite(tc)):
+            raise InitError("E_INIT_INVALID", "Tfuel and Tcoolant must be finite")
 
         poisons = init.get("poisons", {"mode": "zero"})
         power = init.get("power", {"mode": "source-equilibrium"})
@@ -235,14 +241,16 @@ class Engine:
         y[ITF], y[ITC] = tf, tc
         if power["mode"] in ("given", "critical-equilibrium"):
             p0 = float(power["value"])
-            if p0 < 0:
-                raise InitError("E_INIT_INVALID", "power must be >= 0")
+            if not math.isfinite(p0) or p0 < 0:
+                raise InitError("E_INIT_INVALID", "power must be finite and >= 0")
         else:
             p0 = None
         if poisons["mode"] == "zero":
             i0 = x0 = 0.0
         elif poisons["mode"] == "given":
             i0, x0 = float(poisons["I"]), float(poisons["X"])
+            if not (math.isfinite(i0) and math.isfinite(x0)) or i0 < 0 or x0 < 0:
+                raise InitError("E_INIT_INVALID", "poisons I and X must be finite and >= 0")
         elif poisons["mode"] == "equilibrium":
             phi = lib.flux_per_watt * p0
             i0 = lib.gamma_i * lib.sigma_f * phi / lib.lambda_i
@@ -534,6 +542,8 @@ class Engine:
             hs = t1 - t if truncated else h
             while True:
                 y_new, err = self._stepper(t, y, hs, J, f0, ft)
+                if not math.isfinite(err):
+                    raise SolverError(f"non-finite error estimate at t = {t:.9g}")
                 if err <= 1.0 and y_new[IP] >= 0.0:
                     break
                 self.diag["rejected"] += 1
@@ -782,7 +792,14 @@ class Engine:
             if cmd.get("kind") == "clear":
                 self.extra_rho = 0.0
             else:
-                self.extra_rho += float(cmd.get("deltaRho", 0.0))
+                try:
+                    delta = float(cmd.get("deltaRho", 0.0))
+                except (TypeError, ValueError):
+                    delta = math.nan
+                if not math.isfinite(delta):
+                    status, reason = "rejected", "REJ_BAD_ARGUMENT"
+                else:
+                    self.extra_rho += delta
         elif ctype == "fault.instrument":
             iid, kind = cmd.get("instrument"), cmd.get("kind")
             if iid not in {i["id"] for i in self.lib.instruments}:
@@ -816,12 +833,21 @@ class Engine:
         self._integrate(t0, t1)
         self.step_index += 1
         self._boundary()
+        if not all(math.isfinite(v) for v in self.y):             # a state that is not a number is never a result: halt, with the reason
+            self.halted = "R_NONFINITE_STATE"
+            self.events.append({"type": "halt", "t": self.t, "reason": self.halted})
 
-    def advance(self, seconds: float) -> None:
-        """Advance a whole number of outer steps. Splitting a span into several calls gives identical results."""
+    def advance(self, seconds: float) -> int:
+        """Advance a whole number of outer steps (returns how many were taken: fewer than asked if the engine halted).
+        Splitting a span into several calls gives identical results."""
         n = round(seconds / self.config["outerDt"])
+        taken = 0
         for _ in range(n):
+            if self.halted:
+                break
             self.step()
+            taken += 1
+        return taken
 
     def validity(self) -> dict:
         lib, dom, reasons = self.lib, self.lib.domain, []

@@ -409,6 +409,11 @@ class Checker {
         this.add("E_SCHEMA", `$.domain.${name}`, "must lie within the axis of reactivity table for it (the domain is where the table has data)");
       }
     }
+    const cpAxis = m.thermal.fuel.cp.T as number[]; // the heat capacity table is read at the fuel temperature too
+    const tfDom = dom.Tfuel as number[];
+    if (tfDom[0]! <= tfDom[1]! && (tfDom[0]! < cpAxis[0]! || tfDom[1]! > cpAxis[cpAxis.length - 1]!)) {
+      this.add("E_SCHEMA", "$.domain.Tfuel", "must lie within the temperature axis of thermal.fuel.cp (the domain is where the tables have data)");
+    }
     for (const rod of r.rods) {
       const [lo, hi] = dom.rods[rod.id] as number[];
       const xs = rod.worth.x as number[];
