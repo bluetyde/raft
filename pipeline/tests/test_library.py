@@ -116,5 +116,27 @@ class TestGenerator(unittest.TestCase):
         self.assertEqual(changed, [], "regenerate with `python -m pipeline.library.synthetic` and review the diff")
 
 
+class TestJointCheckedBoronWindow(unittest.TestCase):
+    """domain.jointChecked[].boron (library format section 13): a [lo, hi] window, valid with the boron capability and lo <= hi."""
+
+    def check(self, fixture, window):
+        import shutil
+        with tempfile.TemporaryDirectory() as d:
+            folder = Path(d) / "lib"
+            shutil.copytree(VECTORS / fixture, folder)
+            m = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+            m["domain"]["jointChecked"] = [{"rods": {"safety": 0.5, "regulating": 0.5, "transient": 0.0}, "boron": window, "maxShapeErr": 0.0, "rhoErr": 0.0}]
+            (folder / "manifest.json").write_text(json.dumps(m), encoding="utf-8")
+            return [i.code for i in validate_library(folder)]
+
+    def test_a_window_with_equal_ends_is_valid_and_a_reversed_one_is_not(self):
+        self.assertEqual(self.check("synthetic-core-boron", [1000.0, 1000.0]), [])
+        self.assertEqual(self.check("synthetic-core-boron", [990.0, 1010.0]), [])
+        self.assertEqual(self.check("synthetic-core-boron", [1010.0, 990.0]), ["E_SCHEMA"])
+
+    def test_a_window_needs_the_boron_capability(self):
+        self.assertEqual(self.check("synthetic-core", [990.0, 1010.0]), ["E_CAPABILITY_UNSUPPORTED"])
+
+
 if __name__ == "__main__":
     unittest.main()
