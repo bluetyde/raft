@@ -234,6 +234,7 @@ export class OperatorPanel {
     }
 
     this.message = el("div", { className: "vr-note" });
+    this.message.dataset["op"] = "message";
     this.copilot = new JevCopilot(client, "operator");
     const copilotBtn = createCopilotButton(this.copilot);
 

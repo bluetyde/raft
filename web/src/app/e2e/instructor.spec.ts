@@ -87,7 +87,7 @@ test("a coarse session shows its step, offers 3600x, and rejects pulse mode and 
 
   await page.click('[data-op="play"]');
   await page.selectOption('[data-op="mode"]', "pulse");
-  const note = page.locator(".vr-operator > .vr-note");
+  const note = page.locator('.vr-operator > .vr-note[data-op="message"]');
   await expect(note).toContainText("mode.set rejected: REJ_COARSE_STEP", { timeout: 10_000 });
   await expect(note).toContainText("outer step of 10 ms or less");
   const fire = await page.evaluate(() => (window as any).vr.client.command({ type: "rod.fire", rod: "transient" }));

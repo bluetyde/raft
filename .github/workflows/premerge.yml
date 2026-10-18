@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   premerge:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       VR_PYTHON: python3
@@ -38,7 +38,7 @@ jobs:
 
   e2e:
     # Browser end-to-end check of the runtime worker (web/src/app/e2e/), on the production build.
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7

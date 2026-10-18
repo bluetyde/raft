@@ -54,7 +54,7 @@ test("two windows share one session: a command in one shows in the other", async
     .poll(() => a.evaluate(() => (window as any).vr.snapshot.truth.rods.regulating.moving), { timeout: 10_000 })
     .toBe("out");
   await expect.poll(() => t(b), { timeout: 10_000 }).toBeGreaterThan(0.5);
-  await expect(b.locator(".vr-operator > .vr-note")).toContainText("rod.move accepted");
+  await expect(b.locator('.vr-operator > .vr-note[data-op="message"]')).toContainText("rod.move accepted");
   // the operator's own panel shows the time, set by the instructor
   await expect(b.locator(".vr-opclock")).toContainText("achieved");
 });
