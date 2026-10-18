@@ -56,7 +56,7 @@ describe("library fixtures", () => {
       .map((d) => d.name)
       .sort();
 
-    expect(cases.length).toBe(61);
+    expect(cases.length).toBe(62);
 
     for (const caseName of cases) {
       const caseFolder = join(invalidDir, caseName);

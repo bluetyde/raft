@@ -534,10 +534,14 @@ def invalid_cases() -> list[tuple[str, list[str], Callable]]:
         add_rod_shadowing(m)                                     # the two replace each other
 
     def scram_not_from_top(m, b):
-        m["reactivity"]["rods"][0]["scram"]["x"][0] = 0.8                # the rod would jump from 1.0 to 0.8 at the start of a scram
+        sc = m["reactivity"]["rods"][0]["scram"]
+        sc["x"] = [0.8 * x for x in sc["x"]]                              # non-increasing and ending at 0, but starting at 0.8: the rod would jump from 1.0 to 0.8 at the start of a scram
 
     def domain_tfuel_beyond_table(m, b):
         m["domain"]["Tfuel"][1] = m["reactivity"]["fuelTemp"]["T"][-1] + 100.0
+
+    def domain_tfuel_below_table(m, b):
+        m["domain"]["Tfuel"][0] = m["reactivity"]["fuelTemp"]["T"][0] - 50.0
 
     def domain_interval_reversed(m, b):
         lo, hi = m["domain"]["xenon"]
@@ -595,6 +599,7 @@ def invalid_cases() -> list[tuple[str, list[str], Callable]]:
         ("rod-shadowing-and-interaction", ["E_CAPABILITY_UNSUPPORTED"], rs_and_ri),
         ("scram-profile-not-from-the-top", ["E_SCRAM_PROFILE"], scram_not_from_top),
         ("domain-tfuel-beyond-table", ["E_SCHEMA"], domain_tfuel_beyond_table),
+        ("domain-tfuel-below-table", ["E_SCHEMA"], domain_tfuel_below_table),
         ("domain-interval-reversed", ["E_SCHEMA"], domain_interval_reversed),
         ("domain-rod-beyond-table", ["E_SCHEMA"], domain_rod_beyond_table),
         ("rod-delta-missing", ["E_ROD_UNKNOWN"], rod_delta_missing),
