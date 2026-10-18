@@ -1,6 +1,6 @@
 /**
  * The fault commands the instructor view can send (docs/m6-instructor-design.md, D3 and amendment 2).
- * Only faults that the engine has today. The others wait for the engine (request D3a in docs/cloud-notes.md).
+ * Only faults that the engine has today. The others wait for the engine (request D3a in the agent coordination notes, kept outside this repository).
  */
 
 import { PCM } from "./truth";

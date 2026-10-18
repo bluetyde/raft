@@ -4,7 +4,7 @@ Status: **approved by the user on 2026-09-28: D1–D5 and D7 as recommended (opt
 The decisions are marked **D1–D7**, each with options and a recommendation. The table at the end lists them.
 
 This is the last M5 item in TODO: "Scenarios: startup, steady power, pulse, scram, xenon transient". Plan 05 sketches the format.
-The format design is A7 in `docs/AGENT-TASKS.md`. A7 was on hold, and the user asked for this item on 2026-09-28.
+The format design is task A7 of the agent task list (kept outside this repository). A7 was on hold, and the user asked for this item on 2026-09-28.
 The design builds on the C6 runtime, the M5 operator panel and the M6 instructor view ([m6-instructor-design.md](m6-instructor-design.md)).
 
 ## 1. What a scenario is

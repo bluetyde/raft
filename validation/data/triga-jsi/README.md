@@ -3,7 +3,7 @@
 This directory collects physical, nuclear kinetics, and thermal-hydraulic parameters for the **Jožef Stefan Institute (JSI) TRIGA Mark II research reactor** (Ljubljana, Slovenia).
 
 > **Status: unverified (review 2026-09-26).** The values were gathered by an agent and have not been checked against the cited publications.
-> Treat every value as an estimate until task C2 (parameter check, `docs/AGENT-TASKS.md`) confirms or corrects it, value by value.
+> Treat every value as an estimate until task C2 (parameter check, in the agent task list kept outside this repository) confirms or corrects it, value by value.
 > Known correction: `poisons.fluxPerWatt` was 4.0e7 (1000x too low, disagreeing with the library); it is now 4.0e10, still unverified.
 > The "Benchmark Sources" below are candidate sources to check, not confirmation. See `docs/reviews/2026-09-26-m1-go-review.md`.
 

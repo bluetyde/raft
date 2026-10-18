@@ -83,7 +83,7 @@ Overlay charts of two branches need traces of the other branch. The CSV replay (
   This needs a mirror protocol, owner-loss detection, and "disconnected" handling.
 - (c) One window only in M6. Two windows come later.
 
-With (a), ARCHITECTURE's "one owner" rule (mirror detects owner loss) changes to "one shared worker". That file is outside my scope, so the other session would change it (a request in `cloud-notes.md`).
+With (a), ARCHITECTURE's "one owner" rule (mirror detects owner loss) changes to "one shared worker". That file is outside my scope, so the other session would change it (a request in the agent coordination notes, kept outside this repository).
 
 ### D3: faults that the engine does not have
 

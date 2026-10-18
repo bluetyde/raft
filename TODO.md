@@ -3,7 +3,7 @@
 Running list. Check items off, add new ones at the bottom of their section, and note the date when something finishes.
 Design lives in [PLAN.md](PLAN.md). Details per area in [docs/plans/](docs/plans/); overall structure in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-Flags: **[agy]** = a delegation candidate for Antigravity: large, mechanical, contract fixed, strong oracle ([antigravity-task step 0](docs/AGENT-TASKS.md); run step 0 again before dispatching).
+Flags: **[agy]** = a delegation candidate for Antigravity: large, mechanical, contract fixed, strong oracle (antigravity-task step 0; run step 0 again before dispatching).
 Unflagged items are Claude's: judgment, data, small or precision-critical work. **[codex]** = a Codex review checkpoint; every milestone ends with one.
 
 ## Next (updated 2026-10-08)
