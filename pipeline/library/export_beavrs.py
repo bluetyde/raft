@@ -307,7 +307,8 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
         path_report[cid] = {"computed": True, "driftZ": conv["z"], "rhoCase": rho_c, "rhoPred": rho_p, "difference": diff, "rhoSigma": sig_c, "limit": lim, "label": label_,
                             "differenceNoTable": predict(r, with_table=False)[0] - rho_c, "sumRods": sum_rods(r["steps"]),
                             "maxShapeErr": shape_err(shape_p, shape_of_row(r)), "negativeBins": sum(1 for v in shape_p if v < -1e-6)}
-        if label_ == "good":
+        path_report[cid]["shapeOk"] = path_report[cid]["maxShapeErr"] <= SHAPE_ERR_LIMIT      # the library's acceptance for a checked state is 100 pcm (or 3 sigma) AND one mean bin of shape
+        if label_ == "good" and path_report[cid]["shapeOk"]:
             joint.append({"rods": {rid(b): x_of(r["steps"][b]) for b in BANKS}, "boron": [float(r["boron"]) - JOINT_BORON_HALF_WIDTH, float(r["boron"]) + JOINT_BORON_HALF_WIDTH],
                           "maxShapeErr": path_report[cid]["maxShapeErr"], "rhoErr": abs(diff)})
 
@@ -321,11 +322,12 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
             if any(c in near_cases() for c in by_path):           # near cases were delivered: any planned one that is absent is reported, not dropped
                 for cid in near_cases():
                     path_report.setdefault(cid, {"computed": False, "reason": "missing: not in the held-out file"})
-        n_good = sum(1 for e in path_report.values() if e.get("label") == "good")
+        n_good = len(joint)
         n_comp = sum(1 for e in path_report.values() if e.get("computed"))
         boron_note = (f" Each listed state covers the boron it was run at plus or minus {JOINT_BORON_HALF_WIDTH:g} ppm only (a boron window in domain.jointChecked); "
                       "the boron x bank interaction is not in the model.") if n_good else ""
-        checked_note = f"Checked against {n_comp} held-out cases: {n_good} within the limit (listed in domain.jointChecked)." + boron_note
+        checked_note = (f"Checked against {n_comp} held-out cases: {n_good} within the limits of reactivity (100 pcm or 3 sigma) and power shape (one mean bin), "
+                        "listed in domain.jointChecked." + boron_note)
     if model == "shadowing":
         rod_note = ("Several banks in: each bank's worth is scaled by 1 + g(the summed single-bank reactivity of the other banks) (reactivity.rodShadowing, capability rod-interaction-v2, "
                     "fitted to the three combined sweep cases and the nine path cases of the fourteenth protocol, and to nothing else); it sees only that sum, not which banks or where "
@@ -576,6 +578,11 @@ def check_sweep(rows: list[dict]) -> dict[str, dict]:
         for key in ("steps", "boron", "tFuel", "tWater", "particles", "batches", "inactive", "ifp"):
             if r.get(key) != want[key]:
                 raise ValueError(f"case {r['case']}: {key} is {r.get(key)!r} in the sweep, the plan says {want[key]!r}")
+        if r.get("seed") != HELD_OUT_SEED:
+            raise ValueError(f"case {r['case']}: seed is {r.get('seed')!r} in the sweep, the protocols fix {HELD_OUT_SEED}")
+        # the 45 sweep rows of 2026-10-07 predate the recorded BEAVRS commit (the protocol's errata say it was 1ccae04); a row that does record one must match
+        if r.get("beavrsHead") not in (None, BEAVRS_HEAD):
+            raise ValueError(f"case {r['case']}: the BEAVRS commit is {r.get('beavrsHead')!r}, the protocols fix {BEAVRS_HEAD!r}")
     return {r["case"]: r for r in rows}
 
 

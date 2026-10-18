@@ -550,6 +550,30 @@ class PlantedShadowing(unittest.TestCase):
         _, _, report0 = xb.build(self.rows, CORE, created="2026-10-15", path_rows=self.path, model="shadowing", shadow_rows=self.held, shadow_knots=KNOTS)
         self.assertFalse(any(c in report0["heldOutCases"] for c in near_cases()))       # no near case delivered: the optional file is simply not part of this export
 
+    def test_sweep_rows_from_another_seed_or_beavrs_commit_are_refused(self):
+        for key, bad in (("seed", 2), ("seed", None), ("beavrsHead", "deadbee")):
+            rows = make_rows()
+            rows[5][key] = bad
+            with self.subTest(key=key, bad=bad), self.assertRaises(ValueError):
+                xb.build(rows, CORE)
+        rows = make_rows()
+        for r in rows:
+            r.pop("beavrsHead")                                   # the original sweep did not record it: accepted
+        xb.build(rows, CORE)
+
+    def test_a_held_out_case_with_a_good_reactivity_but_a_bad_power_shape_is_not_listed_as_checked(self):
+        held = make_rows(plan=shadow_cases(), shadow=planted_g)
+        r = next(x for x in held if x["case"] == "O-S3")
+        units = planted_units(r["steps"], None)
+        r["fission"] = mesh([u * (1.8 if i % 2 else 0.2) for i, u in enumerate(units)], CORE, 1e-3)      # the shape is far off, the reactivity (k) is untouched
+        m, _, report = xb.build(self.rows, CORE, created="2026-10-18", path_rows=self.path, model="shadowing", shadow_rows=held, shadow_knots=KNOTS)
+        e = report["heldOutCases"]["O-S3"]
+        self.assertEqual(e["label"], "good")
+        self.assertGreater(e["maxShapeErr"], xb.SHAPE_ERR_LIMIT)
+        self.assertFalse(e["shapeOk"])
+        self.assertEqual(len(m["domain"]["jointChecked"]), 12)
+        self.assertIn("Checked against 13 held-out cases: 12 within the limits", m["provenance"]["notes"])
+
     def test_every_checked_state_carries_the_boron_window_of_its_run(self):
         half = xb.JOINT_BORON_HALF_WIDTH
         plan = shadow_cases()

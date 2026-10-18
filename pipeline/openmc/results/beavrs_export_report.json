@@ -966,7 +966,8 @@
    "differenceNoTable": 0.01993947269796889,
    "sumRods": -0.0407533464411849,
    "maxShapeErr": 2.5410421176311666,
-   "negativeBins": 19
+   "negativeBins": 19,
+   "shapeOk": false
   },
   "L-C-40": {
    "computed": true,
@@ -980,7 +981,8 @@
    "differenceNoTable": 0.020014958571423436,
    "sumRods": -0.03955221257992069,
    "maxShapeErr": 2.3594272075930136,
-   "negativeBins": 47
+   "negativeBins": 47,
+   "shapeOk": false
   },
   "L-C-83": {
    "computed": true,
@@ -994,7 +996,8 @@
    "differenceNoTable": 0.014166900882887488,
    "sumRods": -0.03802790812924244,
    "maxShapeErr": 1.9239268418977082,
-   "negativeBins": 91
+   "negativeBins": 91,
+   "shapeOk": false
   },
   "L-C-120": {
    "computed": true,
@@ -1008,7 +1011,8 @@
    "differenceNoTable": 0.012356354545360153,
    "sumRods": -0.035684835687097474,
    "maxShapeErr": 1.9373458229398974,
-   "negativeBins": 87
+   "negativeBins": 87,
+   "shapeOk": false
   },
   "L-C-160": {
    "computed": true,
@@ -1022,7 +1026,8 @@
    "differenceNoTable": 0.011648918115558533,
    "sumRods": -0.033546076408938405,
    "maxShapeErr": 1.9101894048102805,
-   "negativeBins": 78
+   "negativeBins": 78,
+   "shapeOk": false
   },
   "L-ARO-860": {
    "computed": true,
@@ -1036,7 +1041,8 @@
    "differenceNoTable": -0.0004934391382426413,
    "sumRods": 0.0,
    "maxShapeErr": 0.39343172824104855,
-   "negativeBins": 0
+   "negativeBins": 0,
+   "shapeOk": true
   },
   "O-S3": {
    "computed": true,
@@ -1050,7 +1056,8 @@
    "differenceNoTable": 0.0026587288872400913,
    "sumRods": -0.014424721633073496,
    "maxShapeErr": 0.7311614702598656,
-   "negativeBins": 0
+   "negativeBins": 0,
+   "shapeOk": true
   },
   "O-S5": {
    "computed": true,
@@ -1064,7 +1071,8 @@
    "differenceNoTable": 0.009715922680175501,
    "sumRods": -0.02498854017367836,
    "maxShapeErr": 1.709220707288524,
-   "negativeBins": 4
+   "negativeBins": 4,
+   "shapeOk": false
   },
   "O-S6": {
    "computed": true,
@@ -1078,7 +1086,8 @@
    "differenceNoTable": 0.010839747002653825,
    "sumRods": -0.033150515306469855,
    "maxShapeErr": 2.4173801292117676,
-   "negativeBins": 12
+   "negativeBins": 12,
+   "shapeOk": false
   },
   "O-D-76": {
    "computed": true,
@@ -1092,7 +1101,8 @@
    "differenceNoTable": 0.012751389463127212,
    "sumRods": -0.038470811945227265,
    "maxShapeErr": 3.0472230041966153,
-   "negativeBins": 60
+   "negativeBins": 60,
+   "shapeOk": false
   },
   "X-5": {
    "computed": true,
@@ -1106,7 +1116,8 @@
    "differenceNoTable": 0.01746438853495231,
    "sumRods": -0.03317395195187611,
    "maxShapeErr": 1.6460597627561937,
-   "negativeBins": 15
+   "negativeBins": 15,
+   "shapeOk": false
   },
   "X-6": {
    "computed": true,
@@ -1120,7 +1131,8 @@
    "differenceNoTable": 0.02579656744625332,
    "sumRods": -0.04128884702202926,
    "maxShapeErr": 1.8667975003782056,
-   "negativeBins": 38
+   "negativeBins": 38,
+   "shapeOk": false
   },
   "X-9": {
    "computed": true,
@@ -1134,7 +1146,8 @@
    "differenceNoTable": 0.033843871448922015,
    "sumRods": -0.05571356865510275,
    "maxShapeErr": 2.5529619905539773,
-   "negativeBins": 87
+   "negativeBins": 87,
+   "shapeOk": false
   },
   "N-C-0": {
    "computed": true,
@@ -1148,7 +1161,8 @@
    "differenceNoTable": 0.0038351115193240425,
    "sumRods": -0.01576480626750654,
    "maxShapeErr": 0.744207661557281,
-   "negativeBins": 0
+   "negativeBins": 0,
+   "shapeOk": true
   },
   "N-C-40": {
    "computed": true,
@@ -1162,7 +1176,8 @@
    "differenceNoTable": 0.004853804115163517,
    "sumRods": -0.014563672406242328,
    "maxShapeErr": 0.7062575962286738,
-   "negativeBins": 0
+   "negativeBins": 0,
+   "shapeOk": true
   },
   "N-C-80": {
    "computed": true,
@@ -1176,7 +1191,8 @@
    "differenceNoTable": 0.0018586188305439828,
    "sumRods": -0.013229346802226049,
    "maxShapeErr": 0.7015217573460751,
-   "negativeBins": 4
+   "negativeBins": 4,
+   "shapeOk": true
   },
   "N-C-120": {
    "computed": false,
@@ -1194,7 +1210,8 @@
    "differenceNoTable": 0.0005692109762799207,
    "sumRods": -0.009429769869030087,
    "maxShapeErr": 0.6444036306398253,
-   "negativeBins": 3
+   "negativeBins": 3,
+   "shapeOk": true
   },
   "N-C-180": {
    "computed": true,
@@ -1208,7 +1225,8 @@
    "differenceNoTable": -5.417705712428651e-05,
    "sumRods": -0.008276740617451374,
    "maxShapeErr": 0.5009491300820412,
-   "negativeBins": 0
+   "negativeBins": 0,
+   "shapeOk": true
   },
   "N-C-228": {
    "computed": true,
@@ -1222,7 +1240,8 @@
    "differenceNoTable": -2.7054698865059887e-06,
    "sumRods": -0.007602831134715049,
    "maxShapeErr": 0.5102106739283176,
-   "negativeBins": 0
+   "negativeBins": 0,
+   "shapeOk": true
   }
  },
  "model": "shadowing",
