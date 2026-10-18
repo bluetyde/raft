@@ -62,6 +62,13 @@ class Guards(unittest.TestCase):
         self.assertEqual(e.advance(1.0), 0)
         self.assertEqual(e.step_index, before)
 
+    def test_a_solver_step_whose_error_estimate_is_not_a_number_stops_with_a_clear_error(self):
+        from physics_ref.engine import SolverError
+        e = engine()
+        e._stepper = lambda t, y, h, J, f0, ft: (list(y), math.nan)
+        with self.assertRaisesRegex(SolverError, "non-finite error estimate"):
+            e.step()
+
 
 class Vectors(unittest.TestCase):
     def test_a_scenario_that_halts_is_an_error_not_a_shorter_vector(self):

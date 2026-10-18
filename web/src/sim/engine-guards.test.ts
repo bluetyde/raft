@@ -55,6 +55,12 @@ describe("the engine guards", () => {
     expect(reasons).toEqual(["REJ_UNKNOWN_COMMAND", "REJ_BAD_ARGUMENT"]);
   });
 
+  it("a solver step whose error estimate is not a number stops with a clear error (it used to loop for ever in this engine)", async () => {
+    const e = await engine();
+    (e as any)._stepper = (_t: number, y: number[]) => [y.slice(), Number.NaN];
+    expect(() => e.step()).toThrow(/non-finite error estimate/);
+  }, 20_000);
+
   it("advance returns the steps taken and stops when halted", async () => {
     const e = await engine();
     expect(e.advance(0.1)).toBe(10);
