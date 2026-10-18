@@ -1,4 +1,4 @@
-"""M1 run 3, exactly as fixed in docs/validation/m1-run3-protocol.md (committed 053c4c3 before this code).
+"""M1 run 3, exactly as fixed in docs/validation/m1-run3-protocol.md (committed 882fb14 before this code).
 
 Part A: code-to-code. The engine with svajger2024 Table 10's inputs (libraries/triga-jsi-paper) against Fuchs-Hansen.
 Part B: code-to-data per core, on the trace-inferred $ axis, with each core's own library and no calibration.
@@ -125,7 +125,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", type=Path, default=REPO_ROOT / "validation" / "m1_run3_report.json")
     args = ap.parse_args(argv)
-    report = {"protocol": "docs/validation/m1-run3-protocol.md (053c4c3)", "A": part_a(), "B": {c: part_b(c) for c in ("242", "246")}}
+    report = {"protocol": "docs/validation/m1-run3-protocol.md (882fb14)", "A": part_a(), "B": {c: part_b(c) for c in ("242", "246")}}
     b_ok = all(all(report["B"][c].get(k, {}).get("pass", False) for k in ("B1", "B2", "B3", "B4")) for c in ("242", "246"))
     report["proposal"] = "GO" if report["A"]["A1"]["pass"] and b_ok else "NO-GO"
     args.out.write_bytes((json.dumps(report, indent=1, sort_keys=True, allow_nan=False) + "\n").encode("utf-8"))

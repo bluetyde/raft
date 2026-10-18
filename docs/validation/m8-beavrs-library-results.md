@@ -1,6 +1,6 @@
 # M8 BEAVRS hot zero power: the library against the cycle 1 physics tests: results (2026-10-10)
 
-Protocol: `m8-beavrs-library-protocol.md` (twelfth protocol; not blind, with its predictions written first). Library: `libraries/pwr-beavrs-hzp-openmc`, git `3842ace`, manifest SHA-256 `e9103694…ae35` (checked by the script), Python reference engine 0.4.0. Script: `validation/m8_beavrs_library.py`, run once (`python -m validation.m8_beavrs_library`, a few seconds). Full output: `validation/m8_beavrs_library_report.json`. Every metric is reported. Nothing was changed after seeing the results; the library is unchanged.
+Protocol: `m8-beavrs-library-protocol.md` (twelfth protocol; not blind, with its predictions written first). Library: `libraries/pwr-beavrs-hzp-openmc`, git `b6ff0e8`, manifest SHA-256 `e9103694…ae35` (checked by the script), Python reference engine 0.4.0. Script: `validation/m8_beavrs_library.py`, run once (`python -m validation.m8_beavrs_library`, a few seconds). Full output: `validation/m8_beavrs_library_report.json`. Every metric is reported. Nothing was changed after seeing the results; the library is unchanged.
 
 ## Result in one paragraph
 

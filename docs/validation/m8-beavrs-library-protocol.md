@@ -4,7 +4,7 @@ This is M8 step 6 (`docs/m8-second-reactor-plan.md`). The eleventh protocol (`m8
 
 ## What is fixed
 
-- **The library:** `libraries/pwr-beavrs-hzp-openmc`, git `3842ace`, manifest SHA-256 `e9103694b658ebf986c9c6b6d66fec625d64efcce4dd823ba87d290a1123ae35`. The analysis refuses to run if the manifest hash differs.
+- **The library:** `libraries/pwr-beavrs-hzp-openmc`, git `b6ff0e8`, manifest SHA-256 `e9103694b658ebf986c9c6b6d66fec625d64efcce4dd823ba87d290a1123ae35`. The analysis refuses to run if the manifest hash differs.
 - **The engine:** `physics_ref` (Python), engine version 0.4.0. The TypeScript engine is not used here; it agrees with the Python one on the golden vectors and on this library's critical boron (`web/src/sim/beavrs-library.test.ts`).
 - **The measured data:** the table of the eleventh protocol (critical boron 975, 902, 810, 686 and 508 ppm at S0, S1, S2, S4 and S7 with σ 22 ppm; bank worths D 788, C 1203, B 1171, A 548, SE 461, SD 772, SC 1099 pcm; ITC −1.75 pcm/°F at all rods out and −8.01 pcm/°F with C and D in, σ 0.54). The states S0 to S7 are the cumulative insertions of that protocol (banks D, C, B, A, SE, SD, SC in that order; the rods not named are at the benchmark configuration, D at step 213).
 

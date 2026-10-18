@@ -33,7 +33,7 @@ Piecewise linear, clamp-and-flag outside; the points are given to the nearest pc
 
 Each case is run once (a crashed or stopped case is run again with the same settings, not counted as a second run). The convergence check of the earlier protocols applies (the mean k of batches 101 to 200 and of 201 to 300 agree within 2 standard errors of their difference); an unconverged case is kept, labelled, and enters no decision item.
 
-**The library:** `libraries/pwr-beavrs-hzp-openmc` rebuilt by `pipeline.library.export_beavrs` with the table (capability added; everything else as the library of git `3842ace`), read by the Python reference engine. The measured data are those of the eleventh and twelfth protocols (critical boron 975, 902, 810, 686 and 508 ppm, σ 22; the seven sequential worths; the two temperature coefficients).
+**The library:** `libraries/pwr-beavrs-hzp-openmc` rebuilt by `pipeline.library.export_beavrs` with the table (capability added; everything else as the library of git `b6ff0e8`), read by the Python reference engine. The measured data are those of the eleventh and twelfth protocols (critical boron 975, 902, 810, 686 and 508 ppm, σ 22; the seven sequential worths; the two temperature coefficients).
 
 ## Disclosure: what was seen before writing
 

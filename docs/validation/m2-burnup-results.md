@@ -1,6 +1,6 @@
 # M2 burnup calibration: results (2026-09-27)
 
-Protocol: `m2-burnup-protocol.md` (committed `1b252aa`/`c1caf20`, before any calibrated result). Runner: `python -m validation.m2_burnup
+Protocol: `m2-burnup-protocol.md` (committed `99cd110`/`3546ebe`, before any calibrated result). Runner: `python -m validation.m2_burnup
 --grid 22 24 26 28`; report `validation/m2_burnup_report.json`. Depletion table: `pipeline/openmc/data/jsi_fuel_depleted.json`
 (5,000 × 50 per depletion step). Core points: 20,000 × 150, 50 inactive.
 

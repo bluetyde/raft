@@ -1,6 +1,6 @@
 # M1 comparison C1: results
 
-Run 2026-09-26 exactly as fixed in [m1-c1-protocol.md](m1-c1-protocol.md) (committed `88e9197` before any run).
+Run 2026-09-26 exactly as fixed in [m1-c1-protocol.md](m1-c1-protocol.md) (committed `425c4d7` before any run).
 Code: `validation/c1_comparison.py`. Full numbers: `validation/c1_report.json`.
 **Proposal to the user: NO-GO for M1 as stated.** The decision is the user's.
 
@@ -135,7 +135,7 @@ The γ "inconsistency" from pass 2 is resolved, and the library's 84 kg is wrong
 - **The C1 cores, from the database's core maps** (trigapulse.ijs.si `242.pdf`, `246.pdf`): both use only standard 12 wt% fuel.
   Core 242 (26 Sept 2019) has **59** elements in the core; core 246 (23 July 2021) has **65** (two more are in the storage rack, not counted).
   That is 139 kg and 154 kg of fuel.
-- **84 kg is unsourced:** it came in with the first parameter commit (`15192b3`) with no citation, and equals 36 elements, fewer than any JSI core.
+- **84 kg is unsourced:** it came in with the first parameter commit (`0ddf51b`) with no citation, and equals 36 elements, fewer than any JSI core.
   It reproduced γ ≈ 2.1 × 10⁻⁹ only because a too-low mass cancelled the figure-read α(T) (6–9 pcm/K, lower than Table 10's 10 pcm/K).
 - **Consequences:**
   1. A faithful model is one library per core (fuel mass N × 2.363 kg), not one library for both. C1 used one library for two cores
@@ -194,8 +194,8 @@ clean enough; the rest are low-$ pulses buried in noise) and inverts the engine'
 
 ## Run 3 (2026-09-27): per-core libraries, trace-inferred $, the user's criterion
 
-Protocol `m1-run3-protocol.md` (committed `053c4c3` before any run-3 code), code `53cf090`, report `validation/m1_run3_report.json`.
-Two deviations, both committed before any run-3 metric was seen: the simulation grid was widened from $1.275–1.75 to $1.25–1.90 (`2cc9c0e`, `9f0e645`)
+Protocol `m1-run3-protocol.md` (committed `882fb14` before any run-3 code), code `a36c370`, report `validation/m1_run3_report.json`.
+Two deviations, both committed before any run-3 metric was seen: the simulation grid was widened from $1.275–1.75 to $1.25–1.90 (`1101bee`, `ef9ee75`)
 because one pulse was inferred at $1.7515 and the −$0.03 sensitivity shift reached $1.27. Both earlier attempts stopped with an error before computing any metric.
 
 **Part A (code-to-code, svajger2024 Table 10 inputs, γ = 2.102 × 10⁻⁹ /J):**

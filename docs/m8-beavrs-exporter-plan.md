@@ -1,6 +1,6 @@
 # M8 step 3, the BEAVRS library exporter: plan (2026-10-08)
 
-Turns the 45-case sweep (`pipeline/openmc/results/beavrs_sweep.jsonl`, committed `21d3d7f`) into a runnable library `libraries/pwr-beavrs-hzp-openmc` that passes both validators and runs in both engines, with the boron capability (`point-kinetics/boron-v1`, engine 0.4.0). Status: built 2026-10-10 (sections 4 and 6 were carried out with the proposed defaults; rod ids are lowercase `a` to `se` because the schema pattern requires it). It follows `pipeline/library/export_openmc.py` (the TRIGA exporter) but is a new file, `pipeline/library/export_beavrs.py`, because the TRIGA one is built around four rods, a base library inherited from `build_triga`, and `core_model` constants.
+Turns the 45-case sweep (`pipeline/openmc/results/beavrs_sweep.jsonl`, committed `287abb7`) into a runnable library `libraries/pwr-beavrs-hzp-openmc` that passes both validators and runs in both engines, with the boron capability (`point-kinetics/boron-v1`, engine 0.4.0). Status: built 2026-10-10 (sections 4 and 6 were carried out with the proposed defaults; rod ids are lowercase `a` to `se` because the schema pattern requires it). It follows `pipeline/library/export_openmc.py` (the TRIGA exporter) but is a new file, `pipeline/library/export_beavrs.py`, because the TRIGA one is built around four rods, a base library inherited from `build_triga`, and `core_model` constants.
 
 ## 1. What the sweep gives, and where each manifest field comes from
 

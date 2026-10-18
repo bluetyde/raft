@@ -123,7 +123,7 @@ A realism toggle hides the 3D inset during scenarios.
    - A first comparison with the JSI pulse database (`validation/pulse_comparison.py`) gave sim/exp median peak-power ratios of 0.51–5.92
      across $1.10–2.20, with disagreeing scaling exponents. It pooled 31 core configurations without screening or condition matching,
      and the library's values are unverified estimates. So it can't decide validity either way.
-   - An earlier "GO" (commit `0903af4`) rested on the single $2.00 point and was withdrawn after review: `docs/reviews/2026-09-26-m1-go-review.md`.
+   - An earlier "GO" (commit `1acc6af`) rested on the single $2.00 point and was withdrawn after review: `docs/reviews/2026-09-26-m1-go-review.md`.
    - **C1 done (2026-09-26), proposal: NO-GO for M1 as stated** ([results](docs/validation/m1-c1-results.md), protocol fixed in advance).
      Held-out core 246 errs by ×1.85 typical after a one-parameter calibration, and core 242 by ×2.4; the calibration had to go outside its allowed range.
      Measured peak power grows as (ρ−$1)^3.1–3.8, the model as ^2.0 (Nordheim–Fuchs). The leading hypothesis is too-weak temperature dependence

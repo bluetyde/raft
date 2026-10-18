@@ -49,7 +49,7 @@ Its caveat: it is k∞ of standard fuel, not the core's effective coefficient.
 
 ## Part B: code-to-data, per core, on the trace-inferred $ axis
 
-**Inferred $.** For each core, `validation/trace_period.py` (fit window 2–20% of the peak, as committed in `a4ab95c`) is re-run with that core's run-3 library
+**Inferred $.** For each core, `validation/trace_period.py` (fit window 2–20% of the peak, as committed in `0aeaa0f`) is re-run with that core's run-3 library
 for the engine ω($) curve. A pulse is used if its trace fit succeeded and its inferred $ is **≥ 1.30**. (The agreed "d ≥ $2" isn't reachable on the corrected axis:
 the highest inferred values are about $1.69 and $1.51. The intent, "the higher-$ pulses whose data the source trusts", is implemented as this rule.
 Flagged to the user.)
