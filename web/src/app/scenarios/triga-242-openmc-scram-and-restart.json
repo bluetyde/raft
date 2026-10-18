@@ -1,0 +1,107 @@
+{
+  "format": "virtual-reactor-scenario",
+  "version": 1,
+  "id": "triga-242-openmc-scram-and-restart",
+  "library": "triga-jsi-242-openmc",
+  "title": "Scram and restart (OpenMC core 242)",
+  "brief": "Start from shutdown with the source in the core. Bring the reactor to a low steady power (between 1 % and 12 % of the power-high setpoint) and hold it for ten minutes. Then scram it and watch the period settle. Reset the trip and restart. The banner at the top of each window says when the state leaves what the model is meant for.",
+  "outerDt": 0.01,
+  "seed": 1,
+  "init": {
+    "rods": "shutdown"
+  },
+  "controls": {
+    "allow": [
+      "rod.move",
+      "scram",
+      "trip.reset"
+    ]
+  },
+  "envelope": {
+    "summary": "A short hold at low power, a scram and a restart, up to 15 % of the power-high setpoint; no pulses, no long runs.",
+    "power": {
+      "fromTrip": "power-high",
+      "times": 0.15,
+      "source": "the lesson's goals end at 15 % of the setpoint (docs/validation/supported-envelope.md)"
+    },
+    "fuelTemp": {
+      "max": 570,
+      "source": "libraries/triga-jsi-242-openmc/manifest.json domain.jointChecked: the warmest checked state is 569.8 K"
+    },
+    "modes": [
+      "steady"
+    ],
+    "knownLimits": [
+      {
+        "text": "The heat transfer law (hA grows with the fuel-to-pool temperature difference, exponent 0.217) was fitted to one real JSI power ascension on an unstated core. It predicts the power defect at 100 to 223 kW within about 4 %, but at the low end it overshoots: about 33 to 37 pcm against 20.6 pcm measured at 2.9 kW, so the regulating rod may need a little less withdrawal than in the real reactor at the lowest powers. Nothing has been checked at low power by an independent measurement.",
+        "source": "docs/validation/m7-heat-transfer-results.md (adopted as a candidate; the library stays experimental)"
+      },
+      {
+        "text": "In a second real experiment (the 1994 JSI benchmark: a fresh 45-element core, no cooling) the same heat transfer law predicts a fuel temperature rise 20 to 70 % too high from 45 kW upward, and the measured rise grows with power much faster than this law does. The lesson stays below 40 kW, under where that comparison starts, and the model's fuel feedback agrees with that experiment within about 10 % up to 100 C. Treat the model's fuel temperatures as a rough guide.",
+        "source": "docs/validation/m7-fuel-coefficient-results.md (metrics A, D and E)"
+      }
+    ]
+  },
+  "goals": [
+    {
+      "id": "steady",
+      "text": "Hold the power between 1 % and 12 % of the power-high setpoint for 10 minutes",
+      "check": {
+        "signal": "indicated.linear",
+        "op": "between",
+        "fromTrip": "power-high",
+        "times": [
+          0.01,
+          0.12
+        ]
+      },
+      "for": 600,
+      "within": 1800
+    },
+    {
+      "id": "scram",
+      "text": "Scram the reactor",
+      "check": {
+        "signal": "truth.rod.safety",
+        "op": "le",
+        "value": 0
+      },
+      "after": "steady",
+      "within": 300,
+      "source": "rod position 0 is fully inserted (docs/ARCHITECTURE.md, conventions)"
+    },
+    {
+      "id": "negative-period",
+      "text": "Watch the period settle near -80 s",
+      "check": {
+        "signal": "truth.period",
+        "op": "between",
+        "value": [
+          -90,
+          -70
+        ]
+      },
+      "for": 10,
+      "after": "scram",
+      "within": 400,
+      "source": "Keepin, Physics of Nuclear Kinetics (1965): after a scram from steady power the period settles at about -80 s, set by the longest-lived delayed-neutron group (half-life about 55 s)"
+    },
+    {
+      "id": "restart",
+      "text": "Reset the trip and raise the power above 1 % of the power-high setpoint again",
+      "check": {
+        "signal": "indicated.linear",
+        "op": "gt",
+        "fromTrip": "power-high",
+        "times": 0.01
+      },
+      "after": "negative-period",
+      "within": 1200
+    }
+  ],
+  "hints": [
+    "The steady hold lets the delayed-neutron precursors reach equilibrium. Without it, the period after the scram does not settle near -80 s.",
+    "The negative period does not depend on how much rod worth went in.",
+    "A manual scram latches a trip. Reset it before you withdraw the rods."
+  ]
+}

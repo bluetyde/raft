@@ -25,7 +25,7 @@ const t = (page: Page) => page.evaluate(() => (window as any).vr.snapshot?.t ?? 
 /** An instructor window (role full) on session `id` with the synthetic core loaded. */
 async function fullWindow(page: Page, id: string) {
   await page.goto(`/?session=${id}`);
-  await ready(page, "triga-jsi-242"); // the default library
+  await ready(page, "triga-jsi-242-openmc"); // the default library
   await page.selectOption(".vr-bar select >> nth=0", "synthetic-core");
   await ready(page);
 }
@@ -131,12 +131,12 @@ test("the open-operator button opens a second window of the same session", async
 test("a new window without a session id gets its own session, kept in the URL", async ({ context }) => {
   const a = await context.newPage();
   await a.goto("/");
-  await ready(a, "triga-jsi-242");
+  await ready(a, "triga-jsi-242-openmc");
   const id = new URL(a.url()).searchParams.get("session");
   expect(id).toMatch(/^[A-Za-z0-9_-]{1,40}$/);
   const b = await context.newPage();
   await b.goto("/");
-  await ready(b, "triga-jsi-242");
+  await ready(b, "triga-jsi-242-openmc");
   expect(new URL(b.url()).searchParams.get("session")).not.toBe(id);
 });
 
@@ -145,7 +145,7 @@ test("without SharedWorker, the app runs in one window with a dedicated worker",
     delete (window as any).SharedWorker;
   });
   await page.goto("/?session=nosw&role=operator");
-  await ready(page, "triga-jsi-242");
+  await ready(page, "triga-jsi-242-openmc");
   expect(await page.evaluate(() => [(window as any).vr.shared, (window as any).vr.role])).toEqual([false, "full"]);
   await expect(page.locator('[data-op="open-operator"]')).toBeHidden();
   await expect(page.locator('[data-op="window"]')).toContainText("no SharedWorker");

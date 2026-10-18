@@ -10,7 +10,7 @@ import { FakeHost, loadedRuntime, readFolder, send, syntheticCoreDir } from "./t
 
 const DIR = join(repoRoot, "web", "src", "app", "scenarios");
 const scenario = (id: string) => JSON.parse(readFileSync(join(DIR, `${id}.json`), "utf8")) as ScenarioFile;
-const trigaDir = join(repoRoot, "libraries", "triga-jsi-242");
+const openmcDir = join(repoRoot, "libraries", "triga-jsi-242-openmc");
 
 /** A synthetic scenario with events at t = 0 (step 0) and t = 0.047 s (step 5), and every control allowed. */
 function withEvents(): ScenarioFile {
@@ -278,21 +278,25 @@ async function play(files: Record<string, ArrayBuffer>, sc: ScenarioFile, operat
   return { view: view(), rejected: host.of("ack").filter((a) => a.status === "rejected") };
 }
 
+/** The OpenMC library's power-high setpoint is 275 kW: its 10 % mark is 27.5 kW, and the lessons hold between 5 % and 12 % (13.75 to 33 kW). */
+const OPENMC_BAND: [number, number] = [28000, 31000];
+
 /** Withdraw the large rods, then hold 20-30 kW with the regulating rod (the power-ascension operator). */
-function ascensionOperator() {
+function ascensionOperator(liftTransient = false, band: [number, number] = [20000, 30000]) {
   let started = false;
   let reg = "";
   return async (e: Engine, _goals: string[], op: Op) => {
     if (!started) {
       started = true;
-      for (const r of e.lib.rods) if (r.id !== "transient" && r.id !== "regulating") await op({ type: "rod.move", rod: r.id, direction: "out" });
+      // the OpenMC library needs the transient rod out as well: with it in, the other three rods out leave the core 1300 pcm subcritical
+      for (const r of e.lib.rods) if ((liftTransient || r.id !== "transient") && r.id !== "regulating") await op({ type: "rod.move", rod: r.id, direction: "out" });
     }
     if (e.t < 51) return;
     const lin = e.indicated["linear"] as number;
     const per = e.snapshot().truth.period; // stands in for the operator watching the period
     let want = "stop";
-    if (lin < 20000 && (per > 20 || per < 0)) want = "out";
-    if (lin > 30000 || (per > 0 && per < 10)) want = "in";
+    if (lin < band[0] && (per > 20 || per < 0)) want = "out";
+    if (lin > band[1] || (per > 0 && per < 10)) want = "in";
     if (want !== reg) {
       reg = want;
       await op({ type: "rod.move", rod: "regulating", direction: want });
@@ -300,12 +304,17 @@ function ascensionOperator() {
   };
 }
 
-/** All rods but the transient rod out; scram when the steady hold is met; reset and restart when the period has settled. */
-function scramOperator() {
+/**
+ * All rods but the transient rod out; scram when the steady hold is met; reset and restart when the period has settled.
+ * With `regulate`, the regulating rod is also worked by the ascension operator's rule while the power is being held (a library whose
+ * full-out power would pass the trip setpoint).
+ */
+function scramOperator(regulate = false) {
   let phase = 0;
+  const hold = regulate ? ascensionOperator(true, OPENMC_BAND) : null;
   return async (e: Engine, goals: string[], op: Op) => {
     const out = async () => {
-      for (const r of e.lib.rods) if (r.id !== "transient") await op({ type: "rod.move", rod: r.id, direction: "out" });
+      for (const r of e.lib.rods) if (regulate ? r.id !== "regulating" : r.id !== "transient") await op({ type: "rod.move", rod: r.id, direction: "out" });
     };
     if (phase === 0) {
       phase = 1;
@@ -318,26 +327,27 @@ function scramOperator() {
       await op({ type: "trip.reset" });
       await out();
     }
+    if (hold && (phase === 1 || phase === 3)) await hold(e, goals, op);
   };
 }
 
 describe("headless runs of the shipped scenarios", () => {
   for (const [id, lib] of [
     ["synthetic-power-ascension", "synthetic"],
-    ["triga-power-ascension", "triga"],
+    ["triga-242-openmc-low-power-ascension", "openmc"],
     ["synthetic-scram-and-restart", "synthetic"],
-    ["triga-scram-and-restart", "triga"],
+    ["triga-242-openmc-scram-and-restart", "openmc"],
   ] as const) {
     it(`${id}: a scripted operator meets every goal, with no unexpected trip`, async () => {
-      const files = lib === "synthetic" ? readFolder(syntheticCoreDir) : readFolder(trigaDir);
-      const operator = id.includes("ascension") ? ascensionOperator() : scramOperator();
+      const files = readFolder(lib === "synthetic" ? syntheticCoreDir : openmcDir);
+      const operator = id.includes("ascension") ? ascensionOperator(lib === "openmc", lib === "openmc" ? OPENMC_BAND : undefined) : scramOperator(lib === "openmc");
       const { view, rejected } = await play(files, scenario(id), operator);
       expect(view.goals.map((g) => [g.id, g.status])).toEqual(view.goals.map((g) => [g.id, "met"]));
       const last = Math.max(...view.goals.map((g) => g.t!));
       expect(view.score).toEqual({ met: view.goals.length, failed: 0, total: view.goals.length, trips: 0, lastGoalT: last });
       expect(view.endedAt).toBeNull();
       expect(rejected).toEqual([]);
-    }, 120_000);
+    }, 480_000);
   }
 });
 

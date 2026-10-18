@@ -16,7 +16,6 @@ describe("scenario validator (docs/m5-scenarios-design.md §3)", () => {
   it("passes every shipped scenario for its library", async () => {
     const libs: Record<string, Library> = {
       "synthetic-core": await loadSyntheticCore(),
-      "triga-jsi-242": await loadLibrary(nodeReader(join(repoRoot, "libraries", "triga-jsi-242"))),
       "triga-jsi-242-openmc": await loadLibrary(nodeReader(join(repoRoot, "libraries", "triga-jsi-242-openmc"))),
       "pwr-beavrs-hzp-openmc": await loadLibrary(nodeReader(join(repoRoot, "libraries", "pwr-beavrs-hzp-openmc"))),
     };
@@ -27,8 +26,7 @@ describe("scenario validator (docs/m5-scenarios-design.md §3)", () => {
       "synthetic-power-ascension",
       "synthetic-scram-and-restart",
       "triga-242-openmc-low-power-ascension",
-      "triga-power-ascension",
-      "triga-scram-and-restart",
+      "triga-242-openmc-scram-and-restart",
     ]);
     for (const s of all) expect(validateScenario(s, libs[s.library]!), s.id).toEqual([]);
   });

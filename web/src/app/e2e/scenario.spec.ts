@@ -20,7 +20,7 @@ test.beforeEach(async ({ page }) => {
     await cdp.send("Emulation.setCPUThrottlingRate", { rate: Number(process.env.VR_E2E_THROTTLE) });
   }
   await page.goto("/");
-  await ready(page, "triga-jsi-242");
+  await ready(page, "triga-jsi-242-openmc");
   await page.selectOption(".vr-bar select >> nth=0", "synthetic-core");
   await ready(page);
   await page.selectOption('[data-op="layout"]', "instructor");

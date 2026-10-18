@@ -311,7 +311,7 @@ void (async () => {
     status.textContent = "waiting for the instructor window to load a library";
     return;
   }
-  const initial = CATALOG.find((e) => e.name === "triga-jsi-242") ?? CATALOG[0];
+  const initial = CATALOG.find((e) => e.name === "triga-jsi-242-openmc") ?? CATALOG[0];
   if (initial) return show(initial.name);
 })();
 

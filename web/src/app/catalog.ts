@@ -9,7 +9,6 @@ import type { LibraryReader } from "../library/platform";
 const FILES = import.meta.glob(
   [
     "../../../schema/vectors/synthetic-core/**/*",
-    "../../../libraries/triga-jsi-242/**/*",
     "../../../libraries/triga-jsi-242-openmc/**/*",
     "../../../libraries/triga-jsi-246-openmc/**/*",
     "../../../libraries/pwr-beavrs-hzp-openmc/**/*",

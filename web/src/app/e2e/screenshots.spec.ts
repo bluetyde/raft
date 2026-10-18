@@ -24,8 +24,6 @@ test("README pictures", async ({ page }) => {
   mkdirSync(dir!, { recursive: true });
   await page.setViewportSize({ width: 1500, height: 1120 });
   await page.goto("/");
-  await ready(page, "triga-jsi-242");
-  await page.selectOption(".vr-bar select >> nth=0", "triga-jsi-242-openmc");
   await ready(page, "triga-jsi-242-openmc");
   await page.selectOption('[data-op="layout"]', "instructor");
   await inst(page, "scenario-choice").selectOption("triga-242-openmc-low-power-ascension");

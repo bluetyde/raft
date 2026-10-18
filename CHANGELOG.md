@@ -14,7 +14,7 @@ Experimental and educational. No library is marked validated.
 - An optional local assistant (`jev-server/`, not needed for anything else).
 
 **Libraries** (`libraries/`)
-- TRIGA Mark II (Jožef Stefan Institute) cores 242 and 246 built with OpenMC, core 134 (not in the app), an earlier core 242 library, and a synthetic test core.
+- TRIGA Mark II (Jožef Stefan Institute) cores 242 and 246 built with OpenMC, core 134 (not in the app), and a synthetic test core. An earlier core 242 library (mostly assumed values) is kept in `libraries/` for the validation scripts but is not in the app.
 - PWR at hot zero power (BEAVRS cycle 1), 193 assemblies, nine rod banks, boron, with a rod-shadowing correction fitted to 12 transport cases and checked against 20 held-out cases (19 converged).
 
 **Lessons**
