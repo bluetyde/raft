@@ -18,6 +18,8 @@ This is the Python FastAPI server that hosts the local `openjev/openjev` model. 
 
 ## Architecture
 
+The server listens on this machine only (`127.0.0.1`; set `JEV_HOST` and `JEV_PORT` to change) and accepts only browser pages served from this machine (`JEV_ALLOWED_ORIGINS`, comma separated, adds others). Requests are bounded: 100 000 characters a message, 32 candidates, one inference at a time. It has no authentication, so do not expose it on a network you do not trust. The package versions in `requirements.txt` are the ones it was run with.
+
 The server exposes a WebSocket endpoint at `ws://localhost:8000/ws/{role}`, where `{role}` can be `operator` or `instructor`.
 
 The Web client sends a JSON payload:

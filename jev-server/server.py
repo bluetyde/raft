@@ -2,6 +2,7 @@ import json
 import logging
 import asyncio
 import argparse
+import re
 import sys
 import os
 from contextlib import asynccontextmanager
@@ -12,6 +13,39 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("jev-server")
+
+# What a client may ask. The server is a local helper for the browser copilot: it listens on this machine only (JEV_HOST to change), accepts
+# browser pages served from this machine only (JEV_ALLOWED_ORIGINS adds more, comma separated), and bounds what one request can cost.
+LOCAL_ORIGIN = re.compile(r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$")
+MAX_MESSAGE_CHARS = 100_000
+MAX_PREMISE_CHARS = 20_000
+MAX_CANDIDATES = 32
+MAX_CANDIDATE_CHARS = 2_000
+INFERENCE_LOCK = None          # one inference at a time: the model is not safe to share between threads, and concurrent sockets must not multiply the work
+
+
+def origin_allowed(origin):
+    """No Origin header means a client that is not a browser page (a test, a script on this machine); a page must come from this machine or be listed."""
+    if origin is None:
+        return True
+    if LOCAL_ORIGIN.match(origin):
+        return True
+    extra = [o.strip() for o in os.environ.get("JEV_ALLOWED_ORIGINS", "").split(",") if o.strip()]
+    return origin in extra
+
+
+def payload_problem(msg):
+    """None if the request is well formed and within bounds, else a short reason."""
+    premise, candidates = msg.get("premise"), msg.get("candidates")
+    if not isinstance(premise, str) or not premise or len(premise) > MAX_PREMISE_CHARS:
+        return "premise must be a non-empty string of at most %d characters" % MAX_PREMISE_CHARS
+    if not isinstance(candidates, list) or not candidates or len(candidates) > MAX_CANDIDATES:
+        return "candidates must be a non-empty list of at most %d" % MAX_CANDIDATES
+    for c in candidates:
+        if not isinstance(c, dict) or not isinstance(c.get("id"), str) or not isinstance(c.get("text"), str) or len(c["text"]) > MAX_CANDIDATE_CHARS:
+            return "each candidate needs a string id and a string text of at most %d characters" % MAX_CANDIDATE_CHARS
+    return None
+
 
 # Global state
 args = None
@@ -177,6 +211,13 @@ async def websocket_endpoint(websocket: WebSocket, role: str):
     await serve(websocket, role)
 
 async def serve(websocket: WebSocket, role: str):
+    global INFERENCE_LOCK
+    if not origin_allowed(websocket.headers.get("origin")):
+        logger.warning(f"Refused a connection from origin {websocket.headers.get('origin')!r}")
+        await websocket.close(code=1008)
+        return
+    if INFERENCE_LOCK is None:
+        INFERENCE_LOCK = asyncio.Lock()
     await websocket.accept()
     logger.info(f"Client connected as {role}")
     if args.shadow:
@@ -187,10 +228,17 @@ async def serve(websocket: WebSocket, role: str):
             data_str = await websocket.receive_text()
             import time
             start_time = time.time()
+            if len(data_str) > MAX_MESSAGE_CHARS:
+                logger.warning("Received a message over the size limit")
+                await websocket.send_json({"protocolVersion": 1, "status": "error", "errorCode": "INVALID_PAYLOAD"})
+                continue
             try:
                 msg = json.loads(data_str)
             except json.JSONDecodeError:
                 logger.warning("Received invalid JSON")
+                continue
+            if not isinstance(msg, dict):
+                await websocket.send_json({"protocolVersion": 1, "status": "error", "errorCode": "INVALID_PAYLOAD"})
                 continue
                 
             # Parse versioned protocol
@@ -209,7 +257,7 @@ async def serve(websocket: WebSocket, role: str):
             premise = msg.get("premise", "")
             candidates = msg.get("candidates", [])
             
-            if not premise or not candidates:
+            if payload_problem(msg) is not None:
                 await websocket.send_json({
                     "protocolVersion": 1,
                     "sessionId": session_id,
@@ -223,7 +271,8 @@ async def serve(websocket: WebSocket, role: str):
                 continue
                 
             try:
-                best_candidate_id = await asyncio.to_thread(evaluate_hypotheses, premise, candidates)
+                async with INFERENCE_LOCK:
+                    best_candidate_id = await asyncio.to_thread(evaluate_hypotheses, premise, candidates)
                 latency_ms = (time.time() - start_time) * 1000
                 
                 response = {
@@ -262,4 +311,4 @@ if __name__ == "__main__":
     import uvicorn
     # Need to run with uvicorn programmatically differently if we want argparse
     # But since uvicorn reloads, argparse inside __main__ gets tricky. 
-    uvicorn.run("server:app", host="0.0.0.0", port=8000)
+    uvicorn.run("server:app", host=os.environ.get("JEV_HOST", "127.0.0.1"), port=int(os.environ.get("JEV_PORT", "8000")), ws_max_size=MAX_MESSAGE_CHARS * 4)
