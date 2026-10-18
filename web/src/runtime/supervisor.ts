@@ -77,11 +77,13 @@ export class Supervisor {
     this.errorBackoffMs = limits.errorBackoffMs ?? 2000;
   }
 
-  public enableTracking(port: string): void {
-    if (this.mode !== "TRIPPED" && this.mode !== "UNAVAILABLE") {
-      this.mode = "TRACKING";
-      this.ownerPort = port;
-    }
+  /** Turn supervision on for `port`. False (nothing changed) if it is tripped or unavailable, or another window already owns it. */
+  public enableTracking(port: string): boolean {
+    if (this.mode === "TRIPPED" || this.mode === "UNAVAILABLE") return false;
+    if (this.ownerPort !== null && this.ownerPort !== port) return false;
+    this.mode = "TRACKING";
+    this.ownerPort = port;
+    return true;
   }
 
   public trip(): void {

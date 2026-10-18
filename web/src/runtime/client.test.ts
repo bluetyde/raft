@@ -104,6 +104,18 @@ describe("RuntimeClient", () => {
     expect(q.rt.engine!.commandLog).toHaveLength(1);
   });
 
+  it("a worker error rejects the requests still waiting, and later requests reject instead of throwing", async () => {
+    const p = pair();
+    await p.load();
+    const waiting = p.client.exportSession();
+    const cmd = p.client.command({ type: "noop" });
+    p.worker.onerror?.(new Event("error"));
+    await expect(waiting).rejects.toThrow(/stopped/);
+    await expect(cmd).rejects.toThrow(/stopped/);
+    await expect(p.client.exportSession()).rejects.toThrow(/stopped/);
+    await expect(p.client.command({ type: "noop" })).rejects.toThrow(/stopped/);
+  });
+
   it("a worker error marks the client disconnected and emits a fault", async () => {
     const p = pair();
     const faults: string[] = [];

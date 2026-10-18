@@ -203,3 +203,22 @@ describe("supervisor loop (headless, stub agent)", () => {
     expect(rig.requests.length).toBe(before); // supervision dropped: no new request after the timeout
   });
 });
+
+describe("supervision ownership", () => {
+  it("a second window cannot take supervision over, and it ends when its owner window goes", async () => {
+    const rig = await agentRig(() => null);
+    rig.rt.connect("a", "operator");
+    rig.rt.connect("b", "operator");
+    rig.rt.receive({ kind: "supervisor.enable" }, "a");
+    await rig.rt.idle();
+    expect((rig.rt as any).supervisor.ownerPort).toBe("a");
+    rig.host.drain();
+    rig.rt.receive({ kind: "supervisor.enable" }, "b");
+    await rig.rt.idle();
+    const refused = rig.host.drain().find((m) => m.kind === "error");
+    expect(refused).toMatchObject({ kind: "error", request: "supervisor.enable", code: "E_SUPERVISION_REFUSED" });
+    expect((rig.rt as any).supervisor.ownerPort).toBe("a");
+    rig.rt.disconnect("a");
+    expect((rig.rt as any).supervisor.ownerPort).toBeNull();
+  });
+});

@@ -237,6 +237,8 @@ export class Runtime {
   disconnect(id: string): void {
     this.ports.delete(id);
     for (const [seq, p] of this.pendingAcks) if (p.port === id) this.pendingAcks.delete(seq);
+    // the window that owns supervision is gone: nobody could answer the AI's decisions or turn it off
+    if (this.supervisor.ownerPort === id) this.stopSupervision();
   }
 
   /** The connected windows and their roles (for tests and the host). */
@@ -306,7 +308,10 @@ export class Runtime {
       case "script.load":
         return this.loadScript(msg.script);
       case "supervisor.enable": {
-        this.supervisor.enableTracking(from);
+        if (!this.supervisor.enableTracking(from)) {
+          const why = this.supervisor.ownerPort !== null && this.supervisor.ownerPort !== from ? "another window already runs supervision" : "supervision is tripped or unavailable";
+          return this.error("supervisor.enable", "E_SUPERVISION_REFUSED", why);
+        }
         // Turning supervision on is the operator's explicit approval to hold the power as it is now.
         const power = this.eng?.snapshot(false).indicated?.["log"] ?? this.eng?.snapshot(false).truth?.power ?? 0;
         this.sequencer.reset();
@@ -1131,8 +1136,8 @@ export class Runtime {
     if (sc) {
       this.tracker = tracker;
       this.trackerAt = trackerAt;
-      // the end belongs to the timeline where it happened: it stays only if the shared part includes it
-      if (this.scenarioEndStep !== null && this.scenarioEndStep > built.fromStep) this.scenarioEndStep = null;
+      // the end belongs to the timeline where it happened
+      this.scenarioEndStep = target.file.scenario?.endStep ?? null; // each timeline remembers where its own scenario ended
       this.scenarioDirty = true;
     }
     this.install(built.engine);

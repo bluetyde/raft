@@ -37,9 +37,9 @@ export class RuntimeClient {
   private nextClientSeq = 1;
   private nextReqId = 1;
   private readonly reqPrefix = Math.random().toString(36).slice(2, 8);
-  private acks = new Map<number, { resolve: (a: Ack) => void; onQueued?: (q: Queued) => void }>();
+  private acks = new Map<number, { resolve: (a: Ack) => void; reject: (e: Error) => void; onQueued?: (q: Queued) => void }>();
   private listeners = new Map<Kind, Set<(msg: any) => void>>();
-  private waiters: { kinds: Kind[]; request: ToWorker["kind"]; reqId?: string; resolve: (msg: FromWorker) => void }[] = [];
+  private waiters: { kinds: Kind[]; request: ToWorker["kind"]; reqId?: string; resolve: (msg: FromWorker) => void; reject: (e: Error) => void }[] = [];
   /** True after the worker failed. Views disable their controls and say so. */
   disconnected = false;
 
@@ -50,6 +50,11 @@ export class RuntimeClient {
     worker.onmessage = (ev) => this.dispatch(ev.data as FromWorker);
     worker.onerror = () => {
       this.disconnected = true;
+      // nothing will answer the requests still waiting: fail them instead of leaving their callers hanging for ever
+      const stopped = new Error("the runtime worker stopped");
+      for (const a of this.acks.values()) a.reject(stopped);
+      this.acks.clear();
+      for (const w of this.waiters.splice(0)) w.reject(stopped);
       this.emit({ kind: "fault", message: "the runtime worker stopped" });
     };
   }
@@ -67,8 +72,7 @@ export class RuntimeClient {
     opts: { init?: Record<string, any>; seed?: number; config?: Record<string, any>; scenario?: unknown } = {},
   ): Promise<LoadedInfo> {
     const transfer = source.kind === "files" ? Object.values(source.files) : [];
-    const done = this.next(["loaded", "loadFailed", "error"], "load");
-    this.send({ kind: "load", protocol: PROTOCOL_VERSION, source, ...opts }, transfer);
+    const done = this.request(["loaded", "loadFailed", "error"], "load", undefined, () => this.send({ kind: "load", protocol: PROTOCOL_VERSION, source, ...opts }, transfer));
     return done.then((m) => {
       if (m.kind === "loadFailed") throw new LoadError(m.issues);
       if (m.kind === "error") throw new Error(`${m.code}: ${m.message}`);
@@ -83,8 +87,13 @@ export class RuntimeClient {
    */
   command(cmd: Record<string, unknown>, onQueued?: (q: Queued) => void, clientId: string = this.clientId): Promise<Ack> {
     const clientSeq = this.nextClientSeq++;
-    const p = new Promise<Ack>((resolve) => this.acks.set(clientSeq, { resolve, onQueued }));
-    this.send({ kind: "command", clientSeq, clientId, cmd });
+    const p = new Promise<Ack>((resolve, reject) => this.acks.set(clientSeq, { resolve, reject, onQueued }));
+    try {
+      this.send({ kind: "command", clientSeq, clientId, cmd });
+    } catch (err) {
+      this.acks.delete(clientSeq);
+      return Promise.reject(err);
+    }
     return p;
   }
 
@@ -98,36 +107,31 @@ export class RuntimeClient {
 
   rewind(step: number): Promise<Msg<"rewound">> {
     const reqId = this.newReqId();
-    const done = this.next(["rewound", "error"], "rewind", reqId);
-    this.send({ kind: "rewind", step, reqId });
+    const done = this.request(["rewound", "error"], "rewind", reqId, () => this.send({ kind: "rewind", step, reqId }));
     return done.then((m) => this.orThrow(m, "rewound"));
   }
 
   exportSession(): Promise<SessionFile> {
-    const done = this.next(["session", "error"], "session.export");
-    this.send({ kind: "session.export" });
+    const done = this.request(["session", "error"], "session.export", undefined, () => this.send({ kind: "session.export" }));
     return done.then((m) => this.orThrow(m, "session").file);
   }
 
   /** Load an instructor script (a parsed script file), or null to clear it. Rejects with the validator's message. */
   loadScript(script: unknown | null): Promise<Msg<"script">> {
-    const done = this.next(["script", "error"], "script.load");
-    this.send({ kind: "script.load", script });
+    const done = this.request(["script", "error"], "script.load", undefined, () => this.send({ kind: "script.load", script }));
     return done.then((m) => this.orThrow(m, "script"));
   }
 
   /** Import a session file. A version 3 file that runs a scenario needs that scenario file too. */
   importSession(file: SessionFile, scenario?: unknown): Promise<Msg<"rewound">> {
     const reqId = this.newReqId();
-    const done = this.next(["rewound", "error"], "session.import", reqId);
-    this.send(scenario === undefined ? { kind: "session.import", file, reqId } : { kind: "session.import", file, scenario, reqId });
+    const done = this.request(["rewound", "error"], "session.import", reqId, () => this.send(scenario === undefined ? { kind: "session.import", file, reqId } : { kind: "session.import", file, scenario, reqId }));
     return done.then((m) => this.orThrow(m, "rewound"));
   }
 
   /** Say which role this window has. Resolves with the role and what is loaded now (null if nothing). */
   attach(role: Role): Promise<Msg<"attached">> {
-    const done = this.next(["attached", "error"], "attach");
-    this.send({ kind: "attach", role });
+    const done = this.request(["attached", "error"], "attach", undefined, () => this.send({ kind: "attach", role }));
     return done.then((m) => this.orThrow(m, "attached"));
   }
 
@@ -175,8 +179,7 @@ export class RuntimeClient {
   /** Make another branch the current timeline. Resolves like a rewind; the clock is paused. */
   switchBranch(id: number): Promise<Msg<"rewound">> {
     const reqId = this.newReqId();
-    const done = this.next(["rewound", "error"], "branch.switch", reqId);
-    this.send({ kind: "branch.switch", id, reqId });
+    const done = this.request(["rewound", "error"], "branch.switch", reqId, () => this.send({ kind: "branch.switch", id, reqId }));
     return done.then((m) => this.orThrow(m, "rewound"));
   }
 
@@ -196,7 +199,19 @@ export class RuntimeClient {
    * Requests of one kind are answered in order, because the worker handles messages in order.
    */
   private next(kinds: Kind[], request: ToWorker["kind"], reqId?: string): Promise<FromWorker> {
-    return new Promise((resolve) => this.waiters.push({ kinds, request, reqId, resolve }));
+    return new Promise((resolve, reject) => this.waiters.push({ kinds, request, reqId, resolve, reject }));
+  }
+
+  /** Register the waiter, then send; a send that throws (the worker is gone) rejects the request and removes its waiter, so no caller gets a synchronous throw or a leaked waiter. */
+  private request(kinds: Kind[], request: ToWorker["kind"], reqId: string | undefined, send: () => void): Promise<FromWorker> {
+    const p = this.next(kinds, request, reqId);
+    try {
+      send();
+    } catch (err) {
+      this.waiters.pop();
+      return Promise.reject(err);
+    }
+    return p;
   }
 
   private newReqId(): string {
