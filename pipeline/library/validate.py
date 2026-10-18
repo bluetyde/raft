@@ -72,8 +72,8 @@ def _increasing(xs: list[float]) -> bool:
 
 
 def _safe_relpath(p: str) -> bool:
-    if not p or "\\" in p or ":" in p or p.startswith("/"):
-        return False
+    if not p or "\\" in p or ":" in p or p.startswith("/") or any(ch in p for ch in "%?#") or any(ord(ch) < 32 for ch in p):
+        return False       # "%2e%2e" would pass the segment test and be resolved to ".." by a URL reader; "?" and "#" would end the path
     # Check raw segments: PurePosixPath would silently normalize "./a" and "a//b".
     return all(seg not in ("", ".", "..") for seg in p.split("/"))
 

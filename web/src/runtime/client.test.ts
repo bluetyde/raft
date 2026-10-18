@@ -122,11 +122,21 @@ describe("readers", () => {
       asked.push(url);
       return url.endsWith("manifest.json")
         ? { ok: true, arrayBuffer: async () => new TextEncoder().encode("{}").buffer as ArrayBuffer }
-        : { ok: false, arrayBuffer: async () => new ArrayBuffer(0) };
+        : { ok: false, status: 404, arrayBuffer: async () => new ArrayBuffer(0) };
     });
     expect(new TextDecoder().decode((await reader.read("manifest.json"))!)).toBe("{}");
     expect(await reader.read("arrays/x.f32")).toBeNull();
     expect(asked).toEqual(["https://example.test/lib/manifest.json", "https://example.test/lib/arrays/x.f32"]);
+  });
+
+  it("fetchReader reads a 404 or 410 as missing and any other failure as an error that names the URL", async () => {
+    const answer = (status: number) =>
+      fetchReader("https://example.test/lib", async () => ({ ok: false, status, arrayBuffer: async () => new ArrayBuffer(0) }));
+    expect(await answer(404).read("a")).toBeNull();
+    expect(await answer(410).read("a")).toBeNull();
+    for (const status of [403, 429, 500, 503]) {
+      await expect(answer(status).read("a")).rejects.toThrow(`https://example.test/lib/a: HTTP ${status}`);
+    }
   });
 
   it("filesReader looks keys up as own properties only", async () => {

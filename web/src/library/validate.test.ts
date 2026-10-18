@@ -19,7 +19,7 @@ describe("validate helpers", () => {
     for (const ok of ["arrays/base.f32", "a.f32"]) {
       expect(safeRelpath(ok)).toBe(true);
     }
-    for (const bad of ["../a", "/abs", "C:/x", "a\\b", "arrays/../../x", "./a", ""]) {
+    for (const bad of ["../a", "/abs", "C:/x", "a\\b", "arrays/../../x", "./a", "", "arrays/%2e%2e/%2e%2e/x.f32", "arrays/%2E%2E/x", "a%2fb", "a?x=1", "a#frag", "a\u0000b", "a\nb"]) {
       expect(safeRelpath(bad)).toBe(false);
     }
   });

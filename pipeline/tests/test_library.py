@@ -66,7 +66,7 @@ class TestHelpers(unittest.TestCase):
     def test_safe_relpath(self):
         for ok in ("arrays/base.f32", "a.f32"):
             self.assertTrue(_safe_relpath(ok), ok)
-        for bad in ("../a", "/abs", "C:/x", "a\\b", "arrays/../../x", "./a", ""):
+        for bad in ("../a", "/abs", "C:/x", "a\\b", "arrays/../../x", "./a", "", "arrays/%2e%2e/%2e%2e/x.f32", "arrays/%2E%2E/x", "a%2fb", "a?x=1", "a#frag", "a\x00b", "a\nb"):
             self.assertFalse(_safe_relpath(bad), bad)
 
 

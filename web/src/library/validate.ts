@@ -80,7 +80,8 @@ export function increasing(xs: number[]): boolean {
 }
 
 export function safeRelpath(p: string): boolean {
-  if (!p || p.includes("\\") || p.includes(":") || p.startsWith("/")) {
+  if (!p || p.includes("\\") || p.includes(":") || p.startsWith("/") || /[%?#\u0000-\u001f]/.test(p)) {
+    // "%2e%2e" would pass the segment test and be resolved to ".." by a URL reader; "?" and "#" would end the path
     return false;
   }
   const segs = p.split("/");

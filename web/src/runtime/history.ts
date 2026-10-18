@@ -115,6 +115,12 @@ export function replayCommands(
   if (cmds.length > 0 && cmds[0]!.step < engine.stepIndex) {
     throw new CheckpointError(`command seq ${cmds[0]!.seq} is at step ${cmds[0]!.step}, before the start`);
   }
+  for (let i = 1; i < cmds.length; i++) {
+    if (cmds[i]!.step < cmds[i - 1]!.step) {
+      // the loop below applies commands in order as time passes: a command logged later but dated earlier would be skipped for ever
+      throw new CheckpointError(`command seq ${cmds[i]!.seq} is at step ${cmds[i]!.step}, before seq ${cmds[i - 1]!.seq} at step ${cmds[i - 1]!.step}`);
+    }
+  }
   let k = 0;
   while (engine.stepIndex < untilStep) {
     while (k < cmds.length && cmds[k]!.step === engine.stepIndex) {
@@ -128,6 +134,11 @@ export function replayCommands(
   while (k < cmds.length && cmds[k]!.step === engine.stepIndex) {
     engine.submit(cmds[k]!.cmd, cmds[k]!.clientId);
     k++;
+  }
+  if (k < cmds.length && cmds[k]!.step <= untilStep) {
+    // a command that was due within the replay but not applied: a replay that silently drops it is not a replay of the session
+    // (commands dated after untilStep are not due yet: a rewind replays to an earlier step and the later ones wait)
+    throw new CheckpointError(`${cmds.length - k} logged command(s) were not applied, from seq ${cmds[k]!.seq} at step ${cmds[k]!.step} (the replay ends at step ${untilStep})`);
   }
 }
 
@@ -145,6 +156,10 @@ export function sessionFile(
     ...(extra.scenario ? { scenario: structuredClone(extra.scenario) } : {}),
   };
 }
+
+/** The most a session import will replay: 1 000 000 steps (10 000 s at the fine 10 ms step) and 100 000 commands. */
+export const MAX_SESSION_STEPS = 1_000_000;
+export const MAX_SESSION_COMMANDS = 100_000;
 
 /** Check a session file's form and pins against this engine build and library. Throws CheckpointError. */
 export function checkSessionFile(file: unknown, lib: Library): SessionFile {
@@ -164,9 +179,21 @@ export function checkSessionFile(file: unknown, lib: Library): SessionFile {
   if (!Number.isInteger(f.endStep) || f.endStep < 0) {
     throw new CheckpointError("endStep must be a non-negative integer");
   }
+  if (f.endStep > MAX_SESSION_STEPS) {
+    // an import replays step by step in the worker: a file must not be able to ask for an unbounded run
+    throw new CheckpointError(`endStep ${f.endStep} is beyond the ${MAX_SESSION_STEPS} steps an import will replay`);
+  }
   const s = f.session;
   if (typeof s !== "object" || s === null || typeof s.pins !== "object" || !Array.isArray(s.commands)) {
     throw new CheckpointError("session has no pins or commands");
+  }
+  if (s.commands.length > MAX_SESSION_COMMANDS) {
+    throw new CheckpointError(`${s.commands.length} commands are more than the ${MAX_SESSION_COMMANDS} an import will replay`);
+  }
+  for (const c of s.commands as Record<string, unknown>[]) {
+    if (typeof c !== "object" || c === null || !Number.isInteger(c["seq"]) || !Number.isInteger(c["step"]) || (c["step"] as number) < 0 || (c["step"] as number) > f.endStep || typeof c["cmd"] !== "object" || c["cmd"] === null) {
+      throw new CheckpointError(`a logged command is malformed or dated outside 0 to ${f.endStep} (seq ${String(c?.["seq"])}, step ${String(c?.["step"])})`);
+    }
   }
   if (s.pins.engineVersion !== ENGINE_VERSION) {
     throw new CheckpointError(`session from engine ${s.pins.engineVersion}, this is ${ENGINE_VERSION}`);
