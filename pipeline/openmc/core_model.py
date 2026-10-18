@@ -346,6 +346,8 @@ def main(argv=None) -> int:
     rods = {kv.split("=")[0]: float(kv.split("=")[1]) for kv in a.rods.split(",")}
     overrides = {k: v for k, v in (("b4c", a.b4c), ("graphite", a.graphite), ("burnup", a.burnup), ("tfuel", a.tfuel), ("tcool", a.tcool), ("fuel1994", a.fuel1994 or None),
                                                     ("elementTfuel", json.loads(a.element_tfuel.read_text(encoding="utf-8")) if a.element_tfuel else None)) if v is not None}
+    if a.burnup is not None and a.fuel1994:
+        ap.error("--burnup and --fuel1994 cannot be combined: the 1994 fuel is fresh")
     if a.kinetics and a.inactive < IFP_GENERATIONS:
         ap.error(f"--kinetics needs at least {IFP_GENERATIONS} inactive batches")
     model = build(a.core, rods, a.particles, a.batches, a.inactive, a.source_from,

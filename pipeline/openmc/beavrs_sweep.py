@@ -126,7 +126,7 @@ def main(argv: list[str] | None = None) -> int:
     plan = plan()
     if args.out is None:
         args.out = default_out
-    ids = list(plan) if args.all else args.case
+    ids = list(plan) if args.all else list(dict.fromkeys(args.case))   # a case named twice runs once
     for cid in ids:
         if cid not in plan:
             raise SystemExit(f"{cid} is not a sweep case")
