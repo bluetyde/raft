@@ -1,6 +1,6 @@
 [project]
 name = "virtual-reactor"
-version = "0.0.1"
+version = "0.1.0"
 description = "Open reactor modeller: OpenMC-derived reactor libraries run live in the browser"
 license = "MIT"
 requires-python = ">=3.11"

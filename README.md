@@ -70,6 +70,16 @@ Build the headless runner: `cd web && npm run build:headless`.
 
 `jev-server/` is a small local server for the assistant (Python; `run-jev-server.cmd` on Windows). It uses the **Mica-v0.1-4B** classification model, which is not part of this repository and is about 4.7 GB with its runtime. Get it from Hugging Face (`sky7350/Mica-v0.1-4B`, a fine-tune of Qwen3.5-4B, Apache-2.0 according to its model card), and put the folder named `Mica-v0.1-4B` next to this repository's folder; read the licence and NOTICE files that come with it before redistributing anything. A graphics card helps but is not required. Without the server or the model the app works; the AI Copilot button just does not connect.
 
+## Versions
+
+RAFT 0.1.0 (the first public release; see [CHANGELOG.md](CHANGELOG.md)). The reference engine is 0.6.0 (`physics_ref` and `web/src/sim`, kept equal by the golden vectors), the library format is 0.1.0 (`docs/library-format.md`; a library says which capabilities it needs), and each library names itself in its manifest (id, creation date, provenance); the loader computes a content digest of it.
+
+## How this was made
+
+RAFT was written with AI coding assistants, under the direction of one person (bluetyde). Claude Code (Anthropic) wrote most of the code, tests and documents; Codex (OpenAI) was used for independent reviews of changes; some bounded tasks went to Antigravity (Google) and to smaller Claude models, and the optional assistant in `jev-server/` runs a local language model. The person chose the goals, set the rules and approved what was merged. The rules: every comparison with data is a protocol written before the run, each run happens once, nothing is refitted afterwards, and libraries stay `experimental`. Commits made by an assistant carry a `Co-Authored-By` line.
+
+AI review is not expert review. This repository records no independent review of the physics, the numbers or the lessons by a reactor physicist, and the validation documents list every comparison, including the ones that failed. Read the results with that in mind.
+
 ## Licence and sources
 
 MIT (`LICENSE`). Third-party code and data, and anything installed separately, are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The measured data used for the TRIGA comparisons (the JSI pulse database, IAEA steady-power numbers and the core 134 tables) are not distributed here, because redistribution permission is not confirmed; tests that need them skip, and the validation notes quote the numbers they used. The BEAVRS benchmark (MIT licence) is used for the PWR work.
