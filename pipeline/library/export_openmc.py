@@ -24,6 +24,8 @@ from pipeline.openmc import core_model
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 OPENMC_DATA = REPO_ROOT / "pipeline" / "openmc" / "data"
+RHO_ERR_LIMIT = 1.0e-3       # 100 pcm (or three standard errors, if larger): a held-out state is listed as checked only within this reactivity error ...
+SHAPE_ERR_LIMIT = 1.0       # ... and within one mean bin of power shape (the acceptance of the library READMEs)
 
 ROD_ID_MAP = {
     "T": "transient",
@@ -202,6 +204,13 @@ def check_summary(summary: dict[str, Any]) -> None:
     core = str(summary["core"])
     if core not in sweep.REFERENCE_RODS:
         raise ValueError(f"unknown core {core!r}")
+    if summary.get("stats") != sweep.STANDARD:                  # a quick or test sweep is not the library's sweep
+        raise ValueError(f"summary stats are {summary.get('stats')!r}, the production sweep uses {sweep.STANDARD!r}")
+    if list(summary.get("extractor") or []) != list(sweep.SUMMARY_EXTRACTOR):
+        raise ValueError(f"summary extractor is {summary.get('extractor')!r}, this exporter reads {list(sweep.SUMMARY_EXTRACTOR)!r}")
+    want_burnup = None if core in sweep.FRESH_CORES else sweep.B246
+    if summary["burnup"] != want_burnup:
+        raise ValueError(f"summary burnup is {summary['burnup']!r}, core {core} needs {want_burnup!r}")
     cases = summary["cases"]
     names = [c.get("name") for c in cases]
     if len(names) != len(set(names)):
@@ -443,10 +452,12 @@ def _write_library(summary: dict[str, Any], out_dir: Path, created: str | None) 
 
     # Base unc
     base_unc_f64 = []
-    for row in ref_case["baseUnc"]:
-        for v in row:
+    for brow, row in zip(ref_case["base"], ref_case["baseUnc"], strict=True):
+        for b, v in zip(brow, row, strict=True):
             if v is None or math.isnan(v) or math.isinf(v):
-                base_unc_f64.append(1.0)
+                if b is not None and float(b) > 0.0:
+                    raise ValueError(f"the reference case has no usable uncertainty for a bin with power ({b!r})")
+                base_unc_f64.append(1.0)                     # no power in the bin: a relative uncertainty is undefined; 100 % is recorded
             else:
                 base_unc_f64.append(float(v))
     data_base_unc = build_triga.pack_f32(base_unc_f64)
@@ -579,12 +590,17 @@ def _write_library(summary: dict[str, Any], out_dir: Path, created: str | None) 
         max_shape_err = _finite(max(diffs), f"holdout {c['name']} shape error") * (E * A)
         rho_err = _finite(rho_err, f"holdout {c['name']} rho error")
 
-        joint_checked.append({
-            "rods": h_rods_x,
-            "Tfuel": h_tfuel,
-            "rhoErr": rho_err,
-            "maxShapeErr": max_shape_err,
-        })
+        sigma_rho = math.hypot(_finite(c["kStd"], f"holdout {c['name']} kStd") / k_case ** 2,
+                               _finite(ref_case["kStd"], "reference kStd") / float(ref_case["k"]) ** 2)    # the statistical errors of the case and of the reference (the tables' own are not included)
+        limit = max(RHO_ERR_LIMIT, 3.0 * sigma_rho)
+        accepted = rho_err <= limit and max_shape_err <= SHAPE_ERR_LIMIT        # the library acceptance: 100 pcm or three standard errors, and one mean bin of shape
+        if accepted:
+            joint_checked.append({
+                "rods": h_rods_x,
+                "Tfuel": h_tfuel,
+                "rhoErr": rho_err,
+                "maxShapeErr": max_shape_err,
+            })
         report_joint_checked.append({
             "rods": h_rods_x,
             "Tfuel": h_tfuel,
@@ -592,6 +608,8 @@ def _write_library(summary: dict[str, Any], out_dir: Path, created: str | None) 
             "rho_pred": rho_pred,
             "rhoErr": rho_err,
             "maxShapeErr": max_shape_err,
+            "limit": limit,
+            "listed": accepted,
         })
 
     # Geometry primitives
@@ -684,7 +702,8 @@ def _write_library(summary: dict[str, Any], out_dir: Path, created: str | None) 
     openmc_version = summary["openmc"]["openmc"]
     data_digests = sorted({c["dataDigest"] for c in cases})
     xs_path = summary.get("nuclearData", {}).get("crossSections", "")
-    model_id = hashlib.sha256("\n".join(sorted(c["key"] for c in cases)).encode()).hexdigest()
+    results_blob = json.dumps(sorted(cases, key=lambda c: c["name"]), sort_keys=True, separators=(",", ":")).encode()
+    model_id = hashlib.sha256("\n".join(sorted(c["key"] for c in cases)).encode() + b"\n" + hashlib.sha256(results_blob).digest()).hexdigest()   # the keys hash the inputs, the blob the results
     fuel_phrase = "with fresh fuel (the 1994 benchmark core; default H/Zr 1.60 composition)" if burnup is None else f"at a uniform burnup ({burnup} MWd/kg)"
     notes = (
         f"Full-core OpenMC {openmc_version} transport {fuel_phrase}, {len(cases)} cases "

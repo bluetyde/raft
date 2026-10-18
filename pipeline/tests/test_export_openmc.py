@@ -128,8 +128,7 @@ class TestExportOpenMC(unittest.TestCase):
             self.assertEqual(delta_rho, -rho_val)
 
     def test_f_joint_checked(self):
-        """jointChecked has 6 entries; rhoErr < 1e-9 for noise=0, and rhoErr ≈ 1e-3 for noise=1e-3."""
-        # Noise-free
+        """jointChecked has 6 entries when the holdouts meet the acceptance (100 pcm, one mean bin); rhoErr < 1e-9 for noise=0, and rhoErr = 5e-4 for noise=5e-4."""
         s0 = synthetic_summary("246", noise=0.0)
         with tempfile.TemporaryDirectory() as t:
             out_dir = Path(t) / "lib0"
@@ -140,8 +139,7 @@ class TestExportOpenMC(unittest.TestCase):
             for entry in jc0:
                 self.assertLess(entry["rhoErr"], 1e-9)
 
-        # With noise = 1e-3
-        s_noisy = synthetic_summary("246", noise=1e-3)
+        s_noisy = synthetic_summary("246", noise=5e-4)
         with tempfile.TemporaryDirectory() as t:
             out_dir = Path(t) / "lib_noisy"
             export(s_noisy, out_dir, created="2026-09-27")
@@ -149,7 +147,30 @@ class TestExportOpenMC(unittest.TestCase):
             jc_noisy = m_noisy["domain"]["jointChecked"]
             self.assertEqual(len(jc_noisy), 6)
             for entry in jc_noisy:
-                self.assertAlmostEqual(entry["rhoErr"], 1e-3, places=5)
+                self.assertAlmostEqual(entry["rhoErr"], 5e-4, places=6)
+
+    def test_f2_a_failed_holdout_is_reported_but_not_listed_as_checked(self):
+        s = synthetic_summary("246", noise=6e-3)                      # 600 pcm: beyond three standard errors (about 300 pcm here)
+        with tempfile.TemporaryDirectory() as t:
+            out_dir = Path(t) / "lib"
+            rep = export(s, out_dir, created="2026-10-18")
+            m = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(m["domain"]["jointChecked"], [])
+            self.assertEqual(len(rep["jointChecked"]), 6)
+            self.assertTrue(all(e["listed"] is False and e["rhoErr"] > 2e-3 for e in rep["jointChecked"]))
+            self.assertEqual(validate_library(out_dir), [])
+
+    def test_f3_a_good_reactivity_with_a_bad_shape_is_not_listed(self):
+        s = synthetic_summary("242", noise=0.0)
+        hold = next(c for c in s["cases"] if c["family"] == "holdout")
+        base = hold["base"]
+        hold["base"] = [[v * (3.0 if (i + j) % 2 else 0.1) for j, v in enumerate(row)] for i, row in enumerate(base)]
+        with tempfile.TemporaryDirectory() as t:
+            out_dir = Path(t) / "lib"
+            rep = export(s, out_dir, created="2026-10-18")
+            m = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(len(m["domain"]["jointChecked"]), 5)
+            self.assertEqual(sum(1 for e in rep["jointChecked"] if not e["listed"]), 1)
 
     def test_g_shapes(self):
         """Base shape sums to 1 within 1e-5; delta slices sum to 0 within 1e-5; reference slice is 0."""
@@ -301,6 +322,61 @@ class TestExportOpenMC(unittest.TestCase):
             del s[field]
             with tempfile.TemporaryDirectory() as t, self.assertRaises(ValueError):
                 export(s, t, created="2026-09-27")
+
+
+class ReleaseReviewRegressions(unittest.TestCase):
+    """The exporter findings of the whole-repo Codex review (2026-10-18)."""
+
+    def refused(self, mutate):
+        s = synthetic_summary("242")
+        mutate(s)
+        with tempfile.TemporaryDirectory() as t, self.assertRaises(ValueError):
+            export(s, Path(t) / "lib", created="2026-10-18")
+
+    def test_a_quick_sweep_is_not_the_librarys_sweep(self):
+        self.refused(lambda s: s.update(stats={"particles": 100, "batches": 10, "inactive": 2}))
+
+    def test_another_extractor_version_is_refused(self):
+        self.refused(lambda s: s.update(extractor=["sweep-summary", "1"]))
+        self.refused(lambda s: s.pop("extractor"))
+
+    def test_the_burnup_must_be_the_cores(self):
+        self.refused(lambda s: s.update(burnup=None))                    # core 242 needs the calibrated burnup
+        s = synthetic_summary("134")
+        s["burnup"] = 5.0                                                # core 134 is fresh
+        with tempfile.TemporaryDirectory() as t, self.assertRaises(ValueError):
+            export(s, Path(t) / "lib", created="2026-10-18")
+
+    def test_a_missing_uncertainty_where_there_is_power_is_an_error(self):
+        def drop(s):
+            ref = next(c for c in s["cases"] if c["family"] == "reference")
+            ref["baseUnc"][0][0] = float("inf")
+            ref["base"][0][0] = 0.01                                     # a bin with power
+        self.refused(drop)
+
+    def test_a_missing_uncertainty_where_there_is_no_power_is_recorded_as_100_percent(self):
+        s = synthetic_summary("242")
+        ref = next(c for c in s["cases"] if c["family"] == "reference")
+        ref["baseUnc"][0][0] = float("inf")
+        ref["base"][0][0] = 0.0
+        with tempfile.TemporaryDirectory() as t:
+            out = Path(t) / "lib"
+            export(s, out, created="2026-10-18")
+            raw = (out / "arrays" / "base_unc.f32").read_bytes()
+            self.assertAlmostEqual(struct.unpack("<f", raw[:4])[0], 1.0)
+
+    def test_the_model_id_changes_when_a_result_changes_and_a_key_does_not(self):
+        def model_id(s):
+            with tempfile.TemporaryDirectory() as t:
+                out = Path(t) / "lib"
+                export(s, out, created="2026-10-18")
+                return json.loads((out / "manifest.json").read_text(encoding="utf-8"))["provenance"]
+        a = synthetic_summary("242")
+        b = synthetic_summary("242")
+        c = next(x for x in b["cases"] if x["family"] == "rod-worth")
+        c["k"] = c["k"] * 1.0001                                         # a different result under the same key
+        pa, pb = model_id(a), model_id(b)
+        self.assertNotEqual(json.dumps(pa, sort_keys=True), json.dumps(pb, sort_keys=True))
 
 
 def _digest_tree(root: Path) -> dict[str, str]:

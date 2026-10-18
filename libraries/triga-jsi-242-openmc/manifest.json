@@ -10,7 +10,7 @@
     "generator": "pipeline.library.export_openmc",
     "transportCode": "OpenMC 0.15.3",
     "nuclearData": "/root/nuclear_data/endfb-viii.0-hdf5/cross_sections.xml (data digests 2fa6354d2216)",
-    "model": "sha256 of the 41 sweep case keys: a8d95a83c9aa77fdb52844c049787073901019c81b74795cbee9a3e07db7a21f",
+    "model": "sha256 of the 41 sweep case keys: 7f1751b7d9efbd9a9838bba62a6b84aae4995e192926edbfe8817143d07f8e88",
     "created": "2026-09-28",
     "notes": "Full-core OpenMC 0.15.3 transport at a uniform burnup (23.675258421961058 MWd/kg), 41 cases ({'particles': 20000, 'batches': 150, 'inactive': 50}). Transport results: reference state rho, rod worth curves, fuel and coolant temperature reactivity feedback, kinetics (beta_eff and Lambda by IFP), and fission power shapes (fraction of all fuel fission; the lowest axial bin holds fuel-follower fuel below the core, zero for regular elements, whose volume there is nominal; its relative uncertainty is the region total's). Base library inputs: thermal properties, poisons, plant instrumentation/trips/interlocks, delayed group lambdas, external source, rod scram profiles, and xenon table. The plant block's setpoints (power-high 275 kW, fuel-temp-high 873.15 K, period-short 3 s) have no source recorded in this repository: they are assumed generic TRIGA-like values, not JSI's. Heat transfer: hA(dT) = h0 (dT / 100 K)^n with h0 = 1288.7 W/K and n = 0.2169, fitted to the measured power defect at 43.6 and 250 kW of the IAEA/JSI steady power ascension (one exercise, unknown core; docs/validation/m7-heat-transfer-results.md). It reproduces the held-out defect within 4 % and the shape of the fuel temperature rise within 0.03-0.05, but overshoots the defect at 2.9 kW (33-37 against 20.6 pcm). At the primary configuration it is consistent with the measured hot-element temperature (1.18 times the measured rise) given a thermocouple peaking of 1.28 from the pulse database; with other conductivities or thermocouple radii the prediction reaches 1.7 to 1.8 times the measured rise, and the library's own shape arrays give a larger peaking and a prediction 1.6 to 1.8 times too hot (docs/validation/m7-hot-element-2-results.md).",
     "sources": [
@@ -2516,24 +2516,13 @@
     "jointChecked": [
       {
         "rods": {
-          "transient": 0.333333333333,
-          "shim": 0.764285714286,
-          "safety": 0.864285714286,
-          "regulating": 0.492857142857
-        },
-        "Tfuel": 504.8,
-        "rhoErr": 0.004497798206741753,
-        "maxShapeErr": 0.5534465830390481
-      },
-      {
-        "rods": {
           "transient": 0.616666666667,
           "shim": 0.2,
           "safety": 0.542857142857,
           "regulating": 0.921428571429
         },
         "Tfuel": 553.5,
-        "rhoErr": 0.0008243550643042552,
+        "rhoErr": 0.0008243550643042483,
         "maxShapeErr": 0.6285038342918187
       },
       {
@@ -2555,7 +2544,7 @@
           "regulating": 0.907142857143
         },
         "Tfuel": 493.2,
-        "rhoErr": 0.00060623467082941,
+        "rhoErr": 0.0006062346708294031,
         "maxShapeErr": 0.4527673971222076
       },
       {
@@ -2577,7 +2566,7 @@
           "regulating": 0.335714285714
         },
         "Tfuel": 569.8,
-        "rhoErr": 0.0006857979652290583,
+        "rhoErr": 0.0006857979652290652,
         "maxShapeErr": 0.4734452824133222
       }
     ]

@@ -194,8 +194,9 @@ def synthetic_summary(core: str, noise: float = 0.0, seed: int = 1) -> dict[str,
 
     return {
         "core": core,
-        "burnup": sweep.B246,
+        "burnup": None if core in sweep.FRESH_CORES else sweep.B246,
         "stats": dict(sweep.STANDARD),
+        "extractor": list(sweep.SUMMARY_EXTRACTOR),
         "openmc": {"openmc": "0.15.3", "numpy": "2.4.0"},
         "nuclearData": {"crossSections": "/synthetic/cross_sections.xml"},
         "complete": True,

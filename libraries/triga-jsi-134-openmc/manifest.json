@@ -10,7 +10,7 @@
     "generator": "pipeline.library.export_openmc",
     "transportCode": "OpenMC 0.15.3",
     "nuclearData": "/root/nuclear_data/endfb-viii.0-hdf5/cross_sections.xml (data digests ee43802ed3bc)",
-    "model": "sha256 of the 41 sweep case keys: 37b1b88cb8902d6957cd063eb010a8159a16c4e83e8ee990043d3d1a8b3f67c2",
+    "model": "sha256 of the 41 sweep case keys: f3fbbfd9b8d5fed3afd7ed5b4de1eaef01af6c7e56cdd3bef3de7126212f73ed",
     "created": "2026-10-06",
     "notes": "Full-core OpenMC 0.15.3 transport with fresh fuel (the 1994 benchmark core; default H/Zr 1.60 composition), 41 cases ({'particles': 20000, 'batches': 150, 'inactive': 50}). Transport results: reference state rho, rod worth curves, fuel and coolant temperature reactivity feedback, kinetics (beta_eff and Lambda by IFP), and fission power shapes (fraction of all fuel fission; the lowest axial bin holds fuel-follower fuel below the core, zero for regular elements, whose volume there is nominal; its relative uncertainty is the region total's). Base library inputs: thermal properties, poisons, plant instrumentation/trips/interlocks, delayed group lambdas, external source, rod scram profiles, and xenon table. The plant block's setpoints (power-high 275 kW, fuel-temp-high 873.15 K, period-short 3 s) have no source recorded in this repository: they are assumed generic TRIGA-like values, not JSI's. STATUS: parked as a regulating-rod library. Checked against the 1994 benchmark of this core (docs/validation/m7-core134-*): the regulating rod worth is reproduced (total 0.965 of measured, shape within 0.041, 15 pcm at the critical position); the shim, safety and transient rod worths are 12-31 % high and are not to be used; the fuel temperature feedback is 37-40 % weaker than the measured reactivity loss at 60-100 C average fuel temperature and is not explained (not the reference treatment, the interval, the fuel hydrogen or the thermocouple conversion); the heat transfer is the base library's constant assumed hA (3000 W/K), not fitted, and gives a fuel rise 35-68 % of the measured one; the model is 323 pcm above critical at the measured critical rods (calibrated out) with about 500 pcm of input uncertainty from the fuel composition. Do not compare a power ascension on this library.",
     "sources": [
@@ -2176,47 +2176,14 @@
     "jointChecked": [
       {
         "rods": {
-          "transient": 0.661111111111,
-          "shim": 0.364285714286,
-          "safety": 0.978571428571,
-          "regulating": 0.835714285714
-        },
-        "Tfuel": 348.6,
-        "rhoErr": 0.0034935637915021493,
-        "maxShapeErr": 0.32477007393648893
-      },
-      {
-        "rods": {
           "transient": 0.772222222222,
           "shim": 0.5,
           "safety": 0.257142857143,
           "regulating": 0.664285714286
         },
         "Tfuel": 541.7,
-        "rhoErr": 0.0007022041735492354,
+        "rhoErr": 0.0007022041735492424,
         "maxShapeErr": 0.47475261485935505
-      },
-      {
-        "rods": {
-          "transient": 0.638888888889,
-          "shim": 0.207142857143,
-          "safety": 0.828571428571,
-          "regulating": 0.035714285714
-        },
-        "Tfuel": 541.5,
-        "rhoErr": 0.0074793447680034375,
-        "maxShapeErr": 0.6151332213806575
-      },
-      {
-        "rods": {
-          "transient": 0.983333333333,
-          "shim": 0.442857142857,
-          "safety": 0.221428571429,
-          "regulating": 0.314285714286
-        },
-        "Tfuel": 524.7,
-        "rhoErr": 0.008949350032268044,
-        "maxShapeErr": 0.47018249430744347
       },
       {
         "rods": {
@@ -2226,19 +2193,8 @@
           "regulating": 0.642857142857
         },
         "Tfuel": 552.4,
-        "rhoErr": 0.0016070529047879228,
+        "rhoErr": 0.0016070529047879263,
         "maxShapeErr": 0.34597416010904325
-      },
-      {
-        "rods": {
-          "transient": 0.388888888889,
-          "shim": 0.314285714286,
-          "safety": 0.985714285714,
-          "regulating": 0.635714285714
-        },
-        "Tfuel": 369.4,
-        "rhoErr": 0.004322069683829439,
-        "maxShapeErr": 0.361154286942296
       }
     ]
   }
