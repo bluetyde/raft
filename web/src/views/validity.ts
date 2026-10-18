@@ -21,13 +21,21 @@ export function describeValidity(v: ValidityView): string[] {
   return lines;
 }
 
+const banners = new WeakMap<HTMLElement, () => void>();
+
+/** Stop a banner following the runtime (call when the panel that holds it is disposed, or the dead banner keeps receiving every update). */
+export function disposeValidityBanner(box: HTMLElement): void {
+  banners.get(box)?.();
+  banners.delete(box);
+}
+
 /** A banner that follows the runtime's validity view. Shown in every window that has a state to trust. */
 export function createValidityBanner(client: RuntimeClient): HTMLElement {
   const box = document.createElement("div");
   box.dataset["validity"] = "banner";
   box.style.cssText = "margin: 6px 0; padding: 6px 10px; border-radius: 4px; font-size: 0.9em; line-height: 1.35;";
   box.hidden = true;
-  client.on("validity", (m) => {
+  const off = client.on("validity", (m) => {
     const lines = describeValidity(m.view);
     const c = COLOURS[m.view.level];
     box.style.background = c.bg;
@@ -44,6 +52,7 @@ export function createValidityBanner(client: RuntimeClient): HTMLElement {
     }
     box.hidden = false;
   });
+  banners.set(box, off);
   // the runtime posted its first view before this window subscribed; ask for it again
   client.resync();
   return box;

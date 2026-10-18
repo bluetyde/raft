@@ -7,14 +7,23 @@ import type { SessionFile } from "../../runtime/protocol";
 import type { TraceReply, TraceRequest } from "../../runtime/trace-worker";
 
 /** Replay `file` in a new worker and return its CSV trace. The worker stops when it answers. */
-export function traceInWorker(files: Record<string, ArrayBuffer>, file: SessionFile, everyS = 0.1): Promise<TraceReply> {
+export const TRACE_TIMEOUT_MS = 10 * 60_000;
+
+export function traceInWorker(files: Record<string, ArrayBuffer>, file: SessionFile, everyS = 0.1, timeoutMs = TRACE_TIMEOUT_MS): Promise<TraceReply> {
   const worker = new Worker(new URL("../../runtime/trace-worker.ts", import.meta.url), { type: "module" });
   return new Promise((resolve) => {
+    // a worker that never answers must not leave the button spinning for ever
+    const timer = setTimeout(() => {
+      worker.terminate();
+      resolve({ ok: false, message: `the trace worker did not answer within ${Math.round(timeoutMs / 1000)} s` });
+    }, timeoutMs);
     worker.onmessage = (ev: MessageEvent) => {
+      clearTimeout(timer);
       worker.terminate();
       resolve(ev.data as TraceReply);
     };
     worker.onerror = (ev) => {
+      clearTimeout(timer);
       worker.terminate();
       resolve({ ok: false, message: String((ev as ErrorEvent).message ?? "the trace worker stopped") });
     };

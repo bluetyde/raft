@@ -506,6 +506,19 @@ describe("coarse sessions and active faults (M6, docs/m6-instructor-design.md)",
     expect(rt.engine!.mode).toBe("steady");
   });
 
+  it("the snapshot's active faults name the pumps that are off, so the operator's fault tile can light for a pump trip", async () => {
+    const { host, rt } = await loadedRuntime();
+    await send(rt, { kind: "step", n: 1 });
+    await send(rt, { kind: "frameAck" });
+    expect(host.last("snapshot")!.faults).toMatchObject({ pumpsOff: [] });
+    const ack = await commandAck(host, rt, 1, { type: "pump.set", pump: "primary", on: false });
+    expect(ack.status).toBe("accepted");
+    await send(rt, { kind: "frameAck" });
+    await send(rt, { kind: "step", n: 1 });
+    await send(rt, { kind: "frameAck" });
+    expect(host.last("snapshot")!.faults).toMatchObject({ pumpsOff: ["primary"], instruments: {}, extraRho: 0 });
+  });
+
   it("a fine session passes the same commands to the engine", async () => {
     const { host, rt } = await loadedRuntime();
     const pulse = await commandAck(host, rt, 1, { type: "mode.set", mode: "pulse" });
@@ -563,13 +576,13 @@ describe("coarse sessions and active faults (M6, docs/m6-instructor-design.md)",
 
   it("each snapshot message lists the active faults, and a clear removes an instrument fault", async () => {
     const { host, rt } = await loadedRuntime();
-    expect(host.last("snapshot")!.faults).toEqual({ instruments: {}, extraRho: 0 });
+    expect(host.last("snapshot")!.faults).toEqual({ instruments: {}, extraRho: 0, pumpsOff: [] });
     await send(rt, { kind: "command", clientSeq: 1, clientId: "instructor", cmd: { type: "fault.instrument", instrument: "log", kind: "stuck" } });
     await send(rt, { kind: "command", clientSeq: 2, clientId: "instructor", cmd: { type: "fault.instrument", instrument: "linear", kind: "dead" } });
     await send(rt, { kind: "command", clientSeq: 3, clientId: "instructor", cmd: { type: "fault.reactivity", deltaRho: 0.001 } });
     await send(rt, { kind: "step", n: 1 });
     await send(rt, { kind: "frameAck" });
-    expect(host.last("snapshot")!.faults).toEqual({ instruments: { log: "stuck", linear: "dead" }, extraRho: 0.001 });
+    expect(host.last("snapshot")!.faults).toEqual({ instruments: { log: "stuck", linear: "dead" }, extraRho: 0.001, pumpsOff: [] });
     expect(host.last("snapshot")!.snapshot.indicated.linear).toBeNull();
     await send(rt, { kind: "command", clientSeq: 4, clientId: "instructor", cmd: { type: "fault.instrument", instrument: "log", kind: "clear" } });
     await send(rt, { kind: "step", n: 1 });

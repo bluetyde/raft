@@ -4,6 +4,8 @@ import type { DecisionRequest, DecisionResponse } from "../runtime/protocol";
 export const JEV_URL = "ws://localhost:8000/jev";
 /** Wall time the instructor waits between its own requests (ms). */
 const INSTRUCTOR_PERIOD_MS = 5000;
+/** A request with no reply after this long is given up, so a server that stays connected but never answers does not silence the copilot for ever. */
+export const REPLY_TIMEOUT_MS = 30_000;
 
 const INSTRUCTOR_CANDIDATES = [
   { id: "wait", text: "The operator is busy. I will wait and observe." },
@@ -26,7 +28,9 @@ export class JevCopilot {
 
   // instructor loop state
   private readonly connectionId = `${Math.random().toString(36).slice(2)}`;
-  private pending: { requestId: string; step: number } | null = null;
+  private pending: { requestId: string; step: number; at: number } | null = null;
+  /** The last thing that went wrong with the copilot (a reply that never came, a refused command), or null. */
+  public lastIssue: string | null = null;
   private lastAsk = 0;
   private step = 0;
   private offSnapshot: (() => void) | null = null;
@@ -109,11 +113,16 @@ export class JevCopilot {
 
   private onInstructorSnapshot(snap: Record<string, any>): void {
     const now = Date.now();
+    if (this.pending && now - this.pending.at > REPLY_TIMEOUT_MS) {
+      this.lastIssue = `no reply to request ${this.pending.requestId} after ${REPLY_TIMEOUT_MS / 1000} s; asking again`;
+      console.warn(`[JevCopilot] ${this.lastIssue}`);
+      this.pending = null;
+    }
     if (this.pending || now - this.lastAsk < INSTRUCTOR_PERIOD_MS) return;
     this.lastAsk = now;
-    const power = snap.indicated?.["log"] ?? snap.truth?.power ?? 0;
+    const power = snap.truth?.power ?? snap.indicated?.["log"] ?? 0; // the instructor's premise is the true power: a stuck instrument must not be stated as the reactor's power
     const requestId = `${this.connectionId}-${this.step}`;
-    this.pending = { requestId, step: this.step };
+    this.pending = { requestId, step: this.step, at: now };
     const req: DecisionRequest = {
       protocolVersion: 1,
       sessionId: "instructor",
@@ -136,7 +145,12 @@ export class JevCopilot {
     if (res.status !== "ok" || !res.candidateId) return; // error and shadow replies choose nothing
     if (res.candidateId === "stick") {
       // schema/command.schema.json has no drift kind, so an AI-triggered fault is a stuck reading
-      this.client.command({ type: "fault.instrument", instrument: "linear", kind: "stuck" }, undefined, "instructor");
+      void this.client.command({ type: "fault.instrument", instrument: "linear", kind: "stuck" }, undefined, "instructor").then((ack) => {
+        if (ack.status === "rejected") {
+          this.lastIssue = `the engine refused the fault the AI chose: ${ack.reason ?? "no reason given"}`;
+          console.warn(`[JevCopilot] ${this.lastIssue}`);
+        }
+      });
     } else if (res.candidateId === "end") {
       this.client.endScenario();
     }

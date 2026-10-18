@@ -4,7 +4,7 @@ import { loadSyntheticCore } from "../../sim/testing";
 import { faultLabel, instrumentFault, pumpFault, reactivityFault, WAITING_FOR_ENGINE } from "./faults";
 import { formatOuterStep, OUTER_STEPS, ratesFor } from "./time";
 import { Timeline } from "./timeline";
-import { activeFaultLines, formatPcm, formatSignal, instrumentRows, PCM, reactivityBars } from "./truth";
+import { activeFaultLines, formatPcm, formatSignal, instrumentRows, PCM, REACTIVITY_SOURCES, reactivityBars } from "./truth";
 
 describe("time settings (D5, amendment 1)", () => {
   it("offers rates that the outer step can reach", () => {
@@ -109,6 +109,13 @@ describe("truth panel on the real engine", () => {
       "instrument log: stuck",
       "reactivity inserted: 80.0 pcm",
     ]);
+  });
+
+  it("the reactivity bars include every source the engine reports, so they add up to the total", () => {
+    const r = { total: 0.0123, reference: -0.01, calibration: 0.01, fault: 0.0, rods: 0.005, fuel: -0.001, coolant: 0.0, xenon: 0.0, boron: 0.0073, rodInteraction: 0.0010 };
+    const { bars, totalPcm } = reactivityBars(r);
+    expect(bars.map((b) => b.source)).toEqual([...REACTIVITY_SOURCES, "boron", "rodInteraction"]);
+    expect(bars.reduce((a, b) => a + b.pcm, 0)).toBeCloseTo(totalPcm, 9);
   });
 
   it("lists a pump that is off", () => {

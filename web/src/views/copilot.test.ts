@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { JevCopilot, JEV_URL } from "./copilot";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { JevCopilot, JEV_URL, REPLY_TIMEOUT_MS } from "./copilot";
 
 class FakeSocket {
   static all: FakeSocket[] = [];
@@ -97,5 +97,56 @@ describe("JevCopilot relay", () => {
     expect(req.role).toBe("instructor");
     ws.reply({ requestId: "wrong", observationStep: 0, status: "ok", candidateId: "end" });
     expect(c.responses).toEqual([]);
+  });
+});
+
+
+describe("the instructor copilot (whole-repo review)", () => {
+  afterEach(() => { vi.useRealTimers(); });
+
+  function start() {
+    const c = fakeClient();
+    const cop = new JevCopilot(c, "instructor");
+    cop.toggle();
+    const ws = FakeSocket.all[0]!;
+    ws.open();
+    return { c, cop, ws };
+  }
+
+  it("states the true power, not a stuck reading of it", () => {
+    const { c, ws } = start();
+    c.listeners.get("snapshot")!({ snapshot: { t: 1, indicated: { log: 5.0 }, truth: { power: 123.0 } } });
+    expect(JSON.parse(ws.sent[0]!).premise).toContain("1.230e+2 W");
+  });
+
+  it("asks again when the server stays connected but never replies", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000_000);
+    const { c, cop, ws } = start();
+    const snap = { snapshot: { t: 1, truth: { power: 1 } } };
+    c.listeners.get("snapshot")!(snap);
+    expect(ws.sent.length).toBe(1);
+    vi.setSystemTime(1_000_000 + 10_000);
+    c.listeners.get("snapshot")!(snap);                      // within the timeout: still waiting
+    expect(ws.sent.length).toBe(1);
+    vi.setSystemTime(1_000_000 + REPLY_TIMEOUT_MS + 1);
+    c.listeners.get("snapshot")!(snap);                      // past it: given up, asked again, and the issue is recorded
+    expect(ws.sent.length).toBe(2);
+    expect(cop.lastIssue).toMatch(/no reply to request/);
+  });
+
+  it("records a fault the engine refused instead of acting as if it were applied", async () => {
+    const c = fakeClient();
+    c.command = () => Promise.resolve({ status: "rejected", reason: "REJ_HALTED" });
+    const cop = new JevCopilot(c, "instructor");
+    cop.toggle();
+    const ws = FakeSocket.all[0]!;
+    ws.open();
+    c.listeners.get("snapshot")!({ snapshot: { t: 1, truth: { power: 1 } } });
+    const req = JSON.parse(ws.sent[0]!);
+    ws.reply({ requestId: req.requestId, observationStep: req.observationStep, status: "ok", candidateId: "stick" });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(cop.lastIssue).toMatch(/refused the fault the AI chose: REJ_HALTED/);
   });
 });

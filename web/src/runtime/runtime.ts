@@ -1302,14 +1302,14 @@ export class Runtime {
     const now = this.host.now();
     let snapshot: Record<string, any> | null = null;
     let shape: Float32Array | null = null;
-    let faults: { instruments: Record<string, string>; extraRho: number } | null = null;
+    let faults: { instruments: Record<string, string>; extraRho: number; pumpsOff: string[] } | null = null;
     for (const p of this.ports.values()) {
       if (p.role === null) continue;
       const changed = p.forceSnapshot || e.stepIndex !== p.lastSnapStep;
       if (!changed || p.awaitingFrameAck) continue;
       if (!p.forceSnapshot && !this.paused && now - p.lastSnapWall < 1000 / this.options.snapshotHz) continue;
       snapshot ??= e.snapshot(false);
-      faults ??= { instruments: { ...e.faults }, extraRho: e.extraRho };
+      faults ??= { instruments: { ...e.faults }, extraRho: e.extraRho, pumpsOff: Object.entries(e.pumps).filter(([, on]) => !on).map(([id]) => id).sort() };
       let own: Float32Array | undefined;
       if (this.shapeDue(p, snapshot)) {
         shape ??= Float32Array.from(e.shape());

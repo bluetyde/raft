@@ -21,7 +21,9 @@ export interface ReactivityBar {
 }
 
 export function reactivityBars(reactivity: Record<string, number>): { bars: ReactivityBar[]; totalPcm: number } {
-  const values = REACTIVITY_SOURCES.map((s) => ({ source: s, pcm: (reactivity[s] ?? 0) / PCM }));
+  // every source the engine reports gets a bar (boron, rod interaction, ...), so the bars always add up to the total
+  const extra = Object.keys(reactivity).filter((k) => k !== "total" && !(REACTIVITY_SOURCES as readonly string[]).includes(k) && typeof reactivity[k] === "number").sort();
+  const values = [...REACTIVITY_SOURCES, ...extra].map((s) => ({ source: s, pcm: (reactivity[s] ?? 0) / PCM }));
   const largest = Math.max(1e-12, ...values.map((v) => Math.abs(v.pcm)));
   return {
     bars: values.map((v) => ({ ...v, size: Math.abs(v.pcm) / largest })),

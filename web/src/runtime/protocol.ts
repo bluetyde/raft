@@ -144,6 +144,8 @@ export const RUNTIME_REJECTIONS: Record<string, string> = {
 export interface ActiveFaults {
   instruments: Record<string, string>;
   extraRho: number;
+  /** Pumps that are off (an instructor's pump trip is a fault the operator's panel must show when the scenario shows faults). */
+  pumpsOff?: string[];
 }
 
 /**

@@ -57,7 +57,7 @@ function describe(ack: Ack): string {
 }
 
 import { JevCopilot, createCopilotButton, describeSupervision } from "../copilot";
-import { createValidityBanner } from "../validity";
+import { createValidityBanner, disposeValidityBanner } from "../validity";
 
 export class InstructorPanel {
   readonly root: HTMLElement;
@@ -215,7 +215,7 @@ export class InstructorPanel {
     this.goalText = el("div", { className: "vr-inst-message" });
     this.goalText.dataset["inst"] = "goal-status";
     // what is actually in effect (the panel's goal or a script's, whichever is newer), not just what was typed here
-    client.on("supervision", (m) => {
+    this.offs.push(client.on("supervision", (m) => {
       const s = m.state;
       const goal =
         s.goal === null
@@ -226,7 +226,7 @@ export class InstructorPanel {
         this.scriptProgress = `${s.scriptFired} of ${s.scriptTotal} script events fired${s.scriptNext ? `; next: ${(s.scriptNext.t / 60).toFixed(1)} min ${s.scriptNext.note}` : ""}`;
       } else this.scriptProgress = "";
       this.refreshScriptText();
-    });
+    }));
 
     // ---- script ----
     const scriptInput = el("input", { type: "file", accept: ".json,application/json" });
@@ -236,7 +236,7 @@ export class InstructorPanel {
     this.scriptText = el("div", { className: "vr-inst-message" });
     this.scriptText.dataset["inst"] = "script-status";
     this.scriptText.textContent = this.scriptListing;
-    client.on("script", (m) => this.showScript(m.script));
+    this.offs.push(client.on("script", (m) => this.showScript(m.script)));
 
     this.copilot = new JevCopilot(client, "instructor");
     const copilotBtn = createCopilotButton(this.copilot);
@@ -248,9 +248,11 @@ export class InstructorPanel {
     hdr.style.justifyContent = "space-between";
     hdr.style.marginBottom = "10px";
 
+    const banner = createValidityBanner(client);
+    this.offs.push(() => disposeValidityBanner(banner));
     this.root = el("div", { className: "vr-instructor" }, [
       hdr,
-      createValidityBanner(client),
+      banner,
       el("section", {}, [
         el("h3", { textContent: "Time" }),
         el("div", { className: "vr-row" }, [this.play, this.rate, step, this.clockText]),
@@ -493,22 +495,30 @@ export class InstructorPanel {
   }
 
   private async exportSession(): Promise<void> {
-    const file = await this.client.exportSession();
-    const t = file.endStep * file.session.pins.config.outerDt; // the file's own step, not the panel's
-    download(`${this.opts.libraryId}-${timeTag(t)}.session.json`, JSON.stringify(file), "application/json");
-    this.exportText.textContent = `session file: ${file.session.commands.length} commands, ${file.annotations?.length ?? 0} notes, t = ${t.toFixed(2)} s`;
+    try {
+      const file = await this.client.exportSession();
+      const t = file.endStep * file.session.pins.config.outerDt; // the file's own step, not the panel's
+      download(`${this.opts.libraryId}-${timeTag(t)}.session.json`, JSON.stringify(file), "application/json");
+      this.exportText.textContent = `session file: ${file.session.commands.length} commands, ${file.annotations?.length ?? 0} notes, t = ${t.toFixed(2)} s`;
+    } catch (err) {
+      this.exportText.textContent = `session export failed: ${String(err)}`;
+    }
   }
 
   private async exportCsv(): Promise<void> {
     this.exportText.textContent = "writing the CSV (replaying the session in a separate worker)…";
-    const file = await this.client.exportSession();
-    const reply = await traceInWorker(await this.opts.files(), file, 0.1);
-    if (!reply.ok) {
-      this.exportText.textContent = `CSV failed: ${reply.message}`;
-      return;
+    try {
+      const file = await this.client.exportSession();
+      const reply = await traceInWorker(await this.opts.files(), file, 0.1);
+      if (!reply.ok) {
+        this.exportText.textContent = `CSV failed: ${reply.message}`;
+        return;
+      }
+      download(`${this.opts.libraryId}-${timeTag(file.endStep * file.session.pins.config.outerDt)}.csv`, reply.csv, "text/csv");
+      this.exportText.textContent = `CSV: ${reply.rows} rows`;
+    } catch (err) {
+      this.exportText.textContent = `CSV failed: ${String(err)}`;
     }
-    download(`${this.opts.libraryId}-${timeTag(file.endStep * file.session.pins.config.outerDt)}.csv`, reply.csv, "text/csv");
-    this.exportText.textContent = `CSV: ${reply.rows} rows`;
   }
 
   private async loadScriptFile(input: HTMLInputElement): Promise<void> {
@@ -613,7 +623,11 @@ export class InstructorPanel {
     this.bar.dataset["end"] = this.timeline.endT.toFixed(2);
   }
 
+  /** What to undo when the panel goes away: runtime subscriptions would otherwise keep a dead panel alive and updating. */
+  private readonly offs: (() => void)[] = [];
+
   dispose(): void {
+    for (const off of this.offs.splice(0)) off();
     this.copilot.disconnect();
   }
 }

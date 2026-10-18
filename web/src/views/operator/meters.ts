@@ -62,6 +62,16 @@ export function isPegged(m: Meter, v: number | null | undefined): boolean {
   return v !== null && v !== undefined && Number.isFinite(v) && (v >= m.range[1] || v <= m.range[0]);
 }
 
+/** Whether the readings since the last snapshot (their minimum and maximum) reached a limit of the meter, even if the current reading is back inside. */
+export function excursion(m: Meter, ex: { min: number; max: number } | undefined): boolean {
+  return ex !== undefined && (isPegged(m, ex.min) || isPegged(m, ex.max));
+}
+
+/** A boron target as the panel shows it: a whole number of ppm stays whole, a fractional one keeps its decimal (the engine accepts both). */
+export function formatTarget(ppm: number): string {
+  return Number.isInteger(ppm) ? ppm.toFixed(0) : ppm.toFixed(1);
+}
+
 /** Kelvin to degrees Celsius, for display only (ARCHITECTURE conventions: convert in one place). */
 export function kelvinToCelsius(k: number): number {
   return k - 273.15;

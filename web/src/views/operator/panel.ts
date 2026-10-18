@@ -10,7 +10,7 @@ import { formatPeriod, formatPower } from "../explorer/live";
 import { Annunciator } from "./annunciator";
 import { StripChart } from "./chart";
 import { operatorView, type OperatorView } from "./console";
-import { isPegged, kelvinToCelsius, meterReading, metersFrom, unitOf, type InstrumentSpec, type Meter } from "./meters";
+import { excursion, formatTarget, isPegged, kelvinToCelsius, meterReading, metersFrom, unitOf, type InstrumentSpec, type Meter } from "./meters";
 import { PeriodEstimator } from "./period";
 import { allowedTypes, formatElapsed, goalLine, scoreText } from "./scenario";
 import { chartPoints, StripBuffer } from "./strip";
@@ -44,7 +44,7 @@ const RATES = [0.1, 1, 10, 100];
 const SCRAM_COVER_MS = 5000;
 
 import { JevCopilot, createCopilotButton, describeSupervision } from "../copilot";
-import { createValidityBanner } from "../validity";
+import { createValidityBanner, disposeValidityBanner } from "../validity";
 
 export class OperatorPanel {
   readonly root: HTMLElement;
@@ -240,9 +240,11 @@ export class OperatorPanel {
 
     const aiStatus = el("div", { className: "vr-note" });
     aiStatus.dataset["op"] = "ai-status";
-    client.on("supervision", (m) => {
-      aiStatus.textContent = describeSupervision(m.state) + (m.state.lastAction ? ` - last: ${m.state.lastAction}` : "");
-    });
+    this.offs.push(
+      client.on("supervision", (m) => {
+        aiStatus.textContent = describeSupervision(m.state) + (m.state.lastAction ? ` - last: ${m.state.lastAction}` : "");
+      }),
+    );
 
     const hdr = el("div", { className: "vr-row" }, [
       el("h2", { textContent: "Operator Panel" }),
@@ -251,9 +253,11 @@ export class OperatorPanel {
     hdr.style.justifyContent = "space-between";
     hdr.style.marginBottom = "10px";
 
+    const banner = createValidityBanner(client);
+    this.offs.push(() => disposeValidityBanner(banner));
     this.root = el("div", { className: "vr-operator" }, [
       hdr,
-      createValidityBanner(client),
+      banner,
       aiStatus,
       this.scenarioBox,
       el("section", {}, [el("h3", { textContent: "Instruments" }), ...meterRows, periodRow]),
@@ -354,7 +358,8 @@ export class OperatorPanel {
       e.bar.style.width = `${(100 * r.fraction).toFixed(1)}%`;
       e.value.textContent = r.failed ? "FAILED" : display(m, v!);
       e.flag.textContent = r.peg === "over" ? "OVER" : r.peg === "under" ? "UNDER" : "";
-      states.push({ id: m.id, failed: r.failed, pegged: r.peg !== null });
+      // a brief excursion to a meter limit that returned before this snapshot still lights the tile (the chart shows it, so the alarm must too)
+      states.push({ id: m.id, failed: r.failed, pegged: r.peg !== null || excursion(m, msg.extremes?.[m.id]) });
     }
 
     // period (amendment 2): extremes are not used here; they are not evenly spaced readings
@@ -388,13 +393,13 @@ export class OperatorPanel {
     if (this.mode.value !== view.console.mode) this.mode.value = view.console.mode;
     if (this.boronReading && view.console.boron) {
       const b = view.console.boron;
-      this.boronReading.textContent = `${b.ppm.toFixed(1)} ppm${b.target !== null ? ` → ${b.target.toFixed(0)}` : ""}`;
-      if (this.boronInput && !this.boronInputTouched && document.activeElement !== this.boronInput) this.boronInput.value = (b.target ?? b.ppm).toFixed(0);
+      this.boronReading.textContent = `${b.ppm.toFixed(1)} ppm${b.target !== null ? ` → ${formatTarget(b.target)}` : ""}`;
+      if (this.boronInput && !this.boronInputTouched && document.activeElement !== this.boronInput) this.boronInput.value = formatTarget(b.target ?? b.ppm);
     }
     this.annunciator.update(view.console.trips, states);
     // a scenario with faultsVisible shows one tile while an instructor fault is active (M6 D4b); otherwise there is no tile
     const f = msg.faults;
-    this.faultActive = f !== undefined && (Object.keys(f.instruments).length > 0 || Math.abs(f.extraRho) > 1e-15);
+    this.faultActive = f !== undefined && (Object.keys(f.instruments).length > 0 || Math.abs(f.extraRho) > 1e-15 || (f.pumpsOff?.length ?? 0) > 0);
     this.annunciator.instructorFault(this.scenario?.faultsVisible === true, this.faultActive);
     this.renderTiles();
     if (this.scenario) this.elapsed.textContent = `elapsed ${formatElapsed(t)}`;
@@ -464,7 +469,11 @@ export class OperatorPanel {
     );
   }
 
+  /** What to undo when the panel goes away: runtime subscriptions would otherwise keep a dead panel alive and updating. */
+  private readonly offs: (() => void)[] = [];
+
   dispose(): void {
+    for (const off of this.offs.splice(0)) off();
     window.removeEventListener("keydown", this.onKey);
     this.closeCover();
     this.copilot.disconnect();

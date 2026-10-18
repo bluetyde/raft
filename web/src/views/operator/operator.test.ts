@@ -4,7 +4,7 @@ import { loadBoronCore, loadSyntheticCore } from "../../sim/testing";
 import { nearCriticalRods } from "../../sim/vectors";
 import { Annunciator } from "./annunciator";
 import { CONSOLE_TRUTH_FIELDS, consoleState, operatorView, stripTruthPhysics } from "./console";
-import { isPegged, kelvinToCelsius, meterReading, metersFrom, roleOf, type InstrumentSpec } from "./meters";
+import { excursion, formatTarget, isPegged, kelvinToCelsius, meterReading, metersFrom, roleOf, type InstrumentSpec } from "./meters";
 import { PeriodEstimator } from "./period";
 import { chartPoints, StripBuffer } from "./strip";
 
@@ -265,5 +265,25 @@ describe("annunciator (D1)", () => {
     expect(state(a, "range:linear")).toBe("flashing");
     a.reset();
     expect(a.list().every((t) => t.state === "off")).toBe(true);
+  });
+});
+
+
+describe("meter limits and boron targets (whole-repo review)", () => {
+  const m = { id: "log", role: "power", range: [1e-6, 1e3], scale: "log" } as any;
+
+  it("an excursion to a meter limit since the last snapshot counts even if the reading is back inside", () => {
+    expect(isPegged(m, 5.0)).toBe(false);
+    expect(excursion(m, { min: 2.0, max: 6.0 })).toBe(false);
+    expect(excursion(m, { min: 2.0, max: 1000 })).toBe(true);        // reached the top
+    expect(excursion(m, { min: 1e-6, max: 6.0 })).toBe(true);        // reached the bottom
+    expect(excursion(m, { min: 0.0, max: 6.0 })).toBe(true);         // went below it
+    expect(excursion(m, undefined)).toBe(false);
+  });
+
+  it("a fractional boron target keeps its decimal and a whole one stays whole", () => {
+    expect(formatTarget(990.4)).toBe("990.4");
+    expect(formatTarget(990)).toBe("990");
+    expect(formatTarget(900.0)).toBe("900");
   });
 });
