@@ -40,6 +40,8 @@ Every comparison was written as a protocol before it was run, run once, and repo
 - Rod worths are added as if the rods acted alone; only a few combinations were checked against transport runs, and the app says so when you leave them.
 - Many plant values (trip setpoints, instrument ranges, rod speeds) are assumed and labelled as such in each library.
 - The 3D power shapes and rod worths carry the statistical error of the transport runs that produced them.
+- **This is not a security boundary.** The operator, instructor and other window roles are chosen by a URL parameter and are there to separate screens, not to keep anyone out. The assistant server accepts connections from this machine only by default.
+- **Educational use only.** Do not use this for operation, licensing, design or safety decisions about any real reactor.
 - The AI assistant has not been shown to do better than a person or a plain controller. [docs/validation/ai-operator-baseline.md](docs/validation/ai-operator-baseline.md) is a comparison against a fixed-rule baseline, and says what it does not show.
 
 ## Install and first run
@@ -64,7 +66,7 @@ Build the headless runner: `cd web && npm run build:headless`.
 
 ## Building a library (optional)
 
-`pipeline/` turns OpenMC runs into a library (`python -m pipeline.library.export_openmc`, see [docs/plans/02-openmc-pipeline.md](docs/plans/02-openmc-pipeline.md)). This needs OpenMC 0.15 and an ENDF/B-VIII.0 HDF5 library, installed separately; neither is included, and the runs take hours. The finished libraries are in `libraries/`, so you do not need to rebuild them to use the app. Writing a library for another reactor: [docs/library-format.md](docs/library-format.md) is the format.
+`pipeline/` turns OpenMC runs into a library (`python -m pipeline.library.export_openmc`, see [docs/plans/02-openmc-pipeline.md](docs/plans/02-openmc-pipeline.md)). This needs OpenMC 0.15 and an ENDF/B-VIII.0 HDF5 library, installed separately; neither is included, and the runs take hours. The finished libraries are in `libraries/`, so you do not need to rebuild them to use the app. Writing a library for another reactor: [docs/library-authoring.md](docs/library-authoring.md) is the order to work in and [docs/library-format.md](docs/library-format.md) is the format. What the engine solves: [docs/physics-notes.md](docs/physics-notes.md). To contribute: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## AI assistant (optional)
 
