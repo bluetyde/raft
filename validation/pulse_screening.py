@@ -168,6 +168,12 @@ def screen_pulses(records: List[PulseRecord]) -> ScreenResult:
     """
     cleaned_records, normalized = normalize_records(records)
 
+    ids = [p.pulse_id for p in cleaned_records]
+    dup = sorted({i for i in ids if ids.count(i) > 1})
+    if dup:
+        # exclusion reasons are kept per pulse id: two records under one id would share them
+        raise ValueError(f"duplicate pulse ids: {dup[:10]}")
+
     pulse_reasons: Dict[int, List[str]] = {p.pulse_id: [] for p in cleaned_records}
 
     # Reason 1: missing_reactivity
@@ -190,12 +196,19 @@ def screen_pulses(records: List[PulseRecord]) -> ScreenResult:
         ):
             pulse_reasons[p.pulse_id].append("subprompt_high_power")
 
+    # Reason 3b: missing_core_config (it would otherwise be kept but belong to no core summary)
+    for p in cleaned_records:
+        if p.core_config is None:
+            pulse_reasons[p.pulse_id].append("missing_core_config")
+
     # Reason 4: group_outlier
-    # Group by core_config and rho_dollars rounded to 2 decimals
+    # Group by core_config and rho_dollars rounded to 2 decimals, from the records that passed the physical checks above:
+    # a pulse already excluded (say, an impossible power) must not set the median and spread that judge the others
     groups: Dict[Tuple[str, float], List[PulseRecord]] = {}
     for p in cleaned_records:
         if (
-            p.core_config is not None
+            not pulse_reasons[p.pulse_id]
+            and p.core_config is not None
             and p.rho_dollars is not None
             and p.peak_power_mw is not None
             and p.peak_power_mw > 0

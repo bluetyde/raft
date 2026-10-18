@@ -85,6 +85,9 @@
       140
     ],
     "transportCSigmaSteps": 3.054624295345866,
+    "spansUncomputed": [
+      120
+    ],
     "differenceSteps": 2.4559869575645052,
     "label": "good"
   },

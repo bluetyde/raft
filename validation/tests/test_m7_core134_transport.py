@@ -32,6 +32,24 @@ def load(lines, temps):
         return tr.load_runs(p, temps)
 
 
+class RunChecks(unittest.TestCase):
+    def test_prompt_runs_and_unusable_uncertainties_are_refused(self):
+        lines, temps = run_lines()
+        load(lines, temps)
+        with self.assertRaisesRegex(ValueError, "prompt-only"):
+            load([dict(lines[0], prompt=True)] + lines[1:], temps)
+        for bad in (float("nan"), 0.0, -1.0, float("inf")):
+            with self.assertRaisesRegex(ValueError, "finite and positive"):
+                load([dict(lines[0], kStd=bad)] + lines[1:], temps)
+
+    def test_saved_temperatures_must_match_the_rule(self):
+        tr.check_saved_temperatures({"A1": 380.0, "B1": 368.0}, {"A1": 380.0000004, "B1": 368.0})
+        with self.assertRaisesRegex(ValueError, "differ"):
+            tr.check_saved_temperatures({"A1": 372.0, "B1": 372.0}, {"A1": 380.0, "B1": 368.0})
+        with self.assertRaisesRegex(ValueError, "name"):
+            tr.check_saved_temperatures({"A1": 372.0}, {"A1": 380.0, "B1": 368.0})
+
+
 class ElementTemperatures(unittest.TestCase):
     def test_the_volume_mean_rise_is_the_requested_one_and_the_hot_elements_are_hotter(self):
         from physics_ref.library import Library

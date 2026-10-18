@@ -48,7 +48,8 @@
         "label": "good",
         "within50ppm": true,
         "rhoPcm": -29.28088195227771,
-        "errorPpmWithBwS7": -2.280070227723049
+        "errorPpmWithBwS7": -2.280070227723049,
+        "sensitiveToConversion": false
       },
       "7": {
         "computed": true,
@@ -60,7 +61,8 @@
         "label": "good",
         "within50ppm": true,
         "rhoPcm": -187.71461421709373,
-        "errorPpmWithBwS7": -14.61713154277512
+        "errorPpmWithBwS7": -14.61713154277512,
+        "sensitiveToConversion": false
       }
     },
     "aggregate": {

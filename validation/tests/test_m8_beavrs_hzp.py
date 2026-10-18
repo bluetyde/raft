@@ -27,7 +27,7 @@ def line(cid, spec, rho_pcm, drift=0.0, sigma=SIGMA_PCM):
     k = 1.0 / (1.0 - rho)
     n = spec["batches"]
     batches = [k + (0.001 if i % 2 else -0.001) + drift * i for i in range(n)]
-    return {"case": cid, **spec, "k": k, "kStd": sigma / bv.PCM * k ** 2, "kBatches": batches}
+    return {"case": cid, **spec, "seed": 1, "k": k, "kStd": sigma / bv.PCM * k ** 2, "kBatches": batches}
 
 
 def planted_runs(cum, r0=0.0, itc=ITC_F, drift=None, skip=()):
@@ -60,6 +60,19 @@ class Cases(unittest.TestCase):
         self.assertEqual((c["T0p"]["particles"], c["T0p"]["batches"]), (100000, 800))
         self.assertEqual((c["W0"]["particles"], c["W0"]["batches"], c["W0"]["inactive"]), (60000, 300, 100))
         self.assertAlmostEqual(bv.total_worth()[0], 6042.0)
+
+
+class RunIdentity(unittest.TestCase):
+    def test_a_wrong_seed_or_beavrs_commit_is_refused(self):
+        good = planted_runs(cum_from_boron())
+        load(good)                                                                      # the planted file itself is accepted
+        bad_seed = [dict(good[0], seed=2)] + good[1:]
+        with self.assertRaisesRegex(ValueError, "seed 2"):
+            load(bad_seed)
+        bad_head = [dict(good[0], beavrsHead="deadbee")] + good[1:]
+        with self.assertRaisesRegex(ValueError, "BEAVRS 'deadbee'"):
+            load(bad_head)
+        load([dict(good[0], beavrsHead=bv.BEAVRS_HEAD)] + good[1:])
 
 
 class Analysis(unittest.TestCase):

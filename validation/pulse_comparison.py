@@ -16,6 +16,7 @@ here pool 31 core configurations without screening or condition matching, so the
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import math
 from dataclasses import asdict, dataclass
@@ -104,9 +105,8 @@ def simulate_pulse(
     Calibrates initial state to critical equilibrium at reference ambient temperature,
     then steps reactivity by rho_dollars * beta_total via fault.reactivity.
     """
-    lib = Library(Path(library.manifest["provenance"]["generator"].split()[0]).parent.parent / "libraries" / library.id) if hasattr(library, "id") else library
-    # Make a detached copy with zeroed shutdown offset for critical start
-    lib_copy = Library(DEFAULT_LIBRARY_PATH)
+    # Make a detached copy of the library that was passed (not the default one) with zeroed shutdown offset for critical start
+    lib_copy = copy.deepcopy(library)
     lib_copy.calibration = -lib_copy.ref_rho
     lib_copy.ext_source = 0.0
     lib_copy.mark_modified(f"pulse-{rho_dollars:.2f}")
@@ -235,7 +235,7 @@ def run_pulse_comparison(
 
     sweep = rho_sweep or DEFAULT_RHO_SWEEP
     points: List[PulseComparisonPoint] = []
-    total_matched = 0
+    matched_ids: set = set()   # a pulse in two overlapping windows counts once in the total
 
     for rho in sweep:
         sim = simulate_pulse(lib, rho)
@@ -246,13 +246,11 @@ def run_pulse_comparison(
             max_rho=rho + window_dollars,
             require_valid_pmax=True,
         )
-        total_matched += len(matches)
+        matched_ids.update(p.pulse_id for p in matches)
 
         powers = [p.peak_power_mw for p in matches if p.peak_power_mw and p.peak_power_mw > 0]
         energies = [
-            (p.energy_1000pts_mws or p.energy_1pct_mws or p.energy_tangent_mws)
-            for p in matches
-            if (p.energy_1000pts_mws or p.energy_1pct_mws or p.energy_tangent_mws) and (p.energy_1000pts_mws or p.energy_1pct_mws or p.energy_tangent_mws) > 0
+            e for e in ((p.energy_1000pts_mws or p.energy_1pct_mws or p.energy_tangent_mws) for p in matches) if e and e > 0
         ]
         fwhms = [p.fwhm_s for p in matches if p.fwhm_s and p.fwhm_s > 0]
         temps = [p.t1_max_c for p in matches if p.t1_max_c and p.t1_max_c > 0]
@@ -294,12 +292,14 @@ def run_pulse_comparison(
 
     exp_prompt_rhos = [p.rho_prompt_dollars for p in fit_points if p.exp_pmax_median_mw]
     exp_pmaxs = [p.exp_pmax_median_mw for p in fit_points if p.exp_pmax_median_mw]
+    # energy fits use their own x values: a bin with peak power but no energy must not shift the pairing
+    exp_e_rhos = [p.rho_prompt_dollars for p in fit_points if p.exp_energy_median_mws]
     exp_energies = [p.exp_energy_median_mws for p in fit_points if p.exp_energy_median_mws]
 
     sim_p_slope = _log_polyfit_slope(sim_prompt_rhos, sim_pmaxs)
     sim_e_slope = _log_polyfit_slope(sim_prompt_rhos, sim_energies)
     exp_p_slope = _log_polyfit_slope(exp_prompt_rhos, exp_pmaxs)
-    exp_e_slope = _log_polyfit_slope(exp_prompt_rhos, exp_energies)
+    exp_e_slope = _log_polyfit_slope(exp_e_rhos, exp_energies)
 
     # No automatic verdict (review 2026-09-26). Report the whole picture instead of one point.
     ratios = [p.sim_pmax_mw / p.exp_pmax_median_mw for p in points if p.exp_pmax_median_mw]
@@ -311,7 +311,7 @@ def run_pulse_comparison(
     return ComparisonSummary(
         library_id=lib.id,
         num_simulations=len(points),
-        total_experimental_pulses_matched=total_matched,
+        total_experimental_pulses_matched=len(matched_ids),
         pmax_scaling_exponent_sim=round(sim_p_slope, 3),
         pmax_scaling_exponent_exp=round(exp_p_slope, 3),
         energy_scaling_exponent_sim=round(sim_e_slope, 3),

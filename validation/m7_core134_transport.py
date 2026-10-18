@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 from validation import m7_core134_data as dm
@@ -56,6 +57,15 @@ def temperature_report(temps: dict, volumes: dict) -> dict:
 
 # ---------------------------------------------------------------- the runs
 
+def check_saved_temperatures(saved: dict, fresh: dict) -> None:
+    """The file the runs used must be what the protocol's rule gives now (to the 6 decimals it was rounded to); otherwise the runs tested some other distribution."""
+    if set(saved) != set(fresh):
+        raise ValueError(f"the saved element temperatures name {len(saved)} positions, the protocol's rule gives {len(fresh)}")
+    off = [p for p in fresh if abs(saved[p] - fresh[p]) > 1e-5]
+    if off:
+        raise ValueError(f"the saved element temperatures differ from the protocol's rule at {off[:5]} (e.g. {off[0]}: {saved[off[0]]} against {fresh[off[0]]:.6f})")
+
+
 def load_runs(path: Path, temps: dict) -> dict:
     """{"R294", "U372", "NU372": {rho, sigma, k, kStd}}: every line must be one of the protocol's three runs, once each."""
     runs = {}
@@ -78,7 +88,11 @@ def load_runs(path: Path, temps: dict) -> dict:
             raise ValueError(f"{path.name} line {n}: unexpected overrides {ov if len(str(ov)) < 80 else sorted(ov)}")
         if name in runs:
             raise ValueError(f"{path.name} line {n}: the run {name} appears twice")
+        if r.get("prompt"):
+            raise ValueError(f"{path.name} line {n}: run {name} is a prompt-only run (no delayed neutrons), not a protocol run")
         k, sd = r["k"], r["kStd"]
+        if not (isinstance(k, (int, float)) and isinstance(sd, (int, float)) and math.isfinite(k) and math.isfinite(sd) and k > 0.0 and sd > 0.0):
+            raise ValueError(f"{path.name} line {n}: run {name} has k {k!r} and kStd {sd!r}; both must be finite and positive")
         runs[name] = {"rho": (k - 1.0) / k * base.PCM, "sigma": sd / k ** 2 * base.PCM, "k": k, "kStd": sd}
     missing = [k for k in ("R294", "U372", "NU372") if k not in runs]
     if missing:
@@ -163,7 +177,9 @@ def main(argv: list[str] | None = None) -> int:
         TEMPS_FILE.write_text(json.dumps({p: round(t, 6) for p, t in temps.items()}, indent=1, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
         print(f"wrote {TEMPS_FILE}: {temperature_report(temps, volumes)}")
         return 0
+    fresh = temps
     temps = json.loads(TEMPS_FILE.read_text(encoding="utf-8"))          # the rounded values the runs used
+    check_saved_temperatures(temps, fresh)
     report = run(lib, temps, volumes, load_runs(RUNS, temps))
     args.out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8", newline="\n")
     print_summary(report)

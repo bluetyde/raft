@@ -111,8 +111,12 @@ def model_curve(library_path: Path = LIBRARY_PATH) -> list[tuple[float, float]]:
     curve = []
     for d in DOLLAR_GRID:
         fit = fit_omega(engine_trace(d, library_path=library_path), SIM_DT, clean=True)
-        if fit:
-            curve.append((d, fit[0]))
+        if not fit or not math.isfinite(fit[0]):
+            # a gap in the grid would make invert() interpolate across it without saying so
+            raise RuntimeError(f"the reference fit failed at ${d:.3f}: the dollar grid has a gap")
+        curve.append((d, fit[0]))
+    if any(w1 <= w0 for (_, w0), (_, w1) in zip(curve, curve[1:])):
+        raise RuntimeError("the reference curve is not increasing, so it cannot be inverted: " + str(curve))
     return curve
 
 
@@ -134,8 +138,8 @@ def main(argv: list[str] | None = None) -> int:
     for meta_path in sorted(TRACES.glob("*.json")):
         pid = int(meta_path.stem)
         p = pulses[pid]
-        if str(p["core_config"]) not in args.cores or p.get("rho_dollars") is None:
-            continue
+        if str(p["core_config"]) not in args.cores:
+            continue   # a missing database label does not stop a fit: the method infers the dollars itself
         power, dt = load_window(pid)
         fit = fit_omega(power, dt)
         row = {"pulse_id": pid, "core": str(p["core_config"]), "date": p["date"], "label": p["rho_dollars"],
@@ -143,12 +147,18 @@ def main(argv: list[str] | None = None) -> int:
         if fit:
             row.update({"omega": fit[0], "points": fit[1], "noise_mw": fit[2], "inferred": invert(curve, fit[0])})
         rows.append(row)
-    report = {"method": __doc__.split("\n\n")[1], "lo": LO, "hi": HI, "modelCurve": curve, "pulses": rows}
+    # which pulses of these cores had no downloaded trace: a criterion on the number fitted is only as good as this coverage
+    expected = sorted(i for i, p in pulses.items() if str(p["core_config"]) in args.cores and p.get("peak_power_mw") is not None)
+    have = {r["pulse_id"] for r in rows}
+    fitted_ids = sorted(r["pulse_id"] for r in rows if r.get("inferred") is not None)
+    coverage = {"expected": len(expected), "traces": len(have), "missingTraces": [i for i in expected if i not in have], "fitted": len(fitted_ids),
+                "unfitted": sorted(have - set(fitted_ids))}
+    report = {"method": __doc__.split("\n\n")[1], "lo": LO, "hi": HI, "modelCurve": curve, "coverage": coverage, "pulses": rows}
     args.out.write_bytes((json.dumps(report, indent=1, sort_keys=True, allow_nan=False) + "\n").encode("utf-8"))
     fitted = [r for r in rows if r.get("inferred") is not None]
     print(f"model curve: {[(round(d, 2), round(w, 1)) for d, w in curve]}")
-    print(f"{len(rows)} pulses, {len(fitted)} with an inferred $; report {args.out}")
-    return 0
+    print(f"{len(rows)} pulses, {len(fitted)} with an inferred $; {len(coverage['missingTraces'])} expected pulses have no trace; report {args.out}")
+    return 0 if fitted else 1
 
 
 if __name__ == "__main__":

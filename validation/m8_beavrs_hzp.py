@@ -17,6 +17,8 @@ import math
 from collections import OrderedDict
 from pathlib import Path
 
+from pipeline.openmc.beavrs_cases import BEAVRS_HEAD
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RUNS = REPO_ROOT / "pipeline" / "openmc" / "results" / "beavrs_hzp.jsonl"
 OUT = REPO_ROOT / "validation" / "m8_beavrs_hzp_report.json"
@@ -88,6 +90,10 @@ def load_runs(path: Path) -> dict:
         for key, want in plan[cid].items():
             if r.get(key) != want:
                 raise ValueError(f"{path.name} line {n}: case {cid} has {key} {r.get(key)!r}, the protocol has {want!r}")
+        if r.get("seed") != 1:
+            raise ValueError(f"{path.name} line {n}: case {cid} has seed {r.get('seed')!r}, the protocol fixes 1")
+        if r.get("beavrsHead") not in (None, BEAVRS_HEAD):    # the first runs did not record the commit; a recorded one must be the protocol's
+            raise ValueError(f"{path.name} line {n}: case {cid} was built from BEAVRS {r.get('beavrsHead')!r}, the protocol fixes {BEAVRS_HEAD!r}")
         if cid in runs:
             raise ValueError(f"{path.name} line {n}: the case {cid} appears twice")
         for key in ("k", "kStd", "kBatches"):

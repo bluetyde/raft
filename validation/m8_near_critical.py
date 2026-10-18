@@ -80,14 +80,19 @@ def library_critical(model: rs.ShadowModel, boron: float = BORON) -> float | Non
     return 0.5 * (lo + hi)
 
 
-def transport_critical(computed: dict[str, dict]) -> dict | None:
-    """Zero of the straight line through the two neighbouring computed transport cases (in C) that bracket zero; None if no pair brackets it."""
+def transport_critical(computed: dict[str, dict], planned_c: list[float] | None = None) -> dict | None:
+    """Zero of the straight line through the two neighbouring transport cases (in C) that bracket zero; None if no pair brackets it.
+    The protocol's "neighbouring pair" is read as neighbouring COMPUTED cases, so a planned case that was not computed is stepped over; the
+    planned C values lying between the pair are reported as `spansUncomputed`, because a straight line over a gap is only as good as the
+    curve is straight there (the reported statistical error does not include that)."""
     pts = sorted((e["C"], e["transportPcm"], e["transportSigmaPcm"]) for e in computed.values())
+    planned = sorted(planned_c) if planned_c is not None else None
     for (c0, r0, s0), (c1, r1, s1) in zip(pts, pts[1:]):
         if r0 < 0.0 <= r1:
             c = c0 + (0.0 - r0) / (r1 - r0) * (c1 - c0)
             slope = (r1 - r0) / (c1 - c0)
-            return {"steps": c, "between": [c0, c1], "sigmaSteps": max(s0, s1) / slope}
+            gap = [x for x in (planned or []) if c0 < x < c1]
+            return {"steps": c, "between": [c0, c1], "sigmaSteps": max(s0, s1) / slope, "spansUncomputed": gap}
     return None
 
 
@@ -118,12 +123,12 @@ def crit_label(d: float) -> str:
 
 def critical_item(model: rs.ShadowModel, p: dict, boron: float = BORON) -> dict:
     lib_c = library_critical(model, boron)
-    tr = transport_critical({c: e for c, e in p.items() if e["computed"]})
+    tr = transport_critical({c: e for c, e in p.items() if e["computed"]}, [plan["steps"]["C"] for plan in near_cases().values()])
     if lib_c is None or tr is None:
         return {"computed": False, "libraryC": lib_c, "reason": "no bracketing pair of transport cases" if tr is None else "the library does not cross zero"}
     d = lib_c - tr["steps"]
     label = crit_label(d)
-    return {"computed": True, "libraryC": lib_c, "transportC": tr["steps"], "transportCBetween": tr["between"], "transportCSigmaSteps": tr["sigmaSteps"],
+    return {"computed": True, "libraryC": lib_c, "transportC": tr["steps"], "transportCBetween": tr["between"], "transportCSigmaSteps": tr["sigmaSteps"], "spansUncomputed": tr["spansUncomputed"],
             "differenceSteps": d, "label": label}
 
 
@@ -174,7 +179,7 @@ def print_summary(r: dict) -> None:
         print(f"   {c}: " + (f"{e['libraryPcm']:+.0f} vs {e['transportPcm']:+.0f} (sigma {e['transportSigmaPcm']:.0f}), difference {e['differencePcm']:+.0f}, {e['label']}"
                              if e["computed"] else f"not computed ({e['reason']})"))
     c = r["critical"]
-    print("critical C (steps): " + (f"library {c['libraryC']:.1f}, transport {c['transportC']:.1f} +- {c['transportCSigmaSteps']:.1f} (between {c['transportCBetween']}), "
+    print("critical C (steps): " + (f"library {c['libraryC']:.1f}, transport {c['transportC']:.1f} +- {c['transportCSigmaSteps']:.1f} (between {c['transportCBetween']}, stepping over uncomputed C = {c['spansUncomputed']}), "
                                    f"difference {c['differenceSteps']:+.1f}, {c['label']}" if c["computed"] else f"not computed ({c['reason']})"))
     for item in r["decision"]["items"]:
         print("  decision:", item)

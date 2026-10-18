@@ -189,6 +189,11 @@ class PlantedAnalysis(unittest.TestCase):
         self.assertIsNone(nc.transport_critical({k: v for k, v in pts.items() if k in ("a", "d")}))             # none above zero
         exact = {"x": {"C": 10.0, "transportPcm": -50.0, "transportSigmaPcm": 1.0}, "y": {"C": 20.0, "transportPcm": 0.0, "transportSigmaPcm": 1.0}}
         self.assertAlmostEqual(nc.transport_critical(exact)["steps"], 20.0)
+        # a planned case between the pair that was not computed is reported, not hidden
+        gap = nc.transport_critical({k: v for k, v in pts.items() if k in ("a", "c")}, [40.0, 100.0, 120.0, 140.0, 180.0])
+        self.assertEqual(gap["between"], [100.0, 180.0])
+        self.assertEqual(gap["spansUncomputed"], [120.0, 140.0])
+        self.assertEqual(nc.transport_critical(pts, [40.0, 100.0, 140.0, 180.0])["spansUncomputed"], [])
 
     def test_a_library_whose_reactivity_block_is_not_the_protocols_is_refused(self):
         with self.assertRaises(nc.PinError):

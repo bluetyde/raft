@@ -40,3 +40,7 @@ Protocol: `m8-near-critical-protocol.md` (sixteenth protocol; predictions writte
 ## Next
 
 Build the lesson on this state family (D and C in, boron 900 ppm, C withdrawn to critical at about 0.59 of travel), with scripted-operator tests whose outcomes are written before they run, a browser check, a Codex review and the notes (README, supported envelope, library README). The draft on `claude/bank-withdrawal-lesson` (seven banks in, 860 ppm) is superseded and will be replaced, not edited.
+
+## Erratum (2026-10-18, code review)
+
+Codex's review of the analysis script noted that the transport critical position was interpolated across the uncomputed N-C-120 without saying so in the report. The protocol's "neighbouring pair" was read, as above, as the neighbouring computed cases, so the number and the decision (Q1) are unchanged. What changed is disclosure: the report now carries `spansUncomputed` (here C = 120) next to the critical position, and the printed summary says the straight line steps over it. The ± 3.1 steps is the statistical error of the two cases only; it does not include how straight the reactivity curve is between 80 and 140 steps. A transport run of N-C-120 would settle it; none was made, because the protocol rules a run once.

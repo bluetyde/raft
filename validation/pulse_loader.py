@@ -54,13 +54,17 @@ class PulseRecord:
 
 
 def _parse_row(row: Dict[str, str]) -> PulseRecord:
-    def _float_or_none(val: Optional[str]) -> Optional[float]:
+    def _float_or_none(val: Optional[str], column: str = "?") -> Optional[float]:
+        """Blank means no value. Anything else must be a finite number: a typo is an error naming the pulse and column, not a pulse that quietly drops out of the bins."""
         if not val or val.strip().lower() in ("", "none", "null"):
             return None
         try:
-            return float(val)
+            x = float(val)
         except ValueError:
-            return None
+            raise ValueError(f"pulse {row.get('pulse_id')}: column {column} is not a number: {val!r}") from None
+        if x != x or x in (float("inf"), float("-inf")):
+            raise ValueError(f"pulse {row.get('pulse_id')}: column {column} is not finite: {val!r}")
+        return x
 
     def _str_or_none(val: Optional[str]) -> Optional[str]:
         if not val or val.strip().lower() in ("", "none", "null"):
@@ -70,16 +74,16 @@ def _parse_row(row: Dict[str, str]) -> PulseRecord:
     return PulseRecord(
         pulse_id=int(row["pulse_id"]),
         date=row["date"].strip(),
-        rho_dollars=_float_or_none(row.get("rho_dollars")),
-        rho_pcm=_float_or_none(row.get("rho_pcm")),
-        rod_position=_float_or_none(row.get("rod_position")),
-        peak_power_mw=_float_or_none(row.get("peak_power_mw")),
-        energy_1000pts_mws=_float_or_none(row.get("energy_1000pts_mws")),
-        energy_1pct_mws=_float_or_none(row.get("energy_1pct_mws")),
-        energy_tangent_mws=_float_or_none(row.get("energy_tangent_mws")),
-        fwhm_s=_float_or_none(row.get("fwhm_s")),
-        t1_max_c=_float_or_none(row.get("t1_max_c")),
-        t2_max_c=_float_or_none(row.get("t2_max_c")),
+        rho_dollars=_float_or_none(row.get("rho_dollars"), "rho_dollars"),
+        rho_pcm=_float_or_none(row.get("rho_pcm"), "rho_pcm"),
+        rod_position=_float_or_none(row.get("rod_position"), "rod_position"),
+        peak_power_mw=_float_or_none(row.get("peak_power_mw"), "peak_power_mw"),
+        energy_1000pts_mws=_float_or_none(row.get("energy_1000pts_mws"), "energy_1000pts_mws"),
+        energy_1pct_mws=_float_or_none(row.get("energy_1pct_mws"), "energy_1pct_mws"),
+        energy_tangent_mws=_float_or_none(row.get("energy_tangent_mws"), "energy_tangent_mws"),
+        fwhm_s=_float_or_none(row.get("fwhm_s"), "fwhm_s"),
+        t1_max_c=_float_or_none(row.get("t1_max_c"), "t1_max_c"),
+        t2_max_c=_float_or_none(row.get("t2_max_c"), "t2_max_c"),
         raw_data_file=_str_or_none(row.get("raw_data_file")),
         processed_data_file=_str_or_none(row.get("processed_data_file")),
         power_chart_pdf=_str_or_none(row.get("power_chart_pdf")),
