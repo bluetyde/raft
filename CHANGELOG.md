@@ -2,7 +2,7 @@
 
 RAFT follows [semantic versioning](https://semver.org/) for the app and the library format as a pair: a change that makes an existing library invalid or changes an engine result is a new minor version while the format is 0.x. The reference engine has its own number (it moves when a golden vector changes) and is pinned by the vectors.
 
-## 0.1.0 (the first public release; not yet tagged)
+## 0.1.0 (2026-10-18, the first public release)
 
 Experimental and educational. No library is marked validated.
 
