@@ -39,7 +39,7 @@ EXPECTED = {"core": "134", "rods": {"T": 0.0, "K": 200.0, "V": 200.0, "R": 727.3
 
 def element_temperatures(lib, mean_rise: float = MEAN_RISE_K, n: float = EXPONENT, base_k: float = BASE_K) -> tuple[dict, dict]:
     """({position: K}, {position: in-core fuel volume}) for the 48 fuel positions: rise proportional to the element's relative power density to the 1/(1+n), volume mean = mean_rise."""
-    b = dm.bins_of(lib)
+    b = dm.bins_of(lib, zero_power=False)       # the bins the runs' temperatures were made from (see the results' erratum)
     f, v = {}, {}
     for e, a, fission, vol in b["cells"]:
         f[e] = f.get(e, 0.0) + fission

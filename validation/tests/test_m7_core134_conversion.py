@@ -125,6 +125,7 @@ class Implied(unittest.TestCase):
         self.assertEqual(cv.decide(*self.make(indep="fails"))["case"], 2)                           # the paper's conversion is supported, the feedback is weak
         self.assertEqual(cv.decide(*self.make(g1="differs", indep="fails"))["case"], 3)             # the conversion is off but does not explain it
         self.assertIsNone(cv.decide(*self.make(g1="differs", indep="good"))["case"])
+        self.assertEqual(cv.decide(*self.make(indep="fails", paper="good"))["case"], 2)             # case 2 reads G4 with the independent conversions: a plausible paper route does not hide it
 
 
 class RealData(unittest.TestCase):

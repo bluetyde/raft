@@ -77,3 +77,7 @@ Sensitivity (reported, not scored): every d_inf shifted by ±$0.03 (about the sp
 ## Outputs
 
 `validation/m1_run3.py` → `validation/m1_run3_report.json` (all numbers above, per pulse and per core) and a "Run 3" section in `m1-c1-results.md`.
+
+## Note (2026-10-18, code review)
+
+The script's simulation grid is $1.25 to $1.90, wider than the $1.275 to $1.75 above (the widening was made before any metric was seen, as the script's comment says, but this document was not amended). One scored pulse lies outside the protocol's range: core 242's pulse 434, inferred $1.7515, so the report has n = 32 for core 242 where the protocol grid scores 31. Recomputed from the report's own pulses on the protocol range: core 242 RMS 0.0468 (was 0.0478), mean 0.0376 (0.0388), slopes 1.888 and 1.978 (1.889 and 1.979); core 246 is unchanged (n = 36, highest inferred $1.545). B1 to B3 pass either way and the proposal does not change. The report now lists the pulses outside the protocol range (`outsideProtocolGrid`).

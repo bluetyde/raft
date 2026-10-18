@@ -1446,7 +1446,7 @@
         "heatTransfer": "the law is specific to the earlier exercise (E fails): add a known limit",
         "secondary": {
           "B": "fails",
-          "C": "good"
+          "C": "plausible"
         }
       }
     },
@@ -2895,7 +2895,7 @@
         "heatTransfer": "the law is specific to the earlier exercise (E fails): add a known limit",
         "secondary": {
           "B": "fails",
-          "C": "good"
+          "C": "plausible"
         }
       }
     }

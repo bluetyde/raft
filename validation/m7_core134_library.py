@@ -82,7 +82,7 @@ def rod_metrics(lib, rod_data: dict) -> dict:
         meas_total = rows[38] if rid == "regulating" else full
         d_total = 38 if rid == "regulating" else TRAVEL_CM
         model_total = model_worth_pcm(lib, rid, d_total)
-        diffs = [abs(model_worth_pcm(lib, rid, d) / model_total - rows[d] / meas_total) for d in sorted(rows)]
+        diffs = [abs(model_worth_pcm(lib, rid, d) / model_total - rows[d] / meas_total) for d in sorted(rows) if d >= 1]   # the protocol compares rows 1 to 38 cm; the 0 cm row has no travel to compare
         r1 = model_total / meas_total
         out[rid] = {"modelTotalPcm": model_total, "measuredTotalPcm": meas_total, "R1": {"ratio": r1, "label": label_ratio(r1)},
                     "R2": {"maxAbsDiff": max(diffs), "label": label_diff(max(diffs), R2_BANDS)}}

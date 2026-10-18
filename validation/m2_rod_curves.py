@@ -5,7 +5,7 @@
 
 Model points: validation/m2_scurve_points.jsonl (core_model --json, 20,000 x 150 per point) plus the T = 0 / 900 points of core 242
 in validation/m2_burnup_report.json. Tables: the database's s242.txt / s246.txt (downloaded, gitignored). Worth W(s) = rho(T = 0) -
-rho(T = s); dollars use the model's own beta_eff at B246 for the model and 700 pcm/$ for the tables (m2-core.md).
+rho(T = s); dollars use the model's own beta_eff for the model (each core's own: core 242's at B246 from the burnup report, core 246's from its library) and 700 pcm/$ for the tables (m2-core.md).
 
 Run from the repo root (any Python):  python -m validation.m2_rod_curves
 """
@@ -81,9 +81,13 @@ def model_points() -> dict[str, dict[float, tuple[float, float]]]:
 
 def main() -> int:
     rep = json.loads(BURNUP_REPORT.read_text(encoding="utf-8"))
-    beta = rep["T4"]["betaEffPcm"]
-    out = {"B246": rep["B246"], "betaEffPcm": beta, "tablePcmPerDollar": TABLE_PCM_PER_DOLLAR, "cores": {}}
+    # each core's dollars use that core's own beta_eff: core 242's from the burnup report (T4, core 242 at B246), core 246's from the delayed
+    # fractions its library carries (the IFP tally of the core 246 model); dividing both by core 242's value mis-scales core 246 by about 3 %
+    lib246 = json.loads((REPO_ROOT / "libraries" / "triga-jsi-246-openmc" / "manifest.json").read_text(encoding="utf-8"))
+    betas = {"242": rep["T4"]["betaEffPcm"], "246": sum(lib246["kinetics"]["beta"]["values"]) * 1e5}
+    out = {"B246": rep["B246"], "betaEffPcm": betas["242"], "betaEffPcmByCore": betas, "tablePcmPerDollar": TABLE_PCM_PER_DOLLAR, "cores": {}}
     for core, table in (("242", "s242.txt"), ("246", "s246.txt")):
+        beta = betas[core]
         header, meas = parse_table(TRACES / table)
         pts = model_points()[core]
         if 0.0 not in pts:

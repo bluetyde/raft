@@ -242,7 +242,7 @@ def decide(c1_res: dict, c2_res: dict, c3_res: dict) -> dict:
     removed = {k: v["fractionOfShortfallRemoved"] for k, v in c3_res["step7"].items() if k != "paper"}
     if g1_ok and g2_ok and indep_ok:
         return {"case": 1, "text": "the paper's conversion was too high; the feedback is consistent with the measurement with the independent conversion", "removed": removed}
-    if g1_ok and g2_ok and g3_differs and not paper_ok:
+    if g1_ok and g2_ok and g3_differs and not indep_ok:   # G4 is defined with the independent conversions
         return {"case": 2, "text": "the paper's conversion is supported; the feedback is too weak by the implied factor; the next protocol tests OpenMC's fuel temperature treatment", "removed": removed}
     if not (g1_ok and g2_ok) and not indep_ok:
         return {"case": 3, "text": "the conversion is partly off but does not explain the shortfall; the fraction it removes at step 7 is in 'removed'", "removed": removed}

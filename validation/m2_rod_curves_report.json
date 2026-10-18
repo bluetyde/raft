@@ -72,56 +72,60 @@
      "modelPcm": 190.16869045815687,
      "modelStdPcm": 92.3483313674777,
      "measuredPcm": 58.7,
-     "modelDollars": 0.2625529341312903,
+     "modelDollars": 0.2546467194751211,
      "measuredDollars": 0.08385714285714287,
-     "ratioDollars": 3.130954921497499
+     "ratioDollars": 3.0366729750014434
     },
     {
      "steps": 300.0,
      "modelPcm": 238.9959604969859,
      "modelStdPcm": 93.52549461499446,
      "measuredPcm": 362.4,
-     "modelDollars": 0.3299654139849924,
+     "modelDollars": 0.3200292180681241,
      "measuredDollars": 0.5177142857142857,
-     "ratioDollars": 0.6373504133264203
+     "ratioDollars": 0.6181579819196659
     },
     {
      "steps": 450.0,
      "modelPcm": 946.700527115247,
      "modelStdPcm": 97.19435026615632,
      "measuredPcm": 999.0,
-     "modelDollars": 1.3070448165726742,
+     "modelDollars": 1.2676859843461428,
      "measuredDollars": 1.427142857142857,
-     "ratioDollars": 0.9158472188196917
+     "ratioDollars": 0.8882684574997998
     },
     {
      "steps": 600.0,
      "modelPcm": 1776.1322982576623,
      "modelStdPcm": 106.37256109775021,
      "measuredPcm": 1839.6,
-     "modelDollars": 2.452184663991828,
+     "modelDollars": 2.378342418068227,
      "measuredDollars": 2.6279999999999997,
-     "ratioDollars": 0.9330991872115024
+     "ratioDollars": 0.905000920117286
     },
     {
      "steps": 750.0,
      "modelPcm": 2416.174959341659,
      "modelStdPcm": 90.81565010494543,
      "measuredPcm": 2600.4,
-     "modelDollars": 3.3358478907403843,
+     "modelDollars": 3.235396034920199,
      "measuredDollars": 3.714857142857143,
-     "ratioDollars": 0.8979747437003034
+     "ratioDollars": 0.870934173374919
     },
     {
      "steps": 900.0,
      "modelPcm": 2598.3958293046176,
      "modelStdPcm": 92.76670206983768,
      "measuredPcm": 2937.2,
-     "modelDollars": 3.5874278114595524,
+     "modelDollars": 3.479400169587046,
      "measuredDollars": 4.196,
-     "ratioDollars": 0.8549637300904558
+     "ratioDollars": 0.829218343562213
     }
    ]
   }
+ },
+ "betaEffPcmByCore": {
+  "242": 724.306095025632,
+  "246": 746.79418941714
  }
 }

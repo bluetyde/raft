@@ -135,15 +135,28 @@ class Secondary(unittest.TestCase):
 
 class Decision(unittest.TestCase):
     @staticmethod
-    def entry(a="good", d="good", e="good"):
-        return {"A": {"primary": {"worst": a}}, "D": {"primary": {"label": d}}, "E": {"primary": {"worst": e}},
-                "B": {"primary": {"label": "good"}}, "C": {"primary": {"label": "good"}}}
+    def entry(a="good", d="good", e="good", a_worst=None, d_worst=None, e_worst=None):
+        # the protocol reads the labels that are the worst over the sensitivities; the primary line is beside them
+        return {"A": {"primary": {"worst": a}, "worst": a_worst or a}, "D": {"primary": {"label": d}, "worst": d_worst or d},
+                "E": {"primary": {"worst": e}, "worst": e_worst or e},
+                "B": {"primary": {"label": "good"}, "worst": "good"}, "C": {"primary": {"label": "good"}, "worst": "plausible"}}
 
     def test_the_branches(self):
         self.assertIn("transfers", fc.decide(self.entry())["heatTransfer"])
         self.assertIn("exponent does not", fc.decide(self.entry(d="fails"))["heatTransfer"])
         self.assertIn("specific", fc.decide(self.entry(e="fails", d="good"))["heatTransfer"])
         self.assertTrue(fc.decide(self.entry(a="fails"))["feedback"].startswith("fails"))
+        # a primary label that is good while a prescribed sensitivity fails is read as failing
+        self.assertTrue(fc.decide(self.entry(a="good", a_worst="fails"))["feedback"].startswith("fails"))
+        self.assertIn("exponent does not", fc.decide(self.entry(d="good", d_worst="fails"))["heatTransfer"])
+        self.assertIn("specific", fc.decide(self.entry(e="good", e_worst="fails"))["heatTransfer"])
+        self.assertEqual(fc.decide(self.entry())["secondary"]["C"], "plausible")
+
+    def test_the_exponent_fit_needs_every_point(self):
+        p = [10.0, 20.0, 40.0, 80.0]
+        self.assertIsNotNone(fc.fit_exponent(p, [1.0, 1.5, 2.2, 3.3]))
+        self.assertIsNone(fc.fit_exponent(p, [1.0, 1.5, 0.0, 3.3]))                     # one bad rise: not computed, not a fit of the others
+        self.assertIsNone(fc.fit_exponent(p, [1.0, 1.5, 2.2]))
 
     def test_the_full_run_has_the_documented_shape(self):
         lib = synthetic()

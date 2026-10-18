@@ -107,7 +107,9 @@ def slope(table, lo: float, hi: float) -> float:
 
 def fit_exponent(power_kw: list[float], rise_k: list[float]) -> float | None:
     """n of a rise ~ P^(1/(1+n)) by least squares of ln(rise) on ln(P); None if the fit is degenerate."""
-    pts = [(math.log(p), math.log(r)) for p, r in zip(power_kw, rise_k) if p > 0 and r > 0]
+    if len(power_kw) != len(rise_k) or any(not (p > 0 and r > 0) for p, r in zip(power_kw, rise_k)):
+        return None            # every prescribed point must be valid: a dropped point would fit some other, undeclared subset
+    pts = [(math.log(p), math.log(r)) for p, r in zip(power_kw, rise_k)]
     if len(pts) < 3:
         return None
     mx = sum(x for x, _ in pts) / len(pts)
@@ -233,11 +235,12 @@ def evaluate_library(lib, name: str, data: dict) -> dict:
 
 
 def decide(entry: dict) -> dict:
-    """The protocol's decision process, read on the primary line."""
+    """The protocol's decision process, read on each metric's label that is the worst over the sensitivities ("the labels are the worst over the
+    sensitivities with the best beside them"); the primary line stays in the report beside it."""
     ok = ("good", "plausible")
-    a = entry["A"]["primary"]["worst"]
-    d = entry["D"]["primary"]["label"]
-    e = entry["E"]["primary"]["worst"]
+    a = entry["A"]["worst"]
+    d = entry["D"]["worst"]
+    e = entry["E"]["worst"]
     out = {"feedback": "consistent" if a in ok else "fails (burnup is the first candidate)"}
     if e not in ok:
         out["heatTransfer"] = "the law is specific to the earlier exercise (E fails): add a known limit"
@@ -245,7 +248,7 @@ def decide(entry: dict) -> dict:
         out["heatTransfer"] = "the law transfers to core 134 (D and E good or plausible)"
     else:
         out["heatTransfer"] = "the scale transfers, the exponent does not (D fails, E good or plausible)"
-    out["secondary"] = {"B": entry["B"]["primary"]["label"], "C": entry["C"]["primary"]["label"]}
+    out["secondary"] = {"B": entry["B"]["worst"], "C": entry["C"]["worst"]}
     return out
 
 

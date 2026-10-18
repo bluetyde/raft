@@ -97,15 +97,18 @@ def d_metrics(vii1: dict, p1: dict, ref: dict[float, float]) -> dict:
 
 # ---------------------------------------------------------------- part C: the effective fuel temperature
 
-def bins_of(lib) -> dict:
-    """Fission fraction and volume of every (element, in-core axial bin) at the reference state, and the bin and element indices."""
+def bins_of(lib, zero_power: bool = True) -> dict:
+    """Fission fraction and volume of every (element, in-core axial bin) at the reference state, and the bin and element indices.
+    `zero_power` keeps the in-core bins with fuel volume but no fission (the protocol's volume mean includes them); False drops them, which is what
+    the core 134 transport runs' element temperatures did (docs/validation/m7-core134-transport-results.md, erratum)."""
     s = lib.shapes
     elements, edges = s["bins"]["elements"], s["bins"]["axialEdgesCm"]
     A = len(edges) - 1
     arr = he.shape_array(lib, dict(lib.ref_rods), base.K0 + 21.6)
     vol = lib.arrays[s["volumes"]]
     in_core = [a for a in range(A) if edges[a] >= -19.05 - 1e-9]
-    cells = [(e, a, arr[e * A + a], vol[e * A + a]) for e in range(len(elements)) for a in in_core if arr[e * A + a] > 0.0]
+    # every in-core bin with fuel volume, also those with no fission: they have no temperature rise but they are in the volume mean the protocol fixes
+    cells = [(e, a, arr[e * A + a], vol[e * A + a]) for e in range(len(elements)) for a in in_core if (vol[e * A + a] > 0.0 if zero_power else arr[e * A + a] > 0.0)]
     return {"cells": cells, "elements": elements, "inCoreBins": in_core}
 
 
@@ -183,8 +186,11 @@ def w_metrics(lib, data: dict, c: dict, d: dict | None) -> dict:
 def decide(p: dict, d: dict | None, c: dict, w: dict) -> dict:
     ok = ("good", "plausible")
     items = []
+    snapped = sorted(t for t, e in p.get("p2Effects", {}).items() if e["treatmentEffect"])
     if p["constant"] and p["smoothAll"]:
-        items.append("1. OpenMC's temperature treatment is not responsible for the shortfall (P1 constant, the curve smooth)")
+        # the snapped run P2 differs from P1 by construction (see the protocol's P2 metric); the sizes stay in the report, and the sentence says so
+        items.append("1. OpenMC's temperature treatment is not responsible for the shortfall (P1 constant, the curve smooth)"
+                     + (f"; the snapped run P2 differs from P1 by more than 2 sigma at {', '.join(f'{t:.0f}' for t in snapped)} K, as a snapped run must (see the results' erratum on how the protocol's last sentence reads)" if snapped else ""))
     else:
         items.append("1. a treatment artefact exists (P1 varying or the curve not smooth); record its size; a corrected library needs its own protocol")
     if d is None:

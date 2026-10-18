@@ -44,3 +44,7 @@ The last row is an addition made after the analysis to show what the statistical
 ## Limits, repeated
 
 κ_T carries ±0.038, so 1.00 and 1.08 cannot be told apart; the axial distribution is not modelled; the temperatures follow the model's own power shapes (which carry their tally uncertainty); one temperature per element, none inside the pellet; the model's Zr rod, cladding and water stay at 294 K.
+
+## Erratum (2026-10-18, code review)
+
+The element temperatures of these runs were made from the in-core bins that carry fission; the in-core bins with fuel volume but no fission (eleven) were left out of the volume mean. With them included the volume-mean rise of the same 48 temperatures is 77.7 K, not the intended 78 K (a 0.4 % shorter rise). The runs stand as made: they tested a distribution with the stated spread, and the κ_T of 1.03 ± 0.04 against the proxy's 1.09 (the proxy is now computed with the full fuel volume; it was 1.08) leads to the same decision (2, the proxy overstates the effect). `element_temperatures` keeps the old bins on purpose (`bins_of(lib, zero_power=False)`) so that the saved temperature file is reproducible, and the analysis now refuses a saved file that differs from that rule.

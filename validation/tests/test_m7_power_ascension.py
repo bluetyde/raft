@@ -110,6 +110,23 @@ class ModelArithmetic(unittest.TestCase):
             self.assertEqual(set(v["summary"]), {"A", "B", "C"})
         self.assertIn("D", entry)
 
+    @needs_data("jsi-steady-power")
+    def test_an_uncalibrated_case_makes_the_summary_incomplete(self):
+        from unittest import mock
+        real = m7.calibrate_hA
+        calls = []
+
+        def flaky(*a, **k):
+            calls.append(1)
+            return None if len(calls) == 3 else real(*a, **k)
+
+        with mock.patch.object(m7, "calibrate_hA", flaky):
+            v1 = m7.run({"syn": synthetic_lib()})["libraries"]["syn"]["variants"]["V1"]
+        self.assertEqual(sum(1 for c in v1["cases"] if "A" not in c), 1)
+        for m in "ABC":
+            self.assertEqual(v1["summary"][m]["worst"], "not computed")            # seven good cases of eight are not a passing summary
+            self.assertEqual(v1["summary"][m]["notComputed"], 1)
+
 
 class RealLibrariesLoad(unittest.TestCase):
     def test_the_two_libraries_load_with_what_the_script_reads(self):

@@ -23,6 +23,7 @@ A_POINTS = [1.5, 1.8, 2.1]
 A_RANGE = (0.75, 1.02)
 B_MIN_DOLLARS = 1.30
 B_GRID = [1.25 + 0.025 * k for k in range(27)]    # $1.25 ... $1.90 (protocol said $1.275 ... $1.75; extended so every pulse and the +-$0.03 shifts fit, before any metric was seen)
+PROTOCOL_RANGE = (1.275, 1.75)                   # the protocol's grid; B_GRID is wider
 B_RMS, B_BIAS, B_SLOPE, B_MIN_N = math.log(1.5), math.log(1.3), 0.4, 20
 SHIFT = 0.03
 
@@ -103,7 +104,9 @@ def part_b(core: str) -> dict:
             pulses.append({"pulse_id": pid, "date": s["date"], "label": s["rho_dollars"], "omega": fit[0],
                            "inferred": d, "peak_mw": s["peak_power_mw"]})
     grid = [(d, math.log(peak_power(LIBS[core], d))) for d in B_GRID]
-    out = {"modelCurve": curve, "fitted": fitted, "used": len(pulses), "grid": grid, "pulses": pulses}
+    # the grid is wider than the protocol's $1.275 to $1.75 (see B_GRID): say how many scored pulses lie outside the protocol's range
+    outside = sorted(p["pulse_id"] for p in pulses if not PROTOCOL_RANGE[0] <= p["inferred"] <= PROTOCOL_RANGE[1])
+    out = {"modelCurve": curve, "fitted": fitted, "used": len(pulses), "outsideProtocolGrid": outside, "grid": grid, "pulses": pulses}
     if len(pulses) < B_MIN_N:
         out["B4"] = {"pass": False, "untestable": True}
         return out

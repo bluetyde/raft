@@ -90,3 +90,7 @@ per grid point.
 The calibrated model reproduces an independent critical state (core 242) within 309 pcm, the measured burnup reactivity coefficient
 within 1.3σ, and the transient rod worth within 3% in dollars. It is the base for the remaining M2 steps: the S-curve shape of the rod
 worth at B246, core 246 vs its measured table (on core 244), and the rod shapes for the per-core libraries.
+
+## Erratum (2026-10-18, code review)
+
+`validation/m2_rod_curves.py` divided both cores' model worths by core 242's β_eff (724 pcm). Core 246's own β_eff, from the delayed fractions its library carries, is 747 pcm. The pcm comparisons in this document are unaffected (the core 246 transient rod is 12 % below the table in pcm); in dollars the core 246 model at 900 steps is $3.48, not $3.59, and its ratio to the table 0.83, not 0.85 (0.62, 0.91 and 0.83 at 300, 600 and 900 steps). The script now uses each core's own β_eff and `validation/m2_rod_curves_report.json` carries both (`betaEffPcmByCore`); the stored report was recomputed from its own pcm values, because the measured tables are not in this checkout.

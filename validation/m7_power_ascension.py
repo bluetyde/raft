@@ -232,8 +232,10 @@ def run(libs: dict, meas: dict | None = None) -> dict:
             done = [c for c in cases if "A" in c]
             summary = {}
             for m in ("A", "B", "C"):
-                labels = [c[m]["label"] for c in done] or ["not computed"]
-                summary[m] = {"worst": worst(labels), "best": best(labels), "sensitive": worst(labels) != best(labels)}
+                # a case whose hA could not be calibrated is "not computed", and the worst over the sensitivities includes it: seven passing
+                # cases of eight do not make a passing summary
+                labels = [c[m]["label"] for c in done] + ["not computed"] * (len(cases) - len(done))
+                summary[m] = {"worst": worst(labels), "best": best(labels), "sensitive": worst(labels) != best(labels), "notComputed": len(cases) - len(done)}
             entry["variants"][variant] = {"summary": summary, "cases": cases}
         entry["D"] = metric_D(meas, lib)
         report["libraries"][name] = entry

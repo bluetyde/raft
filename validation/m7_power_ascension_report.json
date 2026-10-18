@@ -11,17 +11,20 @@
             "A": {
               "worst": "fails",
               "best": "fails",
-              "sensitive": false
+              "sensitive": false,
+              "notComputed": 0
             },
             "B": {
               "worst": "plausible",
               "best": "plausible",
-              "sensitive": false
+              "sensitive": false,
+              "notComputed": 0
             },
             "C": {
               "worst": "fails",
               "best": "fails",
-              "sensitive": false
+              "sensitive": false,
+              "notComputed": 0
             }
           },
           "cases": [
@@ -448,17 +451,20 @@
             "A": {
               "worst": "good",
               "best": "good",
-              "sensitive": false
+              "sensitive": false,
+              "notComputed": 0
             },
             "B": {
               "worst": "plausible",
               "best": "plausible",
-              "sensitive": false
+              "sensitive": false,
+              "notComputed": 0
             },
             "C": {
               "worst": "fails",
               "best": "fails",
-              "sensitive": false
+              "sensitive": false,
+              "notComputed": 0
             }
           },
           "cases": [
@@ -900,17 +906,20 @@
             "A": {
               "worst": "fails",
               "best": "fails",
-              "sensitive": false
+              "sensitive": false,
+              "notComputed": 0
             },
             "B": {
               "worst": "plausible",
               "best": "plausible",
-              "sensitive": false
+              "sensitive": false,
+              "notComputed": 0
             },
             "C": {
               "worst": "fails",
               "best": "fails",
-              "sensitive": false
+              "sensitive": false,
+              "notComputed": 0
             }
           },
           "cases": [
@@ -1337,17 +1346,20 @@
             "A": {
               "worst": "good",
               "best": "good",
-              "sensitive": false
+              "sensitive": false,
+              "notComputed": 0
             },
             "B": {
               "worst": "fails",
               "best": "plausible",
-              "sensitive": true
+              "sensitive": true,
+              "notComputed": 0
             },
             "C": {
               "worst": "fails",
               "best": "fails",
-              "sensitive": false
+              "sensitive": false,
+              "notComputed": 0
             }
           },
           "cases": [

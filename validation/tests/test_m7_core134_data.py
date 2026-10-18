@@ -115,6 +115,14 @@ class RealLibrary(unittest.TestCase):
         self.assertEqual(len(b["inCoreBins"]), 15)                                              # the bin below the core is left out
         self.assertGreater(len(b["cells"]), 600)
 
+    def test_zero_power_bins_are_in_the_volume_mean(self):
+        from physics_ref.library import Library
+        lib = Library(dm.LIBRARY)
+        with_zero, without = dm.bins_of(lib)["cells"], dm.bins_of(lib, zero_power=False)["cells"]
+        self.assertGreater(len(with_zero), len(without))                                         # the bins with volume but no fission
+        k_with, k_without = (dm.kappa(c, 2.0, 0.22, "full") for c in (with_zero, without))
+        self.assertGreater(k_with, k_without)                                                    # more of the volume sits at the mean rise's cold end
+
 
 if __name__ == "__main__":
     unittest.main()
