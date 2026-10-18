@@ -195,6 +195,8 @@ class _Checker:
         for rid in m["shapes"]["rodDeltas"]:
             if rid not in rods:
                 self.add("E_ROD_UNKNOWN", f"$.shapes.rodDeltas.{rid}", "unknown rod")
+        for rid in sorted(rods - set(m["shapes"]["rodDeltas"])):
+            self.add("E_ROD_UNKNOWN", "$.shapes.rodDeltas", f"no shape delta for rod {rid!r} (a rod with no shape response would leave the power shape unchanged when it moves)")
         for i, jc in enumerate(m["domain"]["jointChecked"]):
             for rid in jc["rods"]:
                 if rid not in rods:
@@ -214,6 +216,8 @@ class _Checker:
         if not _increasing(t[axis]):
             self.add("E_TABLE_NOT_MONOTONIC", f"{path}.{axis}", "axis must be strictly increasing")
             return
+        if "unc" in t and any(not (u >= 0) for u in t["unc"]):
+            self.add("E_SCHEMA", f"{path}.unc", "uncertainties must be finite and not negative")
         if ref is not None:
             v = _interp(t[axis], t[value], ref)
             if v is None:
@@ -234,6 +238,9 @@ class _Checker:
                 self.add("E_TABLE_NOT_MONOTONIC", f"{path}.scram.t", "must start at 0 and strictly increase")
             elif sc["x"][-1] != 0 or any(not 0 <= x <= 1 for x in sc["x"]):
                 self.add("E_SCRAM_PROFILE", f"{path}.scram.x", "positions must be in [0, 1] and end at 0")
+            elif sc["x"][0] != 1:
+                # a rod at its upper limit enters the profile at its first point: anything below 1 would move the rod instantly when the scram starts
+                self.add("E_SCRAM_PROFILE", f"{path}.scram.x", "the profile must start at 1 (the upper limit)")
             elif any(b > a for a, b in zip(sc["x"], sc["x"][1:])):
                 # the engine inverts the profile (Rod.scram_tau), which needs it non-increasing
                 self.add("E_SCRAM_PROFILE", f"{path}.scram.x", "positions must not increase during a scram")
@@ -244,6 +251,19 @@ class _Checker:
         self._table(r["fuelTemp"], "T", "rho", "$.reactivity.fuelTemp", ref["Tfuel"]["value"])
         self._table(r["coolantTemp"], "T", "rho", "$.reactivity.coolantTemp", ref["Tcoolant"]["value"])
         self._table(r["xenon"], "N", "rho", "$.reactivity.xenon", ref["xenon"]["value"])
+        dom = m["domain"]
+        for name, axis_col, table in (("Tfuel", "T", r["fuelTemp"]), ("Tcoolant", "T", r["coolantTemp"]), ("xenon", "N", r["xenon"])):
+            lo, hi = dom[name]
+            if lo > hi:
+                self.add("E_SCHEMA", f"$.domain.{name}", "must be [lo, hi] with lo <= hi")
+            elif lo < table[axis_col][0] or hi > table[axis_col][-1]:
+                self.add("E_SCHEMA", f"$.domain.{name}", f"must lie within the axis of reactivity table for it (the domain is where the table has data)")
+        for rod in r["rods"]:
+            lo, hi = dom["rods"][rod["id"]]
+            if lo > hi:
+                self.add("E_SCHEMA", f"$.domain.rods.{rod['id']}", "must be [lo, hi] with lo <= hi")
+            elif lo < rod["worth"]["x"][0] or hi > rod["worth"]["x"][-1]:
+                self.add("E_SCHEMA", f"$.domain.rods.{rod['id']}", "must lie within the position axis of the rod's worth table")
         if self.has_rod_interaction:
             self._table(r["rodInteraction"], "S", "rho", "$.reactivity.rodInteraction", 0.0)       # zero where every rod is at its reference position
         if self.has_rod_shadow:

@@ -303,6 +303,11 @@ class Checker {
         this.add("E_ROD_UNKNOWN", `$.shapes.rodDeltas.${rid}`, "unknown rod");
       }
     }
+    for (const rid of Array.from(rods).sort()) {
+      if (!Object.hasOwn(m.shapes.rodDeltas, rid)) {
+        this.add("E_ROD_UNKNOWN", "$.shapes.rodDeltas", `no shape delta for rod '${rid}' (a rod with no shape response would leave the power shape unchanged when it moves)`);
+      }
+    }
     for (let i = 0; i < m.domain.jointChecked.length; i++) {
       const jc = m.domain.jointChecked[i];
       for (const rid of Object.keys(jc.rods)) {
@@ -338,6 +343,9 @@ class Checker {
       this.add("E_TABLE_NOT_MONOTONIC", `${path}.${axis}`, "axis must be strictly increasing");
       return;
     }
+    if (Object.hasOwn(t, "unc") && t["unc"]!.some((u) => !(u >= 0))) {
+      this.add("E_SCHEMA", `${path}.unc`, "uncertainties must be finite and not negative");
+    }
     if (ref !== null) {
       const v = interp(axisCol, t[value]!, ref);
       if (v === null) {
@@ -370,6 +378,9 @@ class Checker {
         sc.x.some((x: number) => !(0 <= x && x <= 1))
       ) {
         this.add("E_SCRAM_PROFILE", `${path}.scram.x`, "positions must be in [0, 1] and end at 0");
+      } else if (sc.x[0] !== 1) {
+        // a rod at its upper limit enters the profile at its first point: anything below 1 would move the rod instantly when the scram starts
+        this.add("E_SCRAM_PROFILE", `${path}.scram.x`, "the profile must start at 1 (the upper limit)");
       } else if (sc.x.some((b: number, i: number) => i > 0 && b > sc.x[i - 1])) {
         // the engine inverts the profile (Rod.scram_tau), which needs it non-increasing
         this.add("E_SCRAM_PROFILE", `${path}.scram.x`, "positions must not increase during a scram");
@@ -384,6 +395,29 @@ class Checker {
     this.table(r.fuelTemp, "T", "rho", "$.reactivity.fuelTemp", ref.Tfuel.value);
     this.table(r.coolantTemp, "T", "rho", "$.reactivity.coolantTemp", ref.Tcoolant.value);
     this.table(r.xenon, "N", "rho", "$.reactivity.xenon", ref.xenon.value);
+    const dom = m.domain;
+    for (const [name, axisCol, table] of [
+      ["Tfuel", "T", r.fuelTemp],
+      ["Tcoolant", "T", r.coolantTemp],
+      ["xenon", "N", r.xenon],
+    ] as [string, string, any][]) {
+      const [lo, hi] = dom[name] as number[];
+      const axis = table[axisCol] as number[];
+      if (lo! > hi!) {
+        this.add("E_SCHEMA", `$.domain.${name}`, "must be [lo, hi] with lo <= hi");
+      } else if (lo! < axis[0]! || hi! > axis[axis.length - 1]!) {
+        this.add("E_SCHEMA", `$.domain.${name}`, "must lie within the axis of reactivity table for it (the domain is where the table has data)");
+      }
+    }
+    for (const rod of r.rods) {
+      const [lo, hi] = dom.rods[rod.id] as number[];
+      const xs = rod.worth.x as number[];
+      if (lo! > hi!) {
+        this.add("E_SCHEMA", `$.domain.rods.${rod.id}`, "must be [lo, hi] with lo <= hi");
+      } else if (lo! < xs[0]! || hi! > xs[xs.length - 1]!) {
+        this.add("E_SCHEMA", `$.domain.rods.${rod.id}`, "must lie within the position axis of the rod's worth table");
+      }
+    }
     if (this.hasRodInteraction) {
       this.table(r.rodInteraction, "S", "rho", "$.reactivity.rodInteraction", 0.0); // zero where every rod is at its reference position
     }

@@ -533,6 +533,28 @@ def invalid_cases() -> list[tuple[str, list[str], Callable]]:
         add_rod_interaction(m)
         add_rod_shadowing(m)                                     # the two replace each other
 
+    def scram_not_from_top(m, b):
+        m["reactivity"]["rods"][0]["scram"]["x"][0] = 0.8                # the rod would jump from 1.0 to 0.8 at the start of a scram
+
+    def domain_tfuel_beyond_table(m, b):
+        m["domain"]["Tfuel"][1] = m["reactivity"]["fuelTemp"]["T"][-1] + 100.0
+
+    def domain_interval_reversed(m, b):
+        lo, hi = m["domain"]["xenon"]
+        m["domain"]["xenon"] = [hi, lo]
+
+    def domain_rod_beyond_table(m, b):
+        rid = m["reactivity"]["rods"][0]["id"]
+        m["domain"]["rods"][rid] = [-0.1, 1.0]
+
+    def rod_delta_missing(m, b):
+        del m["shapes"]["rodDeltas"][m["reactivity"]["rods"][0]["id"]]
+
+    def negative_uncertainty(m, b):
+        t = m["reactivity"]["fuelTemp"]
+        t["unc"] = [0.0] * len(t["T"])
+        t["unc"][1] = -1.0e-4
+
     def jc_boron_without_capability(m, b):
         m["domain"]["jointChecked"] = [{"rods": {"safety": 0.5, "regulating": 0.5, "transient": 0.0}, "boron": [990.0, 1010.0], "maxShapeErr": 0.0, "rhoErr": 0.0}]
 
@@ -571,6 +593,12 @@ def invalid_cases() -> list[tuple[str, list[str], Callable]]:
         ("rod-shadowing-axis-not-increasing", ["E_TABLE_NOT_MONOTONIC"], rs_axis_not_increasing),
         ("rod-shadowing-without-zero", ["E_REF_NONZERO"], rs_without_zero),
         ("rod-shadowing-and-interaction", ["E_CAPABILITY_UNSUPPORTED"], rs_and_ri),
+        ("scram-profile-not-from-the-top", ["E_SCRAM_PROFILE"], scram_not_from_top),
+        ("domain-tfuel-beyond-table", ["E_SCHEMA"], domain_tfuel_beyond_table),
+        ("domain-interval-reversed", ["E_SCHEMA"], domain_interval_reversed),
+        ("domain-rod-beyond-table", ["E_SCHEMA"], domain_rod_beyond_table),
+        ("rod-delta-missing", ["E_ROD_UNKNOWN"], rod_delta_missing),
+        ("negative-uncertainty", ["E_SCHEMA"], negative_uncertainty),
         ("joint-checked-boron-needs-capability", ["E_CAPABILITY_UNSUPPORTED"], jc_boron_without_capability),
         ("joint-checked-boron-window-reversed", ["E_SCHEMA"], jc_boron_window_reversed),
         ("schema-missing-field", ["E_SCHEMA"], delp(["kinetics", "genTime"])),

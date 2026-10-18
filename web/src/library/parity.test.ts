@@ -47,7 +47,7 @@ describe("parity oracle", () => {
       .filter((d) => d.isDirectory())
       .map((d) => join(invalidDir, d.name))
       .sort();
-    expect(invalidCases.length).toBe(55);
+    expect(invalidCases.length).toBe(61);
 
     const origText = readFileSync(join(syntheticCore, "manifest.json"), "utf-8");
 
