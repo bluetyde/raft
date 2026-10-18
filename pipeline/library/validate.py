@@ -199,6 +199,11 @@ class _Checker:
             for rid in jc["rods"]:
                 if rid not in rods:
                     self.add("E_ROD_UNKNOWN", f"$.domain.jointChecked[{i}]", f"unknown rod {rid!r}")
+            if "boron" in jc:
+                if not self.has_boron:
+                    self.add("E_CAPABILITY_UNSUPPORTED", f"$.domain.jointChecked[{i}].boron", f"a boron window needs the capability {BORON_CAPABILITY}")
+                elif jc["boron"][0] > jc["boron"][1]:
+                    self.add("E_SCHEMA", f"$.domain.jointChecked[{i}].boron", "must be [lo, hi] with lo <= hi")
 
     def _table(self, t: dict, axis: str, value: str, path: str, ref: float | None) -> None:
         cols = [axis, value] + (["unc"] if "unc" in t else [])

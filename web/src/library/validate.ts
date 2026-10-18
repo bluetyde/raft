@@ -310,6 +310,13 @@ class Checker {
           this.add("E_ROD_UNKNOWN", `$.domain.jointChecked[${i}]`, `unknown rod '${rid}'`);
         }
       }
+      if (Object.hasOwn(jc, "boron")) {
+        if (!this.hasBoron) {
+          this.add("E_CAPABILITY_UNSUPPORTED", `$.domain.jointChecked[${i}].boron`, `a boron window needs the capability ${BORON_CAPABILITY}`);
+        } else if ((jc.boron as number[])[0]! > (jc.boron as number[])[1]!) {
+          this.add("E_SCHEMA", `$.domain.jointChecked[${i}].boron`, "must be [lo, hi] with lo <= hi");
+        }
+      }
     }
   }
 

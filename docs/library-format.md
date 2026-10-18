@@ -208,7 +208,7 @@ Every shape element must have at least one primitive (`E_GEOMETRY_ID`).
 ## 13. Domain (`domain`)
 
 - `rods`: `{ <rodId>: [lo, hi] }`, `Tfuel`, `Tcoolant`, `xenon`: `[lo, hi]`. This is where the tables have data.
-- `jointChecked`: `[{ rods: {<id>: x}, Tfuel?, maxShapeErr, rhoErr }]`, the joint states where superposition was actually tested against full transport runs. It may be empty.
+- `jointChecked`: `[{ rods: {<id>: x}, Tfuel?, boron?, maxShapeErr, rhoErr }]`, the joint states where superposition was actually tested against full transport runs. It may be empty. `boron`, `[lo, hi]` in ppm, is optional and needs the boron capability (`E_CAPABILITY_UNSUPPORTED` otherwise, `E_SCHEMA` if lo > hi): the entry then covers only states whose boron concentration is inside the window; without it the entry covers any boron. A library whose checks were made at one concentration should say so this way, because the boron-by-rod interaction is not in the tables.
 
 Runtime validity status: `outOfDomain` if any axis leaves `domain`, `unvalidated` if the state is inside the domain but no joint check covers the combination (or `status` isn't `validated-for-domain`), otherwise `supported`.
 Reason codes (`R_*`) are defined with the engine, not in this format.

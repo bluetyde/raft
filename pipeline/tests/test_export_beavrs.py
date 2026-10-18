@@ -550,11 +550,19 @@ class PlantedShadowing(unittest.TestCase):
         _, _, report0 = xb.build(self.rows, CORE, created="2026-10-15", path_rows=self.path, model="shadowing", shadow_rows=self.held, shadow_knots=KNOTS)
         self.assertFalse(any(c in report0["heldOutCases"] for c in near_cases()))       # no near case delivered: the optional file is simply not part of this export
 
-    def test_the_notes_say_that_checks_at_another_boron_hold_there_only(self):
-        self.assertIn("860 ppm hold at that boron only", self.m["provenance"]["notes"])
-        no_lesson = [r for r in make_rows(plan=shadow_cases(), shadow=planted_g) if r["boron"] == 975.0]
-        m, _, _ = xb.build(self.rows, CORE, created="2026-10-15", path_rows=self.path, model="shadowing", shadow_rows=no_lesson, shadow_knots=KNOTS)
-        self.assertNotIn("hold at that boron only", m["provenance"]["notes"])
+    def test_every_checked_state_carries_the_boron_window_of_its_run(self):
+        half = xb.JOINT_BORON_HALF_WIDTH
+        plan = shadow_cases()
+        listed = self.m["domain"]["jointChecked"]
+        self.assertEqual(len(listed), 13)
+        want = sorted((tuple(sorted((b.lower(), round(x_frac(s), 9)) for b, s in c["steps"].items())), c["boron"] - half, c["boron"] + half) for c in plan.values())
+        got = sorted((tuple(sorted((k, round(v, 9)) for k, v in j["rods"].items())), j["boron"][0], j["boron"][1]) for j in listed)
+        self.assertEqual(got, want)
+        self.assertEqual({tuple(j["boron"]) for j in listed}, {(850.0, 870.0), (965.0, 985.0)})
+        self.assertIn("covers the boron it was run at plus or minus 10 ppm only", self.m["provenance"]["notes"])
+        with tempfile.TemporaryDirectory() as d:
+            xb.write_library(Path(d) / "lib", self.m, self.blobs)
+            self.assertEqual(validate_library(Path(d) / "lib"), [])               # the boron window is valid format
 
     def test_without_held_out_cases_the_notes_say_so_and_nothing_is_listed(self):
         m, _, _ = xb.build(self.rows, CORE, created="2026-10-15", path_rows=self.path, model="shadowing", shadow_knots=KNOTS)

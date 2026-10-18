@@ -13,8 +13,8 @@
     "transportCode": "OpenMC 0.15.3",
     "nuclearData": "ENDF/B-VIII.0",
     "model": "BEAVRS 3D full core, hot zero power (mit-crpg/BEAVRS, MIT licence), 45 cases of pipeline/openmc/beavrs_cases.py",
-    "created": "2026-10-15",
-    "notes": "Zero-power physics only. Reactivity tables, kinetics, shapes and boron worth come from the transport sweep; the plant (rod speed, scram, thermal masses, heat transfer, instruments, trips) is assumed and labelled so. Isothermal temperature coefficient: the transport model is 1.6 to 2.0 pcm/F too negative against the benchmark measurement (docs/validation/m8-beavrs-hzp-results.md), so temperature feedback is NOT validated. Xenon worth is zero (not computed); no decay heat; no pressure. The shape of the power does not depend on coolant temperature or boron. Several banks in: each bank's worth is scaled by 1 + g(the summed single-bank reactivity of the other banks) (reactivity.rodShadowing, capability rod-interaction-v2, fitted to the three combined sweep cases and the nine path cases of the fourteenth protocol, and to nothing else); it sees only that sum, not which banks or where in the core, so it is valid only along the states it was checked on (docs/validation/m8-rod-shadowing-protocol.md). Checked against 19 held-out cases: 13 within the limit (listed in domain.jointChecked). The checks at 860, 900 ppm hold at that boron only (domain.jointChecked lists rod positions, not boron; the boron x bank interaction is not in the model).",
+    "created": "2026-10-18",
+    "notes": "Zero-power physics only. Reactivity tables, kinetics, shapes and boron worth come from the transport sweep; the plant (rod speed, scram, thermal masses, heat transfer, instruments, trips) is assumed and labelled so. Isothermal temperature coefficient: the transport model is 1.6 to 2.0 pcm/F too negative against the benchmark measurement (docs/validation/m8-beavrs-hzp-results.md), so temperature feedback is NOT validated. Xenon worth is zero (not computed); no decay heat; no pressure. The shape of the power does not depend on coolant temperature or boron. Several banks in: each bank's worth is scaled by 1 + g(the summed single-bank reactivity of the other banks) (reactivity.rodShadowing, capability rod-interaction-v2, fitted to the three combined sweep cases and the nine path cases of the fourteenth protocol, and to nothing else); it sees only that sum, not which banks or where in the core, so it is valid only along the states it was checked on (docs/validation/m8-rod-shadowing-protocol.md). Checked against 19 held-out cases: 13 within the limit (listed in domain.jointChecked). Each listed state covers the boron it was run at plus or minus 10 ppm only (a boron window in domain.jointChecked); the boron x bank interaction is not in the model.",
     "sources": [
       {
         "id": "beavrs",
@@ -4979,6 +4979,10 @@
           "sd": 0.0,
           "se": 0.0
         },
+        "boron": [
+          850.0,
+          870.0
+        ],
         "maxShapeErr": 2.5410421176311666,
         "rhoErr": 0.0007648338727135676
       },
@@ -4994,6 +4998,10 @@
           "sd": 0.0,
           "se": 0.0
         },
+        "boron": [
+          850.0,
+          870.0
+        ],
         "maxShapeErr": 1.9239268418977082,
         "rhoErr": 0.0009150083973102213
       },
@@ -5009,6 +5017,10 @@
           "sd": 0.0,
           "se": 0.0
         },
+        "boron": [
+          850.0,
+          870.0
+        ],
         "maxShapeErr": 1.9373458229398974,
         "rhoErr": 0.0005184822295771913
       },
@@ -5024,6 +5036,10 @@
           "sd": 0.0,
           "se": 0.0
         },
+        "boron": [
+          850.0,
+          870.0
+        ],
         "maxShapeErr": 1.9101894048102805,
         "rhoErr": 9.39846207623947e-05
       },
@@ -5039,6 +5055,10 @@
           "sd": 1.0,
           "se": 1.0
         },
+        "boron": [
+          850.0,
+          870.0
+        ],
         "maxShapeErr": 0.39343172824104855,
         "rhoErr": 0.0004934391382426413
       },
@@ -5054,6 +5074,10 @@
           "sd": 0.0,
           "se": 0.0
         },
+        "boron": [
+          965.0,
+          985.0
+        ],
         "maxShapeErr": 1.709220707288524,
         "rhoErr": 0.0003241905074224394
       },
@@ -5069,6 +5093,10 @@
           "sd": 0.0,
           "se": 0.0
         },
+        "boron": [
+          965.0,
+          985.0
+        ],
         "maxShapeErr": 2.4173801292117676,
         "rhoErr": 0.0007805875806864496
       },
@@ -5084,6 +5112,10 @@
           "sd": 0.0,
           "se": 0.0
         },
+        "boron": [
+          965.0,
+          985.0
+        ],
         "maxShapeErr": 2.5529619905539773,
         "rhoErr": 0.0006036685742958486
       },
@@ -5099,6 +5131,10 @@
           "sd": 1.0,
           "se": 1.0
         },
+        "boron": [
+          890.0,
+          910.0
+        ],
         "maxShapeErr": 0.744207661557281,
         "rhoErr": 0.0004649920452739955
       },
@@ -5114,6 +5150,10 @@
           "sd": 1.0,
           "se": 1.0
         },
+        "boron": [
+          890.0,
+          910.0
+        ],
         "maxShapeErr": 0.7015217573460751,
         "rhoErr": 0.0004645970226806609
       },
@@ -5129,6 +5169,10 @@
           "sd": 1.0,
           "se": 1.0
         },
+        "boron": [
+          890.0,
+          910.0
+        ],
         "maxShapeErr": 0.6444036306398253,
         "rhoErr": 0.00018514096748858217
       },
@@ -5144,6 +5188,10 @@
           "sd": 1.0,
           "se": 1.0
         },
+        "boron": [
+          890.0,
+          910.0
+        ],
         "maxShapeErr": 0.5009491300820412,
         "rhoErr": 0.0003324375804125905
       },
@@ -5159,6 +5207,10 @@
           "sd": 1.0,
           "se": 1.0
         },
+        "boron": [
+          890.0,
+          910.0
+        ],
         "maxShapeErr": 0.5102106739283176,
         "rhoErr": 2.7054698865059887e-06
       }

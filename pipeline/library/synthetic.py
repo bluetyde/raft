@@ -533,6 +533,13 @@ def invalid_cases() -> list[tuple[str, list[str], Callable]]:
         add_rod_interaction(m)
         add_rod_shadowing(m)                                     # the two replace each other
 
+    def jc_boron_without_capability(m, b):
+        m["domain"]["jointChecked"] = [{"rods": {"safety": 0.5, "regulating": 0.5, "transient": 0.0}, "boron": [990.0, 1010.0], "maxShapeErr": 0.0, "rhoErr": 0.0}]
+
+    def jc_boron_window_reversed(m, b):
+        add_boron(m)
+        m["domain"]["jointChecked"] = [{"rods": {"safety": 0.5, "regulating": 0.5, "transient": 0.0}, "boron": [1010.0, 990.0], "maxShapeErr": 0.0, "rhoErr": 0.0}]
+
     def hA_exponent_on_v1(m, b):
         m["thermal"]["hA"]["exponent"] = 0.25           # the capability stays v1
 
@@ -564,6 +571,8 @@ def invalid_cases() -> list[tuple[str, list[str], Callable]]:
         ("rod-shadowing-axis-not-increasing", ["E_TABLE_NOT_MONOTONIC"], rs_axis_not_increasing),
         ("rod-shadowing-without-zero", ["E_REF_NONZERO"], rs_without_zero),
         ("rod-shadowing-and-interaction", ["E_CAPABILITY_UNSUPPORTED"], rs_and_ri),
+        ("joint-checked-boron-needs-capability", ["E_CAPABILITY_UNSUPPORTED"], jc_boron_without_capability),
+        ("joint-checked-boron-window-reversed", ["E_SCHEMA"], jc_boron_window_reversed),
         ("schema-missing-field", ["E_SCHEMA"], delp(["kinetics", "genTime"])),
         ("schema-unknown-field", ["E_SCHEMA"], setp(["reactivity", "extra"], 1)),
         ("schema-bad-operator", ["E_SCHEMA"], setp(["plant", "trips", 0, "predicate"], {"op": "approx", "value": 1.0})),

@@ -7,7 +7,7 @@
 import { Library, Table } from "./library";
 import { MASK64, SplitMix64, luFactor, luSolve, type LUFactored } from "./numerics";
 
-export const ENGINE_VERSION = "0.6.0";
+export const ENGINE_VERSION = "0.7.0";
 export const CAPABILITY = "point-kinetics/lumped-thermal-v1";
 export const CAPABILITY_V2 = "point-kinetics/lumped-thermal-v2"; // adds thermal.hA.exponent
 export const CAPABILITY_BORON = "point-kinetics/boron-v1"; // adds soluble boron: a concentration the operator changes at a limited rate (ppm), and its reactivity table
@@ -1379,11 +1379,14 @@ export class Engine {
       }
     }
     if (Object.keys(moved).length >= 2 || (corrected && Object.keys(moved).length >= 1)) {
-      const covered = dom.jointChecked.some((jc: any) =>
-        lib.rods.every((r) => {
-          const refPos = Object.hasOwn(jc.rods, r.id) ? jc.rods[r.id] : lib.refRods[r.id]!;
-          return Math.abs(refPos - this.rodPosition(r.id, this.t)) <= 0.05;
-        }),
+      const boronNow = lib.hasBoron ? this.boronValue(this.t) : null;
+      const covered = dom.jointChecked.some(
+        (jc: any) =>
+          lib.rods.every((r) => {
+            const refPos = Object.hasOwn(jc.rods, r.id) ? jc.rods[r.id] : lib.refRods[r.id]!;
+            return Math.abs(refPos - this.rodPosition(r.id, this.t)) <= 0.05;
+          }) &&
+          (!Object.hasOwn(jc, "boron") || boronNow === null || (jc.boron[0] <= boronNow && boronNow <= jc.boron[1])), // a window limits the check to that boron
       );
       if (!covered) {
         reasons.push("R_JOINT_UNCHECKED");

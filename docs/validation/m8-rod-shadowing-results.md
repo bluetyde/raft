@@ -27,7 +27,7 @@ Protocol: `m8-rod-shadowing-protocol.md` (fifteenth protocol; predictions writte
 - **Against the summed model** the table is a large improvement everywhere a rod is in (the sum is off by +266 to +3384 pcm). The one case where "the table does not improve on the sum" is flagged (L-ARO-860) has no rod moved, so the table adds nothing and the two differences are equal; that is not a defect.
 - **Order claim (decision 3):** 3 of 4 other-order cases are good or plausible, so the library may state the correction for other insertion orders. It fails only at O-D-76 (D part-way with six banks in, −284).
 - **SA and SB (decision 4):** X-9 (all nine in) is good; X-5 and X-6 (SA, then SA and SB, added to D to A) fail by +562 and +700 pcm, in the direction of the library being less negative. The model saw no case with SA or SB in.
-- **Library listing:** `domain.jointChecked` now lists the good cases (eight). The checks at 860 ppm hold at that boron only (the notes say so; the entry has no boron field).
+- **Library listing:** `domain.jointChecked` now lists the good cases (eight). The checks at 860 ppm hold at that boron only: the entries carry a boron window of ±10 ppm (added 2026-10-18; at first the entry had no boron field and the notes alone said so).
 
 ## Predictions
 

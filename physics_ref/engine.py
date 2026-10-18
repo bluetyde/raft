@@ -21,7 +21,7 @@ import math
 from .library import Library
 from .numerics import SplitMix64, lu_factor, lu_solve
 
-ENGINE_VERSION = "0.6.0"
+ENGINE_VERSION = "0.7.0"
 CAPABILITY = "point-kinetics/lumped-thermal-v1"
 CAPABILITY_V2 = "point-kinetics/lumped-thermal-v2"      # adds thermal.hA.exponent: hA depends on the fuel-to-coolant temperature difference
 CAPABILITY_ROD_INTERACTION = "point-kinetics/rod-interaction-v1"   # adds reactivity.rodInteraction: a correction on the summed single-rod reactivities (rods shadow or boost each other)
@@ -855,8 +855,11 @@ class Engine:
         moved = {r.id: self.rod_position(r.id, self.t) for r in lib.rods
                  if abs(self.rod_position(r.id, self.t) - lib.ref_rods[r.id]) > 1e-9}
         if len(moved) >= 2 or (corrected and len(moved) >= 1):
+            boron_now = self.boron_value(self.t) if lib.has_boron else None
             covered = any(all(abs(jc["rods"].get(rid, lib.ref_rods[rid]) - self.rod_position(rid, self.t)) <= 0.05
-                              for rid in lib.rod_by_id) for jc in dom["jointChecked"])
+                              for rid in lib.rod_by_id)
+                          and ("boron" not in jc or boron_now is None or jc["boron"][0] <= boron_now <= jc["boron"][1])      # a window limits the check to that boron
+                          for jc in dom["jointChecked"])
             if not covered:
                 reasons.append("R_JOINT_UNCHECKED")
         if self.halted:

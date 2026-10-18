@@ -49,6 +49,7 @@ RHO_ERR_LIMIT = 1.0e-3        # 100 pcm, about four times a case's statistical e
 SHAPE_ERR_LIMIT = 1.0         # in mean bins
 ROD_INTERACTION_CAPABILITY = "point-kinetics/rod-interaction-v1"
 ROD_SHADOW_CAPABILITY = "point-kinetics/rod-interaction-v2"
+JOINT_BORON_HALF_WIDTH = 10.0                          # ppm: a checked state covers its boron plus or minus this (about 85 pcm of boron worth)
 HELD_OUT_SEED = 1                                      # the seed of the path, shadow and near runs (the sweep's too)
 SHADOW_KNOTS = (-0.01, -0.02, -0.03, -0.0385)          # the shadowing table's free knots (fractions): the protocol of the fifteenth fixes them; -3850 pcm is the deepest R among the fit cases
 R_ABOVE = 1.0e-3                                       # +100 pcm: nothing above the reference is claimed (g held at 0 there)
@@ -307,7 +308,8 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
                             "differenceNoTable": predict(r, with_table=False)[0] - rho_c, "sumRods": sum_rods(r["steps"]),
                             "maxShapeErr": shape_err(shape_p, shape_of_row(r)), "negativeBins": sum(1 for v in shape_p if v < -1e-6)}
         if label_ == "good":
-            joint.append({"rods": {rid(b): x_of(r["steps"][b]) for b in BANKS}, "maxShapeErr": path_report[cid]["maxShapeErr"], "rhoErr": abs(diff)})
+            joint.append({"rods": {rid(b): x_of(r["steps"][b]) for b in BANKS}, "boron": [float(r["boron"]) - JOINT_BORON_HALF_WIDTH, float(r["boron"]) + JOINT_BORON_HALF_WIDTH],
+                          "maxShapeErr": path_report[cid]["maxShapeErr"], "rhoErr": abs(diff)})
 
     held_given = (path_rows is not None) if model == "interaction" else (shadow_rows is not None)
     if not held_given:
@@ -321,9 +323,8 @@ def build(rows: list[dict], core: dict, created: str | None = None, path_rows: l
                     path_report.setdefault(cid, {"computed": False, "reason": "missing: not in the held-out file"})
         n_good = sum(1 for e in path_report.values() if e.get("label") == "good")
         n_comp = sum(1 for e in path_report.values() if e.get("computed"))
-        at = sorted({r["boron"] for r in by_path.values() if r["boron"] != b_ref})
-        boron_note = (f" The checks at {', '.join(f'{b:g}' for b in at)} ppm hold at that boron only (domain.jointChecked lists rod positions, not boron; "
-                      "the boron x bank interaction is not in the model).") if at else ""
+        boron_note = (f" Each listed state covers the boron it was run at plus or minus {JOINT_BORON_HALF_WIDTH:g} ppm only (a boron window in domain.jointChecked); "
+                      "the boron x bank interaction is not in the model.") if n_good else ""
         checked_note = f"Checked against {n_comp} held-out cases: {n_good} within the limit (listed in domain.jointChecked)." + boron_note
     if model == "shadowing":
         rod_note = ("Several banks in: each bank's worth is scaled by 1 + g(the summed single-bank reactivity of the other banks) (reactivity.rodShadowing, capability rod-interaction-v2, "

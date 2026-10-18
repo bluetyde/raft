@@ -72,7 +72,7 @@ Build the headless runner: `cd web && npm run build:headless`.
 
 ## Versions
 
-RAFT 0.1.0 (the first public release; see [CHANGELOG.md](CHANGELOG.md)). The reference engine is 0.6.0 (`physics_ref` and `web/src/sim`, kept equal by the golden vectors), the library format is 0.1.0 (`docs/library-format.md`; a library says which capabilities it needs), and each library names itself in its manifest (id, creation date, provenance); the loader computes a content digest of it.
+RAFT 0.1.0 (the first public release; see [CHANGELOG.md](CHANGELOG.md)). The reference engine is 0.7.0 (`physics_ref` and `web/src/sim`, kept equal by the golden vectors), the library format is 0.1.0 (`docs/library-format.md`; a library says which capabilities it needs), and each library names itself in its manifest (id, creation date, provenance); the loader computes a content digest of it.
 
 ## How this was made
 
