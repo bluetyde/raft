@@ -14,6 +14,8 @@ export interface Branch {
   file: SessionFile;
   marks: Mark[];
   summary: BranchSummary;
+  /** The scenario and instructor script this timeline ran under. A switch back is only allowed under the same ones: the goals, events and script cursor are not stored per branch. */
+  context: string;
 }
 
 const FAULT_COMMANDS = new Set(["fault.instrument", "fault.reactivity", "pump.set"]);

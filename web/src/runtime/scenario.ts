@@ -433,6 +433,7 @@ export class GoalTracker {
       }
       if (evalPredicate(g.check, get)) {
         st.holdSince ??= t;
+        // no `for`: met at the first evaluated step where the check is true (so a one-step pulse peak counts); a check already true at load is met at step 0
         if (t - st.holdSince >= (g.for ?? 0) - eps) {
           st.status = "met";
           st.t = t;

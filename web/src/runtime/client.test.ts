@@ -51,6 +51,19 @@ describe("RuntimeClient", () => {
     expect((err as LoadError).issues.map((i) => i.code)).toContain("E_JSON");
   });
 
+  it("a load is completed by its own reply, not by another window's loaded broadcast", async () => {
+    const p = pair();
+    let done = false;
+    const pending = p.load().then((i) => ((done = true), i));
+    // another window's load answered first: same kind, other request id
+    p.worker.onmessage?.({ data: { kind: "loaded", protocol: 1, reqId: "someone-else", libraryId: "other", digest: "x", pins: {}, outerDt: 0.5 } } as MessageEvent);
+    await p.settle();
+    const info = await pending;
+    expect(info.libraryId).toBe("synthetic-core");
+    expect(info.outerDt).toBe(0.01);
+    expect(done).toBe(true);
+  });
+
   it("a command resolves with the engine's result after the step that applied it", async () => {
     const p = pair();
     await p.load();

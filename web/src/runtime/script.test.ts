@@ -155,3 +155,48 @@ describe("instructor script: AI operator goal", () => {
     expect(validateScript(file([{ atSeconds: 0, action: "goal.set", powerW: -1 }]), lib).map((i) => i.code)).toEqual(["E_SCRIPT_PARAM"]);
   });
 });
+
+describe("instructor script: goals and the clock (code review)", () => {
+  it("rejects a script whose goal is already in the past", async () => {
+    const rig = await agentRig(() => "hold");
+    await send(rig.rt, { kind: "step", n: 300 });   // 3 s
+    await send(rig.rt, { kind: "script.load", script: file([{ atSeconds: 1, action: "goal.set", powerW: 5 }]) });
+    expect(rig.host.last("error")!.code).toBe("E_SCRIPT_PAST");
+    expect((rig.rt as any).script).toBeNull();
+  });
+
+  it("a panel goal set at the same step as a script goal wins; a later script goal still replaces an older panel goal", async () => {
+    const rig = await agentRig(() => "hold");
+    await send(rig.rt, { kind: "script.load", script: file([{ atSeconds: 0.5, action: "goal.set", powerW: 5 }]) });
+    await send(rig.rt, { kind: "step", n: 50 });                       // the script goal is due at this step
+    expect((rig.rt as any).effectiveGoal().source).toBe("script");
+    await send(rig.rt, { kind: "supervisor.goal", powerW: 20 });       // the instructor sets one at the same step
+    expect((rig.rt as any).effectiveGoal()).toMatchObject({ source: "panel", powerW: 20 });
+    await send(rig.rt, { kind: "step", n: 5 });
+    expect((rig.rt as any).effectiveGoal()).toMatchObject({ source: "panel", powerW: 20 });
+  });
+
+  it("importing a session drops a loaded script and tells the windows", async () => {
+    const rig = await agentRig(() => "hold");
+    await send(rig.rt, { kind: "script.load", script: file([{ atSeconds: 5, action: "goal.set", powerW: 5 }]) });
+    await send(rig.rt, { kind: "session.export" });
+    const exported = rig.host.last("session")!.file;
+    rig.host.drain();
+    await send(rig.rt, { kind: "session.import", file: exported });
+    expect(rig.host.of("script").at(-1)!.script).toBeNull();
+  });
+});
+
+describe("branches and the scripts they ran under (code review)", () => {
+  it("a branch cannot be switched to after a script was loaded on the timeline that replaced it", async () => {
+    const rig = await agentRig(() => "hold");
+    await send(rig.rt, { kind: "step", n: 20 });
+    await send(rig.rt, { kind: "rewind", step: 10 });                      // keeps the future as branch 1, with no script
+    const branch = (rig.rt as any).branches[0].info.id;
+    await send(rig.rt, { kind: "script.load", script: file([{ atSeconds: 5, action: "goal.set", powerW: 5 }]) });
+    rig.host.drain();
+    await send(rig.rt, { kind: "branch.switch", id: branch });
+    expect(rig.host.last("error")).toMatchObject({ request: "branch.switch", code: "E_BRANCH_CONTEXT" });
+    expect(rig.rt.engine!.stepIndex).toBe(10);                             // nothing changed
+  });
+});

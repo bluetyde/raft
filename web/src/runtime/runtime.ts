@@ -314,6 +314,7 @@ export class Runtime {
         }
         // Turning supervision on is the operator's explicit approval to hold the power as it is now.
         const power = this.eng?.snapshot(false).indicated?.["log"] ?? this.eng?.snapshot(false).truth?.power ?? 0;
+        if (this.eng && this.sequencer.plan) this.eng.submit({ type: "rod.move", rod: this.sequencer.plan.rod, direction: "stop" }, "supervisor");   // enabling again must not drop a plan that has a rod moving
         this.sequencer.reset();
         if (this.supervisor.ownerPort === from && !this.controller.enabled) {
           if (power > TARGET_FLOOR_W) this.controller.enable(power);
@@ -374,8 +375,16 @@ export class Runtime {
   }
 
   private handleDecisionResponse(response: import("./protocol").DecisionResponse): void {
+    this.supervisor.lastError = null;
     const candidate = this.supervisor.resolveDecision(response);
-    if (!candidate) return; // Invalid, ignored, or error
+    if (!candidate) {
+      // an error reply to the request in flight: say so (the supervisor backs off and asks again), instead of looking like a quiet AI
+      if (this.supervisor.lastError !== null) {
+        this.lastAction = `the assistant server reported an error (${this.supervisor.lastError}); asking again shortly`;
+        this.postSupervision();
+      }
+      return; // Invalid, ignored, or error
+    }
 
     if (candidate.intent === "HOLD_TARGET") {
       // Keep the approved target and its history. A reply never arms or moves the target.
@@ -572,7 +581,7 @@ export class Runtime {
     this.stopClock();
     // A failed load keeps the previous library and engine, paused; the clock message says so.
     const fail = (issues: Issue[]) => {
-      this.reply({ kind: "loadFailed", protocol: PROTOCOL_VERSION, issues });
+      this.reply({ kind: "loadFailed", protocol: PROTOCOL_VERSION, issues, ...(this.reqId !== undefined ? { reqId: this.reqId } : {}) });
       this.afterChange();
     };
     let lib: Library;
@@ -626,9 +635,16 @@ export class Runtime {
     this.timelineDirty = true;
     this.submitDueEvents();
     // every window hears of a new session, so an attached window can rebuild its panels
-    this.host.post({ kind: "loaded", protocol: PROTOCOL_VERSION, ...this.loadedInfo()! });
+    this.host.post({ kind: "loaded", protocol: PROTOCOL_VERSION, ...(this.reqId !== undefined ? { reqId: this.reqId } : {}), ...this.loadedInfo()! });
     this.host.post(this.scriptMessage());
     this.afterChange();
+  }
+
+  /** Stop every rod whose latest move command came from the AI and was not a stop (the AI that was steering it is gone). */
+  private stopAiRods(e: Engine): void {
+    const last = new Map<string, { direction: string; by: string }>();
+    for (const c of e.commandLog) if (c.cmd?.type === "rod.move") last.set(String(c.cmd.rod), { direction: String(c.cmd.direction), by: String(c.clientId) });
+    for (const [rod, m] of last) if (m.by === "supervisor" && m.direction !== "stop") e.submit({ type: "rod.move", rod, direction: "stop" }, "supervisor");
   }
 
   /** Make `eng` the current engine, after a load, rewind or import. The clock stays paused. */
@@ -645,6 +661,7 @@ export class Runtime {
     this.supervisor.temporalEpoch++;
     this.supervisor.disable();
     this.controller.disable();
+    this.stopAiRods(eng);   // a restored state can have a rod the AI was moving; with supervision off nothing would stop it
 
     this.faulted = false;
     this.limited = null;
@@ -878,7 +895,8 @@ export class Runtime {
     let at = this.goalStep;
     let t: number | null = this.goalStep >= 0 && e ? this.goalStep * e.config.outerDt : null;
     for (const g of this.script?.goals ?? []) {
-      if (e && g.step <= e.stepIndex && g.step >= at) {
+      // at the same step a script goal replaces another script goal, but not a panel goal: script events are submitted at the boundary first, so a panel goal set at that step is the later action
+      if (e && g.step <= e.stepIndex && (g.step > at || (g.step === at && source === "script"))) {
         goal = g.powerW;
         source = "script";
         at = g.step;
@@ -916,7 +934,7 @@ export class Runtime {
       if (err instanceof ScriptError) return this.error("script.load", err.issues[0]!.code, err.message);
       throw err;
     }
-    const past = prepared.events.find((x) => x.step < e.stepIndex);
+    const past = [...prepared.events, ...prepared.goals].find((x) => x.step < e.stepIndex);   // a goal dated in the past would change the AI's goal at once
     if (past) return this.error("script.load", "E_SCRIPT_PAST", `an event is due at ${past.t} s, before the current time ${e.t} s`);
     this.script = prepared;
     this.submitDueScript();
@@ -1093,9 +1111,19 @@ export class Runtime {
       file,
       marks: [...this.marks],
       summary: summarize(e, this.current, this.annotations.length),
+      context: this.branchContext(),
     });
     while (this.branches.length > MAX_BRANCHES) this.branches.shift();
     this.timelineDirty = true;
+  }
+
+  /** Which scenario and script the current timeline runs under (what a branch needs to be replayed with the same goals and scripted events). */
+  private branchContext(): string {
+    const sc = this.script;
+    return JSON.stringify({
+      scenario: this.scenario ? [this.scenario.file.id, this.scenario.digest] : null,
+      script: sc ? { events: sc.events.map((x) => [x.step, x.cmd]), goals: sc.goals.map((x) => [x.step, x.powerW]) } : null,
+    });
   }
 
   private switchBranch(id: number): void {
@@ -1105,6 +1133,9 @@ export class Runtime {
     const i = this.branches.findIndex((b) => b.info.id === id);
     if (i < 0) return this.error("branch.switch", "E_NO_BRANCH", `no branch ${id}`);
     const target = this.branches[i]!;
+    if (target.context !== this.branchContext()) {
+      return this.error("branch.switch", "E_BRANCH_CONTEXT", `branch ${id} ran under a different scenario or instructor script than the current timeline (a session was imported or a script loaded since); its goals and scripted events cannot be restored`);
+    }
     let built: ReturnType<typeof buildBranch>;
     let tracker: GoalTracker | null = null;
     let trackerAt = new Map<number, GoalTracker>();
@@ -1243,6 +1274,7 @@ export class Runtime {
     this.submitDueEvents();
     this.historyDirty = true;
     this.host.post({ kind: "rewound", step: ne.stepIndex, t: ne.t, previous, outerDt: ne.config.outerDt, replaced: true, reqId: this.reqId });
+    this.host.post(this.scriptMessage());   // the import dropped any loaded script: the windows must not keep showing it
     this.afterChange();
   }
 
@@ -1420,6 +1452,7 @@ export class Runtime {
           if (!this.supervisor.isPending(req.requestId) || !this.supervisor.wallExpired()) return;
           this.stopSupervision();
           this.pauseFor("solver", "Loss of AI supervision (timeout)");
+          this.afterChange();   // a paused clock schedules no ticks: tell the windows now, or they keep the old clock state
         });
       }, this.supervisor.maxWallAgeMs + 1);
     }

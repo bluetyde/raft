@@ -88,7 +88,7 @@ Rules (a validator checks each one, with an error code):
 - **Allowed controls (D4):** the worker rejects an operator's command whose type is not in `controls.allow`, with `REJ_SCENARIO`.
   "An operator's command" means any command from an operator window, or with a `clientId` other than `instructor` or `scenario`.
 - **Goals (D3):** after each engine step, the runtime evaluates each open goal's check on that step's state.
-  - A goal is met the first time its check holds for `for` seconds without a break (default: one step).
+  - A goal is met the first time its check holds for `for` seconds without a break (default: none, so it is met at the first evaluated step where the check is true, which is what lets a one-step pulse peak count; a check that is already true at load is met at step 0, so a lesson should not state such a goal).
   - A goal with `after` opens only when that goal is met.
   - A goal with `within` fails if it is not met within that many seconds after it opens.
   - The results are a list of `{goal, status, t}`. Like the timeline marks, they belong to a branch, and a rewind drops the ones after the rewind point.

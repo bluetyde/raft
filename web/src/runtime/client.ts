@@ -72,11 +72,12 @@ export class RuntimeClient {
     opts: { init?: Record<string, any>; seed?: number; config?: Record<string, any>; scenario?: unknown } = {},
   ): Promise<LoadedInfo> {
     const transfer = source.kind === "files" ? Object.values(source.files) : [];
-    const done = this.request(["loaded", "loadFailed", "error"], "load", undefined, () => this.send({ kind: "load", protocol: PROTOCOL_VERSION, source, ...opts }, transfer));
+    const reqId = this.newReqId();
+    const done = this.request(["loaded", "loadFailed", "error"], "load", reqId, () => this.send({ kind: "load", protocol: PROTOCOL_VERSION, source, ...opts, reqId }, transfer));
     return done.then((m) => {
       if (m.kind === "loadFailed") throw new LoadError(m.issues);
       if (m.kind === "error") throw new Error(`${m.code}: ${m.message}`);
-      const { kind: _k, protocol: _p, ...info } = m as Msg<"loaded">;
+      const { kind: _k, protocol: _p, reqId: _r, ...info } = m as Msg<"loaded">;
       return info;
     });
   }
@@ -221,7 +222,7 @@ export class RuntimeClient {
   private matches(w: { kinds: Kind[]; request: ToWorker["kind"]; reqId?: string }, msg: FromWorker): boolean {
     if (!w.kinds.includes(msg.kind)) return false;
     // another window's rewind is broadcast to every window; it does not answer this window's request
-    if (msg.kind === "rewound" && w.reqId !== undefined && msg.reqId !== w.reqId) return false;
+    if ((msg.kind === "rewound" || msg.kind === "loaded" || msg.kind === "loadFailed") && w.reqId !== undefined && msg.reqId !== w.reqId) return false;
     return msg.kind !== "error" || msg.request === w.request;
   }
 

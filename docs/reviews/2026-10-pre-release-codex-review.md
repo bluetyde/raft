@@ -22,7 +22,7 @@ Before a first public release the whole repository was reviewed by Codex (OpenAI
 
 ## Open after this review
 
-- Some runtime edge cases are not changed: a rewind while the AI is moving a rod, goals dated in the past, a goal and a script finishing on the same step, the timeout clock while paused, the default duration of a hold goal. They are not expected to change a physics result; they can produce a surprising lesson score. They are listed in `TODO.md`.
+- The runtime edge cases found by the review were fixed after the first release tag, with tests (see `TODO.md`); two small pipeline items stay open (the above-core fission bin in `shapes.py`, which the current model cannot produce, and the run cache's memoised data digest).
 - The older `triga-jsi-242` library (mostly assumed values) stays in `libraries/` for the validation scripts, but after this review the app no longer lists it: the two TRIGA lessons that used it were replaced by `triga-242-openmc-low-power-ascension` and `triga-242-openmc-scram-and-restart` on the OpenMC library, each with a scripted-operator test and an envelope.
 - The measured-data comparisons for the TRIGA cores cannot be rerun by a reader of this repository, because the data are not redistributed; the validation notes quote what they used.
 - A reviewer reading the code cannot replace a physicist reading the physics. No library is validated.

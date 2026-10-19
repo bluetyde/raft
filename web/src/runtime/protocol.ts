@@ -183,6 +183,8 @@ export type ToWorker =
       config?: Record<string, any>;
       /** A scenario file (docs/m5-scenarios-design.md). It sets the start state, seed and outer step, so init, seed and config are then ignored. */
       scenario?: unknown;
+      /** Echoed in `loaded` and `loadFailed`, so a window completes its own load and not another window's. */
+      reqId?: string;
     }
   | { kind: "command"; clientSeq: number; clientId: string; cmd: unknown }
   | { kind: "time"; rate?: number; paused?: boolean }
@@ -227,10 +229,10 @@ export interface LoadedInfo {
 }
 
 export type FromWorker =
-  | ({ kind: "loaded"; protocol: number } & LoadedInfo)
+  | ({ kind: "loaded"; protocol: number; reqId?: string } & LoadedInfo)
   /** The answer to `attach`: the role, and what is loaded now (null if nothing). */
   | { kind: "attached"; role: Role; loaded: LoadedInfo | null }
-  | { kind: "loadFailed"; protocol: number; issues: Issue[] }
+  | { kind: "loadFailed"; protocol: number; issues: Issue[]; reqId?: string }
   | { kind: "queued"; clientSeq: number; seq: number; step: number; t: number }
   | {
       kind: "ack";

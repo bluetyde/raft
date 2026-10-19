@@ -59,6 +59,8 @@ export class Supervisor {
   private readonly minIntervalMs: number;
   private readonly errorBackoffMs: number;
   private nextAllowedWall = 0;
+  /** The error code of the last matching error reply, or null after a good reply: the runtime shows it so a failing server is not mistaken for a thinking one. */
+  public lastError: string | null = null;
 
   public pendingRequest: boolean = false;
   /** Identity of the one request in flight; a reply must match all of it. */
@@ -229,10 +231,14 @@ export class Supervisor {
     this.pendingIdentity = null;
 
     if (response.status !== "ok" || !response.candidateId) {
-      if (response.status === "error") this.nextAllowedWall = this.now() + this.errorBackoffMs; // do not hammer a failing server
+      if (response.status === "error") {
+        this.nextAllowedWall = this.now() + this.errorBackoffMs; // do not hammer a failing server
+        this.lastError = response.errorCode ?? "error";
+      }
       this.activeCandidates.clear();
       return null;
     }
+    this.lastError = null;
     const candidate = this.activeCandidates.get(response.candidateId) ?? null;
     this.activeCandidates.clear();
     return candidate;

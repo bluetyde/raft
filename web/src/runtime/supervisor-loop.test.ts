@@ -222,3 +222,28 @@ describe("supervision ownership", () => {
     expect((rig.rt as any).supervisor.ownerPort).toBeNull();
   });
 });
+
+describe("supervision after a rewind or an error reply (code review)", () => {
+  it("a rewind stops a rod the AI was moving, because the AI is switched off", async () => {
+    const rig = await agentRig(() => null);
+    await send(rig.rt, { kind: "command", clientSeq: 1, clientId: "supervisor", cmd: { type: "rod.move", rod: "regulating", direction: "out" } });
+    await send(rig.rt, { kind: "step", n: 60 });
+    await send(rig.rt, { kind: "rewind", step: 30 });
+    const log = rig.rt.engine!.commandLog;
+    const last = log.filter((c: any) => c.cmd.type === "rod.move").at(-1);
+    expect(last).toMatchObject({ clientId: "supervisor", cmd: { rod: "regulating", direction: "stop" } });
+    const pos = rig.rt.engine!.snapshot().truth.rods["regulating"].position;
+    await send(rig.rt, { kind: "step", n: 100 });
+    expect(rig.rt.engine!.snapshot().truth.rods["regulating"].position).toBeCloseTo(pos, 9);   // it did not carry on to its limit
+  });
+
+  it("an error reply is shown in the supervision state instead of looking like a quiet AI", async () => {
+    const rig = await agentRig((r) => ({
+      protocolVersion: 1, sessionId: r.sessionId, temporalEpoch: r.temporalEpoch, connectionId: r.connectionId,
+      requestId: r.requestId, observationStep: r.observationStep, status: "error", errorCode: "MODEL_DOWN",
+    }) as DecisionResponse);
+    await startSupervised(rig);
+    await rig.run(1500);
+    expect(rig.supervision()?.lastAction ?? "").toContain("MODEL_DOWN");
+  });
+});
